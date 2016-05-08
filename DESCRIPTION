@@ -1,0 +1,21 @@
+Package: largeVis
+Type: Package
+Title: High-Quality Visualizations of Ultra-Large, High-Dimensional Datasets
+Version: 0.1.0
+Author: Amos B. Elberg
+Maintainer: Amos Elberg <amos.elberg@gmail.com>
+Description: Implements the largeVis algorithm for visualizing very large high-dimensional datasets. Also very fast search for approximate nearest neighbors.
+License: GPL-3
+LazyData: TRUE
+RoxygenNote: 5.0.1
+Imports: proxy,
+    progress,
+    Matrix,
+    parallel,
+    Rcpp (>= 0.12.4),
+    RcppArmadillo
+LinkingTo: Rcpp,RcppArmadillo
+Suggests: testthat,
+    covr
+URL: https://github.com/elbamos/largeVis
+BugReports: https://github.com/elbamos/largeVis/issues

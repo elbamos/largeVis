@@ -1,0 +1,106 @@
+---
+title: "largeVis"
+output: github_document
+---
+
+[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=master)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/master.svg)](https://codecov.io/github/elbamos/largeVis?branch=master)
+
+This is an implementation of the `largeVis` algorithm described in (https://arxiv.org/abs/1602.00370).  It also incorporates code for a very fast algorithm for estimating k-nearest neighbors.
+
+The inner loops for nearest-neighbor search and gradient descent are implemented in C++ using `Rcpp` and `RcppArmadillo`.  (If you get an error that a `NULL value passed as symbol address` this relates to `Rcpp` and please open an issue here.)
+
+#### Project Status & Caveats
+* It works!
+* This project is under heavy development.  
+* I am attempting to replicate the paper's results with larger and larger datasets.  This takes time because my hardware is not as powerful as the authors'.  If you have any to volunteer, please contact me!
+* Note that your installation of R must be configured to work with OpenMP.  I have had a report that on Federa 22, even small datasets could not be processed because of exceeding the C stack space.  If you experience any compilation issues or similar crashes, please create an issue. 
+
+#### Examples:
+```{r setup,eval=T,echo=F,warning=F,error=F,message=F}
+# Note to reader:  Please don't steal the semi-distinctive visual style I spent several hours creating for myself.
+library(RColorBrewer,quietly=T)
+library(wesanderson,quietly=T)
+colors_discrete <- function(x) wes_palette("Darjeeling", n = x)
+colors_divergent_discrete <- function(x) grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
+colors_continuous <-  function(x) wes_palette(name= "Zissou",n = x, type= "continuous")
+nacol <- colors_discrete(4)[4]
+require(ggplot2,quietly = T)
+theme_set(
+        theme_bw() %+replace%
+        theme(
+                                legend.key.size=unit(4,"mm"), 
+                                legend.title=element_text(size=rel(0.8), face = "bold"),
+                                legend.margin=unit(0,"cm"),
+                                legend.key.size=unit(0.5,"lines"),
+                                legend.text=element_text(size = unit(10, "points")), 
+                                axis.title.y = element_text(angle=90),
+                                axis.text = element_text(size=rel(0.7)),
+                                plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 
+                                axis.title=element_text(size=rel(0.8),face="bold"),
+        title = element_text(size=rel(0.9))
+                                ) 
+)
+
+```
+##### Iris
+
+```{r iris,eval=T}
+library(largeVis,quietly=T)
+data(iris)
+dat <- as.matrix(iris[,1:4])
+dat <- scale(dat)
+dupes = which(duplicated(dat))
+dat <- dat[-dupes,]
+visObject <- vis(dat, pca.first = F, 
+                   max.iter = 20, sgd.batches = 800000, 
+                   K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
+```
+```{r echo=F}
+coords <- data.frame(visObject$coords)
+colnames(coords) <- c("X", "Y")
+coords$Species <- iris$Species[-dupes]
+coords$algo <- "largeVis"
+```
+```{r iristsne,echo=F}
+library(Rtsne,quietly=T)
+more <- Rtsne(dat, initial_dims = 4, pca = F)$Y
+more <- data.frame(X = more[,1], Y = more[,2], algo = "B-H t-SNE")
+more$Species <- iris$Species[-dupes]
+coords <- rbind(coords, more)
+coords$algo <- factor(coords$algo)
+```
+```{r showiris,echo=F}
+ggplot(coords, aes(x = X, y = Y, color = Species)) + 
+  geom_point(size = 0.5) + 
+  facet_grid(~ algo, scales = 'free') + 
+  scale_color_manual(values = colors_discrete(3)) + 
+  guides(colour = guide_legend(override.aes = list(size=5))) +
+  ggtitle("The Iris Dataset largeVis vs. t-SNE")
+```
+
+##### MNIST
+
+```{r mnist,eval=F}
+load("./mnist.Rda")
+dat <- mnist$images
+dim(dat) <- c(42000, 28 * 28)
+dat <- (dat / 255) - 0.5
+coords <- vis(dat, pca.f = F, 
+                   n.tree = 10, tree.th = 40, 
+                   K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
+save(coords, file = "./mnistcoords.Rda")
+```
+```{r drawmnist,echo=F,warning=F,error=F,message=F}
+load("./mnist.Rda")
+load("./mnistcoords.Rda")
+coords <- data.frame(coords$coords) 
+coords <- cbind(coords, factor(mnist$labels)) 
+colnames(coords) <- c("x", "y", "label")
+ggplot(coords, aes(x = x, y = y, color = label)) + 
+  geom_point(size = 0.1, alpha = 0.3) +
+  scale_x_continuous(name = "", limits = c(-125, 125)) + 
+  scale_y_continuous(name = "", limits = c(-125, 125)) +
+  scale_color_manual(values = colors_divergent_discrete(10)(10)) +
+  guides(colour = guide_legend(override.aes = list(size=5))) +
+  ggtitle("42,000 Node MNIST Dataset (Kaggle Variant)")
+```
