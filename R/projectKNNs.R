@@ -13,7 +13,7 @@
 #' @param M The number of negative edges to sample for each positive edge
 #' @param distance.function A function mapping the distance between two vertices in the lower-dimensional space to the probability that they are kNN's of each other.
 #'  \eqn{f(||y_1 - y_2||) = P(e_{ij} = 1)}
-#' @param gamma Hyperparameter used in the objective function.  See the papers for details
+#' @param gamma Hyperparameter controlling the weight given to each negative sample.
 #' @param weight.pos.samples Whether to sample positive edges according to their edge weights (the default) or multiply the edge-loss by the edge-weight in the objective function.
 #' @param rho Initial learning rate.
 #' @param min.rho Final learning rate. The learning rate declines non-linearly.  \eqn{\rho_t = \rho_{t-1} - ((\rho_{t-1} - \rho_{min}) / sgd.batches)}
@@ -127,8 +127,8 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
         .val <-  do.call(negfunc, .args)
         grads <- attr(.val, 'gradient')
         # Update parameters, maximizing objective function
-        coords[i,] <- coords[i,] + (grads[1:dim] * rho / M) # update i
-        coords[j,] <- coords[j,] + (grads[(dim +1):(dim * 2)] * rho / M) # update j
+        coords[i,] <- coords[i,] + (grads[1:dim] * rho) # update i
+        coords[j,] <- coords[j,] + (grads[(dim +1):(dim * 2)] * rho) # update j
       }
       .loss <- .loss + .val # Track training loss
     }
