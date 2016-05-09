@@ -43,7 +43,7 @@ randomProjectionTreeSearch <- function(x,
   for (T in 1:max.iter) {
     if (verbose) progress$tick()
     knns <- new_knns
-    new_knns <- foreach(i = 1:N, .combine = cbind, .multicombine = TRUE) %do% {
+    new_knns <- foreach(i = 1:N, .combine = cbind, .multicombine = TRUE) %dopar% {
       candidates <- c(knns[,i], knns[,knns[,i]])
       candidates <- candidates[candidates != i]
       candidates <- candidates[! candidates == 0]

@@ -29,23 +29,23 @@ largeVis(x, dim = 2, K = 40, pca.first = TRUE, pca.dims = 50,
 
 \item{pca.dims}{How many pca dimensions to use}
 
-\item{n.trees}{See \code\link{randomProjectionTreeSearch}}
+\item{n.trees}{See \link{randomProjectionTreeSearch}}
 
-\item{tree.threshold}{See \code\link{randomProjectionTreeSearch}}
+\item{tree.threshold}{See \link{randomProjectionTreeSearch}}
 
-\item{max.iter}{See \code\link{randomProjectionTreeSearch}}
+\item{max.iter}{See \link{randomProjectionTreeSearch}}
 
-\item{distance.method}{See \code\link{randomProjectionTreeSearch}}
+\item{distance.method}{See \link{randomProjectionTreeSearch}}
 
 \item{perplexity}{See paper}
 
-\item{sgd.batches}{See \code\link{projectKNNs}}
+\item{sgd.batches}{See \link{projectKNNs}}
 
-\item{M}{See \code\link{projectKNNs}}
+\item{M}{See \link{projectKNNs}}
 
-\item{weight.pos.samples}{See \code\link{projectKNNs}}
+\item{weight.pos.samples}{See \link{projectKNNs}}
 
-\item{distance.function}{See \code\link{projectKNNs}}
+\item{distance.function}{See \link{projectKNNs}}
 
 \item{gamma}{See `projectKNNs`}
 

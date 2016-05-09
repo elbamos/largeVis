@@ -7,15 +7,15 @@
 #' @param K The number of nearest-neighbors to use in computing the graph
 #' @param pca.first Whether to apply pca first (can speed-up distance calculations)
 #' @param pca.dims How many pca dimensions to use
-#' @param n.trees See \code\link{randomProjectionTreeSearch}
-#' @param tree.threshold See \code\link{randomProjectionTreeSearch}
-#' @param max.iter See \code\link{randomProjectionTreeSearch}
-#' @param distance.method See \code\link{randomProjectionTreeSearch}
+#' @param n.trees See \link{randomProjectionTreeSearch}
+#' @param tree.threshold See \link{randomProjectionTreeSearch}
+#' @param max.iter See \link{randomProjectionTreeSearch}
+#' @param distance.method See \link{randomProjectionTreeSearch}
 #' @param perplexity See paper
-#' @param sgd.batches See \code\link{projectKNNs}
-#' @param M See \code\link{projectKNNs}
-#' @param weight.pos.samples See \code\link{projectKNNs}
-#' @param distance.function See \code\link{projectKNNs}
+#' @param sgd.batches See \link{projectKNNs}
+#' @param M See \link{projectKNNs}
+#' @param weight.pos.samples See \link{projectKNNs}
+#' @param distance.function See \link{projectKNNs}
 #' @param gamma See `projectKNNs`
 #' @param verbose Verbosity
 #' @param ... See paper
@@ -68,9 +68,9 @@ largeVis <- function(x,
                                      K = K,
                                      max.iter = max.iter,
                                      verbose = verbose,
-                                     distance.method = distance.method,
-                                     ...)
+                                     distance.method = distance.method)
 
+  if (verbose) cat("Calculating edge weights...")
   # calculate distance for knns
   is <- rep(1:N, each = K)
   js <- as.vector(knns)
@@ -83,41 +83,43 @@ largeVis <- function(x,
   js[wrongtri] <- ts
   rm(ts, wrongtri)
   # calculate distances
+  if (verbose) cat("neighbor distances...")
   xs <- proxy::dist(x = shrunken.x[is,],
                     y = shrunken.x[js,],
                     method='euclidean',
                     pairwise = TRUE)
+  if (verbose) cat("distance matrix...")
   # assemble edges into graph, as symmetric sparse matrix
   dist_matrix <- Matrix::sparseMatrix(i = is,
                                       j = js,
                                       x = as.vector(xs),
                                       symmetric = TRUE)
-  calcpji <- function(s, e, x) {
-    xs <- (x^2)/s
-    softxs <- exp(-x) / sum(exp(-x))
-    p <- -sum(softxs * log2(softxs))
-    (e - p)^2
+  # select denominators sigma to match distributions to given perplexity
+  if (verbose) cat("sigmas...")
+  sigmas <- foreach(idx = 1:N, .combine = c, .multicombine = TRUE) %dopar% {
+    x_i <- dist_matrix[idx,,drop=FALSE]
+    x_i <- x_i[x_i > 0]
+    optimize(f = function(sigma, x) {
+      xs <- exp(-(x^2)/(sigma))
+      softxs <- xs / sum(xs)
+      p <- -sum(log2(softxs))/length(x)
+      (log2(perplexity) - p)^2
+    },
+    x = x_i,
+    interval = c(0,100))$minimum # note that sigmas are actually (2 * (sigmas^2))
   }
 
-  # select denominators sigma to match distributions to given perplexity
-  sigmas <- lapply(1:N,
-                     FUN = function(idx) optimize(f = calcpji,
-                                                  e = perplexity,
-                                                  x = dist_matrix[idx,,drop=FALSE],
-                                                  interval = c(0,2)))
-  sigmas <- unlist(sigmas) # note that sigmas are actually (2 * (sigmas^2))
+  if (verbose) cat("p(j|i)...")
   pji <- tril(dist_matrix) + triu(dist_matrix)
   stopifnot(length(pji@i) == 2 * length(dist_matrix@i)) # confirm that matrix is no longer symmetric
   pji@x <- exp(-(pji@x^2) / sigmas[pji@i + 1])
   pji <- pji / rowSums(pji)
 
-  if (verbose) cat("Calculated p(j|i)...")
-
+  if (verbose) cat("w_{ji}...")
   # calculate w_{ij} by symmetrizing p(i|j) + p(j|i)/2N
   wij <-forceSymmetric((pji + t(pji)) / (2 * N))
   wij <- as(wij, "dgTMatrix")
-
-  if (verbose) cat("w_{ij}\n")
+  if (verbose) cat("Done!\n")
 
   # SGD PHASE
   coords <- projectKNNs(x = wij,
@@ -127,7 +129,8 @@ largeVis <- function(x,
                         weight.pos.samples = weight.pos.samples,
                         gamma = gamma,
                         verbose = verbose,
-                        distance.function = distance.function)
+                        distance.function = distance.function,
+                        ...)
 
   returnvalue <- list(
     knns = t(knns),

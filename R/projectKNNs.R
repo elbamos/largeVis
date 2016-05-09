@@ -49,21 +49,20 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
                           "( yi", d, " - yj", d, nansaver, ")^2")
       )
     }
-    distance <- paste("sqrt(", distance, ")", collapse = "+")
+    distance <- paste("sqrt(", paste(distance, collapse = " + "), ")", sep = "")
     sub("X", distance, distance.function, fixed = TRUE)
   }
 
-  posobjective <- paste("~ log(", peij(0), ")")
-  negobjective <- paste("~ gamma * log(1 - ", peij(0), ")")
+  posobjective <- paste("~ log(", peij(0), ")",sep="")
+  negobjective <- paste("~ gamma * log(1 - (", peij(0), "))", sep = "")
   # TODO: ADD WIJ WEIGHTING
 
   # get autodifferentiation calls
   namevec <- c(paste(sep="", "yi", 1:dim),
               paste(sep="", "yj", 1:dim))
   # TODO: add wij to namevec
-  print(posobjective)
-  print(negobjective)
-  print(namevec)
+  print(paste("Positive objective function: ", posobjective))
+  print(paste("Negative objection function: ", negobjective))
 
   posfunc <- deriv(as.formula(posobjective), namevec = namevec, function.arg = c(namevec))
   negfunc <- deriv(as.formula(negobjective), namevec = namevec, function.arg = c("gamma", namevec))
@@ -116,13 +115,13 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
 
     # Negative edges
     .args <- list(gamma = gamma)
-    .args[paste(sep='', "yi", 1:dim)] <- as.vector(coords[i,])
     availjs <- which(x[i,] == 0)
     availjs <- availjs[availjs != i]
     js <- sample(availjs, min(M, length(availjs)), replace = F, prob = neg.sample.weights[availjs])
     if (length(js) > 0) {
 
       for (j in js) {
+        .args[paste(sep='', "yi", 1:dim)] <- as.vector(coords[i,])
         .args[paste(sep='', "yj", 1:dim)] <- as.vector(coords[j,])
         .val <-  do.call(negfunc, .args)
         grads <- attr(.val, 'gradient')
@@ -137,15 +136,16 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
     counter <- counter + 1
 
     if (is.factor(verbose) && counter %% 50000 == 1) {
+      print(rho)
       plotcounter <- plotcounter + 1
       if (plotcounter %% 9 == 1) {
         x11()
         par(mfrow=c(3, 3))
       }
-      plot(c(min(coords[,1]), max(coords[,1])),
-           c(min(coords[,2]), max(coords[,2])),
+      plot(coords[as.integer(verbose) == 1,],
+           col = rainbow(nlevels(verbose))[1],
            main = paste("Batch", counter))
-      for (i in 1:nlevels(verbose)) {
+      for (i in 2:nlevels(verbose)) {
         points(coords[as.integer(verbose) == i,],
                col = rainbow(nlevels(verbose))[i])
       }
