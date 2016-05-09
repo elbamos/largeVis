@@ -11,8 +11,9 @@
 #' @param dim The number of dimensions for the projection space
 #' @param sgd.batches The number of edges to process during SGD; defaults to 10000 * the number of rows in x
 #' @param M The number of negative edges to sample for each positive edge
-#' @param distance.function A function mapping the distance between two vertices in the lower-dimensional space to the probability that they are kNN's of each other.
-#'  \eqn{f(||y_1 - y_2||) = P(e_{ij} = 1)}
+#' @param distance.function A function mapping the distance between two vertices in the lower-dimensional space to the probability that they are kNN's of each other.  (\eqn{f(||y_1 - y_2||) = P(e_{ij} = 1)}) The choices are a, \eqn{1 / (1 + \alpha * x^2)},
+#' and b, \eqn{1 / (1 + exp(-x^2))}.
+#' @param alpha Hyperparameter used in distance function a
 #' @param gamma Hyperparameter controlling the weight given to each negative sample.
 #' @param weight.pos.samples Whether to sample positive edges according to their edge weights (the default) or multiply the edge-loss by the edge-weight in the objective function.
 #' @param rho Initial learning rate.
@@ -28,44 +29,12 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
                         sgd.batches = nrow(x) * 10000,
                         M = 5,
                         weight.pos.samples = TRUE,
-                        distance.function =  # the probability that two nodes will be knns, given the distance (X) between them
-                          # "1 / (1 + (X)^2)",
-                          # "1 / (1 + (X)^2)",
-                          "1 / (1 + (2 * (X)^2))",
-                        # "1 / (1 + exp(- (X)^2))",
+                        distance.function =  "a",
                         gamma = 7,
+                        alpha = 2,
                         rho = 1,
                         min.rho = 0.1,
                         verbose = TRUE) {
-  ########################################
-  # GET FUNCTION FOR AUTODIFFERENTIATION
-  ########################################
-  nansaver <- NULL # " + 1e-10"
-  peij <- function(kindex = 0) {
-    distance <- list()
-    for (d in 1:dim) {
-      distance <- c(distance,
-                    paste(sep = "",
-                          "( yi", d, " - yj", d, nansaver, ")^2")
-      )
-    }
-    distance <- paste("sqrt(", paste(distance, collapse = " + "), ")", sep = "")
-    sub("X", distance, distance.function, fixed = TRUE)
-  }
-
-  posobjective <- paste("~ log(", peij(0), ")",sep="")
-  negobjective <- paste("~ gamma * log(1 - (", peij(0), "))", sep = "")
-  # TODO: ADD WIJ WEIGHTING
-
-  # get autodifferentiation calls
-  namevec <- c(paste(sep="", "yi", 1:dim),
-              paste(sep="", "yj", 1:dim))
-  # TODO: add wij to namevec
-  print(paste("Positive objective function: ", posobjective))
-  print(paste("Negative objection function: ", negobjective))
-
-  posfunc <- deriv(as.formula(posobjective), namevec = namevec, function.arg = c(namevec))
-  negfunc <- deriv(as.formula(negobjective), namevec = namevec, function.arg = c("gamma", namevec))
 
   ##################################
   # SETUP SGD
@@ -91,7 +60,7 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
   counter <- 0
   plotcounter <- 0
   for (eij in pos.edges) {
-    if (verbose) if (require(progress)) {progress$tick()} else {utils::setTxtProgressBar(progress, utils::getTxtProgressBar(progress) + 1)}
+    if (verbose) progress$tick()
 
     .args <- list()
     if (! weight.pos.samples) .args$wij <- wij@x[eij]
@@ -107,29 +76,21 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
     }
 
     # Positive edge
-    .args[paste(sep = '', "y", unlist(outer(c("i", "j"), 1:2, FUN=paste, sep="")))] <- as.vector(coords[c(i,j),])
-    # Get gradients
-    .val <-  do.call(posfunc, .args)
-    grads <- attr(.val, 'gradient')
-    .loss <- .loss + .val # Track training loss
+    if (distance.function == "a") grads <- afuncpos(coords[i,], coords[j,], ifelse(weight.pos.samples, 1, wij@x[eij]), alpha)
+    else grads <- bfuncpos(coords[i,], coords[j,],  ifelse(weight.pos.samples, 1, wij@x[eij]))
+    coords[i,] <- coords[i,] + (grads * rho)
+    coords[j,] <- coords[j,] - (grads * rho)
 
-    # Negative edges
-    .args <- list(gamma = gamma)
     availjs <- which(x[i,] == 0)
     availjs <- availjs[availjs != i]
     js <- sample(availjs, min(M, length(availjs)), replace = F, prob = neg.sample.weights[availjs])
     if (length(js) > 0) {
-
       for (j in js) {
-        .args[paste(sep='', "yi", 1:dim)] <- as.vector(coords[i,])
-        .args[paste(sep='', "yj", 1:dim)] <- as.vector(coords[j,])
-        .val <-  do.call(negfunc, .args)
-        grads <- attr(.val, 'gradient')
-        # Update parameters, maximizing objective function
-        coords[i,] <- coords[i,] + (grads[1:dim] * rho) # update i
-        coords[j,] <- coords[j,] + (grads[(dim +1):(dim * 2)] * rho) # update j
+        if (distance.function == "a") grads <- afuncneg(coords[i,], coords[j,], gamma, alpha)
+        else grads <- bfuncneg(coords[i,], coords[j,],  gamma)
+        coords[i,] <- coords[i,] + (grads * rho)
+        coords[j,] <- coords[j,] - (grads * rho)
       }
-      .loss <- .loss + .val # Track training loss
     }
     rho <- rho - ((rho - min.rho) / sgd.batches)
 
@@ -153,3 +114,9 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
   }
   return(coords)
 }
+
+afuncpos <- function(i, j, wij, alpha) (2 * wij * alpha * (i - j)) / (alpha * (sum((i-j)^2)) + 1)
+afuncneg <- function(i,j,gamma, alpha) (2 * alpha * gamma * (i - j) ) / ((1 - (1 / (1 + (alpha * (sum((i-j)^2)))))) * (1 + (alpha * (sum((i-j)^2))))^2)
+bfuncpos <- function(i,j,wij)  (4 * wij * (i - j) * (sum((i^2)) + sum(j^2) - (2 * i * j)) ) / (1 + exp(sum((i - j)^2)^2))
+bfuncneg <- function(i,j,gamma)  - (4 * gamma * (i - j) * (sum((i^2)) + sum(j^2) - (2 * i * j)) ) * exp(sum((i - j)^2)^2) / (1 + exp(sum((i - j)^2)^2))
+

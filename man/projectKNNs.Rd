@@ -5,12 +5,12 @@
 \title{Project a distance matrix into a lower-dimensional space}
 \usage{
 projectKNNs(x, dim, sgd.batches = nrow(x) * 10000, M = 5,
-  weight.pos.samples = TRUE, distance.function = "1 / (1 + (2 * (X)^2))",
-  gamma = 7, rho = 1, min.rho = 0.1, verbose = TRUE)
+  weight.pos.samples = TRUE, distance.function = "a", gamma = 7,
+  alpha = 2, rho = 1, min.rho = 0.1, verbose = TRUE)
 
 projectKNNs(x, dim, sgd.batches = nrow(x) * 10000, M = 5,
-  weight.pos.samples = TRUE, distance.function = "1 / (1 + (2 * (X)^2))",
-  gamma = 7, rho = 1, min.rho = 0.1, verbose = TRUE)
+  weight.pos.samples = TRUE, distance.function = "a", gamma = 7,
+  alpha = 2, rho = 1, min.rho = 0.1, verbose = TRUE)
 }
 \arguments{
 \item{x}{A sparse matrix in triplet form}
@@ -28,6 +28,8 @@ projectKNNs(x, dim, sgd.batches = nrow(x) * 10000, M = 5,
 
 \item{gamma}{Hyperparameter used in the objective function.  See the papers for details}
 
+\item{alpha}{Hyperparameter used in distance function a}
+
 \item{rho}{Initial learning rate.}
 
 \item{min.rho}{Final learning rate. The learning rate declines non-linearly.  \eqn{\rho_t = \rho_{t-1} - ((\rho_{t-1} - \rho_{min}) / sgd.batches)}}
@@ -42,8 +44,8 @@ projectKNNs(x, dim, sgd.batches = nrow(x) * 10000, M = 5,
 
 \item{M}{The number of negative edges to sample for each positive edge}
 
-\item{distance.function}{A function mapping the distance between two vertices in the lower-dimensional space to the probability that they are kNN's of each other.
-\eqn{f(||y_1 - y_2||) = P(e_{ij} = 1)}}
+\item{distance.function}{A function mapping the distance between two vertices in the lower-dimensional space to the probability that they are kNN's of each other.  (\eqn{f(||y_1 - y_2||) = P(e_{ij} = 1)}) The choices are a, \eqn{1 / (1 + \alpha * x^2)},
+and b, \eqn{1 / (1 + exp(-x^2))}.}
 
 \item{gamma}{Hyperparameter controlling the weight given to each negative sample.}
 

@@ -53,6 +53,8 @@ largeVis(x, dim = 2, K = 40, pca.first = TRUE, pca.dims = 50,
 
 \item{...}{See paper}
 
+\item{alpha}{See \link{projectKNNs}}
+
 \item{x}{A matrix}
 
 \item{dim}{The number of dimensions in the output}
