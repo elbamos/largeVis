@@ -17,7 +17,7 @@
 randomProjectionTreeSearch <- function(x,
                                        K = 5, #
                                        n.trees = 2, # how many trees to build
-                                       tree.threshold = k * 2, # the maximum number of nodes per leaf
+                                       tree.threshold = K * 2, # the maximum number of nodes per leaf
                                        distance.method = 'euclidean',
                                        max.iter = 2, # in the neighborhood exploration phase, the number of iterations
                                        search.harder = TRUE, # whether to check 3d-degree neighbors if insufficient neighbors were found
@@ -38,7 +38,7 @@ randomProjectionTreeSearch <- function(x,
   new_knns <- do.call(rbind, tree_assignments)
   if (verbose) cat("...done\n")
 
-  if (verbose) progress <- progress::progress_bar$new(total = max.iter, format = 'Exploring Neighbors [:bar] :percent eta: :eta')#,
+  if (verbose) progress <- progress::progress_bar$new(total = max.iter, format = 'Exploring Neighbors [:bar] :percent eta: :eta', clear = FALSE)#,
                            #       utils::txtProgressBar(min = 0, max = sgd.batches, style = 3))
   for (T in 1:max.iter) {
     if (verbose) progress$tick()

@@ -4,7 +4,7 @@
 \alias{randomProjectionTreeSearch}
 \title{Find approximate k-Nearest Neighbors using random projection tree search}
 \usage{
-randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = k * 2,
+randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = K * 2,
   distance.method = "euclidean", max.iter = 2, search.harder = TRUE,
   verbose = TRUE)
 }

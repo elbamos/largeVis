@@ -1,19 +1,21 @@
 #' Apply the LargeVis algorithm for visualizing large high-dimensional datasets.
 #'
+#' See \href{https://arxiv.org/abs/1602.00370}{Original paper}
+#'
 #' @param x A matrix
 #' @param dim The number of dimensions in the output
 #' @param K The number of nearest-neighbors to use in computing the graph
 #' @param pca.first Whether to apply pca first (can speed-up distance calculations)
 #' @param pca.dims How many pca dimensions to use
-#' @param n.trees The number of random projections trees to create when approximating nearest neighbors
-#' @param tree.threshold The threshold for creating separate projection tree branches
-#' @param max.iter Maximum number of iterations during the neighbor search (the paper recommends 1)
-#' @param distance.method The method used to compute distances when creating the kNN graph; passed to \code{proxy::dist()}
+#' @param n.trees See \code\link{randomProjectionTreeSearch}
+#' @param tree.threshold See \code\link{randomProjectionTreeSearch}
+#' @param max.iter See \code\link{randomProjectionTreeSearch}
+#' @param distance.method See \code\link{randomProjectionTreeSearch}
 #' @param perplexity See paper
-#' @param sgd.batches See `projectKNNs`
-#' @param neg.samples See `projectKNNs`
-#' @param weight.pos.samples See `projectKNNs`
-#' @param distance.function See `projectKNNs`
+#' @param sgd.batches See \code\link{projectKNNs}
+#' @param M See \code\link{projectKNNs}
+#' @param weight.pos.samples See \code\link{projectKNNs}
+#' @param distance.function See \code\link{projectKNNs}
 #' @param gamma See `projectKNNs`
 #' @param verbose Verbosity
 #' @param ... See paper
@@ -40,7 +42,7 @@ largeVis <- function(x,
                      perplexity = K, # hyperparameter for calculating p(j|i)
 
                      sgd.batches = nrow(x) * 10000,
-                     neg.samples = 5,
+                     M = 5,
                      weight.pos.samples = TRUE,
                      distance.function = #'1 / (1 + (X)^2)',
                      #  '1 / (1 + (X)^2)',
@@ -121,7 +123,7 @@ largeVis <- function(x,
   coords <- projectKNNs(x = wij,
                         dim = dim,
                         sgd.batches = sgd.batches,
-                        neg.samples = neg.samples,
+                        M = M,
                         weight.pos.samples = weight.pos.samples,
                         gamma = gamma,
                         verbose = verbose,
