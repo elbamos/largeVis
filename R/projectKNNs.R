@@ -92,7 +92,7 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
         coords[j,] <- coords[j,] - (grads * rho)
       }
     }
-    rho <- rho - ((rho - min.rho) / sgd.batches)
+    rho <- rho - ((rho - min.rho) / (sgd.batches + 1))
 
     counter <- counter + 1
 
@@ -115,8 +115,8 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
   return(coords)
 }
 
-afuncpos <- function(i, j, wij, alpha) (2 * wij * alpha * (i - j)) / (alpha * (sum((i-j)^2)) + 1)
+afuncpos <- function(i, j, wij, alpha) - (2 * wij * alpha * (i - j)) / (alpha * (sum((i-j)^2)) + 1)
 afuncneg <- function(i,j,gamma, alpha) (2 * alpha * gamma * (i - j) ) / ((1 - (1 / (1 + (alpha * (sum((i-j)^2)))))) * (1 + (alpha * (sum((i-j)^2))))^2)
-bfuncpos <- function(i,j,wij)  (4 * wij * (i - j) * (sum((i^2)) + sum(j^2) - (2 * i * j)) ) / (1 + exp(sum((i - j)^2)^2))
-bfuncneg <- function(i,j,gamma)  - (4 * gamma * (i - j) * (sum((i^2)) + sum(j^2) - (2 * i * j)) ) * exp(sum((i - j)^2)^2) / (1 + exp(sum((i - j)^2)^2))
+bfuncpos <- function(i,j,wij)  - (4 * wij * (i - j) * (sum((i^2)) + sum(j^2) - (2 * i * j)) ) / (1 + exp(sum((i - j)^2)^2))
+bfuncneg <- function(i,j,gamma)  (4 * gamma * (i - j) * (sum((i^2)) + sum(j^2) - (2 * i * j)) ) * exp(sum((i - j)^2)^2) / (1 + exp(sum((i - j)^2)^2))
 
