@@ -35,7 +35,7 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
                         # "1 / (1 + exp(- (X)^2))",
                         gamma = 7,
                         rho = 1,
-                        min.rho = 0,
+                        min.rho = 0.1,
                         verbose = TRUE) {
   ########################################
   # GET FUNCTION FOR AUTODIFFERENTIATION
@@ -90,6 +90,7 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
   # SGD
   #################################
   counter <- 0
+  plotcounter <- 0
   for (eij in pos.edges) {
     if (verbose) if (require(progress)) {progress$tick()} else {utils::setTxtProgressBar(progress, utils::getTxtProgressBar(progress) + 1)}
 
@@ -134,12 +135,21 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
     rho <- rho - ((rho - min.rho) / sgd.batches)
 
     counter <- counter + 1
-    if (verbose && counter %% 10000 == 1) coords %>%
-      cbind(iris$Species) %>%
-      data.frame() %>%
-      set_colnames(c("X", "Y", "Species")) %>%
-      mutate(Species = as.factor(Species)) %>%
-      ggplot2::ggplot(aes(x = X, y = Y, color = Species)) + ggplot2::geom_point() + ggplot2::ggtitle(paste("Batch", counter))
+
+    if (is.factor(verbose) && counter %% 50000 == 1) {
+      plotcounter <- plotcounter + 1
+      if (plotcounter %% 9 == 1) {
+        x11()
+        par(mfrow=c(3, 3))
+      }
+      plot(c(min(coords[,1]), max(coords[,1])),
+           c(min(coords[,2]), max(coords[,2])),
+           main = paste("Batch", counter))
+      for (i in 1:nlevels(verbose)) {
+        points(coords[as.integer(verbose) == i,],
+               col = rainbow(nlevels(verbose))[i])
+      }
+    }
   }
   return(coords)
 }
