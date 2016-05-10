@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <queue>
 #include <vector>
+#include <set>
 using namespace Rcpp;
 using namespace std;
 
@@ -21,10 +22,16 @@ double dist(NumericVector i, NumericVector j) {
   return sum(pow(i - j, 2));
 }
 
-void pushHeap(std::priority_queue<heapObject> heap, int j, NumericVector x_i, NumericMatrix data, int K) {
-  double d = sqrt(dist(x_i, data.row(j-1)));
-  heap.push(heapObject(d, j));
-  if (heap.size() > K) heap.pop();
+std::priority_queue<heapObject> pushHeap(std::set<int> seen,
+                                         std::priority_queue<heapObject> heap,
+                                         int j, NumericVector x_i,
+                                         NumericMatrix data, int K) {
+  if (seen.insert(j).second) {
+    double d = dist(x_i, data.row(j-1));
+    heap.push(heapObject(d, j));
+    if (heap.size() > K) heap.pop();
+  }
+  return heap;
 }
 
 // [[Rcpp::export('neighbors_inner')]]
@@ -36,32 +43,42 @@ NumericMatrix neighbors_inner(int K, NumericMatrix old_knns, NumericMatrix data,
   int j, k;
 
   NumericMatrix output = NumericMatrix(K, N);
-  //for (int i = 0; i < K; i++) for (int j = 0; j < N; j++) output(i,j) = 0;
-  std::fill(output.begin(), output.end(), 0);
+  for (int i = 0; i < K; i++) for (int j = 0; j < N; j++) output(i,j) = 0;
 
-  NumericVector x_i;
-
+  #pragma omp parallel for
   for (int i = 0; i < N; i++) {
     if (i % 1000 == 999) callback(1000);
-    x_i = data.row(i);
+    NumericVector x_i = data.row(i);
+
+    std::set<int> seen;
     std::priority_queue<heapObject> heap;
-    #pragma omp parallel for
+
+    seen.insert(i);
+
     for (int jidx = 0; jidx < oldK; jidx++) {
       j = old_knns.column(i)[jidx];
       if (j == 0) break;
-      pushHeap(heap, j, x_i, data, K);
+      if (j - 1 != i && seen.insert(j - 1).second) {
+        double d = dist(x_i, data.row(j-1));
+        heap.push(heapObject(d, j));
+        if (heap.size() > K) heap.pop();
+      }
 
       for (int kidx = 0; kidx < oldK; kidx++) {
         k = old_knns.column(j - 1)[kidx];
         if (k == 0) break;
-        pushHeap(heap, k, x_i, data, K);
+        if (k - 1 != i && seen.insert(k - 1).second) {
+          double d = dist(x_i, data.row(k-1));
+          heap.push(heapObject(d, k));
+          if (heap.size() > K) heap.pop();
+        }
       }
-      int j = 0;
-      while (j < K && ! heap.empty()) {
-        output(j, i) = heap.top().n;
-        heap.pop();
-        j++;
-      }
+    }
+    j = 0;
+    while (j < K && ! heap.empty()) {
+      output(j, i) = heap.top().n;
+      heap.pop();
+      j++;
     }
   }
   return (output);
@@ -72,7 +89,8 @@ arma::sp_mat convertSparse(S4 mat) {
   arma::urowvec i = Rcpp::as<arma::urowvec>(mat.slot("i"));
   arma::urowvec j  = Rcpp::as<arma::urowvec>(mat.slot("j"));
   arma::umat locs;
-  Rcout << locs.n_cols << " " << locs.n_rows << "\n";
+  locs.insert_rows(0, i);
+  locs.insert_rows(0,j);
   arma::vec x     = Rcpp::as<arma::vec>(mat.slot("x"));
   int nrow = dims[0], ncol = dims[1];
   arma::sp_mat res(locs, x, nrow, ncol, true, true);
@@ -103,6 +121,7 @@ void sgd(NumericMatrix coords,
   NumericVector y_i, y_j, grads, j_row;
   arma::sp_mat mat = convertSparse(wij);
 
+  #pragma omp parallel for
   for (int eIdx=0; eIdx < positiveEdges.length(); eIdx++) {
     e_ij = positiveEdges[eIdx];
     i = is[e_ij];

@@ -45,7 +45,6 @@ randomProjectionTreeSearch <- function(x,
     old_knns <- new_knns
     new_knns <- neighbors_inner(K, old_knns, x, ptick)
   }
-
   if (verbose[1]) print('...done!')
   return(new_knns)
 }

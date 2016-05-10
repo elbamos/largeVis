@@ -3,5 +3,6 @@
 export(largeVis)
 export(projectKNNs)
 export(randomProjectionTreeSearch)
+exportPattern("^[[:alpha:]]+")
 importFrom(Rcpp,sourceCpp)
 useDynLib(largevis)

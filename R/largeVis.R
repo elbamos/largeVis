@@ -62,7 +62,6 @@ largeVis <- function(x,
     shrunken.x <- princomp(x, scores = TRUE)$scores[,1:pca.dims]
     if (verbose) cat("done\n")
   }
-
   knns <- randomProjectionTreeSearch(shrunken.x,
                                      n.trees = n.trees,
                                      tree.threshold = tree.threshold,
@@ -70,7 +69,6 @@ largeVis <- function(x,
                                      max.iter = max.iter,
                                      verbose = verbose,
                                      distance.method = distance.method)
-
   if (verbose) cat("Calculating edge weights...")
   # calculate distance for knns
   is <- rep(1:N, each = K)
@@ -91,6 +89,7 @@ largeVis <- function(x,
                     pairwise = TRUE)
   if (verbose) cat("distance matrix...")
   # assemble edges into graph, as symmetric sparse matrix
+
   dist_matrix <- Matrix::sparseMatrix(i = is,
                                       j = js,
                                       x = as.vector(xs),
@@ -98,7 +97,7 @@ largeVis <- function(x,
   # select denominators sigma to match distributions to given perplexity
   if (verbose[1]) progress <- #utils::txtProgressBar(min = 0, max = sgd.batches, style = 3)
     progress::progress_bar$new(total = N, format = 'Estimate sigma [:bar] :percent eta: :eta', clear=FALSE)
-  sigmas <- parallel::mclapply(idx = 1:N, FUN = function(idx) {
+  sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
     x_i <- dist_matrix[idx,,drop=FALSE]
     x_i <- x_i[x_i > 0]
     optimize(f = function(sigma, x) {
@@ -132,7 +131,6 @@ largeVis <- function(x,
                         weight.pos.samples = weight.pos.samples,
                         gamma = gamma,
                         verbose = verbose,
-                        distance.function = distance.function,
                         alpha = alpha,
                         ...)
 
