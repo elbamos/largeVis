@@ -34,7 +34,7 @@ std::priority_queue<heapObject> pushHeap(std::set<int> seen,
   return heap;
 }
 
-// [[Rcpp::export('neighbors_inner')]]
+// [[Rcpp::export]]
 NumericMatrix neighbors_inner(int K, NumericMatrix old_knns, NumericMatrix data, Function callback) {
   int N = old_knns.ncol();
   int oldK = old_knns.nrow();
@@ -97,7 +97,7 @@ arma::sp_mat convertSparse(S4 mat) {
   return res;
 };
 
-// [[Rcpp::export('sgd')]]
+// [[Rcpp::export]]
 void sgd(NumericMatrix coords,
          NumericVector positiveEdges,
          NumericVector is,

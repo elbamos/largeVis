@@ -2,10 +2,10 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 neighbors_inner <- function(K, old_knns, data, callback) {
-    .Call('largevis_neighbors_inner', PACKAGE = 'largevis', K, old_knns, data, callback)
+    .Call('largeVis_neighbors_inner', PACKAGE = 'largeVis', K, old_knns, data, callback)
 }
 
 sgd <- function(coords, positiveEdges, is, js, ws, negativeSampleWeights, gamma, rho, minRho, useWeights, wij, M, alpha, callback) {
-    invisible(.Call('largevis_sgd', PACKAGE = 'largevis', coords, positiveEdges, is, js, ws, negativeSampleWeights, gamma, rho, minRho, useWeights, wij, M, alpha, callback))
+    invisible(.Call('largeVis_sgd', PACKAGE = 'largeVis', coords, positiveEdges, is, js, ws, negativeSampleWeights, gamma, rho, minRho, useWeights, wij, M, alpha, callback))
 }
 

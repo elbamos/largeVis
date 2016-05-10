@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // neighbors_inner
 NumericMatrix neighbors_inner(int K, NumericMatrix old_knns, NumericMatrix data, Function callback);
-RcppExport SEXP largevis_neighbors_inner(SEXP KSEXP, SEXP old_knnsSEXP, SEXP dataSEXP, SEXP callbackSEXP) {
+RcppExport SEXP largeVis_neighbors_inner(SEXP KSEXP, SEXP old_knnsSEXP, SEXP dataSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -22,7 +22,7 @@ END_RCPP
 }
 // sgd
 void sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ws, NumericVector negativeSampleWeights, int gamma, int rho, int minRho, bool useWeights, S4 wij, int M, int alpha, Function callback);
-RcppExport SEXP largevis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP wsSEXP, SEXP negativeSampleWeightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP wijSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
+RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP wsSEXP, SEXP negativeSampleWeightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP wijSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< NumericMatrix >::type coords(coordsSEXP);

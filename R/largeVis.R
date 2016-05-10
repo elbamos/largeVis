@@ -15,7 +15,6 @@
 #' @param sgd.batches See \link{projectKNNs}
 #' @param M See \link{projectKNNs}
 #' @param weight.pos.samples See \link{projectKNNs}
-#' @param distance.function See \link{projectKNNs}
 #' @param alpha See \link{projectKNNs}
 #' @param gamma See `projectKNNs`
 #' @param verbose Verbosity
@@ -26,6 +25,9 @@
 #' @export
 #'
 #' @examples
+#'
+#' @useDynLib largeVis
+#' @importFrom Rcpp sourceCpp
 #'
 largeVis <- function(x,
                      dim = 2,
@@ -45,7 +47,6 @@ largeVis <- function(x,
                      sgd.batches = nrow(x) * 10000,
                      M = 5,
                      weight.pos.samples = TRUE,
-                     distance.function = "a",
                      alpha = 1,
                      gamma = 7,
                      rho = 1,

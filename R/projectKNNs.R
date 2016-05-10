@@ -24,8 +24,6 @@
 #' @return A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.
 #' @export
 #'
-#' @useDynLib largevis
-#' @importFrom Rcpp sourceCpp
 
 projectKNNs <- function(x, # a sparse distance matrix in triplet form
                         dim, # dimension of the projection space
