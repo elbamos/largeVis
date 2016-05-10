@@ -3,3 +3,5 @@
 export(largeVis)
 export(projectKNNs)
 export(randomProjectionTreeSearch)
+importFrom(Rcpp,sourceCpp)
+useDynLib(largevis)

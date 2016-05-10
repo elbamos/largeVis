@@ -27,7 +27,7 @@ randomProjectionTreeSearch <- function(x,
   tree_assignments <- list()
   if (verbose) cat("Creating random projection trees...")
 
-  tree_assignments <- lapply(1:n.trees, FUN = function(T) {
+  tree_assignments <- parallel::mclapply(1:n.trees, FUN = function(T) {
     tree <- partition(indices = 1:N, .threshold = tree.threshold, .data = x)
     knns <- matrix(0, nrow = tree.threshold, ncol = N)
     for (leaf in tree) {
@@ -36,35 +36,16 @@ randomProjectionTreeSearch <- function(x,
     knns
   })
   new_knns <- do.call(rbind, tree_assignments)
-  if (verbose) cat("...done\n")
+  if (verbose[1]) cat("...done\n")
 
-  if (verbose) progress <- progress::progress_bar$new(total = max.iter, format = 'Exploring Neighbors [:bar] :percent eta: :eta', clear = FALSE)#,
-                           #       utils::txtProgressBar(min = 0, max = sgd.batches, style = 3))
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = max.iter * N, format = 'Exploring Neighbors [:bar] :percent eta: :eta', clear = FALSE)$tick
+  else ptick <- function(ticks) {}
+
   for (T in 1:max.iter) {
-    if (verbose) progress$tick()
-    knns <- new_knns
-    new_knns <- foreach(i = 1:N, .combine = cbind, .multicombine = TRUE) %dopar% {
-      candidates <- c(knns[,i], knns[,knns[,i]])
-      candidates <- candidates[candidates != i]
-      candidates <- candidates[! candidates == 0]
-      candidates <- unique(candidates)
-      if (length(candidates) <= K) {
-        if (search.harder) {
-          candidates <- c(candidates, knns[,knns[,knns[,i]]])
-          candidates <- candidates[candidates != i]
-          candidates <- candidates[! candidates == 0]
-          candidates <- unique(candidates)
-        } else {
-          stop(paste("Attempted to visit neighbors but the number of knn candidates was smaller than K."))
-        }
-      }
-      distances <- proxy::dist(x = x[i,,drop=FALSE],
-                               y = x[candidates,],
-                               method = distance.method)
-      candidates <- candidates[order(distances,decreasing=FALSE)[1:min(K, length(candidates))]]
-      if (length(candidates) < K) candidates <- c(candidates,(rep(0, K - length(candidates))))
-      candidates
-    }
+    old_knns <- new_knns
+    new_knns <- neighbors_inner(K, old_knns, x, ptick)
   }
+
+  if (verbose[1]) print('...done!')
   return(new_knns)
 }

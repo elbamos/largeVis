@@ -48,6 +48,8 @@ largeVis <- function(x,
                      distance.function = "a",
                      alpha = 1,
                      gamma = 7,
+                     rho = 1,
+                     min.rho = 0,
 
                      verbose = TRUE,
                     ...) {
@@ -94,8 +96,9 @@ largeVis <- function(x,
                                       x = as.vector(xs),
                                       symmetric = TRUE)
   # select denominators sigma to match distributions to given perplexity
-  if (verbose) cat("sigmas...")
-  sigmas <- foreach(idx = 1:N, .combine = c, .multicombine = TRUE) %dopar% {
+  if (verbose[1]) progress <- #utils::txtProgressBar(min = 0, max = sgd.batches, style = 3)
+    progress::progress_bar$new(total = N, format = 'Estimate sigma [:bar] :percent eta: :eta', clear=FALSE)
+  sigmas <- parallel::mclapply(idx = 1:N, FUN = function(idx) {
     x_i <- dist_matrix[idx,,drop=FALSE]
     x_i <- x_i[x_i > 0]
     optimize(f = function(sigma, x) {
@@ -106,7 +109,8 @@ largeVis <- function(x,
     },
     x = x_i,
     interval = c(0,100))$minimum # note that sigmas are actually (2 * (sigmas^2))
-  }
+  })
+  sigmas <- unlist(sigmas)
 
   if (verbose) cat("p(j|i)...")
   pji <- tril(dist_matrix) + triu(dist_matrix)
