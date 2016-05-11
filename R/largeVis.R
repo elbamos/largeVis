@@ -137,8 +137,7 @@ largeVis <- function(x,
   sigmas <- unlist(sigmas)
   if (verbose[1]) cat("done!\n")
   wijVector = rep(0, length(xs * 2))
-  if (verbose[1]) progress <- #utils::txtProgressBar(min = 0, max = sgd.batches, style = 3)
-    progress::progress_bar$new(total = N, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent eta: :eta', clear=FALSE)$tick
+  if (verbose[1]) progress <- progress::progress_bar$new(total = N, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else progress <- function(tick) {}
 
   distMatrixTowij(is, js, xs, sigmas, wijVector, N, progress)

@@ -2,10 +2,10 @@
 % Please edit documentation in R/projectionTreeSearch.R
 \name{randomProjectionTreeSearch}
 \alias{randomProjectionTreeSearch}
-\title{Find approximate k-Nearest Neighbors using random projection tree search}
+\title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
-randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = K * 2,
-  max.iter = 2, verbose = TRUE)
+randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = max(10,
+  K * 2), max.iter = 2, verbose = TRUE)
 }
 \arguments{
 \item{x}{A matrix}
@@ -24,7 +24,8 @@ randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = K * 2,
 A [nrow(x), K] integer matrix showing the estimated K nearest neighbors for each vertex.
 }
 \description{
-Find approximate k-Nearest Neighbors using random projection tree search
+This is a very fast and accurate algorithm for finding k-nearest neighbors. It is implemented here in C++ and parallel execution
+is enabled using `parallel::mclapply`.
 }
 \examples{
 

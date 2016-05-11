@@ -72,15 +72,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // searchTree
-void searchTree(int threshold, NumericVector indices, NumericMatrix data, NumericMatrix output);
-RcppExport SEXP largeVis_searchTree(SEXP thresholdSEXP, SEXP indicesSEXP, SEXP dataSEXP, SEXP outputSEXP) {
+void searchTree(int threshold, NumericVector indices, NumericMatrix data, NumericMatrix output, Function callback);
+RcppExport SEXP largeVis_searchTree(SEXP thresholdSEXP, SEXP indicesSEXP, SEXP dataSEXP, SEXP outputSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< int >::type threshold(thresholdSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type indices(indicesSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type output(outputSEXP);
-    searchTree(threshold, indices, data, output);
+    Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
+    searchTree(threshold, indices, data, output, callback);
     return R_NilValue;
 END_RCPP
 }

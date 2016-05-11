@@ -56,7 +56,7 @@ projectKNNs <- function(i, j, x, # Components of a sparse matrix in triplet form
   rho <- 1 # learning rate
 
   if (verbose[1]) progress <- #utils::txtProgressBar(min = 0, max = sgd.batches, style = 3)
-    progress::progress_bar$new(total = sgd.batches, format = 'SGD [:bar] :percent eta: :eta', clear=FALSE)
+    progress::progress_bar$new(total = sgd.batches, format = 'SGD [:bar] :percent/:elapsed eta: :eta', clear=FALSE)
 
   plotcounter <- 0
 

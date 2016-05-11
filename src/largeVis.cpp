@@ -212,7 +212,8 @@ void distMatrixTowij(
 };
 
 // [[Rcpp::export]]
-void searchTree(int threshold, NumericVector indices, NumericMatrix data, NumericMatrix output) {
+void searchTree(int threshold, NumericVector indices,
+                NumericMatrix data, NumericMatrix output, Function callback) {
   if (indices.length() == 1) {
     output(0, indices[1] - 1) = indices[1];
   }
@@ -223,6 +224,7 @@ void searchTree(int threshold, NumericVector indices, NumericMatrix data, Numeri
           output(i, indices[j] - 1) = indices[i];
       }
     }
+    callback(indices.length());
     return;
   }
 
@@ -232,19 +234,14 @@ void searchTree(int threshold, NumericVector indices, NumericMatrix data, Numeri
   x2 = data.row(selections[1] - 1);
   v = x2 - x1;
   m = (x1 + x2) / 2;
-  double mv = std::inner_product(m.begin(), m.end(), v.begin(), 0.0);
-  LogicalVector direction = LogicalVector(indices.length());
-  for (int idx = 0; idx < indices.length();idx++) {
-    NumericVector target = data.row(idx);
-    double tv = std::inner_product(target.begin(), target.end(), v.begin(), 0.0);
-    if (tv > mv) direction[idx] = true;
-    else direction[idx] = false;
-  }
-  int branch = sum(direction);
-  if (branch < 3 || branch > threshold - 3) {
-    searchTree(threshold, indices, data, output);
+  double mv = sum(m * v);
+  NumericVector direction = NumericVector(indices.length());
+  for (int idx = 0; idx < indices.length();idx++) direction[idx] = sum(v * data.row(indices[idx] - 1)) - mv;
+  double branch = sum(direction > 0);
+  if (branch < 3 || branch > indices.length() - 3) {
+    searchTree(threshold, indices, data, output, callback);
     return;
   }
-  searchTree(threshold, indices[direction], data, output);
-  searchTree(threshold, indices[! direction], data, output);
+  searchTree(threshold, indices[direction > 0], data, output, callback);
+  searchTree(threshold, indices[direction <= 0], data, output, callback);
 };
