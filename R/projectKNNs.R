@@ -39,7 +39,7 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
 
   N <- nrow(x)
 
-  neg.sample.weights <- colSums(x > 0)^0.75
+  neg.sample.weights <- Matrix::colSums(x > 0)^0.75
   # Select positive samples
   pos.edges <- NULL
   if (weight.pos.samples) pos.edges <- sample(length(x@x), sgd.batches, replace = T, prob = x@x)
@@ -59,6 +59,25 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
   plotcounter <- 0
   avg.gradients <- 0
 
+  callback <- function(tick) {}
+  if (verbose[1]) callback <- function(tick) {
+    progress$tick(tick)
+    if (is.factor(verbose) && tick %% 50000 == 1) {
+      plotcounter <- plotcounter + 1
+      if (plotcounter %% 20 == 1) {
+        x11()
+        par(mfrow=c(5, 4))
+      }
+      plot(coords[as.integer(verbose) == 1,],
+           col = rainbow(nlevels(verbose))[1],
+           main = paste("Batch", counter))
+      for (i in 2:nlevels(verbose)) {
+        points(coords[as.integer(verbose) == i,],
+               col = rainbow(nlevels(verbose))[i])
+      }
+    }
+  }
+
   sgd(coords,
       pos.edges,
       is = x@i,
@@ -67,22 +86,7 @@ projectKNNs <- function(x, # a sparse distance matrix in triplet form
       negativeSampleWeights = neg.sample.weights,
       gamma = gamma, rho = rho, minRho = min.rho,
       useWeights = FALSE, wij = x, M = M,
-      alpha = alpha, callback = function(tick) {
-        progress$tick(tick)
-        if (is.factor(verbose) && tick %% 50000 == 1) {
-          plotcounter <- plotcounter + 1
-          if (plotcounter %% 20 == 1) {
-            x11()
-            par(mfrow=c(5, 4))
-          }
-          plot(coords[as.integer(verbose) == 1,],
-               col = rainbow(nlevels(verbose))[1],
-               main = paste("Batch", counter))
-          for (i in 2:nlevels(verbose)) {
-            points(coords[as.integer(verbose) == i,],
-                   col = rainbow(nlevels(verbose))[i])
-          }
-        }
-      })
+      alpha = alpha, callback = callback)
+
   return(coords)
 }

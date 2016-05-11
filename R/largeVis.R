@@ -10,7 +10,6 @@
 #' @param n.trees See \link{randomProjectionTreeSearch}
 #' @param tree.threshold See \link{randomProjectionTreeSearch}
 #' @param max.iter See \link{randomProjectionTreeSearch}
-#' @param distance.method See \link{randomProjectionTreeSearch}
 #' @param perplexity See paper
 #' @param sgd.batches See \link{projectKNNs}
 #' @param M See \link{projectKNNs}
@@ -40,8 +39,6 @@ largeVis <- function(x,
                      tree.threshold = K * 2, #the maximum number of nodes per leaf
                      max.iter = 2, # in the neighborhood exploration phase, the number of iterations
 
-                     distance.method = 'euclidean', # a distance method under by proxy::dist() for calculating the distance between neighbors
-
                      perplexity = K, # hyperparameter for calculating p(j|i)
 
                      sgd.batches = nrow(x) * 10000,
@@ -68,8 +65,7 @@ largeVis <- function(x,
                                      tree.threshold = tree.threshold,
                                      K = K,
                                      max.iter = max.iter,
-                                     verbose = verbose,
-                                     distance.method = distance.method)
+                                     verbose = verbose)
   if (verbose) cat("Calculating edge weights...")
   # calculate distance for knns
   is <- rep(1:N, each = K)
@@ -84,11 +80,12 @@ largeVis <- function(x,
   rm(ts, wrongtri)
   # calculate distances
   if (verbose) cat("neighbor distances...")
-  xs <- proxy::dist(x = shrunken.x[is,],
-                    y = shrunken.x[js,],
-                    method='euclidean',
-                    pairwise = TRUE)
-  if (verbose) cat("distance matrix...")
+  xs <- rep(0, length(is)) # pre-allocate
+
+  if (verbose) cat("calculating...")
+  distance(is, js, xs, shrunken.x)
+  if (verbose) cat("done!\n")
+
   # assemble edges into graph, as symmetric sparse matrix
 
   dist_matrix <- Matrix::sparseMatrix(i = is,
@@ -98,6 +95,7 @@ largeVis <- function(x,
   # select denominators sigma to match distributions to given perplexity
   if (verbose[1]) progress <- #utils::txtProgressBar(min = 0, max = sgd.batches, style = 3)
     progress::progress_bar$new(total = N, format = 'Estimate sigma [:bar] :percent eta: :eta', clear=FALSE)
+
   sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
     x_i <- dist_matrix[idx,,drop=FALSE]
     x_i <- x_i[x_i > 0]
@@ -113,17 +111,16 @@ largeVis <- function(x,
   sigmas <- unlist(sigmas)
 
   if (verbose) cat("p(j|i)...")
-  pji <- tril(dist_matrix) + triu(dist_matrix)
+  pji <- Matrix::tril(dist_matrix) + Matrix::triu(dist_matrix)
   stopifnot(length(pji@i) == 2 * length(dist_matrix@i)) # confirm that matrix is no longer symmetric
   pji@x <- exp(-(pji@x^2) / sigmas[pji@i + 1])
-  pji <- pji / rowSums(pji)
+  pji <- pji / Matrix::rowSums(pji)
 
   if (verbose) cat("w_{ji}...")
   # calculate w_{ij} by symmetrizing p(i|j) + p(j|i)/2N
-  wij <-forceSymmetric((pji + t(pji)) / (2 * N))
+  wij <- Matrix::forceSymmetric((pji + Matrix::t(pji)) / (2 * N))
   wij <- as(wij, "dgTMatrix")
   if (verbose) cat("Done!\n")
-
   # SGD PHASE
   coords <- projectKNNs(x = wij,
                         dim = dim,
@@ -147,4 +144,3 @@ largeVis <- function(x,
   class(returnvalue) <- 'largeVis'
   return(returnvalue)
 }
-

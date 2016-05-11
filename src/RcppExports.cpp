@@ -7,17 +7,17 @@
 using namespace Rcpp;
 
 // neighbors_inner
-NumericMatrix neighbors_inner(int K, NumericMatrix old_knns, NumericMatrix data, Function callback);
-RcppExport SEXP largeVis_neighbors_inner(SEXP KSEXP, SEXP old_knnsSEXP, SEXP dataSEXP, SEXP callbackSEXP) {
+void neighbors_inner(int maxIter, NumericMatrix old_knns, NumericMatrix data, NumericMatrix outputKnns, Function callback);
+RcppExport SEXP largeVis_neighbors_inner(SEXP maxIterSEXP, SEXP old_knnsSEXP, SEXP dataSEXP, SEXP outputKnnsSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
-    Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type maxIter(maxIterSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type old_knns(old_knnsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type outputKnns(outputKnnsSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    __result = Rcpp::wrap(neighbors_inner(K, old_knns, data, callback));
-    return __result;
+    neighbors_inner(maxIter, old_knns, data, outputKnns, callback);
+    return R_NilValue;
 END_RCPP
 }
 // sgd
@@ -40,6 +40,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
     sgd(coords, positiveEdges, is, js, ws, negativeSampleWeights, gamma, rho, minRho, useWeights, wij, M, alpha, callback);
+    return R_NilValue;
+END_RCPP
+}
+// distance
+void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatrix data);
+RcppExport SEXP largeVis_distance(SEXP isSEXP, SEXP jsSEXP, SEXP xsSEXP, SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type is(isSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type xs(xsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
+    distance(is, js, xs, data);
     return R_NilValue;
 END_RCPP
 }

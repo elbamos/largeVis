@@ -22,66 +22,64 @@ double dist(NumericVector i, NumericVector j) {
   return sum(pow(i - j, 2));
 }
 
-std::priority_queue<heapObject> pushHeap(std::set<int> seen,
-                                         std::priority_queue<heapObject> heap,
-                                         int j, NumericVector x_i,
-                                         NumericMatrix data, int K) {
-  if (seen.insert(j).second) {
-    double d = dist(x_i, data.row(j-1));
-    heap.push(heapObject(d, j));
-    if (heap.size() > K) heap.pop();
-  }
-  return heap;
-}
-
 // [[Rcpp::export]]
-NumericMatrix neighbors_inner(int K, NumericMatrix old_knns, NumericMatrix data, Function callback) {
+void neighbors_inner( int maxIter,
+                      NumericMatrix old_knns,
+                      NumericMatrix data,
+                      NumericMatrix outputKnns,
+                      Function callback) {
   int N = old_knns.ncol();
-  int oldK = old_knns.nrow();
-  int dataD = data.ncol();
-  double d;
-  int j, k;
+  int K = outputKnns.nrow();
+  int oldK;
 
-  NumericMatrix output = NumericMatrix(K, N);
-  for (int i = 0; i < K; i++) for (int j = 0; j < N; j++) output(i,j) = 0;
+  NumericMatrix nextKnns;
+  for (int T = 0; T < maxIter; T++) {
+    if (T > 0) old_knns = nextKnns;
+    oldK = old_knns.nrow();
 
-  #pragma omp parallel for
-  for (int i = 0; i < N; i++) {
-    if (i % 1000 == 999) callback(1000);
-    NumericVector x_i = data.row(i);
+    nextKnns = NumericMatrix(K, N);
+    for (int i = 0; i < K; i++) for (int j = 0; j < N; j++) nextKnns(i,j) = 0; // Initialize matrix
 
-    std::set<int> seen;
-    std::priority_queue<heapObject> heap;
+    #pragma omp parallel for schedule(dynamic, 100)
+    for (int i = 0; i < N; i++) {
+      int j, k;
+      double d;
+      if (i % 1000 == 999) callback(1000);
+      NumericVector x_i = data.row(i);
 
-    seen.insert(i);
+      std::set<int> seen;
+      std::priority_queue<heapObject> heap;
 
-    for (int jidx = 0; jidx < oldK; jidx++) {
-      j = old_knns.column(i)[jidx];
-      if (j == 0) break;
-      if (j - 1 != i && seen.insert(j - 1).second) {
-        double d = dist(x_i, data.row(j-1));
-        heap.push(heapObject(d, j));
-        if (heap.size() > K) heap.pop();
-      }
+      seen.insert(i);
 
-      for (int kidx = 0; kidx < oldK; kidx++) {
-        k = old_knns.column(j - 1)[kidx];
-        if (k == 0) break;
-        if (k - 1 != i && seen.insert(k - 1).second) {
-          double d = dist(x_i, data.row(k-1));
-          heap.push(heapObject(d, k));
+      for (int jidx = 0; jidx < oldK; jidx++) {
+        j = old_knns.column(i)[jidx];
+        if (j == 0) break;
+        if (j - 1 != i && seen.insert(j - 1).second) {
+          d = dist(x_i, data.row(j-1));
+          heap.push(heapObject(d, j));
           if (heap.size() > K) heap.pop();
         }
+
+        for (int kidx = 0; kidx < oldK; kidx++) {
+          k = old_knns.column(j - 1)[kidx];
+          if (k == 0) break;
+          if (k - 1 != i && seen.insert(k - 1).second) {
+            d = dist(x_i, data.row(k-1));
+            heap.push(heapObject(d, k));
+            if (heap.size() > K) heap.pop();
+          }
+        }
+      }
+      j = 0;
+      while (j < K && ! heap.empty()) {
+        nextKnns(j, i) = heap.top().n;
+        heap.pop();
+        j++;
       }
     }
-    j = 0;
-    while (j < K && ! heap.empty()) {
-      output(j, i) = heap.top().n;
-      heap.pop();
-      j++;
-    }
   }
-  return (output);
+  for (int i = 0; i < N; i++) for (int j = 0; j < K; j++) outputKnns(j,i) = nextKnns(j,i);
 };
 
 arma::sp_mat convertSparse(S4 mat) {
@@ -121,7 +119,7 @@ void sgd(NumericMatrix coords,
   NumericVector y_i, y_j, grads, j_row;
   arma::sp_mat mat = convertSparse(wij);
 
-  #pragma omp parallel for
+  #pragma omp parallel for schedule(dynamic, 10)
   for (int eIdx=0; eIdx < positiveEdges.length(); eIdx++) {
     e_ij = positiveEdges[eIdx];
     i = is[e_ij];
@@ -146,12 +144,19 @@ void sgd(NumericMatrix coords,
     negjs = RcppArmadillo::sample(availjs, (M < availjs.length()) ? M : availjs.length(), false, negativeSampleWeights[availjs]);
     for (int jidx = 0; jidx < negjs.length(); jidx++) {
       y_j = coords.row(negjs[jidx]);
-      if (alpha != 0 )  grads =     w * gamma * (y_i - y_j) * 2                   / (dist(y_i, y_j) * ( 1 + (alpha * dist(y_i, y_j))));
-      else              grads =     w * gamma * (y_i - y_j)                       / (exp(dist(y_i, y_j)) + 1);
+      if (alpha != 0 )  grads =     w * gamma * (y_i - y_j) * 2 / (dist(y_i, y_j) * ( 1 + (alpha * dist(y_i, y_j))));
+      else              grads =     w * gamma * (y_i - y_j)     / (exp(dist(y_i, y_j)) + 1);
       coords(i,_) = y_i + (grads * rho / negjs.length());
       coords(j,_) = y_j - (grads * rho);
     }
     rho = rho - ((rho - minRho) / (positiveEdges.length() + 1));
     if (eIdx % 1000 == 0) callback(1000);
+  }
+};
+
+// [[Rcpp::export]]
+void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatrix data) {
+  for (int i=0; i < is.length(); i++) {
+    xs[i] = sqrt(sum(pow(data.row(is[i] - 1) - data.row(js[i] - 1), 2)));
   }
 };

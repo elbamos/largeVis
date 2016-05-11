@@ -5,8 +5,7 @@
 \title{Find approximate k-Nearest Neighbors using random projection tree search}
 \usage{
 randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = K * 2,
-  distance.method = "euclidean", max.iter = 2, search.harder = TRUE,
-  verbose = TRUE)
+  max.iter = 2, search.harder = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{x}{A matrix}
@@ -16,8 +15,6 @@ randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = K * 2,
 \item{n.trees}{The number of trees to build}
 
 \item{tree.threshold}{The threshold for creating a new branch}
-
-\item{distance.method}{Method used to calculate distance between vertices, passed to \code{proxy::dist()}.}
 
 \item{max.iter}{Number of iterations in the neighborhood exploration phase}
 
