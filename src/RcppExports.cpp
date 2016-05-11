@@ -21,8 +21,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // sgd
-void sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ws, NumericVector negativeSampleWeights, int gamma, int rho, int minRho, bool useWeights, S4 wij, int M, int alpha, Function callback);
-RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP wsSEXP, SEXP negativeSampleWeightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP wijSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
+void sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ws, NumericVector negativeSampleWeights, int gamma, int rho, int minRho, bool useWeights, int M, int alpha, Function callback);
+RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP wsSEXP, SEXP negativeSampleWeightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< NumericMatrix >::type coords(coordsSEXP);
@@ -35,11 +35,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< int >::type minRho(minRhoSEXP);
     Rcpp::traits::input_parameter< bool >::type useWeights(useWeightsSEXP);
-    Rcpp::traits::input_parameter< S4 >::type wij(wijSEXP);
     Rcpp::traits::input_parameter< int >::type M(MSEXP);
     Rcpp::traits::input_parameter< int >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    sgd(coords, positiveEdges, is, js, ws, negativeSampleWeights, gamma, rho, minRho, useWeights, wij, M, alpha, callback);
+    sgd(coords, positiveEdges, is, js, ws, negativeSampleWeights, gamma, rho, minRho, useWeights, M, alpha, callback);
     return R_NilValue;
 END_RCPP
 }
@@ -53,6 +52,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type xs(xsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
     distance(is, js, xs, data);
+    return R_NilValue;
+END_RCPP
+}
+// distMatrixTowij
+void distMatrixTowij(NumericVector is, NumericVector js, NumericVector xs, NumericVector sigmas, NumericVector outVector, int N, Function callback);
+RcppExport SEXP largeVis_distMatrixTowij(SEXP isSEXP, SEXP jsSEXP, SEXP xsSEXP, SEXP sigmasSEXP, SEXP outVectorSEXP, SEXP NSEXP, SEXP callbackSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type is(isSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type xs(xsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type sigmas(sigmasSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type outVector(outVectorSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
+    distMatrixTowij(is, js, xs, sigmas, outVector, N, callback);
     return R_NilValue;
 END_RCPP
 }

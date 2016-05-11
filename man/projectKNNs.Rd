@@ -4,12 +4,16 @@
 \alias{projectKNNs}
 \title{Project a distance matrix into a lower-dimensional space}
 \usage{
-projectKNNs(x, dim, sgd.batches = nrow(x) * 10000, M = 5,
+projectKNNs(i, j, x, dim, sgd.batches = nrow(N) * 10000, M = 5,
   weight.pos.samples = TRUE, gamma = 7, alpha = 2, rho = 1,
-  min.rho = 0.1, coords = NULL, verbose = TRUE)
+  .coords = NULL, min.rho = 0.1, verbose = TRUE)
 }
 \arguments{
-\item{x}{A sparse matrix in triplet form}
+\item{i}{The i-vector component of a sparse triplet matrix}
+
+\item{j}{the j-vector component of a sparse triplet matrix}
+
+\item{x}{the x-vector component of a sparse triplet matrix. See \link{Matrix::sparseMatrix}}
 
 \item{dim}{The number of dimensions for the projection space}
 
@@ -21,7 +25,7 @@ projectKNNs(x, dim, sgd.batches = nrow(x) * 10000, M = 5,
 
 \item{gamma}{Hyperparameter controlling the weight given to each negative sample.}
 
-\item{alpha}{Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  If \code{alpha} is set to 0, the alternative distance
+\item{alpha}{Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  If \code{alpha} is 0, the alternative distance
 function \eqn{1 / 1 + exp(||y_i - y_j||^2)} is used instead.  These functions relate the distance between points in the low-dimensional projection to the likelihood
 that they two points are nearest neighbors.}
 
@@ -29,9 +33,9 @@ that they two points are nearest neighbors.}
 
 \item{min.rho}{Final learning rate. The learning rate declines non-linearly.  \eqn{\rho_t = \rho_{t-1} - ((\rho_{t-1} - \rho_{min}) / sgd.batches)}}
 
-\item{coords}{An initialized coordinate matrix.}
-
 \item{verbose}{Verbosity}
+
+\item{coords}{An initialized coordinate matrix.}
 }
 \value{
 A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.

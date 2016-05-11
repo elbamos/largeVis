@@ -20,21 +20,21 @@ largeVis(x, dim = 2, K = 40, pca.first = TRUE, pca.dims = 50,
 
 \item{pca.dims}{How many pca dimensions to use}
 
-\item{n.trees}{See \link{randomProjectionTreeSearch}}
+\item{n.trees}{See \code{\link{randomProjectionTreeSearch}}}
 
-\item{tree.threshold}{See \link{randomProjectionTreeSearch}}
+\item{tree.threshold}{See \code{\link{randomProjectionTreeSearch}}}
 
-\item{max.iter}{See \link{randomProjectionTreeSearch}}
+\item{max.iter}{See \code{\link{randomProjectionTreeSearch}}}
 
 \item{perplexity}{See paper}
 
-\item{sgd.batches}{See \link{projectKNNs}}
+\item{sgd.batches}{See \code{\link{projectKNNs}}}
 
-\item{M}{See \link{projectKNNs}}
+\item{M}{See \code{\link{projectKNNs}}}
 
-\item{weight.pos.samples}{See \link{projectKNNs}}
+\item{weight.pos.samples}{See \code{\link{projectKNNs}}}
 
-\item{alpha}{See \link{projectKNNs}}
+\item{alpha}{See \code{\link{projectKNNs}}}
 
 \item{gamma}{See `projectKNNs`}
 
@@ -44,11 +44,39 @@ largeVis(x, dim = 2, K = 40, pca.first = TRUE, pca.dims = 50,
 }
 \value{
 A `largeVis` object with the following slots:
+ \itemize{
+ \item \code{knns} An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
+ If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.
+ \item \code{pji} A sparse [N,N] adjacency matrix where each cell represents the estimated probability that vertex j
+ will be a neighbor of vertex i.
+ \item \code{call}
+ \item \code{coords} A [N,D] matrix of the embedding of the dataset in the low-dimensional space.
+ \item \code{wij} A sparse [N,N] symmetric adjacency matrix where each cell represent the weight given to the edge between
+ vertex i and vertex j. \code{wij} is symmetricized from \code{pji}.
+ }
 }
 \description{
-See \href{https://arxiv.org/abs/1602.00370}{Original paper}
+Implements the \code{largeVis} algorithm by Tang et al.
+}
+\details{
+\code{largeVis} estimates a low-dimensional embedding for high-dimensional data, where the distance between vertices
+in the low-dimensional space is proportional to the distance between them in the high-dimensional space. The algorithm
+works in 4 phases:
+
+\itemize {
+\item  Estimate candidate nearest-neighbors for each vertex by building \code{n.trees} random projection trees.
+\item  Estimate \code{K} nearest-neighbors for each vertex by visiting each vertex' 2d-degree neighbors (its neighbors' neighbors).
+This is repeated \code{max.iter} times.  Note that the original paper suggested a \code{max.iter} of 1, however a larger number
+may be appropriate for some datasets if the algorithm has trouble finding K neighbors for every vertex.
+\item Estimate \eqn{p_{j|i}}, the conditional probability that each edge found in the previous step is actually to a
+nearest neighbor of each of its nodes.
+\item Using stochastic gradient descent, estimate an embedding for each vertex in the low-dimensional space.
+}
 }
 \examples{
 
+}
+\references{
+Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 }
 

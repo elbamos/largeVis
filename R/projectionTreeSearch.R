@@ -43,7 +43,5 @@ randomProjectionTreeSearch <- function(x,
   outputKnns <- matrix(0, nrow = K, ncol = N)
   neighbors_inner(max.iter, new_knns, x, outputKnns, ptick)
   rm(new_knns)
-  browser()
-  cat("Neighbors found!\n")
   return(outputKnns)
 }

@@ -9,6 +9,12 @@ This has been tested and confirmed to work in many circumstances. More extensive
 
 Please note that this package is under development (the paper is only two weeks old) so it is likely that implementation bugs will be found and changes made to the api.
 
+Some notes:
+
+-   There may be a bug in one of the gradients.
+-   This implementation uses C++ implementations of the neighbor-exploration and sgd phrases. While the implementations **should** be using OpenMP, I have not been able to determine that they do.
+-   The random partition trees and sigma-estimation phases are implemented with `mclapply` from the `parallel` package. The number of cores that will be used may be set with `options(mc.cores = n)`
+
 Examples:
 ---------
 
@@ -18,15 +24,11 @@ library(ggplot2)
 data(iris)
 dat <- as.matrix(iris[,1:4])
 coords <- largeVis(dat, pca.first = F, 
-                   max.iter = 5, sgd.batches = 1000000, 
-                   gamma = 3, K = 40, M = 5, rho = 2,min.rho = 0, verbose = FALSE)
+                   max.iter = 5, sgd.batches = 2000000, 
+                   gamma = 7, K = 40, M = 5, rho = 1,min.rho = 0, verbose = FALSE)
 ```
 
-    ## Called from: randomProjectionTreeSearch(shrunken.x, n.trees = n.trees, tree.threshold = tree.threshold, 
-    ##     K = K, max.iter = max.iter, verbose = verbose)
-    ## debug at /mnt/hfsshare/opensource/largevis/R/projectionTreeSearch.R#47: cat("Neighbors found!\n")
-    ## Neighbors found!
-    ## debug at /mnt/hfsshare/opensource/largevis/R/projectionTreeSearch.R#48: return(outputKnns)
+    ## Estimating sigmas
 
 ``` r
 coords <- data.frame(coords$coords)

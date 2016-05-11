@@ -11,6 +11,12 @@ This has been tested and confirmed to work in many circumstances.  More extensiv
 
 Please note that this package is under development (the paper is only two weeks old) so it is likely that implementation bugs will be found and changes made to the api.
 
+Some notes:
+
+* There may be a bug in one of the gradients.  
+* This implementation uses C++ implementations of the most computationally intensive phases: neighborhood exploration, calculating $p_{j|i}$, and the final calculation of the embeddings using sgd.  While the implementations **should** be using OpenMP, I have not been able to determine that they do.  
+* The random partition trees and sigma-estimation phases are implemented with `mclapply` from the `parallel` package.  The number of cores that will be used may be set with `options(mc.cores = n)`
+
 ## Examples:
 
 ```{r iris}
@@ -19,8 +25,8 @@ library(ggplot2)
 data(iris)
 dat <- as.matrix(iris[,1:4])
 coords <- largeVis(dat, pca.first = F, 
-                   max.iter = 5, sgd.batches = 1000000, 
-                   gamma = 3, K = 40, M = 5, rho = 2,min.rho = 0, verbose = FALSE)
+                   max.iter = 5, sgd.batches = 2000000, 
+                   gamma = 7, K = 40, M = 5, rho = 2,min.rho = 0, verbose = FALSE)
 coords <- data.frame(coords$coords)
 colnames(coords) <- c("X", "Y")
 coords$Species <- iris$Species

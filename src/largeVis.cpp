@@ -1,3 +1,4 @@
+#include <math.h>
 #include <RcppArmadillo.h>
 #include <RcppArmadilloExtensions/sample.h>
 #include <algorithm>
@@ -44,7 +45,7 @@ void neighbors_inner( int maxIter,
     for (int i = 0; i < N; i++) {
       int j, k;
       double d;
-      if (i % 1000 == 999) callback(1000);
+      if (i > 0 && i % 1000 == 0) callback(1000);
       NumericVector x_i = data.row(i);
 
       std::set<int> seen;
@@ -106,24 +107,30 @@ void sgd(NumericMatrix coords,
          int rho,
          int minRho,
          bool useWeights,
-         S4 wij,
          int M,
          int alpha,
          Function callback) {
 
-    bool useAlpha = true;
-
-  int i,j,e_ij;
-  int w = 1;
+  int i,j,e_ij,k;
+  double w = 1;
   IntegerVector availjs, negjs;
   NumericVector y_i, y_j, grads, j_row;
-  arma::sp_mat mat = convertSparse(wij);
+  // Make sparse matrix
+  arma::umat locs; // = join_cols(Rcpp::as<arma::urowvec> (is), Rcpp::as<arma::urowvec> (js)).t();
+  arma::urowvec isvec = Rcpp::as<arma::urowvec> (is);
+  arma::urowvec jsvec = Rcpp::as<arma::urowvec> (js);
+  locs.insert_rows(0,isvec - 1);
+  locs.insert_rows(1,jsvec - 1);
+  int N = max(is);
+
+  arma::sp_mat wij(locs, Rcpp::as<arma::vec> (ws), N, N, true, true);
 
   #pragma omp parallel for schedule(dynamic, 10)
   for (int eIdx=0; eIdx < positiveEdges.length(); eIdx++) {
-    e_ij = positiveEdges[eIdx];
-    i = is[e_ij];
-    j = js[e_ij];
+    e_ij = positiveEdges[eIdx] - 1;
+    i = is[e_ij] - 1;
+    j = js[e_ij] - 1;
+
     if (rnorm(1)[1] < 0) {
       int t = i;
       i = j;
@@ -135,22 +142,24 @@ void sgd(NumericMatrix coords,
     else              grads =   - w * 2 * (y_i - y_j) * exp(dist(y_i, y_j))   / (exp( dist(y_i, y_j)) + 1);
     y_i = y_i + (grads * rho);
     coords(j,_) = y_j - (grads * rho);
-
-    j_row = mat.row(i);
+    j_row = wij.row(i);
     availjs = NumericVector::create();
     for (int jidx = 0; jidx < j_row.length(); jidx++) {
       if (jidx != i && j_row[jidx] == 0) availjs.push_front(jidx);
     }
     negjs = RcppArmadillo::sample(availjs, (M < availjs.length()) ? M : availjs.length(), false, negativeSampleWeights[availjs]);
+
+    coords(i,_) = y_i + (grads * rho);
     for (int jidx = 0; jidx < negjs.length(); jidx++) {
-      y_j = coords.row(negjs[jidx]);
+      k = negjs[jidx] - 1;
+      y_j = coords.row(k);
       if (alpha != 0 )  grads =     w * gamma * (y_i - y_j) * 2 / (dist(y_i, y_j) * ( 1 + (alpha * dist(y_i, y_j))));
       else              grads =     w * gamma * (y_i - y_j)     / (exp(dist(y_i, y_j)) + 1);
-      coords(i,_) = y_i + (grads * rho / negjs.length());
-      coords(j,_) = y_j - (grads * rho);
+//      coords(i,_) = y_i + (grads * rho / negjs.length());
+      coords(k,_) = y_j - (grads * rho);
     }
     rho = rho - ((rho - minRho) / (positiveEdges.length() + 1));
-    if (eIdx % 1000 == 0) callback(1000);
+    if (eIdx > 0 && eIdx % 1000 == 0) callback(1000);
   }
 };
 
@@ -158,5 +167,41 @@ void sgd(NumericMatrix coords,
 void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatrix data) {
   for (int i=0; i < is.length(); i++) {
     xs[i] = sqrt(sum(pow(data.row(is[i] - 1) - data.row(js[i] - 1), 2)));
+  }
+};
+
+// [[Rcpp::export]]
+void distMatrixTowij(
+  NumericVector is,
+  NumericVector js,
+  NumericVector xs,
+  NumericVector sigmas,
+  NumericVector outVector,
+  int N,
+  Function callback
+) {
+  int n_e = is.length();
+  NumericVector rowSums = NumericVector(N);
+  NumericVector pjis = NumericVector(n_e* 2);
+  for (int idx=0; idx < N; idx++) rowSums[idx] = 0;
+  int i, j;
+  double pji;
+  for (int e=0; e < n_e; e++) {
+    i = is[e];
+    pji = exp(- pow(xs[e], 2)) / sigmas[i - 1];
+    pjis[e] = pji;
+    rowSums[i - 1] = rowSums[i - 1] + pji;
+    if (e > 0 && e % 1000 == 0) callback(1000);
+  }
+  for (int e=0; e < n_e; e++) {
+    i = js[e];
+    pji = exp(-pow(xs[e], 2)) / sigmas[i - 1];
+    pjis[e + n_e] = pji;
+    rowSums[i - 1] = rowSums[i - 1] + pji;
+    if (e > 0 && e % 1000 == 0) callback(1000);
+  }
+  for (int e=0; e < n_e; e++) {
+    outVector[e] = ((pjis[e] / rowSums[is[e] - 1]) + (pjis[e] / rowSums[js[e] - 1])) / ( 2 * N );
+    if (e > 0 && e % 1000 == 0) callback(1000);
   }
 };
