@@ -17,3 +17,7 @@ distMatrixTowij <- function(is, js, xs, sigmas, outVector, N, callback) {
     invisible(.Call('largeVis_distMatrixTowij', PACKAGE = 'largeVis', is, js, xs, sigmas, outVector, N, callback))
 }
 
+searchTree <- function(threshold, indices, data, output) {
+    invisible(.Call('largeVis_searchTree', PACKAGE = 'largeVis', threshold, indices, data, output))
+}
+

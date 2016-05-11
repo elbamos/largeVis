@@ -14,12 +14,12 @@ Please note that this package is under development (the paper is only two weeks 
 Some notes:
 
 * There may be a bug in one of the gradients.  
-* This implementation uses C++ implementations of the most computationally intensive phases: neighborhood exploration, calculating $p_{j|i}$, and the final calculation of the embeddings using sgd.  While the implementations **should** be using OpenMP, I have not been able to determine that they do.  
-* The random partition trees and sigma-estimation phases are implemented with `mclapply` from the `parallel` package.  The number of cores that will be used may be set with `options(mc.cores = n)`
+* This implementation uses C++ implementations of the most computationally intensive phases: exploring the random projection trees, neighborhood exploration, calculating $p_{j|i}$, and the final calculation of the embeddings using sgd.  The implementation will attempt to use OpenMP if it is available.  
+* The sigma-estimation phase is implemented with `mclapply` from the `parallel` package.  The number of cores that will be used may be set with `options(mc.cores = n)`
 
 ## Examples:
 
-```{r iris}
+```{r iris,eval=F}
 library(largeVis)
 library(ggplot2)
 data(iris)

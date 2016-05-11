@@ -12,8 +12,8 @@ Please note that this package is under development (the paper is only two weeks 
 Some notes:
 
 -   There may be a bug in one of the gradients.
--   This implementation uses C++ implementations of the neighbor-exploration and sgd phrases. While the implementations **should** be using OpenMP, I have not been able to determine that they do.
--   The random partition trees and sigma-estimation phases are implemented with `mclapply` from the `parallel` package. The number of cores that will be used may be set with `options(mc.cores = n)`
+-   This implementation uses C++ implementations of the most computationally intensive phases: exploring the random projection trees, neighborhood exploration, calculating *p*<sub>*j*|*i*</sub>, and the final calculation of the embeddings using sgd. The implementation will attempt to use OpenMP if it is available.
+-   The sigma-estimation phase is implemented with `mclapply` from the `parallel` package. The number of cores that will be used may be set with `options(mc.cores = n)`
 
 Examples:
 ---------
@@ -25,16 +25,9 @@ data(iris)
 dat <- as.matrix(iris[,1:4])
 coords <- largeVis(dat, pca.first = F, 
                    max.iter = 5, sgd.batches = 2000000, 
-                   gamma = 7, K = 40, M = 5, rho = 1,min.rho = 0, verbose = FALSE)
-```
-
-    ## Estimating sigmas
-
-``` r
+                   gamma = 7, K = 40, M = 5, rho = 2,min.rho = 0, verbose = FALSE)
 coords <- data.frame(coords$coords)
 colnames(coords) <- c("X", "Y")
 coords$Species <- iris$Species
 ggplot(coords, aes(x = X, y = Y, color = Species)) + geom_point(size = 0.5)
 ```
-
-![](README_files/figure-markdown_github/iris-1.png)<!-- -->

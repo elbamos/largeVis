@@ -45,14 +45,11 @@ largeVis(x, dim = 2, K = 40, pca.first = TRUE, pca.dims = 50,
 \value{
 A `largeVis` object with the following slots:
  \itemize{
- \item \code{knns} An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
- If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.
- \item \code{pji} A sparse [N,N] adjacency matrix where each cell represents the estimated probability that vertex j
- will be a neighbor of vertex i.
- \item \code{call}
- \item \code{coords} A [N,D] matrix of the embedding of the dataset in the low-dimensional space.
- \item \code{wij} A sparse [N,N] symmetric adjacency matrix where each cell represent the weight given to the edge between
- vertex i and vertex j. \code{wij} is symmetricized from \code{pji}.
+   \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
+   If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
+   \item{'wij'}{A sparse [N,N] adjacency matrix where each cell represents \eqn{w_{ij}}.}
+   \item{'call'}
+   \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
  }
 }
 \description{

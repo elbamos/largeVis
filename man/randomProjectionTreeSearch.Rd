@@ -5,7 +5,7 @@
 \title{Find approximate k-Nearest Neighbors using random projection tree search}
 \usage{
 randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = K * 2,
-  max.iter = 2, search.harder = TRUE, verbose = TRUE)
+  max.iter = 2, verbose = TRUE)
 }
 \arguments{
 \item{x}{A matrix}
@@ -17,8 +17,6 @@ randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = K * 2,
 \item{tree.threshold}{The threshold for creating a new branch}
 
 \item{max.iter}{Number of iterations in the neighborhood exploration phase}
-
-\item{search.harder}{Whether to check 3d-degree neighbors if \code{< K} local neighbors were found}
 
 \item{verbose}{Whether to print verbose logging using the \code{progress} package}
 }

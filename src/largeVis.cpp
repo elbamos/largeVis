@@ -1,3 +1,5 @@
+#include <omp.h>
+// [[Rcpp::plugins(openmp)]]
 #include <math.h>
 #include <RcppArmadillo.h>
 #include <RcppArmadilloExtensions/sample.h>
@@ -41,7 +43,7 @@ void neighbors_inner( int maxIter,
     nextKnns = NumericMatrix(K, N);
     for (int i = 0; i < K; i++) for (int j = 0; j < N; j++) nextKnns(i,j) = 0; // Initialize matrix
 
-    #pragma omp parallel for schedule(dynamic, 100)
+    #pragma omp parallel for shared(nextKnns)
     for (int i = 0; i < N; i++) {
       int j, k;
       double d;
@@ -125,7 +127,7 @@ void sgd(NumericMatrix coords,
 
   arma::sp_mat wij(locs, Rcpp::as<arma::vec> (ws), N, N, true, true);
 
-  #pragma omp parallel for schedule(dynamic, 10)
+  #pragma omp parallel for shared(coords, rho) private(i,j,e_ij,y_i,y_j,grads,j_row,availjs,negjs,k)
   for (int eIdx=0; eIdx < positiveEdges.length(); eIdx++) {
     e_ij = positiveEdges[eIdx] - 1;
     i = is[e_ij] - 1;
@@ -186,6 +188,7 @@ void distMatrixTowij(
   for (int idx=0; idx < N; idx++) rowSums[idx] = 0;
   int i, j;
   double pji;
+#pragma omp parallel for shared(pjis, rowSums) private(pji, i)
   for (int e=0; e < n_e; e++) {
     i = is[e];
     pji = exp(- pow(xs[e], 2)) / sigmas[i - 1];
@@ -193,6 +196,7 @@ void distMatrixTowij(
     rowSums[i - 1] = rowSums[i - 1] + pji;
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
+#pragma omp parallel for shared(pjis, rowSums) private(pji, i)
   for (int e=0; e < n_e; e++) {
     i = js[e];
     pji = exp(-pow(xs[e], 2)) / sigmas[i - 1];
@@ -200,8 +204,47 @@ void distMatrixTowij(
     rowSums[i - 1] = rowSums[i - 1] + pji;
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
+#pragma omp parallel for shared(pjis, rowSums) private(outVector)
   for (int e=0; e < n_e; e++) {
     outVector[e] = ((pjis[e] / rowSums[is[e] - 1]) + (pjis[e] / rowSums[js[e] - 1])) / ( 2 * N );
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
+};
+
+// [[Rcpp::export]]
+void searchTree(int threshold, NumericVector indices, NumericMatrix data, NumericMatrix output) {
+  if (indices.length() == 1) {
+    output(0, indices[1] - 1) = indices[1];
+  }
+  if (indices.length() <= threshold) {
+    for (int i = 0; i < indices.length(); i++) {
+      for (int j = i + 1; j < indices.length(); j++) {
+          output(i, indices[i] - 1) = indices[j];
+          output(i, indices[j] - 1) = indices[i];
+      }
+    }
+    return;
+  }
+
+  NumericVector selections = RcppArmadillo::sample(indices, 2, false);
+  NumericVector x1, x2, v, m;
+  x1 = data.row(selections[0] - 1);
+  x2 = data.row(selections[1] - 1);
+  v = x2 - x1;
+  m = (x1 + x2) / 2;
+  double mv = std::inner_product(m.begin(), m.end(), v.begin(), 0.0);
+  LogicalVector direction = LogicalVector(indices.length());
+  for (int idx = 0; idx < indices.length();idx++) {
+    NumericVector target = data.row(idx);
+    double tv = std::inner_product(target.begin(), target.end(), v.begin(), 0.0);
+    if (tv > mv) direction[idx] = true;
+    else direction[idx] = false;
+  }
+  int branch = sum(direction);
+  if (branch < 3 || branch > threshold - 3) {
+    searchTree(threshold, indices, data, output);
+    return;
+  }
+  searchTree(threshold, indices[direction], data, output);
+  searchTree(threshold, indices[! direction], data, output);
 };
