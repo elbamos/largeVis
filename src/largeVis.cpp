@@ -1,5 +1,4 @@
 #include <omp.h>
-// [[Rcpp::plugins(openmp)]]
 #include <math.h>
 #include <RcppArmadillo.h>
 #include <RcppArmadilloExtensions/sample.h>
@@ -9,6 +8,8 @@
 #include <set>
 using namespace Rcpp;
 using namespace std;
+
+// [[Rcpp::plugins(openmp)]]
 
 struct heapObject {
   double d;
@@ -21,6 +22,7 @@ struct heapObject {
   }
 };
 
+// The Euclidean distance between two vectors
 double dist(NumericVector i, NumericVector j) {
   return sum(pow(i - j, 2));
 }
@@ -85,18 +87,13 @@ void neighbors_inner( int maxIter,
   for (int i = 0; i < N; i++) for (int j = 0; j < K; j++) outputKnns(j,i) = nextKnns(j,i);
 };
 
-arma::sp_mat convertSparse(S4 mat) {
-  IntegerVector dims = mat.slot("Dim");
-  arma::urowvec i = Rcpp::as<arma::urowvec>(mat.slot("i"));
-  arma::urowvec j  = Rcpp::as<arma::urowvec>(mat.slot("j"));
-  arma::umat locs;
-  locs.insert_rows(0, i);
-  locs.insert_rows(0,j);
-  arma::vec x     = Rcpp::as<arma::vec>(mat.slot("x"));
-  int nrow = dims[0], ncol = dims[1];
-  arma::sp_mat res(locs, x, nrow, ncol, true, true);
-  return res;
-};
+/*
+ * Note three changes from the paper:
+ * 1. \rho is set to decline non-linearly
+ * 2. The gradient applied to update y_i for the positive sample is doubled (2 * \rho)
+ *
+ *
+ */
 
 // [[Rcpp::export]]
 void sgd(NumericMatrix coords,
@@ -140,31 +137,37 @@ void sgd(NumericMatrix coords,
     }
     y_i = coords.row(i);
     y_j = coords.row(j);
+    // Calculate gradients
     if (alpha != 0)   grads =   - w * 2 * (y_i - y_j) * alpha                 / ((alpha * dist(y_i, y_j)) + 1);
     else              grads =   - w * 2 * (y_i - y_j) * exp(dist(y_i, y_j))   / (exp( dist(y_i, y_j)) + 1);
-    y_i = y_i + (grads * rho);
+    // Update parameters
+    y_i = y_i + (grads * rho * 2);
     coords(j,_) = y_j - (grads * rho);
+    // Select negative samples
     j_row = wij.row(i);
     availjs = NumericVector::create();
     for (int jidx = 0; jidx < j_row.length(); jidx++) {
       if (jidx != i && j_row[jidx] == 0) availjs.push_front(jidx);
     }
     negjs = RcppArmadillo::sample(availjs, (M < availjs.length()) ? M : availjs.length(), false, negativeSampleWeights[availjs]);
-
-    coords(i,_) = y_i + (grads * rho);
+    // Iterate through negative samples
     for (int jidx = 0; jidx < negjs.length(); jidx++) {
       k = negjs[jidx] - 1;
       y_j = coords.row(k);
       if (alpha != 0 )  grads =     w * gamma * (y_i - y_j) * 2 / (dist(y_i, y_j) * ( 1 + (alpha * dist(y_i, y_j))));
       else              grads =     w * gamma * (y_i - y_j)     / (exp(dist(y_i, y_j)) + 1);
-//      coords(i,_) = y_i + (grads * rho / negjs.length());
+      y_i = y_i + (grads * rho / negjs.length());
       coords(k,_) = y_j - (grads * rho);
     }
+    coords(i,_) = y_i;
+
     rho = rho - ((rho - minRho) / (positiveEdges.length() + 1));
     if (eIdx > 0 && eIdx % 1000 == 0) callback(1000);
   }
 };
 
+// Take a matrix of data and two vectors of row indices, compute the pairwise Euclidean distance,
+// and store the results in a third vector.
 // [[Rcpp::export]]
 void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatrix data) {
   for (int i=0; i < is.length(); i++) {
@@ -172,6 +175,8 @@ void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatri
   }
 };
 
+// Take four vectors (i indices, j indices, edge distances, and sigmas), and calculate
+// p(j|i) and then w_{ij}.
 // [[Rcpp::export]]
 void distMatrixTowij(
   NumericVector is,
@@ -188,11 +193,14 @@ void distMatrixTowij(
   for (int idx=0; idx < N; idx++) rowSums[idx] = 0;
   int i, j;
   double pji;
+  // We have to compute pji twice, once for the lower and once for the upper triangle
+  // We can accumulate rowSums at the same time
 #pragma omp parallel for shared(pjis, rowSums) private(pji, i)
   for (int e=0; e < n_e; e++) {
     i = is[e];
     pji = exp(- pow(xs[e], 2)) / sigmas[i - 1];
     pjis[e] = pji;
+#pragma omp atomic
     rowSums[i - 1] = rowSums[i - 1] + pji;
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
@@ -201,10 +209,12 @@ void distMatrixTowij(
     i = js[e];
     pji = exp(-pow(xs[e], 2)) / sigmas[i - 1];
     pjis[e + n_e] = pji;
+#pragma omp atomic
     rowSums[i - 1] = rowSums[i - 1] + pji;
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
-#pragma omp parallel for shared(pjis, rowSums) private(outVector)
+  // Now convert p(j|i) to w_{ij} by symmetrizing.
+#pragma omp parallel for shared(pjis, rowSums, outVector)
   for (int e=0; e < n_e; e++) {
     outVector[e] = ((pjis[e] / rowSums[is[e] - 1]) + (pjis[e] / rowSums[js[e] - 1])) / ( 2 * N );
     if (e > 0 && e % 1000 == 0) callback(1000);
@@ -213,12 +223,10 @@ void distMatrixTowij(
 
 // [[Rcpp::export]]
 void searchTree(int threshold, NumericVector indices,
-                NumericMatrix data, NumericMatrix output, Function callback) {
-  if (indices.length() == 1) {
-    output(0, indices[1] - 1) = indices[1];
-  }
+                NumericMatrix data, NumericMatrix output,
+                Function callback) {
   if (indices.length() <= threshold) {
-    for (int i = 0; i < indices.length(); i++) {
+    for (int i = 0; i < indices.length() - 1; i++) {
       for (int j = i + 1; j < indices.length(); j++) {
           output(i, indices[i] - 1) = indices[j];
           output(i, indices[j] - 1) = indices[i];
@@ -227,21 +235,44 @@ void searchTree(int threshold, NumericVector indices,
     callback(indices.length());
     return;
   }
-
+  // Get hyperplane
   NumericVector selections = RcppArmadillo::sample(indices, 2, false);
   NumericVector x1, x2, v, m;
   x1 = data.row(selections[0] - 1);
   x2 = data.row(selections[1] - 1);
   v = x2 - x1;
   m = (x1 + x2) / 2;
-  double mv = sum(m * v);
+  double mv = sum(m * v); // This is the hyperplane
   NumericVector direction = NumericVector(indices.length());
+  // Calculate distances from hyperplane - partition based on which distances are > 0
   for (int idx = 0; idx < indices.length();idx++) direction[idx] = sum(v * data.row(indices[idx] - 1)) - mv;
-  double branch = sum(direction > 0);
-  if (branch < 3 || branch > indices.length() - 3) {
+  int branch = 0;
+  for (int i = 0; i < indices.length(); i++) if (direction[i] > 0) branch++;
+  // Don't create branches that have only 2 nodes; if the split is that lopsided, recurse and try again
+  if (branch < threshold / 3 || branch > indices.length() - (threshold / 3)) {
     searchTree(threshold, indices, data, output, callback);
     return;
   }
-  searchTree(threshold, indices[direction > 0], data, output, callback);
-  searchTree(threshold, indices[direction <= 0], data, output, callback);
+  // Recurse, attempt to work around segfault
+  NumericVector left = NumericVector(branch);
+  NumericVector right = NumericVector(indices.length() - branch);
+  for (int leftidx = 0, rightidx = 0;
+       leftidx + rightidx < indices.length(); ) {
+    if (direction[leftidx + rightidx] > 0) left[leftidx++] = indices[leftidx + rightidx - 1];
+    else right[rightidx++] = indices[leftidx + rightidx - 1];
+  }
+  searchTree(threshold, left, data, output, callback);
+  searchTree(threshold, right, data, output, callback);
+};
+
+// [[Rcpp::export]]
+double sigFunc(double sigma, int idx, NumericVector p, NumericVector x, double perplexity) {
+  int colidx = p[idx - 1], colidx1 = p[idx];
+  NumericVector x_i = NumericVector(colidx1 - colidx);
+  for (int i = 0; i < x_i.length(); i++)  x_i[i] = x[colidx + i];
+
+  NumericVector lxs = exp(-pow(x_i, 2)/(sigma));
+  NumericVector softxs = lxs / sum(lxs);
+  double p2 = - sum(log(softxs) / log(2)) / (colidx1 - colidx);
+  return pow(perplexity - p2, 2);
 };

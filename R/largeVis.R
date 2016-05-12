@@ -6,7 +6,7 @@
 #' in the low-dimensional space is proportional to the distance between them in the high-dimensional space. The algorithm
 #' works in 4 phases:
 #'
-#' \itemize {
+#' \itemize{
 #' \item  Estimate candidate nearest-neighbors for each vertex by building \code{n.trees} random projection trees.
 #' \item  Estimate \code{K} nearest-neighbors for each vertex by visiting each vertex' 2d-degree neighbors (its neighbors' neighbors).
 #' This is repeated \code{max.iter} times.  Note that the original paper suggested a \code{max.iter} of 1, however a larger number
@@ -16,20 +16,25 @@
 #' \item Using stochastic gradient descent, estimate an embedding for each vertex in the low-dimensional space.
 #' }
 #'
-#' @param x A matrix
+#' Note that this implementation expects the data to be free of \code{NaN}'s, \code{NA}'s, \code{Inf}'s, and duplicate rows.
+#' If any of these assumptions are violated, the algorithm will fail. It is also usually a good idea to sale the input data
+#' to have unit norm and mean 0. If there are large values in the input matrix, some computations may oveflow.
+#'
+#' @param x A matrix. Ideally, the columns should be scaled and normalized to avoid the risk of errors caused by overflow.
 #' @param dim The number of dimensions in the output
-#' @param K The number of nearest-neighbors to use in computing the graph
+#' @param K The number of nearest-neighbors to use in computing the kNN graph
+#' @param check.assumptions Whether to check the input matrix for duplicates, \code{NA}`s, etc.
 #' @param pca.first Whether to apply pca first (can speed-up distance calculations)
 #' @param pca.dims How many pca dimensions to use
-#' @param n.trees See \code{\link{randomProjectionTreeSearch}}
-#' @param tree.threshold See \code{\link{randomProjectionTreeSearch}}
-#' @param max.iter See \code{\link{randomProjectionTreeSearch}}
+#' @param n.trees See \code{\link{randomProjectionTreeSearch}}.
+#' @param tree.threshold See \code{\link{randomProjectionTreeSearch}}.
+#' @param max.iter See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See paper
-#' @param sgd.batches See \code{\link{projectKNNs}}
-#' @param M See \code{\link{projectKNNs}}
-#' @param weight.pos.samples See \code{\link{projectKNNs}}
-#' @param alpha See \code{\link{projectKNNs}}
-#' @param gamma See `projectKNNs`
+#' @param sgd.batches See \code{\link{projectKNNs}}.
+#' @param M See \code{\link{projectKNNs}}.
+#' @param weight.pos.samples See \code{\link{projectKNNs}}.
+#' @param alpha See \code{\link{projectKNNs}}.
+#' @param gamma See \code{\link{projectKNNs}}.
 #' @param verbose Verbosity
 #' @param ... See paper
 #'
@@ -45,7 +50,7 @@
 #'
 #' @export
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
-#'
+#' @
 #' @examples
 #'
 #' @useDynLib largeVis
@@ -55,6 +60,7 @@ largeVis <- function(x,
                      dim = 2,
                      K = 40, # number of knn edges per vertex
 
+                     check.assumptions = TRUE,
                      pca.first = TRUE, # whether to apply dimensional reduction first
                      pca.dims = 50,
 
@@ -81,15 +87,30 @@ largeVis <- function(x,
     if (pca.dims >= ncol(x)) stop("Called for dimensional reduction from ", ncol(x), " to ", pca.dims, " using pca.")
     if (verbose[1]) cat("PCA...")
     shrunken.x <- princomp(x, scores = TRUE)$scores[,1:pca.dims]
+    shrunken.x <- scale(shrunken.x)
+    if(any(is.nan(shrunken.x))) stop("NaNs in the pca-reduced matrix imply features with 0 variance.")
     if (verbose[1]) cat("done\n")
   }
+
+  if (check.assumptions)   {
+    if (any(duplicated(shrunken.x))) stop("Duplicates found.")
+    if ((any(is.na(shrunken.x)) + any(is.infinite(shrunken.x)) + any(is.nan(shrunken.x)) + any(shrunken.x == 0)) > 0)
+      stop("Missing values present in input matrix.")
+  }
+
+  #############################################
+  # Search for kNearestNeighbors
+  #############################################
   knns <- randomProjectionTreeSearch(shrunken.x,
                                      n.trees = n.trees,
                                      tree.threshold = tree.threshold,
                                      K = K,
                                      max.iter = max.iter,
                                      verbose = verbose)
-  if (sum(colSums(knns) == 0) > 0) stop("Found no neighbors for some nodes.")
+
+  #############################################
+  # Clean knns and calculate edge distances
+  #############################################
   if (verbose[1]) cat("Calculating edge weights...")
   # calculate distance for knns
   is <- rep(1:N, each = K)
@@ -105,44 +126,58 @@ largeVis <- function(x,
   is <- is[! dupes]
   js <- js[! dupes]
   rm(ts, wrongtri, dupes)
-
-  # calculate distances
-  if (verbose[1]) cat("neighbor distances...")
+  if (verbose[1]) cat("Calculating neighbor distances...")
   xs <- rep(0, length(is)) # pre-allocate
-
-  if (verbose[1]) cat("calculating...")
   distance(is, js, xs, shrunken.x)
   if (verbose) cat("done!\n")
 
-  # assemble edges into graph, as symmetric sparse matrix
+  if ((any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
+    stop("An error leaked into the distance calculation - check for duplicates")
 
+  # assemble edges into graph, as symmetric sparse matrix
   dist_matrix <- Matrix::sparseMatrix(i = is,
                                       j = js,
                                       x = xs,
                                       symmetric = TRUE)
+
+  ########################################################
+  # Estimate sigmas
+  ########################################################
   # select denominators sigma to match distributions to given perplexity
-  if (verbose[1]) cat("Estimating sigmas...")
-  suppressMessages(sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
-    x_i <- dist_matrix[idx,,drop=FALSE]
-    x_i <- x_i[x_i > 0]
-    optimize(f = function(sigma, xi) {
-      lxs <- exp(-(xi^2)/(sigma))
-      softxs <- lxs / sum(lxs)
-      p <- -sum(log2(softxs))/length(xi)
-      (log2(perplexity) - p)^2
-    },
-    x = x_i,
-    interval = c(0,100))$minimum # note that sigmas are actually (2 * (sigmas^2))
-  }))
-  sigmas <- unlist(sigmas)
-  if (verbose[1]) cat("done!\n")
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = N, format = 'Calculate sigmas [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
+  else ptick <- function(tick) {}
+
+  p <- dist_matrix@p
+  xvec <- dist_matrix@x
+  sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
+    ptick(1)
+    optimize(f = sigFunc,
+             idx = idx,
+             p = p,
+             x = xvec,
+             perplexity = perplexity,
+             interval = c(0,100))
+  })
+  sigmas <- sapply(sigmas, `[[`, 1)
+  # note that sigmas are actually (2 * (sigmas^2))
+  if (any(is.na(sigmas)) + any(is.infinite(sigmas)) + any(is.nan(sigmas)) + any((sigmas == 0)) > 0) {
+    stop("Bad sigma")
+  }
+
+  #######################################################
+  # Calculate w_{ij}
+  #######################################################
   wijVector = rep(0, length(xs * 2))
   if (verbose[1]) progress <- progress::progress_bar$new(total = N, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else progress <- function(tick) {}
-
   distMatrixTowij(is, js, xs, sigmas, wijVector, N, progress)
+  if (any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any((xs == 0)) > 0) {
+    stop("Bad sigma")
+  }
 
-  # SGD PHASE
+  #######################################################
+  # Estimate embeddings
+  #######################################################
   coords <- projectKNNs(i = is, j = js, x = wijVector,
                         dim = dim,
                         sgd.batches = sgd.batches,
@@ -153,6 +188,9 @@ largeVis <- function(x,
                         alpha = alpha,
                         ...)
 
+  #######################################################
+  # Cleanup
+  #######################################################
   knns[knns == 0] <- NA
   dist_matrix@x <- xs
 

@@ -22,26 +22,32 @@ randomProjectionTreeSearch <- function(x,
                                        max.iter = 2, # in the neighborhood exploration phase, the number of iterations
                                        verbose= TRUE) {
   N <- nrow(x)
-  if (tree.threshold < 10) stop("The tree threshold must be at least 7.")
+  if (tree.threshold < 10) stop("The tree threshold must be at least 10.")
+  if (any(is.nan(x))) stop("NaNs detected in x.")
+  if (any(is.na(x))) stop("NAs detected in x.")
+  if (any(is.infinite(x))) stop("Infs detected in x.")
   # random projection trees
   tree_assignments <- list()
-  if (verbose[1]) ptick <- progress::progress_bar$new(total = n.trees * N, format = 'Exploring random projection trees [:bar] :percent/:elapsed eta: :eta', clear = FALSE)$tick
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = n.trees * N, format = 'Random projection trees [:bar] :percent/:elapsed eta: :eta', clear = FALSE)$tick
   else ptick <- function(ticks) {}
   ptick(0)
 
   knns <- parallel::mclapply(1:n.trees, FUN=function(T) {
-    someknns <- matrix(0, ncol = N, nrow = tree.threshold)
-    searchTree(tree.threshold, 1:N, x, someknns, ptick)
+    someknns <- matrix(0, ncol = N, nrow = tree.threshold - 1)
+    searchTree(tree.threshold, 1:N, x, output = someknns, callback = ptick)
     someknns
   })
   knns <- do.call(rbind, knns)
 
-  if (sum(colSums(knns) == 0) > 0) stop("Random projection trees found no candidates for some nodes.")
+  if (any(colSums(knns) == 0) + any(is.na(knns)) + any(is.nan(knns)) > 0)
+    stop("Random projection trees found no candidates for some nodes.")
 
-  if (verbose[1]) ptick <- progress::progress_bar$new(total = max.iter * N, format = 'Exploring Neighbors [:bar] :percent/:elapsed eta: :eta', clear = FALSE)$tick
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = max.iter * N, format = 'Neighbors [:bar] :percent/:elapsed eta: :eta', clear = FALSE)$tick
   else ptick <- function(ticks) {}
 
   outputKnns <- matrix(0, nrow = K, ncol = N)
   neighbors_inner(max.iter, knns, x, outputKnns, ptick)
+  if (sum(colSums(outputKnns) == 0) + sum(is.na(outputKnns)) + sum(is.nan(outputKnns)) > 0)
+    stop("After neighbor search, no candidates for some nodes.")
   return(outputKnns)
 }

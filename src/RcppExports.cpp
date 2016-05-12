@@ -85,3 +85,18 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// sigFunc
+double sigFunc(double sigma, int idx, NumericVector p, NumericVector x, double perplexity);
+RcppExport SEXP largeVis_sigFunc(SEXP sigmaSEXP, SEXP idxSEXP, SEXP pSEXP, SEXP xSEXP, SEXP perplexitySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< int >::type idx(idxSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type perplexity(perplexitySEXP);
+    __result = Rcpp::wrap(sigFunc(sigma, idx, p, x, perplexity));
+    return __result;
+END_RCPP
+}

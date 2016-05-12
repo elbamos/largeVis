@@ -23,7 +23,7 @@ projectKNNs(i, j, x, dim, sgd.batches = nrow(N) * 10000, M = 5,
 
 \item{weight.pos.samples}{Whether to sample positive edges according to their edge weights (the default) or multiply the edge-loss by the edge-weight in the objective function.}
 
-\item{gamma}{Hyperparameter controlling the weight given to each negative sample.}
+\item{gamma}{Hyperparameter analogous to the strength of the force operating to push-away negative examples.}
 
 \item{alpha}{Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  If \code{alpha} is 0, the alternative distance
 function \eqn{1 / 1 + exp(||y_i - y_j||^2)} is used instead.  These functions relate the distance between points in the low-dimensional projection to the likelihood
@@ -31,11 +31,11 @@ that they two points are nearest neighbors.}
 
 \item{rho}{Initial learning rate.}
 
+\item{.coords}{An initialized coordinate matrix.}
+
 \item{min.rho}{Final learning rate. The learning rate declines non-linearly.  \eqn{\rho_t = \rho_{t-1} - ((\rho_{t-1} - \rho_{min}) / sgd.batches)}}
 
 \item{verbose}{Verbosity}
-
-\item{coords}{An initialized coordinate matrix.}
 }
 \value{
 A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.

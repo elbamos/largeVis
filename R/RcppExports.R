@@ -21,3 +21,7 @@ searchTree <- function(threshold, indices, data, output, callback) {
     invisible(.Call('largeVis_searchTree', PACKAGE = 'largeVis', threshold, indices, data, output, callback))
 }
 
+sigFunc <- function(sigma, idx, p, x, perplexity) {
+    .Call('largeVis_sigFunc', PACKAGE = 'largeVis', sigma, idx, p, x, perplexity)
+}
+

@@ -4,39 +4,42 @@
 \alias{largeVis}
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
-largeVis(x, dim = 2, K = 40, pca.first = TRUE, pca.dims = 50,
-  n.trees = 2, tree.threshold = K * 2, max.iter = 2, perplexity = K,
-  sgd.batches = nrow(x) * 10000, M = 5, weight.pos.samples = TRUE,
-  alpha = 1, gamma = 7, rho = 1, min.rho = 0, verbose = TRUE, ...)
+largeVis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
+  pca.dims = 50, n.trees = 2, tree.threshold = K * 2, max.iter = 2,
+  perplexity = K, sgd.batches = nrow(x) * 10000, M = 5,
+  weight.pos.samples = TRUE, alpha = 1, gamma = 7, rho = 1,
+  min.rho = 0, verbose = TRUE, ...)
 }
 \arguments{
-\item{x}{A matrix}
+\item{x}{A matrix. Ideally, the columns should be scaled and normalized to avoid the risk of errors caused by overflow.}
 
 \item{dim}{The number of dimensions in the output}
 
-\item{K}{The number of nearest-neighbors to use in computing the graph}
+\item{K}{The number of nearest-neighbors to use in computing the kNN graph}
+
+\item{check.assumptions}{Whether to check the input matrix for duplicates, \code{NA}`s, etc.}
 
 \item{pca.first}{Whether to apply pca first (can speed-up distance calculations)}
 
 \item{pca.dims}{How many pca dimensions to use}
 
-\item{n.trees}{See \code{\link{randomProjectionTreeSearch}}}
+\item{n.trees}{See \code{\link{randomProjectionTreeSearch}}.}
 
-\item{tree.threshold}{See \code{\link{randomProjectionTreeSearch}}}
+\item{tree.threshold}{See \code{\link{randomProjectionTreeSearch}}.}
 
-\item{max.iter}{See \code{\link{randomProjectionTreeSearch}}}
+\item{max.iter}{See \code{\link{randomProjectionTreeSearch}}.}
 
 \item{perplexity}{See paper}
 
-\item{sgd.batches}{See \code{\link{projectKNNs}}}
+\item{sgd.batches}{See \code{\link{projectKNNs}}.}
 
-\item{M}{See \code{\link{projectKNNs}}}
+\item{M}{See \code{\link{projectKNNs}}.}
 
-\item{weight.pos.samples}{See \code{\link{projectKNNs}}}
+\item{weight.pos.samples}{See \code{\link{projectKNNs}}.}
 
-\item{alpha}{See \code{\link{projectKNNs}}}
+\item{alpha}{See \code{\link{projectKNNs}}.}
 
-\item{gamma}{See `projectKNNs`}
+\item{gamma}{See \code{\link{projectKNNs}}.}
 
 \item{verbose}{Verbosity}
 
@@ -60,7 +63,7 @@ Implements the \code{largeVis} algorithm by Tang et al.
 in the low-dimensional space is proportional to the distance between them in the high-dimensional space. The algorithm
 works in 4 phases:
 
-\itemize {
+\itemize{
 \item  Estimate candidate nearest-neighbors for each vertex by building \code{n.trees} random projection trees.
 \item  Estimate \code{K} nearest-neighbors for each vertex by visiting each vertex' 2d-degree neighbors (its neighbors' neighbors).
 This is repeated \code{max.iter} times.  Note that the original paper suggested a \code{max.iter} of 1, however a larger number
@@ -69,6 +72,10 @@ may be appropriate for some datasets if the algorithm has trouble finding K neig
 nearest neighbor of each of its nodes.
 \item Using stochastic gradient descent, estimate an embedding for each vertex in the low-dimensional space.
 }
+
+Note that this implementation expects the data to be free of \code{NaN}'s, \code{NA}'s, \code{Inf}'s, and duplicate rows.
+If any of these assumptions are violated, the algorithm will fail. It is also usually a good idea to sale the input data
+to have unit norm and mean 0. If there are large values in the input matrix, some computations may oveflow.
 }
 \examples{
 

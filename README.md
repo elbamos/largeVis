@@ -11,23 +11,36 @@ Please note that this package is under development (the paper is only two weeks 
 
 Some notes:
 
--   There may be a bug in one of the gradients.
--   This implementation uses C++ implementations of the most computationally intensive phases: exploring the random projection trees, neighborhood exploration, calculating *p*<sub>*j*|*i*</sub>, and the final calculation of the embeddings using sgd. The implementation will attempt to use OpenMP if it is available.
--   The sigma-estimation phase is implemented with `mclapply` from the `parallel` package. The number of cores that will be used may be set with `options(mc.cores = n)`
+-   I see very occasional seg faults running in Rstudio (never in console) that appear to be related to OpenMP but I have not yet been able to track down.
+-   Several phases are implemented with `parallel::mclapply`. The number of parallel threads can be adjusted with `options(mc.cores = n)`.
 
-Examples:
----------
+### Examples:
 
 ``` r
 library(largeVis)
 library(ggplot2)
 data(iris)
 dat <- as.matrix(iris[,1:4])
+dat <- scale(dat)
+dupes = which(duplicated(dat))
+dat <- dat[-dupes,]
 coords <- largeVis(dat, pca.first = F, 
                    max.iter = 5, sgd.batches = 2000000, 
-                   gamma = 7, K = 40, M = 5, rho = 2,min.rho = 0, verbose = FALSE)
+                   gamma = 7, K = 40, M = 5, rho = 1,min.rho = 0, verbose = FALSE)
 coords <- data.frame(coords$coords)
 colnames(coords) <- c("X", "Y")
-coords$Species <- iris$Species
-ggplot(coords, aes(x = X, y = Y, color = Species)) + geom_point(size = 0.5)
+coords$algo <- "largeVis"
+
+library(Rtsne)
+more <- Rtsne(dat, initial_dims = 4, pca = F)$Y
+more <- data.frame(X = more[,1], Y = more[,2], algo = "B-H t-SNE")
+coords <- rbind(coords, more)
+coords$Species <- rep(iris$Species[-dupes])
+
+ggplot(coords, aes(x = X, y = Y, color = Species)) + 
+  geom_point(size = 0.5) + 
+  facet_grid(~ algo) + 
+  ggtitle("The Iris Dataset largeVis vs. t-SNE")
 ```
+
+![](README_files/figure-markdown_github/iris-1.png)<!-- -->

@@ -16,11 +16,11 @@
 #' @param alpha Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  If \code{alpha} is 0, the alternative distance
 #' function \eqn{1 / 1 + exp(||y_i - y_j||^2)} is used instead.  These functions relate the distance between points in the low-dimensional projection to the likelihood
 #' that they two points are nearest neighbors.
-#' @param gamma Hyperparameter controlling the weight given to each negative sample.
+#' @param gamma Hyperparameter analogous to the strength of the force operating to push-away negative examples.
 #' @param weight.pos.samples Whether to sample positive edges according to their edge weights (the default) or multiply the edge-loss by the edge-weight in the objective function.
 #' @param rho Initial learning rate.
 #' @param min.rho Final learning rate. The learning rate declines non-linearly.  \eqn{\rho_t = \rho_{t-1} - ((\rho_{t-1} - \rho_{min}) / sgd.batches)}
-#' @param coords An initialized coordinate matrix.
+#' @param .coords An initialized coordinate matrix.
 #' @param verbose Verbosity
 #'
 #' @return A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.
@@ -40,19 +40,29 @@ projectKNNs <- function(i, j, x, # Components of a sparse matrix in triplet form
                         verbose = TRUE) {
 
   N <- max(max(i), max(j))
+  ##############################################
+  # Prepare vector of weights for negative sampling
+  ##############################################
+  wij <- Matrix::sparseMatrix(i = i,
+                              j = j,
+                              x = rep(1, length(x)),
+                              symmetric = TRUE)
+  neg.sample.weights <- Matrix::colSums(wij)^0.75
+  rm(wij)
 
-  wij <- Matrix::sparseMatrix(i = i, j = j, x = x, symmetric = TRUE)
-
-  neg.sample.weights <- Matrix::colSums(wij > 0)^0.75
-  # Select positive samples
+  ##############################################
+  # Prepare vector of positive samples
+  ##############################################
   pos.edges <- NULL
-
   if (weight.pos.samples) pos.edges <- sample(length(x), sgd.batches, replace = T, prob = x)
   else pos.edges <- sample(length(x), sgd.batches, replace = T)
-
   # initialize coordinate matrix
-  if (is.null(.coords)) .coords <- matrix(rnorm(N * dim), ncol = dim)
 
+
+  ##############################################
+  # Prepare SGD
+  ##############################################
+  if (is.null(.coords)) .coords <- matrix(rnorm(N * dim), ncol = dim)
   rho <- 1 # learning rate
 
   if (verbose[1]) progress <- #utils::txtProgressBar(min = 0, max = sgd.batches, style = 3)
@@ -79,6 +89,9 @@ projectKNNs <- function(i, j, x, # Components of a sparse matrix in triplet form
     }
   }
 
+  #################################################
+  # SGD
+  #################################################
   sgd(.coords,
       pos.edges,
       is = i,
