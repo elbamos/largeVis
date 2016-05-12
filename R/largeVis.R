@@ -35,6 +35,7 @@
 #' @param weight.pos.samples See \code{\link{projectKNNs}}.
 #' @param alpha See \code{\link{projectKNNs}}.
 #' @param gamma See \code{\link{projectKNNs}}.
+#' @param coords A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.
 #' @param verbose Verbosity
 #' @param ... See paper
 #'
@@ -77,6 +78,8 @@ largeVis <- function(x,
                      gamma = 7,
                      rho = 1,
                      min.rho = 0,
+
+                     coords = NULL,
 
                      verbose = TRUE,
                     ...) {
@@ -172,7 +175,7 @@ largeVis <- function(x,
   else progress <- function(tick) {}
   distMatrixTowij(is, js, xs, sigmas, wijVector, N, progress)
   if (any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any((xs == 0)) > 0) {
-    stop("Bad sigma")
+    stop("xs")
   }
 
   #######################################################
@@ -186,6 +189,9 @@ largeVis <- function(x,
                         gamma = gamma,
                         verbose = verbose,
                         alpha = alpha,
+                        .coords = coords,
+                        rho = rho,
+                        min.rho = min.rho,
                         ...)
 
   #######################################################

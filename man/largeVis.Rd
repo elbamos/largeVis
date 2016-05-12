@@ -8,7 +8,7 @@ largeVis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
   pca.dims = 50, n.trees = 2, tree.threshold = K * 2, max.iter = 2,
   perplexity = K, sgd.batches = nrow(x) * 10000, M = 5,
   weight.pos.samples = TRUE, alpha = 1, gamma = 7, rho = 1,
-  min.rho = 0, verbose = TRUE, ...)
+  min.rho = 0, coords = NULL, verbose = TRUE, ...)
 }
 \arguments{
 \item{x}{A matrix. Ideally, the columns should be scaled and normalized to avoid the risk of errors caused by overflow.}
@@ -40,6 +40,8 @@ largeVis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
 \item{alpha}{See \code{\link{projectKNNs}}.}
 
 \item{gamma}{See \code{\link{projectKNNs}}.}
+
+\item{coords}{A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.}
 
 \item{verbose}{Verbosity}
 
