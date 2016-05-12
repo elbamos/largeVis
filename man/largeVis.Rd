@@ -6,7 +6,7 @@
 \usage{
 largeVis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
   pca.dims = 50, n.trees = 2, tree.threshold = K * 2, max.iter = 2,
-  perplexity = K, sgd.batches = nrow(x) * 10000, M = 5,
+  perplexity = max(K, 50), sgd.batches = nrow(x) * 10000, M = 5,
   weight.pos.samples = TRUE, alpha = 1, gamma = 7, rho = 1,
   min.rho = 0, coords = NULL, verbose = TRUE, ...)
 }

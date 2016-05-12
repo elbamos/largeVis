@@ -69,7 +69,7 @@ largeVis <- function(x,
                      tree.threshold = K * 2, #the maximum number of nodes per leaf
                      max.iter = 2, # in the neighborhood exploration phase, the number of iterations
 
-                     perplexity = K, # hyperparameter for calculating p(j|i)
+                     perplexity = max(K, 50), # hyperparameter for calculating p(j|i)
 
                      sgd.batches = nrow(x) * 10000,
                      M = 5,
@@ -152,6 +152,7 @@ largeVis <- function(x,
 
   p <- dist_matrix@p
   xvec <- dist_matrix@x
+  perplexity = log2(perplexity)
   sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
     ptick(1)
     optimize(f = sigFunc,

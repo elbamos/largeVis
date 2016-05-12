@@ -228,7 +228,7 @@ void searchTree(int threshold, NumericVector indices,
   if (indices.length() <= threshold) {
     for (int i = 0; i < indices.length() - 1; i++) {
       for (int j = i + 1; j < indices.length(); j++) {
-          output(i + j - 1, indices[i] - 1) = indices[j];
+          output(i + j- 1, indices[i] - 1) = indices[j];
           output(i, indices[j] - 1) = indices[i];
       }
     }
@@ -277,5 +277,5 @@ double sigFunc(double sigma, int idx, NumericVector p, NumericVector x, double p
   for (int i = 0; i < x_i.length(); i++)  x_i[i] = exp(- pow(x[colidx + i], 2) / sigma);
   NumericVector softxs = x_i / sum(x_i);
   double p2 = - sum(log(softxs) / log(2)) / (colidx1 - colidx);
-  return pow(perplexity - p2, 2);
+  return perplexity - p2;
 };

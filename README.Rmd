@@ -30,7 +30,7 @@ dupes = which(duplicated(dat))
 dat <- dat[-dupes,]
 coords <- largeVis(dat, pca.first = F, 
                    max.iter = 10, sgd.batches = 2000000, 
-                   K = 20, verbose = FALSE, rho = 1, gamma = 7, M = 10)
+                   K = 30, verbose = FALSE)
 coords <- data.frame(coords$coords)
 colnames(coords) <- c("X", "Y")
 coords$Species <- iris$Species[-dupes]
@@ -51,7 +51,7 @@ require(ggplot2)
 ```{r showiris}
 ggplot(coords, aes(x = X, y = Y, color = Species)) + 
   geom_point(size = 0.5) + 
-  facet_grid(~ algo) + 
+#facet_grid(~ algo) + 
   ggtitle("The Iris Dataset largeVis vs. t-SNE")
 ```
 
