@@ -11,37 +11,67 @@ This has been tested and confirmed to work in many circumstances.  More extensiv
 
 Please note that this package is under development (the paper is only two weeks old) so it is likely that implementation bugs will be found and changes made to the api.
 
-Some notes:
+#### Project Status
 
+Most of the computationally intensive code has been re-written in C++, and I am experimenting with larger datasets and the datasets from the original paper for testing and to attempt to reproduce the results. 
+
+#### Some Notes:
 * I see very occasional seg faults running in Rstudio (never in console) that appear to be related to OpenMP but I have not yet been able to track down. 
 * Several phases are implemented with `parallel::mclapply`.  The number of parallel threads can be adjusted with `options(mc.cores = n)`.
 
-### Examples:
+#### Examples:
 
-```{r iris,eval=T}
+```{r iris,eval=F}
 library(largeVis)
-library(ggplot2)
 data(iris)
 dat <- as.matrix(iris[,1:4])
 dat <- scale(dat)
 dupes = which(duplicated(dat))
 dat <- dat[-dupes,]
 coords <- largeVis(dat, pca.first = F, 
-                   max.iter = 5, sgd.batches = 2000000, 
-                   gamma = 7, K = 40, M = 5, rho = 1,min.rho = 0, verbose = FALSE)
+                   max.iter = 10, sgd.batches = 2000000, 
+                   K = 20, verbose = FALSE, rho = 1, gamma = 7, M = 10)
 coords <- data.frame(coords$coords)
 colnames(coords) <- c("X", "Y")
+coords$Species <- iris$Species[-dupes]
 coords$algo <- "largeVis"
-
+```{r iristsne,eval=F}
 library(Rtsne)
 more <- Rtsne(dat, initial_dims = 4, pca = F)$Y
 more <- data.frame(X = more[,1], Y = more[,2], algo = "B-H t-SNE")
+more$Species <- iris$Species[-dupes]
 coords <- rbind(coords, more)
-coords$Species <- rep(iris$Species[-dupes])
-
+coords$algo <- factor(coords$algo)
+save(coords, file = "iriscoords.Rda")
+```
+```{r loadiris,echo=F,warning=F,message=F}
+load("iriscoords.Rda")
+require(ggplot2)
+```
+```{r showiris}
 ggplot(coords, aes(x = X, y = Y, color = Species)) + 
   geom_point(size = 0.5) + 
   facet_grid(~ algo) + 
   ggtitle("The Iris Dataset largeVis vs. t-SNE")
 ```
 
+
+```{r mnist,eval=F,echo=F}
+load("../../kaggle/mnist/mnist.Rda")
+dat <- mnist$images
+dim(dat) <- c(42000, 28 * 28)
+dat <- (dat / 255) - 0.5
+coords <- largeVis(dat, pca.f = F, n.tree = 10, tree.th = 100, K = 40, sgd = 1e7, alpha = 2, rho = 1)$coords
+coords <- data.frame(X = coords[,1], Y = coords[,2], label = mnist$labels)
+ggplot(coords, aes(x = X, y = Y, color = label)) + geom_point(size = 0.2, alpha = 0.3) + ggtitle("MNIST")
+```
+```{r mnist_img,eval=F,echo=F}
+require(raster)
+samples <- sample(nrow(coords), 5000, replace = F)
+toplot <- coords[samples,]
+plot(NA, xlim = c(min(toplot[,1]), max(toplot[,1])), ylim = c(min(toplot[,2]), max(toplot[,2])))
+
+for (i in samples) {
+  rasterImage(mnist$images[i,,], toplot[i,1],toplot[i,2], toplot[i,1] + 0.02,toplot[i,2] + 0.02 )
+}
+```

@@ -47,7 +47,12 @@ randomProjectionTreeSearch <- function(x,
 
   outputKnns <- matrix(0, nrow = K, ncol = N)
   neighbors_inner(max.iter, knns, x, outputKnns, ptick)
+
   if (sum(colSums(outputKnns) == 0) + sum(is.na(outputKnns)) + sum(is.nan(outputKnns)) > 0)
     stop("After neighbor search, no candidates for some nodes.")
+
+  if (verbose[1] && sum(outputKnns == 0) > 0)
+    warning("Wanted to find", nrow(outputKnns) * ncol(outputKnns), " neighbors, but only found",
+                  ((nrow(outputKnns) * ncol(outputKnns)) - sum(outputKnns == 0)))
   return(outputKnns)
 }

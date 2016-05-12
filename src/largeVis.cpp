@@ -23,7 +23,7 @@ struct heapObject {
 };
 
 // The Euclidean distance between two vectors
-double dist(NumericVector i, NumericVector j) {
+inline double dist(NumericVector i, NumericVector j) {
   return sum(pow(i - j, 2));
 }
 
@@ -228,7 +228,7 @@ void searchTree(int threshold, NumericVector indices,
   if (indices.length() <= threshold) {
     for (int i = 0; i < indices.length() - 1; i++) {
       for (int j = i + 1; j < indices.length(); j++) {
-          output(i, indices[i] - 1) = indices[j];
+          output(i + j - 1, indices[i] - 1) = indices[j];
           output(i, indices[j] - 1) = indices[i];
       }
     }
@@ -261,18 +261,21 @@ void searchTree(int threshold, NumericVector indices,
     if (direction[leftidx + rightidx] > 0) left[leftidx++] = indices[leftidx + rightidx - 1];
     else right[rightidx++] = indices[leftidx + rightidx - 1];
   }
+#pragma omp parallel sections
+{
+#pragma omp section
   searchTree(threshold, left, data, output, callback);
+#pragma omp section
   searchTree(threshold, right, data, output, callback);
+}
 };
 
 // [[Rcpp::export]]
 double sigFunc(double sigma, int idx, NumericVector p, NumericVector x, double perplexity) {
   int colidx = p[idx - 1], colidx1 = p[idx];
   NumericVector x_i = NumericVector(colidx1 - colidx);
-  for (int i = 0; i < x_i.length(); i++)  x_i[i] = x[colidx + i];
-
-  NumericVector lxs = exp(-pow(x_i, 2)/(sigma));
-  NumericVector softxs = lxs / sum(lxs);
+  for (int i = 0; i < x_i.length(); i++)  x_i[i] = exp(- pow(x[colidx + i], 2) / sigma);
+  NumericVector softxs = x_i / sum(x_i);
   double p2 = - sum(log(softxs) / log(2)) / (colidx1 - colidx);
   return pow(perplexity - p2, 2);
 };
