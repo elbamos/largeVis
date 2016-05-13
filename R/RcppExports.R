@@ -5,8 +5,8 @@ neighbors_inner <- function(maxIter, old_knns, data, outputKnns, callback) {
     invisible(.Call('largeVis_neighbors_inner', PACKAGE = 'largeVis', maxIter, old_knns, data, outputKnns, callback))
 }
 
-sgd <- function(coords, positiveEdges, is, js, ws, negativeSampleWeights, gamma, rho, minRho, useWeights, M, alpha, callback) {
-    invisible(.Call('largeVis_sgd', PACKAGE = 'largeVis', coords, positiveEdges, is, js, ws, negativeSampleWeights, gamma, rho, minRho, useWeights, M, alpha, callback))
+sgd <- function(coords, positiveEdges, is, js, ws, gamma, rho, minRho, useWeights, M, alpha, callback) {
+    invisible(.Call('largeVis_sgd', PACKAGE = 'largeVis', coords, positiveEdges, is, js, ws, gamma, rho, minRho, useWeights, M, alpha, callback))
 }
 
 distance <- function(is, js, xs, data) {

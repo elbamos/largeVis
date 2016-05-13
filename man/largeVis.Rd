@@ -52,7 +52,8 @@ A `largeVis` object with the following slots:
  \itemize{
    \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
-   \item{'wij'}{A sparse [N,N] adjacency matrix where each cell represents \eqn{w_{ij}}.}
+   \item{'wij'}{A list of the components (i,j,p,s) needed to create a sparse [N,N] symmetric identity matrix
+   where each cell represents \eqn{w_{ij}}. Both j and p are provided for convenience.}
    \item{'call'}
    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
  }

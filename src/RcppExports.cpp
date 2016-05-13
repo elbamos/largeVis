@@ -21,8 +21,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // sgd
-void sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ws, NumericVector negativeSampleWeights, int gamma, int rho, int minRho, bool useWeights, int M, int alpha, Function callback);
-RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP wsSEXP, SEXP negativeSampleWeightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
+void sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ws, int gamma, int rho, int minRho, bool useWeights, int M, int alpha, Function callback);
+RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP wsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< NumericMatrix >::type coords(coordsSEXP);
@@ -30,7 +30,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type is(isSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type js(jsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ws(wsSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type negativeSampleWeights(negativeSampleWeightsSEXP);
     Rcpp::traits::input_parameter< int >::type gamma(gammaSEXP);
     Rcpp::traits::input_parameter< int >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< int >::type minRho(minRhoSEXP);
@@ -38,7 +37,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type M(MSEXP);
     Rcpp::traits::input_parameter< int >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    sgd(coords, positiveEdges, is, js, ws, negativeSampleWeights, gamma, rho, minRho, useWeights, M, alpha, callback);
+    sgd(coords, positiveEdges, is, js, ws, gamma, rho, minRho, useWeights, M, alpha, callback);
     return R_NilValue;
 END_RCPP
 }

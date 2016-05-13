@@ -100,8 +100,7 @@ void sgd(NumericMatrix coords,
          NumericVector positiveEdges,
          NumericVector is,
          NumericVector js,
-         NumericVector ws,
-         NumericVector negativeSampleWeights,
+         NumericVector ws, // w{ij}
          int gamma,
          int rho,
          int minRho,
@@ -110,21 +109,27 @@ void sgd(NumericMatrix coords,
          int alpha,
          Function callback) {
 
+  NumericVector negativeSampleWeights = NumericVector(is.length());
+  NumericVector ps = NumericVector(is.length() + 1);
+  int jidx = -1;
+  // Cache a vector of negative weights for sampling
+  // At the same time, build a p-vector of indices to the start of each row (column)
+  for (int eidx = 0; eidx < negativeSampleWeights.length(); eidx++) {
+    negativeSampleWeights[eidx] = pow(ps[eidx + 1] - ps[eidx], 0.75);
+    if (is[eidx] != jidx) {
+      ps[++jidx] = eidx + 1;
+    }
+  }
+  // Normalize the negative sample weights.  This will allow us to sample without looping
+  // through the whole vector.
+  negativeSampleWeights = negativeSampleWeights / sum(negativeSampleWeights);
+
   int i,j,e_ij,k;
   double w = 1;
   IntegerVector availjs, negjs;
-  NumericVector y_i, y_j, grads, j_row;
-  // Make sparse matrix
-  arma::umat locs; // = join_cols(Rcpp::as<arma::urowvec> (is), Rcpp::as<arma::urowvec> (js)).t();
-  arma::urowvec isvec = Rcpp::as<arma::urowvec> (is);
-  arma::urowvec jsvec = Rcpp::as<arma::urowvec> (js);
-  locs.insert_rows(0,isvec - 1);
-  locs.insert_rows(1,jsvec - 1);
-  int N = max(is);
+  NumericVector y_i, y_j, grads;
 
-  arma::sp_mat wij(locs, Rcpp::as<arma::vec> (ws), N, N, true, true);
-
-  #pragma omp parallel for shared(coords, rho) private(i,j,e_ij,y_i,y_j,grads,j_row,availjs,negjs,k)
+  #pragma omp parallel for shared(coords, rho) private(i,j,e_ij,y_i,y_j,grads,availjs,negjs,k)
   for (int eIdx=0; eIdx < positiveEdges.length(); eIdx++) {
     e_ij = positiveEdges[eIdx] - 1;
     i = is[e_ij] - 1;
@@ -143,26 +148,36 @@ void sgd(NumericMatrix coords,
     // Update parameters
     y_i = y_i + (grads * rho * 2);
     coords(j,_) = y_j - (grads * rho);
-    // Select negative samples
-    j_row = wij.row(i);
-    availjs = NumericVector::create();
-    for (int jidx = 0; jidx < j_row.length(); jidx++) {
-      if (jidx != i && j_row[jidx] == 0) availjs.push_front(jidx);
-    }
-    negjs = RcppArmadillo::sample(availjs, (M < availjs.length()) ? M : availjs.length(), false, negativeSampleWeights[availjs]);
-    // Iterate through negative samples
-    for (int jidx = 0; jidx < negjs.length(); jidx++) {
-      k = negjs[jidx] - 1;
-      y_j = coords.row(k);
-      if (alpha != 0 )  grads =     w * gamma * (y_i - y_j) * 2 / (dist(y_i, y_j) * ( 1 + (alpha * dist(y_i, y_j))));
-      else              grads =     w * gamma * (y_i - y_j)     / (exp(dist(y_i, y_j)) + 1);
-      y_i = y_i + (grads * rho / negjs.length());
-      coords(k,_) = y_j - (grads * rho);
-    }
+    // Negative samples
+    NumericVector samples = runif(M).sort();
+    double maxweight = 1;
+    int jidxb = ps[i], jidxe = ps[i + 1]; // position in the i, j * x vectors of the first element in column i
+    int nidx = 0; // count of negative elements found so far, index to next negative element to fill
+    // subtract from maxweight the weights of each present edge, so the non-present ones
+    // can be rescaled without having to loop through twice
+    for (int idx = ps[i]; idx < ps[i + 1]; idx++) maxweight = maxweight - negativeSampleWeights[idx];
+    double runningCount = 0;
+    int kidx = 0;
+    int k;
+    do {
+      // If this is one of the negative indices, skip it
+      if (kidx >= jidxb && kidx < jidxe ) continue;
+      runningCount += negativeSampleWeights[kidx] / maxweight;
+      if (runningCount > samples[nidx]) {
+        k = js[kidx] - 1;
+        y_j = coords.row(k);
+        if (alpha != 0 )  grads =     w * gamma * (y_i - y_j) * 2 / (dist(y_i, y_j) * ( 1 + (alpha * dist(y_i, y_j))));
+        else              grads =     w * gamma * (y_i - y_j)     / (exp(dist(y_i, y_j)) + 1);
+        y_i = y_i + (grads * rho / negjs.length());
+        coords(k,_) = y_j - (grads * rho);
+        nidx++;
+      }
+    } while (nidx < M && ++kidx < ps.length());
+
     coords(i,_) = y_i;
 
     rho = rho - ((rho - minRho) / (positiveEdges.length() + 1));
-    if (eIdx > 0 && eIdx % 1000 == 0) callback(1000);
+    if (eIdx > 0 && eIdx % 1000 == 0) callback(5000);
   }
 };
 
@@ -271,11 +286,9 @@ void searchTree(int threshold, NumericVector indices,
 };
 
 // [[Rcpp::export]]
-double sigFunc(double sigma, int idx, NumericVector p, NumericVector x, double perplexity) {
-  int colidx = p[idx - 1], colidx1 = p[idx];
-  NumericVector x_i = NumericVector(colidx1 - colidx);
-  for (int i = 0; i < x_i.length(); i++)  x_i[i] = exp(- pow(x[colidx + i], 2) / sigma);
-  NumericVector softxs = x_i / sum(x_i);
-  double p2 = - sum(log(softxs) / log(2)) / (colidx1 - colidx);
+double sigFunc(double sigma, NumericVector x_i, double perplexity) {
+  NumericVector xs = exp(- pow(x_i, 2) / sigma);
+  NumericVector softxs = xs / sum(xs);
+  double p2 = - sum(log(softxs) / log(2)) / xs.length();
   return perplexity - p2;
 };

@@ -40,15 +40,6 @@ projectKNNs <- function(i, j, x, # Components of a sparse matrix in triplet form
                         verbose = TRUE) {
 
   N <- max(max(i), max(j))
-  ##############################################
-  # Prepare vector of weights for negative sampling
-  ##############################################
-  wij <- Matrix::sparseMatrix(i = i,
-                              j = j,
-                              x = rep(1, length(x)),
-                              symmetric = TRUE)
-  neg.sample.weights <- Matrix::colSums(wij)^0.75
-  rm(wij)
 
   ##############################################
   # Prepare vector of positive samples
@@ -97,7 +88,6 @@ projectKNNs <- function(i, j, x, # Components of a sparse matrix in triplet form
       is = i,
       js = j,
       ws = x,
-      negativeSampleWeights = neg.sample.weights,
       gamma = gamma, rho = rho, minRho = min.rho,
       useWeights = FALSE, M = M,
       alpha = alpha, callback = callback)
