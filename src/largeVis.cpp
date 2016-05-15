@@ -133,34 +133,19 @@ void sgd(NumericMatrix coords,
   // Iterate through the edges in the positiveEdges vector
   #pragma omp parallel for shared(coords, rho)
   for (int eIdx=0; eIdx < positiveEdges.length(); eIdx++) {
-    int e_ij = positiveEdges[eIdx];
-    int i = is[e_ij];
-    int j = js[e_ij];
+    const int e_ij = positiveEdges[eIdx];
+    const int i = is[e_ij];
+    const int j = js[e_ij];
 
     NumericVector y_i = coords.row(i);
     NumericVector y_j = coords.row(j);
 
     // wij
-    double w = (useWeights) ? ws[e_ij] : 1;
-    // Calculate gradients for positive edge
-    // if (alpha != 0)   grads =   - w * 2 * (y_i - y_j) * alpha                 / ((alpha * dist(y_i, y_j)) + 1);
-    // else              grads =   - w * 2 * (y_i - y_j) * exp(dist(y_i, y_j))   / (exp(     dist(y_i, y_j)) + 1);
+    const double w = 1;// (useWeights) ? ws[e_ij] : 1;
 
-    NumericVector yigrad = - 2 * alpha * (y_i-y_j)/(1 + (alpha * sum(pow(y_i - y_j,2))));
+    NumericVector yigrad = - alpha * (y_i-y_j)/(1 + (alpha * dist(y_i, y_j)));
     checkVector(yigrad, "yigrad");
 
-    // arma::vec yigrad =
-    // for (int m = 0; m < M; m++) {  // check the pow
-    //   yigrad = yigrad + gamma*(alpha*(y_i-y_k[m])/(distk[m] * pow(alpha*distk[m]+1,2) * (1-1/(alpha*distk[m]+1)));
-    //   jkgrad[m] = gamma * w * (y_k[m] - y_i)/((pow(y_i - y_k[m],2)+pow(y_i-y_k[m],2))*(alpha * distk[m] +1));
-    // }
-
-
-
-    // Update parameters
-    // y_i         = y_i + (grads * rho);
-    // coords(j,_) = y_j - (grads * rho);
-    // Negative samples
     arma::vec samples = arma::randu<arma::vec>(M * 2);
     arma::vec::iterator targetIt = samples.begin();
     int sampleIdx = 1;
@@ -169,10 +154,10 @@ void sgd(NumericMatrix coords,
     while (m < M) {
       if (sampleIdx % (M * 2) == 0) samples.randu();
       // binary search for lowest number greater than the sampled number
-      double target = targetIt[sampleIdx++ % (M * 2)];
+      const double target = targetIt[sampleIdx++ % (M * 2)];
       arma::vec::iterator loc = std::upper_bound(negativeSampleWeights.begin(),
-                                                   negativeSampleWeights.end(), target);
-      int k = std::distance(negativeSampleWeights.begin(), loc);
+                                                 negativeSampleWeights.end(), target);
+      const int k = std::distance(negativeSampleWeights.begin(), loc);
       if (k == i || k == j) continue;
       bool tst = false;
       for (int tstidx = ps(i); tstidx < ps(i + 1); tstidx++) if (is[tstidx] == k) {
@@ -183,21 +168,21 @@ void sgd(NumericMatrix coords,
 
       // Calculate gradient for a single negative sample
       NumericVector y_k = coords.row(k);
-      yigrad = yigrad + gamma *
-        2 * alpha * (y_i - y_k) / (pow(1 + (alpha * sum(pow(y_i - y_j, 2))), 2) * (1 - (1 / (1 + (alpha * sum(pow(y_i - y_j, 2)))))));
+      const double dk = dist(y_i, y_k);
+      const double alphadk1 = (alpha * dk) + 1;
+      yigrad = yigrad + (
+        2 * gamma * alpha * (y_i - y_k) / (
+            pow((alpha * dk) + 1, 2) *
+               (1 - (1 / ((alpha * dk) + 1)))
+        ));
       checkVector(yigrad, "yigradneg");
-      NumericVector kgrad = 2 * gamma * w * (y_k - y_i) / (sum(pow(y_k - y_i, 2))*(1 + (alpha * (sum(pow(y_k - y_i, 2))))));
+      NumericVector kgrad = -2 * gamma * alpha * (y_i - y_k) /
+        ((1 - (1/alphadk1))*pow(alphadk1,2));
       checkVector(kgrad, "kgrad");
-      coords(k,_) = y_k + (kgrad * w * rho);
-//
-//       if (alpha != 0 )  grads =     w * gamma * (y_i - y_j) * 2 / (dist(y_i, y_j) * ( 1 + (alpha * dist(y_i, y_j))));
-//       else              grads =     w * gamma * (y_i - y_j)     / (exp(dist(y_i, y_j)) + 1);
-
-      // y_i = y_i + (grads * rho / M);
-      // coords(k,_) = y_j - (grads * rho);
+      // coords(k,_) = y_k + (kgrad * rho * w);
       m++;
     }
-    NumericVector yjgrad = 2 * alpha * (y_i - y_j) / (1 + (alpha * sum(pow(y_i - y_j, 2))));
+    NumericVector yjgrad = 2 * alpha * (y_i - y_j) / (1 + (alpha * dist(y_i,y_j)));
     checkVector(yjgrad, "jgrad");
 
     coords(i,_) = y_i + (yigrad * w * rho);
