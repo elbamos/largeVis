@@ -46,6 +46,7 @@ randomProjectionTreeSearch <- function(x,
   else ptick <- function(ticks) {}
 
   outputKnns <- matrix(0, nrow = K, ncol = N)
+  ptick(0)
   neighbors_inner(max.iter, knns, x, outputKnns, ptick)
 
   if (sum(colSums(outputKnns) == 0) + sum(is.na(outputKnns)) + sum(is.nan(outputKnns)) > 0)

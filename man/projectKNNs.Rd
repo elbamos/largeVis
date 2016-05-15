@@ -4,17 +4,11 @@
 \alias{projectKNNs}
 \title{Project a distance matrix into a lower-dimensional space}
 \usage{
-projectKNNs(i, j, x, dim, sgd.batches = nrow(N) * 10000, M = 5,
+projectKNNs(wij, dim, sgd.batches = nrow(N) * 10000, M = 5,
   weight.pos.samples = TRUE, gamma = 7, alpha = 2, rho = 1,
   .coords = NULL, min.rho = 0.1, verbose = TRUE)
 }
 \arguments{
-\item{i}{The i-vector component of a sparse triplet matrix}
-
-\item{j}{the j-vector component of a sparse triplet matrix}
-
-\item{x}{the x-vector component of a sparse triplet matrix. See \link{Matrix::sparseMatrix}}
-
 \item{dim}{The number of dimensions for the projection space}
 
 \item{sgd.batches}{The number of edges to process during SGD; defaults to 10000 * the number of rows in x}
@@ -36,6 +30,12 @@ that they two points are nearest neighbors.}
 \item{min.rho}{Final learning rate. The learning rate declines non-linearly.  \eqn{\rho_t = \rho_{t-1} - ((\rho_{t-1} - \rho_{min}) / sgd.batches)}}
 
 \item{verbose}{Verbosity}
+
+\item{i}{The i-vector component of a sparse triplet matrix}
+
+\item{j}{the j-vector component of a sparse triplet matrix}
+
+\item{x}{the x-vector component of a sparse triplet matrix. See \link{Matrix::sparseMatrix}}
 }
 \value{
 A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.

@@ -52,7 +52,7 @@
 #'
 #' @export
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
-#' @
+#'
 #' @examples
 #'
 #' @useDynLib largeVis
@@ -121,11 +121,6 @@ largeVis <- function(x,
   js <- as.vector(knns)
   is <- is[! js == 0]
   js <- js[! js == 0]
-  # eliminate symmetrical duplicates
-  wrongtri <- js < is
-  ts <- is
-  is[wrongtri] <- js[wrongtri]
-  js[wrongtri] <- ts[wrongtri]
   dupes <- duplicated(data.frame(is, js))
   is <- is[! dupes]
   js <- js[! dupes]
@@ -134,17 +129,14 @@ largeVis <- function(x,
   ord <- order(is)
   is <- is[ord]
   js <- js[ord]
-  # wrongtri <- wrongtri[! dupes]
-  # ts <- is
-  # is[wrongtri] <- js[wrongtri]
-  # js[wrongtri] <- ts[wrongtri]
-  rm(ts, wrongtri, dupes)
   # calculate a 1-indexed p-vector as would appear in a C-indexed sparse matrix
   ps <- rep(NA,N + 1)
   diffs <- diff(is)
   ps[is[which(diffs > 0)] + 1] <- which(diffs > 0) + 1
   good <- cumsum(!is.na(ps))
-  ps <- c(1, ps[good + 1][-1], length(is) + 1)
+  ps <- ps[good + 1]
+  ps[1] <- 1
+  ps[length(ps) + 1] <- length(ps)
   # build xs, which is a distance vector corresponding to is, js (and ps)
   if (verbose[1]) cat("Calculating neighbor distances...")
   xs <- rep(0, length(is)) # pre-allocate
@@ -162,18 +154,16 @@ largeVis <- function(x,
   else ptick <- function(tick) {}
   # TODO: MAKE SURE THAT THE C++ CODE HANDLES THE SITUATION WHERE A COLUMN IS EMPTY (HAS NO PRESENCE IN P)
   perplexity = log2(perplexity)
-  sigmas <- lapply(1:N, FUN = function(idx) {
+  sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
     ptick(1)
-    # Need to get an x_i vector
-    x_i <- c( if (ps[idx + 1] > ps[idx]) {xs[(ps[idx]):(ps[idx + 1] - 1)]} else {numeric(0)},
-              if (idx != N){xs[head(which(js[(ps[idx+1]):(length(js))] == js), -1) + ps[idx + 1] + 1]} else {numeric(0)})
-    optimize(f = sigFunc,
+    x_i <- xs[ps[idx]:(ps[idx + 1] - 1)]
+    ret <- optimize(f = sigFunc,
              x = x_i,
              perplexity = perplexity,
-             interval = c(0,1))
+             interval = c(0,1.2))
   })
   sigmas <- sapply(sigmas, `[[`, 1)
-  browser()
+  if (any(sigmas > 1.1)) stop("There was an error in calculating sigma")
   # note that sigmas are actually (2 * (sigmas^2))
   # TODO:  Consider taking sigmas that are > 1 and setting them to mean sigmas
   if (any(is.na(sigmas)) + any(is.infinite(sigmas)) + any(is.nan(sigmas)) + any((sigmas == 0)) > 0)
@@ -183,17 +173,21 @@ largeVis <- function(x,
   #######################################################
   # Calculate w_{ij}
   #######################################################
-  wijVector = rep(0, length(xs * 2))
   if (verbose[1]) progress <- progress::progress_bar$new(total = N, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else progress <- function(tick) {}
-  distMatrixTowij(is, js, xs, sigmas, wijVector, N, progress)
-  if (any(is.na(wijVector)) + any(is.infinite(wijVector)) + any(is.nan(wijVector)) + any((wijVector == 0)) > 0)
+  if (! require(Matrix)) stop("The Matrix package must be available.")
+  wij <- distMatrixTowij(is, js, xs, sigmas, N, progress)
+  if (any(is.na(wij@x)) + any(is.infinite(wij@x)) + any(is.nan(wij@x)) + any((wij@x == 0)) > 0)
     stop("An error has propogated into the w_{ij} vector.")
+
+  # Make the symmetricized wij a duplicative symmetric matrix
+  wij <- wij + Matrix::t(wij)
+  # Object a j-vector for the (transposed) triplet form of wij
 
   #######################################################
   # Estimate embeddings
   #######################################################
-  coords <- projectKNNs(i = is, j = js, x = wijVector,
+  coords <- projectKNNs(wij = wij,
                         dim = dim,
                         sgd.batches = sgd.batches,
                         M = M,
@@ -213,12 +207,7 @@ largeVis <- function(x,
 
   returnvalue <- list(
     knns = t(knns),
-    wij = list(
-      i = is,
-      j = js,
-      p = p,
-      x = xs
-    ),
+    wij = wij,
     call = sys.call(),
     coords = coords,
     sigmas = sqrt(sigmas / 2)

@@ -21,14 +21,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // sgd
-void sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ws, int gamma, int rho, int minRho, bool useWeights, int M, int alpha, Function callback);
-RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP wsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
+void sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ps, NumericVector ws, int gamma, int rho, int minRho, bool useWeights, int M, int alpha, Function callback);
+RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP psSEXP, SEXP wsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< NumericMatrix >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type positiveEdges(positiveEdgesSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type is(isSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type ps(psSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ws(wsSEXP);
     Rcpp::traits::input_parameter< int >::type gamma(gammaSEXP);
     Rcpp::traits::input_parameter< int >::type rho(rhoSEXP);
@@ -37,7 +38,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type M(MSEXP);
     Rcpp::traits::input_parameter< int >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    sgd(coords, positiveEdges, is, js, ws, gamma, rho, minRho, useWeights, M, alpha, callback);
+    sgd(coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWeights, M, alpha, callback);
     return R_NilValue;
 END_RCPP
 }
@@ -55,19 +56,19 @@ BEGIN_RCPP
 END_RCPP
 }
 // distMatrixTowij
-void distMatrixTowij(NumericVector is, NumericVector js, NumericVector xs, NumericVector sigmas, NumericVector outVector, int N, Function callback);
-RcppExport SEXP largeVis_distMatrixTowij(SEXP isSEXP, SEXP jsSEXP, SEXP xsSEXP, SEXP sigmasSEXP, SEXP outVectorSEXP, SEXP NSEXP, SEXP callbackSEXP) {
+arma::sp_mat distMatrixTowij(NumericVector is, NumericVector js, NumericVector xs, NumericVector sigmas, int N, Function callback);
+RcppExport SEXP largeVis_distMatrixTowij(SEXP isSEXP, SEXP jsSEXP, SEXP xsSEXP, SEXP sigmasSEXP, SEXP NSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< NumericVector >::type is(isSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type js(jsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type xs(xsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type sigmas(sigmasSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type outVector(outVectorSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    distMatrixTowij(is, js, xs, sigmas, outVector, N, callback);
-    return R_NilValue;
+    __result = Rcpp::wrap(distMatrixTowij(is, js, xs, sigmas, N, callback));
+    return __result;
 END_RCPP
 }
 // searchTree
@@ -85,17 +86,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // sigFunc
-double sigFunc(double sigma, int idx, NumericVector p, NumericVector x, double perplexity);
-RcppExport SEXP largeVis_sigFunc(SEXP sigmaSEXP, SEXP idxSEXP, SEXP pSEXP, SEXP xSEXP, SEXP perplexitySEXP) {
+double sigFunc(double sigma, NumericVector x_i, double perplexity);
+RcppExport SEXP largeVis_sigFunc(SEXP sigmaSEXP, SEXP x_iSEXP, SEXP perplexitySEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< int >::type idx(idxSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type x_i(x_iSEXP);
     Rcpp::traits::input_parameter< double >::type perplexity(perplexitySEXP);
-    __result = Rcpp::wrap(sigFunc(sigma, idx, p, x, perplexity));
+    __result = Rcpp::wrap(sigFunc(sigma, x_i, perplexity));
     return __result;
 END_RCPP
 }

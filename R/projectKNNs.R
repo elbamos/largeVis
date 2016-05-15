@@ -27,7 +27,7 @@
 #' @export
 #'
 
-projectKNNs <- function(i, j, x, # Components of a sparse matrix in triplet form
+projectKNNs <- function(wij, # sparse matrix
                         dim, # dimension of the projection space
                         sgd.batches = nrow(N) * 10000,
                         M = 5,
@@ -38,16 +38,19 @@ projectKNNs <- function(i, j, x, # Components of a sparse matrix in triplet form
                         .coords = NULL,
                         min.rho = 0.1,
                         verbose = TRUE) {
+  N <- length(wij@p) - 1
+  nnzs <- diff(wij@p)
+  js = rep(0:(N-1), diff(wij@p))
+  is = wij@i
 
-  N <- max(max(i), max(j))
 
   ##############################################
   # Prepare vector of positive samples
   ##############################################
   pos.edges <- NULL
 
-  if (weight.pos.samples) pos.edges <- sample(length(x), sgd.batches, replace = T, prob = x)
-  else pos.edges <- sample(length(x), sgd.batches, replace = T)
+  if (weight.pos.samples) pos.edges <- sample(length(wij@x), sgd.batches, replace = T, prob = wij@x) - 1
+  else pos.edges <- sample(length(wij@x), sgd.batches, replace = T) - 1
 
   ##############################################
   # Prepare SGD
@@ -82,14 +85,15 @@ projectKNNs <- function(i, j, x, # Components of a sparse matrix in triplet form
   #################################################
   # SGD
   #################################################
-
+  callback(0)
   sgd(.coords,
       pos.edges,
-      is = i,
-      js = j,
-      ws = x,
+      is = is,
+      js = js,
+      ps = wij@p,
+      ws = wij@x,
       gamma = gamma, rho = rho, minRho = min.rho,
-      useWeights = FALSE, M = M,
+      useWeights = ! weight.pos.samples, M = M,
       alpha = alpha, callback = callback)
 
   return(.coords)

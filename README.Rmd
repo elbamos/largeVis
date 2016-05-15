@@ -29,8 +29,9 @@ dat <- scale(dat)
 dupes = which(duplicated(dat))
 dat <- dat[-dupes,]
 visObject <- largeVis(dat, pca.first = F, 
-                   max.iter = 10, sgd.batches = 2000000, 
-                   K = 30, verbose = FALSE)
+                   max.iter = 20, sgd.batches = 2000000, 
+                   K = 30,  gamma = 7, rho = 1)
+plot(visObject$coords)
 coords <- data.frame(visObject$coords)
 colnames(coords) <- c("X", "Y")
 coords$Species <- iris$Species[-dupes]

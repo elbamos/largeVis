@@ -1,8 +1,10 @@
+#include <RcppArmadillo.h>
+// [[Rcpp::plugins(openmp)]]
 #include <omp.h>
 #include <math.h>
-#include <RcppArmadillo.h>
 #include <RcppArmadilloExtensions/sample.h>
 #include <algorithm>
+#include <iterator>
 #include <queue>
 #include <vector>
 #include <set>
@@ -45,7 +47,6 @@ void neighbors_inner( int maxIter,
     nextKnns = NumericMatrix(K, N);
     for (int i = 0; i < K; i++) for (int j = 0; j < N; j++) nextKnns(i,j) = 0; // Initialize matrix
 
-    #pragma omp parallel for shared(nextKnns)
     for (int i = 0; i < N; i++) {
       int j, k;
       double d;
@@ -88,18 +89,24 @@ void neighbors_inner( int maxIter,
 };
 
 /*
- * Note three changes from the paper:
+ * Note changes from the paper:
  * 1. \rho is set to decline non-linearly
  * 2. The gradient applied to update y_i for the positive sample is doubled (2 * \rho)
  *
  *
  */
 
+void checkVector(NumericVector x, std::string label) {
+  if (sum(is_na(x)) + sum(is_nan(x)) + sum(is_infinite(x)) > 0)
+    Rcout << "\n Failure at " << label;
+}
+
 // [[Rcpp::export]]
 void sgd(NumericMatrix coords,
          NumericVector positiveEdges,
-         NumericVector is,
-         NumericVector js,
+         NumericVector is, // vary randomly
+         NumericVector js, // ordered
+         NumericVector ps, // N+1 length vector of indices to start of each row j in vector is
          NumericVector ws, // w{ij}
          int gamma,
          int rho,
@@ -109,75 +116,96 @@ void sgd(NumericMatrix coords,
          int alpha,
          Function callback) {
 
-  NumericVector negativeSampleWeights = NumericVector(is.length());
-  NumericVector ps = NumericVector(is.length() + 1);
-  int jidx = -1;
-  // Cache a vector of negative weights for sampling
-  // At the same time, build a p-vector of indices to the start of each row (column)
-  for (int eidx = 0; eidx < negativeSampleWeights.length(); eidx++) {
-    negativeSampleWeights[eidx] = pow(ps[eidx + 1] - ps[eidx], 0.75);
-    if (is[eidx] != jidx) {
-      ps[++jidx] = eidx + 1;
-    }
+  int N = ps.length() - 1;
+  // Calculate negative sample weights, d_{i}^0.75.
+  // Stored as a vector of cumulative sums, normalized, so it can
+  // be readily searched using binary searches.
+  // TODO:  CREATE A FORM FOR WHEN USEWEIGHTS = TRUE
+  arma::vec negativeSampleWeights = pow(diff(ps), 0.75);
+  double scale = sum(negativeSampleWeights);
+  negativeSampleWeights = negativeSampleWeights / scale;
+  double acc = 0;
+  for (int idx = 0; idx < N; idx++) {
+    acc+= negativeSampleWeights[idx];
+    negativeSampleWeights[idx] = acc;
   }
-  // Normalize the negative sample weights.  This will allow us to sample without looping
-  // through the whole vector.
-  negativeSampleWeights = negativeSampleWeights / sum(negativeSampleWeights);
 
-  int i,j,e_ij,k;
-  double w = 1;
-  IntegerVector availjs, negjs;
-  NumericVector y_i, y_j, grads;
-
-  #pragma omp parallel for shared(coords, rho) private(i,j,e_ij,y_i,y_j,grads,availjs,negjs,k)
+  // Iterate through the edges in the positiveEdges vector
+  #pragma omp parallel for shared(coords, rho)
   for (int eIdx=0; eIdx < positiveEdges.length(); eIdx++) {
-    e_ij = positiveEdges[eIdx] - 1;
-    i = is[e_ij] - 1;
-    j = js[e_ij] - 1;
+    int e_ij = positiveEdges[eIdx];
+    int i = is[e_ij];
+    int j = js[e_ij];
 
-    if (rnorm(1)[1] < 0) {
-      int t = i;
-      i = j;
-      j = t;
-    }
-    y_i = coords.row(i);
-    y_j = coords.row(j);
-    // Calculate gradients
-    if (alpha != 0)   grads =   - w * 2 * (y_i - y_j) * alpha                 / ((alpha * dist(y_i, y_j)) + 1);
-    else              grads =   - w * 2 * (y_i - y_j) * exp(dist(y_i, y_j))   / (exp( dist(y_i, y_j)) + 1);
+    NumericVector y_i = coords.row(i);
+    NumericVector y_j = coords.row(j);
+
+    // wij
+    double w = (useWeights) ? ws[e_ij] : 1;
+    // Calculate gradients for positive edge
+    // if (alpha != 0)   grads =   - w * 2 * (y_i - y_j) * alpha                 / ((alpha * dist(y_i, y_j)) + 1);
+    // else              grads =   - w * 2 * (y_i - y_j) * exp(dist(y_i, y_j))   / (exp(     dist(y_i, y_j)) + 1);
+
+    NumericVector yigrad = - 2 * alpha * (y_i-y_j)/(1 + (alpha * sum(pow(y_i - y_j,2))));
+    checkVector(yigrad, "yigrad");
+
+    // arma::vec yigrad =
+    // for (int m = 0; m < M; m++) {  // check the pow
+    //   yigrad = yigrad + gamma*(alpha*(y_i-y_k[m])/(distk[m] * pow(alpha*distk[m]+1,2) * (1-1/(alpha*distk[m]+1)));
+    //   jkgrad[m] = gamma * w * (y_k[m] - y_i)/((pow(y_i - y_k[m],2)+pow(y_i-y_k[m],2))*(alpha * distk[m] +1));
+    // }
+
+
+
     // Update parameters
-    y_i = y_i + (grads * rho * 2);
-    coords(j,_) = y_j - (grads * rho);
+    // y_i         = y_i + (grads * rho);
+    // coords(j,_) = y_j - (grads * rho);
     // Negative samples
-    NumericVector samples = runif(M).sort();
-    double maxweight = 1;
-    int jidxb = ps[i], jidxe = ps[i + 1]; // position in the i, j * x vectors of the first element in column i
-    int nidx = 0; // count of negative elements found so far, index to next negative element to fill
-    // subtract from maxweight the weights of each present edge, so the non-present ones
-    // can be rescaled without having to loop through twice
-    for (int idx = ps[i]; idx < ps[i + 1]; idx++) maxweight = maxweight - negativeSampleWeights[idx];
-    double runningCount = 0;
-    int kidx = 0;
-    int k;
-    do {
-      // If this is one of the negative indices, skip it
-      if (kidx >= jidxb && kidx < jidxe ) continue;
-      runningCount += negativeSampleWeights[kidx] / maxweight;
-      if (runningCount > samples[nidx]) {
-        k = js[kidx] - 1;
-        y_j = coords.row(k);
-        if (alpha != 0 )  grads =     w * gamma * (y_i - y_j) * 2 / (dist(y_i, y_j) * ( 1 + (alpha * dist(y_i, y_j))));
-        else              grads =     w * gamma * (y_i - y_j)     / (exp(dist(y_i, y_j)) + 1);
-        y_i = y_i + (grads * rho / negjs.length());
-        coords(k,_) = y_j - (grads * rho);
-        nidx++;
+    arma::vec samples = arma::randu<arma::vec>(M * 2);
+    arma::vec::iterator targetIt = samples.begin();
+    int sampleIdx = 1;
+    int m = 0;
+   // Rcout << "\n" << i << " " << j << "\t";
+    while (m < M) {
+      if (sampleIdx % (M * 2) == 0) samples.randu();
+      // binary search for lowest number greater than the sampled number
+      double target = targetIt[sampleIdx++ % (M * 2)];
+      arma::vec::iterator loc = std::upper_bound(negativeSampleWeights.begin(),
+                                                   negativeSampleWeights.end(), target);
+      int k = std::distance(negativeSampleWeights.begin(), loc);
+      if (k == i || k == j) continue;
+      bool tst = false;
+      for (int tstidx = ps(i); tstidx < ps(i + 1); tstidx++) if (is[tstidx] == k) {
+        tst = true;
+        break;
       }
-    } while (nidx < M && ++kidx < ps.length());
+      if (tst) continue;
 
-    coords(i,_) = y_i;
+      // Calculate gradient for a single negative sample
+      NumericVector y_k = coords.row(k);
+      yigrad = yigrad + gamma *
+        2 * alpha * (y_i - y_k) / (pow(1 + (alpha * sum(pow(y_i - y_j, 2))), 2) * (1 - (1 / (1 + (alpha * sum(pow(y_i - y_j, 2)))))));
+      checkVector(yigrad, "yigradneg");
+      NumericVector kgrad = 2 * gamma * w * (y_k - y_i) / (sum(pow(y_k - y_i, 2))*(1 + (alpha * (sum(pow(y_k - y_i, 2))))));
+      checkVector(kgrad, "kgrad");
+      coords(k,_) = y_k + (kgrad * w * rho);
+//
+//       if (alpha != 0 )  grads =     w * gamma * (y_i - y_j) * 2 / (dist(y_i, y_j) * ( 1 + (alpha * dist(y_i, y_j))));
+//       else              grads =     w * gamma * (y_i - y_j)     / (exp(dist(y_i, y_j)) + 1);
 
+      // y_i = y_i + (grads * rho / M);
+      // coords(k,_) = y_j - (grads * rho);
+      m++;
+    }
+    NumericVector yjgrad = 2 * alpha * (y_i - y_j) / (1 + (alpha * sum(pow(y_i - y_j, 2))));
+    checkVector(yjgrad, "jgrad");
+
+    coords(i,_) = y_i + (yigrad * w * rho);
+    coords(j,_) = y_j + (yjgrad * w * rho);
+
+    #pragma omp atomic
     rho = rho - ((rho - minRho) / (positiveEdges.length() + 1));
-    if (eIdx > 0 && eIdx % 1000 == 0) callback(5000);
+    if (eIdx > 0 && eIdx % 10000 == 0) callback(10000);
   }
 };
 
@@ -193,25 +221,22 @@ void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatri
 // Take four vectors (i indices, j indices, edge distances, and sigmas), and calculate
 // p(j|i) and then w_{ij}.
 // [[Rcpp::export]]
-void distMatrixTowij(
+arma::sp_mat distMatrixTowij(
   NumericVector is,
   NumericVector js,
   NumericVector xs,
   NumericVector sigmas,
-  NumericVector outVector,
   int N,
   Function callback
 ) {
-  int n_e = is.length();
   NumericVector rowSums = NumericVector(N);
-  NumericVector pjis = NumericVector(n_e* 2);
+  NumericVector pjis = NumericVector(is.length());
   for (int idx=0; idx < N; idx++) rowSums[idx] = 0;
   int i, j;
   double pji;
-  // We have to compute pji twice, once for the lower and once for the upper triangle
-  // We can accumulate rowSums at the same time
+  // Compute pji, accumulate rowSums at the same time
 #pragma omp parallel for shared(pjis, rowSums) private(pji, i)
-  for (int e=0; e < n_e; e++) {
+  for (int e=0; e < pjis.length(); e++) {
     i = is[e];
     pji = exp(- pow(xs[e], 2)) / sigmas[i - 1];
     pjis[e] = pji;
@@ -219,21 +244,22 @@ void distMatrixTowij(
     rowSums[i - 1] = rowSums[i - 1] + pji;
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
-#pragma omp parallel for shared(pjis, rowSums) private(pji, i)
-  for (int e=0; e < n_e; e++) {
-    i = js[e];
-    pji = exp(-pow(xs[e], 2)) / sigmas[i - 1];
-    pjis[e + n_e] = pji;
-#pragma omp atomic
-    rowSums[i - 1] = rowSums[i - 1] + pji;
-    if (e > 0 && e % 1000 == 0) callback(1000);
-  }
   // Now convert p(j|i) to w_{ij} by symmetrizing.
-#pragma omp parallel for shared(pjis, rowSums, outVector)
-  for (int e=0; e < n_e; e++) {
-    outVector[e] = ((pjis[e] / rowSums[is[e] - 1]) + (pjis[e] / rowSums[js[e] - 1])) / ( 2 * N );
+  arma::sp_mat wij = arma::sp_mat(N, N);
+  for (int e=0; e < pjis.length(); e++) {
+    int newi = is[e] - 1, newj = js[e] - 1;
+    if (newi < newj) {
+      int t = newi;
+      newi = newj;
+      newj = t;
+    }
+    double oldw = wij(newi, newj);
+    wij(newi, newj) = (oldw > 0) ?
+                                  (oldw / 2) + ((pjis[e] / rowSums[is[e] - 1]) / (2 * N )) :
+                                  (pjis[e] / rowSums[is[e] - 1]) / N;
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
+  return wij;
 };
 
 // [[Rcpp::export]]
@@ -292,3 +318,5 @@ double sigFunc(double sigma, NumericVector x_i, double perplexity) {
   double p2 = - sum(log(softxs) / log(2)) / xs.length();
   return perplexity - p2;
 };
+
+
