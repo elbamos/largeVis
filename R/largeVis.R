@@ -67,7 +67,7 @@ largeVis <- function(x,
                      pca.dims = 50,
 
                      n.trees = 2, # in the random projection tree phase, how many trees to build
-                     tree.threshold = K * 2, #the maximum number of nodes per leaf
+                     tree.threshold = min(K * 1.5, nrow(x)), #the maximum number of nodes per leaf
                      max.iter = 2, # in the neighborhood exploration phase, the number of iterations
 
                      perplexity = max(K, 50), # hyperparameter for calculating p(j|i)
@@ -209,7 +209,7 @@ largeVis <- function(x,
     knns = t(knns),
     wij = wij,
     call = sys.call(),
-    coords = coords,
+    coords = t(coords),
     sigmas = sqrt(sigmas / 2)
   )
 

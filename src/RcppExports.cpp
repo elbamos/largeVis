@@ -21,9 +21,10 @@ BEGIN_RCPP
 END_RCPP
 }
 // sgd
-void sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ps, NumericVector ws, int gamma, int rho, int minRho, bool useWeights, int M, int alpha, Function callback);
+arma::mat sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ps, NumericVector ws, double gamma, double rho, double minRho, bool useWeights, int M, double alpha, Function callback);
 RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP psSEXP, SEXP wsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< NumericMatrix >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type positiveEdges(positiveEdgesSEXP);
@@ -31,15 +32,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type js(jsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ps(psSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ws(wsSEXP);
-    Rcpp::traits::input_parameter< int >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< int >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< int >::type minRho(minRhoSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< double >::type minRho(minRhoSEXP);
     Rcpp::traits::input_parameter< bool >::type useWeights(useWeightsSEXP);
     Rcpp::traits::input_parameter< int >::type M(MSEXP);
-    Rcpp::traits::input_parameter< int >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    sgd(coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWeights, M, alpha, callback);
-    return R_NilValue;
+    __result = Rcpp::wrap(sgd(coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWeights, M, alpha, callback));
+    return __result;
 END_RCPP
 }
 // distance
@@ -71,18 +72,18 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// searchTree
-void searchTree(int threshold, NumericVector indices, NumericMatrix data, NumericMatrix output, Function callback);
-RcppExport SEXP largeVis_searchTree(SEXP thresholdSEXP, SEXP indicesSEXP, SEXP dataSEXP, SEXP outputSEXP, SEXP callbackSEXP) {
+// searchTrees
+arma::mat searchTrees(int threshold, int n_trees, NumericMatrix data, Function callback);
+RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP dataSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< int >::type threshold(thresholdSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type indices(indicesSEXP);
+    Rcpp::traits::input_parameter< int >::type n_trees(n_treesSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type output(outputSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    searchTree(threshold, indices, data, output, callback);
-    return R_NilValue;
+    __result = Rcpp::wrap(searchTrees(threshold, n_trees, data, callback));
+    return __result;
 END_RCPP
 }
 // sigFunc

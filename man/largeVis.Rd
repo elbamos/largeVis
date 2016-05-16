@@ -5,9 +5,9 @@
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
 largeVis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
-  pca.dims = 50, n.trees = 2, tree.threshold = K * 2, max.iter = 2,
-  perplexity = max(K, 50), sgd.batches = nrow(x) * 10000, M = 5,
-  weight.pos.samples = TRUE, alpha = 1, gamma = 7, rho = 1,
+  pca.dims = 50, n.trees = 2, tree.threshold = min(K * 1.5, nrow(x)),
+  max.iter = 2, perplexity = max(K, 50), sgd.batches = nrow(x) * 10000,
+  M = 5, weight.pos.samples = TRUE, alpha = 1, gamma = 7, rho = 1,
   min.rho = 0, coords = NULL, verbose = TRUE, ...)
 }
 \arguments{

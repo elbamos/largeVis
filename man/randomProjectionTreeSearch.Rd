@@ -4,8 +4,8 @@
 \alias{randomProjectionTreeSearch}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
-randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = max(10,
-  K * 2), max.iter = 2, verbose = TRUE)
+randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = min(K *
+  1.5, nrow(x)), max.iter = 2, verbose = TRUE)
 }
 \arguments{
 \item{x}{A matrix}
@@ -14,18 +14,18 @@ randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = max(10,
 
 \item{n.trees}{The number of trees to build}
 
-\item{tree.threshold}{The threshold for creating a new branch}
+\item{tree.threshold}{The threshold for creating a new branch.  A value of 1.5 * K guarantees that
+the algorithm will return K candidate nearest neighbors for each vertex.}
 
 \item{max.iter}{Number of iterations in the neighborhood exploration phase}
 
 \item{verbose}{Whether to print verbose logging using the \code{progress} package}
 }
 \value{
-A [nrow(x), K] integer matrix showing the estimated K nearest neighbors for each vertex.
+A [N, K] integer matrix showing the estimated K nearest neighbors for each vertex.
 }
 \description{
-This is a very fast and accurate algorithm for finding k-nearest neighbors. It is implemented here in C++ and parallel execution
-is enabled using `parallel::mclapply`.
+This is a very fast and accurate algorithm for finding k-nearest neighbors.
 }
 \examples{
 

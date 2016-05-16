@@ -169,15 +169,20 @@ arma::mat sgd(NumericMatrix coords,
     // arma::mat after = arma::mat(2,M + 2);
     // before.col(0) = y_i;
     // before.col(1) = y_j;
-
     // wij
     const double w = (useWeights) ? ws[e_ij] : 1;
 // should be negative below
-    arma::vec igrad = -2 * alpha * (y_i - y_j) / (1 + (alpha * dist(y_i,y_j)));
+    const double dist_ij = sqrt(dist(y_i, y_j));
+    const arma::vec d_dist_ij = (y_i - y_j) / dist_ij;
+    const double p_ij = 1 / (1 + (alpha * pow(dist_ij,2)));
+    const arma::vec d_p_ij = d_dist_ij * -pow(dist_ij, 2) / pow((pow(dist_ij,2) * alpha) + 1,2);
+ //   const double o_ij = log(p_ij);
+    const arma::vec d_ij = (1 / p_ij) * d_p_ij;
+   // arma::vec igrad = -2 * alpha * (y_i - y_j) / (1 + (alpha * dist(y_i,y_j)));
   //  checkGrad(y_i, y_j, igrad, true, "pos");
 #pragma omp critical
 {
-    coordinates.col(j) -= w * localRho * igrad;
+    coordinates.col(j) -= (w * localRho * d_ij);
     // after.col(1) = coordinates.col(j);
 }
     // checkVector(igrad, "ijgrad");
@@ -189,6 +194,7 @@ arma::mat sgd(NumericMatrix coords,
     // int ms[5];
     // The indices of the nodes with edges to i
     arma::vec searchVector = i_idx.subvec(p[i], p[i + 1] - 1);
+    arma::vec d_i = d_ij;
     while (m < M) {
       if (sampleIdx % (M * 2) == 0) samples.randu();
       // binary search for lowest number greater than the sampled number
@@ -206,14 +212,23 @@ arma::mat sgd(NumericMatrix coords,
       // ms[m] = k;
       // Calculate gradient for a single negative sample
       arma::vec y_k = coordinates.col(k);
-      const double alphadk1 = (alpha * dist(y_i, y_k)) + 1;
-      arma::vec gradk = 2 * gamma * (y_i - y_k) / (dist(y_i, y_k) * alphadk1);
+      const double dist_ik = sqrt(dist(y_i, y_k));
+      const arma::vec d_dist_ik = (y_i - y_k) / dist_ik;
+      const double p_ik = 1 - (1 / (1 + (alpha * pow(dist_ik,2))));
+      const arma::vec d_p_ik = d_dist_ik * (1 / ((pow(dist_ik,2) * pow(alpha, 2)) + alpha));
+    //  const double o_ik = log(p_ik);
+      const arma::vec d_ik = (gamma / p_ik) * d_p_ik;
+
+
+      //
+      // const double alphadk1 = (alpha * dist(y_i, y_k)) + 1;
+      // arma::vec gradk = 2 * gamma * (y_i - y_k) / (dist(y_i, y_k) * alphadk1);
   //    checkGrad(y_i, y_k, igrad, false, "neg");
-      igrad = igrad + gradk;
+      d_i = d_i + d_ik;
       // before.col(m + 2) = y_k;
 #pragma omp critical
 {
-      coordinates.col(k) -=  gradk * localRho * w;
+      coordinates.col(k) -=  (d_ik * localRho * w);
 }
 // after.col(m + 2) = coordinates.col(k);
 m++;
@@ -224,7 +239,7 @@ m++;
 
 #pragma omp critical
 {
-    coordinates.col(i) += igrad * w * localRho;
+    coordinates.col(i) += (d_i * w * localRho);
 }
    // after.col(0) = coordinates.col(i);
     // double bef = objective(before, gamma, alpha);

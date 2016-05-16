@@ -6,7 +6,7 @@ neighbors_inner <- function(maxIter, old_knns, data, outputKnns, callback) {
 }
 
 sgd <- function(coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWeights, M, alpha, callback) {
-    invisible(.Call('largeVis_sgd', PACKAGE = 'largeVis', coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWeights, M, alpha, callback))
+    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWeights, M, alpha, callback)
 }
 
 distance <- function(is, js, xs, data) {
@@ -17,8 +17,8 @@ distMatrixTowij <- function(is, js, xs, sigmas, N, callback) {
     .Call('largeVis_distMatrixTowij', PACKAGE = 'largeVis', is, js, xs, sigmas, N, callback)
 }
 
-searchTree <- function(threshold, indices, data, output, callback) {
-    invisible(.Call('largeVis_searchTree', PACKAGE = 'largeVis', threshold, indices, data, output, callback))
+searchTrees <- function(threshold, n_trees, data, callback) {
+    .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, data, callback)
 }
 
 sigFunc <- function(sigma, x_i, perplexity) {

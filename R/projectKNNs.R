@@ -55,7 +55,7 @@ projectKNNs <- function(wij, # sparse matrix
   ##############################################
   # Prepare SGD
   ##############################################
-  if (is.null(.coords)) .coords <- matrix(rnorm(N * dim), ncol = dim)
+  if (is.null(.coords)) .coords <- matrix(rnorm(N * dim), nrow = dim)
 
   plotcounter <- 0
 
@@ -86,15 +86,15 @@ projectKNNs <- function(wij, # sparse matrix
   # SGD
   #################################################
   callback(0)
-  sgd(.coords,
-      pos.edges,
-      is = is,
-      js = js,
-      ps = wij@p,
-      ws = wij@x,
-      gamma = gamma, rho = rho, minRho = min.rho,
-      useWeights = ! weight.pos.samples, M = M,
-      alpha = alpha, callback = callback)
+  .coords <- sgd(.coords,
+              pos.edges,
+              is = is,
+              js = js,
+              ps = wij@p,
+              ws = wij@x,
+              gamma = gamma, rho = rho, minRho = min.rho,
+              useWeights = ! weight.pos.samples, M = M,
+              alpha = alpha, callback = callback)
 
   return(.coords)
 }
