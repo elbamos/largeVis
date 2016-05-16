@@ -52,6 +52,7 @@ void neighbors_inner( int maxIter,
     nextKnns = NumericMatrix(K, N);
     for (int i = 0; i < K; i++) for (int j = 0; j < N; j++) nextKnns(i,j) = 0; // Initialize matrix
 
+#pragma omp parallel for shared(nextKnns)
     for (int i = 0; i < N; i++) {
       int j, k;
       double d;
@@ -165,33 +166,26 @@ arma::mat sgd(NumericMatrix coords,
     arma::vec y_i = coordinates.col(i);
     arma::vec y_j = coordinates.col(j);
 
-    // arma::mat before = arma::mat(2,M + 2);
-    // arma::mat after = arma::mat(2,M + 2);
-    // before.col(0) = y_i;
-    // before.col(1) = y_j;
     // wij
     const double w = (useWeights) ? ws[e_ij] : 1;
-// should be negative below
+    // TODO: RE-ADD TO USE EXP IF ALPHA = 0
     const double dist_ij = sqrt(dist(y_i, y_j));
     const arma::vec d_dist_ij = (y_i - y_j) / dist_ij;
-    const double p_ij = 1 / (1 + (alpha * pow(dist_ij,2)));
-    const arma::vec d_p_ij = d_dist_ij * -pow(dist_ij, 2) / pow((pow(dist_ij,2) * alpha) + 1,2);
+    const double p_ij = (alpha == 0) ?  (1 / (1 + exp(pow(dist_ij,2)))):
+                                        1 / (1 + (alpha * pow(dist_ij,2)));
+    arma::vec d_p_ij;
+    if (alpha == 0) d_p_ij = - 2 *  d_dist_ij * dist_ij * exp(pow(dist_ij,2)) / (1 + exp(pow(dist_ij,2)));
+    else            d_p_ij =        d_dist_ij * -pow(dist_ij, 2) / pow((pow(dist_ij,2) * alpha) + 1,2);
  //   const double o_ij = log(p_ij);
     const arma::vec d_ij = (1 / p_ij) * d_p_ij;
-   // arma::vec igrad = -2 * alpha * (y_i - y_j) / (1 + (alpha * dist(y_i,y_j)));
-  //  checkGrad(y_i, y_j, igrad, true, "pos");
-#pragma omp critical
-{
-    coordinates.col(j) -= (w * localRho * d_ij);
-    // after.col(1) = coordinates.col(j);
-}
-    // checkVector(igrad, "ijgrad");
-
+    #pragma omp critical
+    {
+      coordinates.col(j) -= (w * localRho * d_ij);
+    }
     arma::vec samples = arma::randu<arma::vec>(M * 2);
     arma::vec::iterator targetIt = samples.begin();
     int sampleIdx = 1;
     int m = 0;
-    // int ms[5];
     // The indices of the nodes with edges to i
     arma::vec searchVector = i_idx.subvec(p[i], p[i + 1] - 1);
     arma::vec d_i = d_ij;
@@ -209,8 +203,7 @@ arma::mat sgd(NumericMatrix coords,
       if (k == i ||
           k == j ||
           sum(searchVector == k) > 0) continue;
-      // ms[m] = k;
-      // Calculate gradient for a single negative sample
+
       arma::vec y_k = coordinates.col(k);
       const double dist_ik = sqrt(dist(y_i, y_k));
       const arma::vec d_dist_ik = (y_i - y_k) / dist_ik;
@@ -219,39 +212,18 @@ arma::mat sgd(NumericMatrix coords,
     //  const double o_ik = log(p_ik);
       const arma::vec d_ik = (gamma / p_ik) * d_p_ik;
 
-
-      //
-      // const double alphadk1 = (alpha * dist(y_i, y_k)) + 1;
-      // arma::vec gradk = 2 * gamma * (y_i - y_k) / (dist(y_i, y_k) * alphadk1);
-  //    checkGrad(y_i, y_k, igrad, false, "neg");
       d_i = d_i + d_ik;
-      // before.col(m + 2) = y_k;
-#pragma omp critical
-{
-      coordinates.col(k) -=  (d_ik * localRho * w);
-}
-// after.col(m + 2) = coordinates.col(k);
-m++;
 
-
+      #pragma omp critical
+      {
+        coordinates.col(k) -=  (d_ik * localRho * w);
+      }
+      m++;
     }
-    // checkVector(igrad, "jgrad");
-
-#pragma omp critical
-{
-    coordinates.col(i) += (d_i * w * localRho);
-}
-   // after.col(0) = coordinates.col(i);
-    // double bef = objective(before, gamma, alpha);
-    // double aft = objective(after, gamma, alpha);
-    // if (bef >= aft) Rcout << eIdx << " BAD " << bef << " to " << aft << " i " << i << " j " << j << " k " << ms << "\n";
-    //
-    // if (bef >= aft && eIdx % 10 == 0) {
-    //   for (int idx = 0; idx < M + 2; idx++) {
-    //     Rcout << before.col(idx)[0] << " " << before.col(idx)[1] << " aft " << after.col(idx)[0] << " " <<
-    //       after.col(idx)[1] << "\n";
-    //   }
-    // }
+    #pragma omp critical
+    {
+        coordinates.col(i) += (d_i * w * localRho);
+    }
     if (eIdx > 0 && eIdx % 10000 == 0) callback(10000);
   }
   return coordinates;
@@ -345,6 +317,7 @@ void searchTree(int threshold,
     searchTree(threshold, indices, data, output, callback);
     return;
   }
+  // TODO: REENABLE OMP HERE
 //  #pragma omp parallel sections
   {
 //    #pragma omp section
