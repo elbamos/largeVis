@@ -219,7 +219,7 @@ vis <- function(x,
     knns = t(knns),
     wij = wij,
     call = sys.call(),
-    coords = t(coords),
+    coords = coords,
     sigmas = sqrt(sigmas / 2)
   )
 

@@ -56,14 +56,14 @@ visObject <- vis(dat, pca.first = F,
                    K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
 ```
 ```{r echo=F}
-coords <- data.frame(visObject$coords)
+coords <- data.frame(scale(visObject$coords))
 colnames(coords) <- c("X", "Y")
 coords$Species <- iris$Species[-dupes]
 coords$algo <- "largeVis"
 ```
 ```{r iristsne,echo=F}
 library(Rtsne,quietly=T)
-more <- Rtsne(dat, initial_dims = 4, pca = F)$Y
+more <- scale(Rtsne(dat, initial_dims = 4, pca = F)$Y)
 more <- data.frame(X = more[,1], Y = more[,2], algo = "B-H t-SNE")
 more$Species <- iris$Species[-dupes]
 coords <- rbind(coords, more)
