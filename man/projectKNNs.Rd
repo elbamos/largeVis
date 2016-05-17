@@ -29,11 +29,11 @@ that they two points are nearest neighbors. Note: the alternative probabilistic 
 
 \item{rho}{Initial learning rate.}
 
+\item{coords}{An initialized coordinate matrix.}
+
 \item{min.rho}{Final learning rate.}
 
 \item{verbose}{Verbosity}
-
-\item{.coords}{An initialized coordinate matrix.}
 }
 \value{
 A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.
