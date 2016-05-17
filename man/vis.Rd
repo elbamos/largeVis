@@ -45,6 +45,10 @@ the first pass through the neighborhood exploration phases will involve up to \e
 
 \item{gamma}{See \code{\link{projectKNNs}}.}
 
+\item{rho}{See \code{\link{projectKNNs}}.}
+
+\item{min.rho}{\code{\link{projectKNNs}}.}
+
 \item{coords}{A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.}
 
 \item{verbose}{Verbosity}
@@ -76,19 +80,19 @@ dat <- as.matrix(iris[,1:4])
 dat <- scale(dat)
 dupes = which(duplicated(dat))
 dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
-visObject <- vis(dat, pca.first = F,
+visObject <- vis(dat, pca.first = FALSE,
                      max.iter = 20, sgd.batches = 800000,
-                     K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
-
- # mnist
- load("./mnist.Rda")
- dat <- mnist$images
- dim(dat) <- c(42000, 28 * 28)
- dat <- (dat / 255) - 0.5
- coords <- vis(dat, pca.f = F,
-                  n.tree = 10, tree.th = 40,
-                  K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
-
+                     K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
+\dontrun{
+# mnist
+load("./mnist.Rda")
+dat <- mnist$images
+dim(dat) <- c(42000, 28 * 28)
+dat <- (dat / 255) - 0.5
+coords <- vis(dat, pca.first = FALSE,
+                     n.tree = 10, tree.threshold = 40,
+                     K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
+}
 
 }
 \references{

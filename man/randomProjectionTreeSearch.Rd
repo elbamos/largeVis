@@ -30,10 +30,12 @@ A [N, K] integer matrix showing the estimated K nearest neighbors for each verte
 This is a very fast and accurate algorithm for finding k-nearest neighbors.
 }
 \examples{
+\dontrun{
 library(kknn) # Shamelessly borrowing sample data from another package
 data(miete)
 miete <- model.matrix(~ ., miete)
 system.time(neighbors <- randomProjectionTreeSearch(miete))
+}
 
 }
 

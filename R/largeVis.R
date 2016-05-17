@@ -54,16 +54,16 @@
 #' visObject <- vis(dat, pca.first = FALSE,
 #'                      max.iter = 20, sgd.batches = 800000,
 #'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
-#'
-#'  # mnist
-#'  load("./mnist.Rda")
-#'  dat <- mnist$images
-#'  dim(dat) <- c(42000, 28 * 28)
-#'  dat <- (dat / 255) - 0.5
-#'  coords <- vis(dat, pca.first = FALSE,
-#'                   n.tree = 10, tree.threshold = 40,
-#'                   K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
-#'
+#'\dontrun{
+#' # mnist
+#' load("./mnist.Rda")
+#' dat <- mnist$images
+#' dim(dat) <- c(42000, 28 * 28)
+#' dat <- (dat / 255) - 0.5
+#' coords <- vis(dat, pca.first = FALSE,
+#'                      n.tree = 10, tree.threshold = 40,
+#'                      K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
+#'}
 #'
 vis <- function(x,
                      dim = 2,
@@ -182,7 +182,7 @@ vis <- function(x,
   #######################################################
   # Calculate w_{ij}
   #######################################################
-  if (! requireNamespace(Matrix,quietly=T)) stop("The Matrix package must be available.")
+  if (! requireNamespace('Matrix',quietly=T)) stop("The Matrix package must be available.")
   if (verbose[1]) progress <- progress::progress_bar$new(total = length(xs) * 2, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else progress <- function(tick) {}
 
@@ -205,7 +205,7 @@ vis <- function(x,
                         gamma = gamma,
                         verbose = verbose,
                         alpha = alpha,
-                        .coords = coords,
+                        coords = coords,
                         rho = rho,
                         min.rho = min.rho,
                         ...)

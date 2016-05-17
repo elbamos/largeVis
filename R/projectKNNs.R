@@ -41,7 +41,7 @@ projectKNNs <- function(wij, # sparse matrix
                         gamma = 7,
                         alpha = 2,
                         rho = 1,
-                        .coords = NULL,
+                        coords = NULL,
                         min.rho = 0.1,
                         verbose = TRUE) {
   N <- length(wij@p) - 1
@@ -61,7 +61,7 @@ projectKNNs <- function(wij, # sparse matrix
   ##############################################
   # Initialize coordinate matrix
   ##############################################
-  if (is.null(.coords)) .coords <- matrix(rnorm(N * dim), nrow = dim)
+  if (is.null(coords)) coords <- matrix(rnorm(N * dim), nrow = dim)
 
   #################################################
   # SGD
@@ -71,7 +71,7 @@ projectKNNs <- function(wij, # sparse matrix
     progress::progress_bar$new(total = sgd.batches, format = 'SGD [:bar] :percent/:elapsed eta: :eta', clear=FALSE)
   if (verbose[1]) callback <- progress$tick
   callback(0)
-  .coords <- sgd(.coords,
+  coords <- sgd(coords,
               pos.edges,
               is = is,
               js = js,
@@ -81,5 +81,5 @@ projectKNNs <- function(wij, # sparse matrix
               useWeights = ! weight.pos.samples, M = M,
               alpha = alpha, callback = callback)
 
-  return(.coords)
+  return(coords)
 }

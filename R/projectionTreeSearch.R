@@ -16,6 +16,12 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' library(kknn) # Shamelessly borrowing sample data from another package
+#' data(miete)
+#' miete <- model.matrix(~ ., miete)
+#' system.time(neighbors <- randomProjectionTreeSearch(miete))
+#' }
 #'
 randomProjectionTreeSearch <- function(x,
                                        K = 5, #
