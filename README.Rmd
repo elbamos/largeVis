@@ -9,8 +9,8 @@ The inner loops for nearest-neighbor search and gradient descent are implemented
 
 #### Project Status & Caveats
 * This project is under heavy development.  It is likely that there are still bugs in the math. 
-* Currently, the code is tested to perform correctly with small datasets. 
-* Performance in the neighborhood exploration phase is unusually slow; I am working on tracing the cause. 
+* Currently, the code is tested to perform correctly with small datasets, and I am attempting to replicate the results in the paper using larger datasets. 
+* My intention is, once I am satisfied that the implementation is accurate to the paper, to submit to CRAN after implementing tests. 
 
 #### Examples:
 

@@ -19,6 +19,9 @@ inline double dist(arma::vec i, arma::vec j) {
   return sum(pow(i - j, 2));
 }
 
+/*
+ * Some helper functions useful in debugging.
+ */
 void checkVector(const arma::vec& x,
                  const std::string& label) {
   if (x.has_nan() || x.has_inf())
@@ -42,9 +45,11 @@ void checkGrad(const arma::vec& x,
   if (together && newDist > oldDist) Rcout << "\nGrad " << label << " yi " << x << " other " << y << " grad " << grad << " moved further apart.";
   else if (! together && newDist < oldDist) Rcout << "\nGrad " << label << " yi " << x << " other " << y << " grad " << grad << "moved closer together.";
 };
+
 /*
- * w * (log( 1 / (1 + (a * sqrt((b - j)^2 + (c - f)^2)^2))) + g(log(1 - (1 / (1 + (a * sqrt((b - g)^2 + (c - k)^2)^2)))) + log(1 - (1 / (1 + (a * sqrt((b - m)^2 + (c - n)^2)^2))))))
+ * The stochastic gradient descent function. Asynchronicity is enabled by openmp.
  */
+
 // [[Rcpp::export]]
 arma::mat sgd(NumericMatrix coords,
          NumericVector positiveEdges,
@@ -75,8 +80,6 @@ arma::mat sgd(NumericMatrix coords,
   negativeSampleWeights = negativeSampleWeights / scale;
   negativeSampleWeights = cumsum(negativeSampleWeights);
 
-  // arma::vec losses = arma::vec(pEdges.size()).zero();
-
   // Iterate through the edges in the positiveEdges vector
 #pragma omp parallel for
   for (int eIdx=0; eIdx < pEdges.size(); eIdx++) {
@@ -95,19 +98,17 @@ arma::mat sgd(NumericMatrix coords,
     const double w = (useWeights) ? ws[e_ij] : 1;
     // TODO: RE-ADD TO USE EXP IF ALPHA = 0
     const double dist_ij = sqrt(dist(y_i, y_j));
-    // Note - when it worked, did not have sqrt in the below
+
     const arma::vec d_dist_ij = (y_i - y_j) / sqrt(dist_ij);
-    const double p_ij = //(alpha == 0) ?  (1 / (1 + exp(pow(dist_ij,2)))):
-                                        1 / (1 + (alpha * pow(dist_ij,2)));
+    double p_ij;
+    if (alpha == 0) p_ij = 1 / (1 +      exp(pow(dist_ij,2)));
+    else            p_ij = 1 / (1 + (alpha * pow(dist_ij,2)));
     arma::vec d_p_ij;
-    if (alpha == 0) d_p_ij = - 2 *  d_dist_ij * dist_ij * exp(pow(dist_ij,2)) / (1 + exp(pow(dist_ij,2)));
-    else            d_p_ij =        d_dist_ij * -pow(dist_ij, 2) / pow((pow(dist_ij,2) * alpha) + 1,2);
+    if (alpha == 0) d_p_ij =   2 *  d_dist_ij * -exp(pow(dist_ij,2)) /    (1 + exp(pow(dist_ij,2)));
+    else            d_p_ij =        d_dist_ij *     -pow(dist_ij,2)  / pow(1 +    (pow(dist_ij,2) * alpha),2);
  //   const double o_ij = log(p_ij);
     const arma::vec d_ij = (1 / p_ij) * d_p_ij;
-    #pragma omp critical
-    {
-      coordinates.col(j) -= (w * localRho * d_ij);
-    }
+
     arma::vec samples = arma::randu<arma::vec>(M * 2);
     arma::vec::iterator targetIt = samples.begin();
     int sampleIdx = 1;
@@ -121,19 +122,20 @@ arma::mat sgd(NumericMatrix coords,
       const double target = targetIt[sampleIdx++ % (M * 2)];
       int k;
       if (useWeights) k = target * (N - 1);
-      else {
-        arma::vec::iterator loc = std::upper_bound(negativeSampleWeights.begin(),
-                                                 negativeSampleWeights.end(), target);
-        k = std::distance(negativeSampleWeights.begin(), loc);
-      }
+      else k = std::distance(negativeSampleWeights.begin(),
+                             std::upper_bound(negativeSampleWeights.begin(),
+                                              negativeSampleWeights.end(),
+                                              target)
+                               );
+
       if (k == i ||
           k == j ||
           sum(searchVector == k) > 0) continue;
 
-      arma::vec y_k = coordinates.col(k);
+      const arma::vec y_k = coordinates.col(k);
       const double dist_ik = sqrt(dist(y_i, y_k));
-      if (dist_ik == 0) continue;
-      // note added sqrt back
+      if (dist_ik == 0) continue; // Duplicates
+
       const arma::vec d_dist_ik = (y_i - y_k) / sqrt(dist_ik);
       const double p_ik = 1 - (1 / (1 + (alpha * pow(dist_ik,2))));
       const arma::vec d_p_ik = d_dist_ik * (1 / ((pow(dist_ik,2) * pow(alpha, 2)) + alpha));
@@ -150,7 +152,8 @@ arma::mat sgd(NumericMatrix coords,
     }
     #pragma omp critical
     {
-        coordinates.col(i) += (d_i * w * localRho);
+        coordinates.col(j) -= (d_ij * w * localRho);
+        coordinates.col(i) += (d_i  * w * localRho);
     }
     if (eIdx > 0 && eIdx % 10000 == 0) callback(10000);
   }

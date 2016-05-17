@@ -58,15 +58,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // distance
-void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatrix data);
-RcppExport SEXP largeVis_distance(SEXP isSEXP, SEXP jsSEXP, SEXP xsSEXP, SEXP dataSEXP) {
+void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatrix data, Function callback);
+RcppExport SEXP largeVis_distance(SEXP isSEXP, SEXP jsSEXP, SEXP xsSEXP, SEXP dataSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< NumericVector >::type is(isSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type js(jsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type xs(xsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
-    distance(is, js, xs, data);
+    Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
+    distance(is, js, xs, data, callback);
     return R_NilValue;
 END_RCPP
 }

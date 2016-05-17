@@ -5,10 +5,11 @@
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
 largeVis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
-  pca.dims = 50, n.trees = 2, tree.threshold = min(K * 1.5, nrow(x)),
-  max.iter = 2, perplexity = max(K, 50), sgd.batches = nrow(x) * 10000,
-  M = 5, weight.pos.samples = TRUE, alpha = 2, gamma = 7, rho = 1,
-  min.rho = 0, coords = NULL, verbose = TRUE, ...)
+  pca.dims = 50, n.trees = 50, tree.threshold = max(10, if (pca.first) {  
+    pca.dims } else {     ncol(x) }), max.iter = 3, perplexity = 50,
+  sgd.batches = nrow(x) * 20000, M = 5, weight.pos.samples = TRUE,
+  alpha = 2, gamma = 7, rho = 1, min.rho = 0, coords = NULL,
+  verbose = TRUE, ...)
 }
 \arguments{
 \item{x}{A matrix. Ideally, the columns should be scaled and normalized to avoid the risk of errors caused by overflow.}
@@ -23,9 +24,12 @@ largeVis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
 
 \item{pca.dims}{How many pca dimensions to use}
 
-\item{n.trees}{See \code{\link{randomProjectionTreeSearch}}.}
+\item{n.trees}{See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
+used in the examples in the original paper.}
 
-\item{tree.threshold}{See \code{\link{randomProjectionTreeSearch}}.}
+\item{tree.threshold}{See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
+in the input set, which is the setting used in the examples in the original paper.  Note the time and memory requirements:
+the first pass through the neighborhood exploration phases will involve up to \eqn{N * nTrees * threshold} comparisons.}
 
 \item{max.iter}{See \code{\link{randomProjectionTreeSearch}}.}
 
@@ -50,11 +54,11 @@ largeVis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
 \value{
 A `largeVis` object with the following slots:
  \itemize{
-   \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
+   \item{'knns'} {An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
-   \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
+   \item{'wij'} {A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
    \item{'call'}
-   \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
+   \item{'coords'} {A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
  }
 }
 \description{

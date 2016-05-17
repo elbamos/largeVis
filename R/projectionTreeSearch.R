@@ -6,7 +6,9 @@
 #' @param K How many nearest neighbors to seek for each node
 #' @param n.trees The number of trees to build
 #' @param tree.threshold The threshold for creating a new branch.  A value of 1.5 * K guarantees that
-#' the algorithm will return K candidate nearest neighbors for each vertex.
+#' the algorithm will return K candidate nearest neighbors for each vertex. The paper authors suggested
+#' using a value equivalent to the number of features in the input set.  However this can lead to very lengthy
+#' calculation times.
 #' @param max.iter Number of iterations in the neighborhood exploration phase
 #' @param verbose Whether to print verbose logging using the \code{progress} package
 #'
@@ -18,7 +20,7 @@
 randomProjectionTreeSearch <- function(x,
                                        K = 5, #
                                        n.trees = 2, # how many trees to build
-                                       tree.threshold = min(K * 1.5, nrow(x)), # the maximum number of nodes per leaf
+                                       tree.threshold =  max(10, if (pca.first) {pca.dims} else {ncol(x)}), # the maximum number of nodes per leaf
                                        max.iter = 2, # in the neighborhood exploration phase, the number of iterations
                                        verbose= TRUE) {
   N <- nrow(x)

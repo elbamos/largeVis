@@ -2,29 +2,30 @@
 % Please edit documentation in R/projectKNNs.R
 \name{projectKNNs}
 \alias{projectKNNs}
-\title{Project a distance matrix into a lower-dimensional space}
+\title{Project a distance matrix into a lower-dimensional space.}
 \usage{
-projectKNNs(wij, dim, sgd.batches = nrow(N) * 10000, M = 5,
+projectKNNs(wij, dim = 2, sgd.batches = nrow(N) * 20000, M = 5,
   weight.pos.samples = TRUE, gamma = 7, alpha = 2, rho = 1,
   .coords = NULL, min.rho = 0.1, verbose = TRUE)
 }
 \arguments{
 \item{wij}{A sparse matrix of edge weights.}
 
-\item{dim}{The number of dimensions for the projection space}
+\item{dim}{The number of dimensions for the projection space.}
 
-\item{sgd.batches}{The number of edges to process during SGD; defaults to 10000 * the number of rows in x}
+\item{sgd.batches}{The number of edges to process during SGD; defaults to 20000 * the number of rows in x, as recommended
+by the paper authors.}
 
-\item{M}{The number of negative edges to sample for each positive edge}
+\item{M}{The number of negative edges to sample for each positive edge.}
 
 \item{weight.pos.samples}{Whether to sample positive edges according to their edge weights (the default) or take the
-weights into account when calculating gradients}
+weights into account when calculating gradient.  Note:  Applying weights to the gradients is not yet implemented.}
 
 \item{gamma}{Hyperparameter analogous to the strength of the force operating to push-away negative examples.}
 
 \item{alpha}{Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  If \code{alpha} is 0, the alternative distance
 function \eqn{1 / 1 + exp(||y_i - y_j||^2)} is used instead.  These functions relate the distance between points in the low-dimensional projection to the likelihood
-that they two points are nearest neighbors.}
+that they two points are nearest neighbors. Note: the alternative probabilistic distance function is not yet implemented.}
 
 \item{rho}{Initial learning rate.}
 
@@ -38,10 +39,15 @@ that they two points are nearest neighbors.}
 A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.
 }
 \description{
-The input is a sparse triplet matrix showing the distances between vertices which are presumably estimated k-nearest-neighbors.
-The algorithm attempts to estimate a \code{dim}-dimensional embedding using stochastic gradient descent.
+The input is a sparse triplet matrix showing the weights to give the edges, which are presumably estimated
+k-nearest-neighbors.
 }
 \details{
-The objective function is: \deqn{ O = \sum_{(i,j)\in E} w_{ij} (\log p(e_{ij} = 1) + \sum_{k=1}^{M} E_{jk~P_{n}(j)} \gamma \log(1 - p(e_{ij_k} - 1)))  }
+The algorithm attempts to estimate a \code{dim}-dimensional embedding using stochastic gradient descent and
+negative sampling.
+
+The objective function is: \deqn{ O = \sum_{(i,j)\in E} w_{ij} (\log f(||p(e_{ij} = 1||) + \sum_{k=1}^{M} E_{jk~P_{n}(j)} \gamma \log(1 - f(||p(e_{ij_k} - 1||)))}
+where \eqn{f()} is a probabilistic function relating the distance between two points in the low-dimensional projection space,
+and the probability that they are nearest neighbors.  See the discussion of the alpha parameter below.
 }
 

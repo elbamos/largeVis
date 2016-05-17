@@ -13,8 +13,8 @@ searchTrees <- function(threshold, n_trees, data, callback) {
     .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, data, callback)
 }
 
-distance <- function(is, js, xs, data) {
-    invisible(.Call('largeVis_distance', PACKAGE = 'largeVis', is, js, xs, data))
+distance <- function(is, js, xs, data, callback) {
+    invisible(.Call('largeVis_distance', PACKAGE = 'largeVis', is, js, xs, data, callback))
 }
 
 distMatrixTowij <- function(is, js, xs, sigmas, N, callback) {

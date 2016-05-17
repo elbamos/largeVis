@@ -4,8 +4,9 @@
 \alias{randomProjectionTreeSearch}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
-randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = min(K *
-  1.5, nrow(x)), max.iter = 2, verbose = TRUE)
+randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = max(10,
+  if (pca.first) {     pca.dims } else {     ncol(x) }), max.iter = 2,
+  verbose = TRUE)
 }
 \arguments{
 \item{x}{A matrix}
@@ -15,7 +16,9 @@ randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = min(K *
 \item{n.trees}{The number of trees to build}
 
 \item{tree.threshold}{The threshold for creating a new branch.  A value of 1.5 * K guarantees that
-the algorithm will return K candidate nearest neighbors for each vertex.}
+the algorithm will return K candidate nearest neighbors for each vertex. The paper authors suggested
+using a value equivalent to the number of features in the input set.  However this can lead to very lengthy
+calculation times.}
 
 \item{max.iter}{Number of iterations in the neighborhood exploration phase}
 

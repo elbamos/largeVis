@@ -14,8 +14,11 @@ using namespace std;
  * Fast calculation of pairwise euclidean distances with the result stored in a pre-allocated vector.
  */
 // [[Rcpp::export]]
-void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatrix data) {
-  for (int i=0; i < is.length(); i++) xs[i] = sqrt(sum(pow(data.row(is[i]) - data.row(js[i]), 2)));
+void distance(NumericVector is, NumericVector js, NumericVector xs, NumericMatrix data, Function callback) {
+  for (int i=0; i < is.length(); i++) {
+    xs[i] = sqrt(sum(pow(data.row(is[i]) - data.row(js[i]), 2)));
+    if (i > 0 && i % 1000 == 0) callback(1000);
+  }
 };
 
 // Take four vectors (i indices, j indices, edge distances, and sigmas), and calculate

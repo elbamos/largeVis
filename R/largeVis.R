@@ -26,8 +26,11 @@
 #' @param check.assumptions Whether to check the input matrix for duplicates, \code{NA}`s, etc.
 #' @param pca.first Whether to apply pca first (can speed-up distance calculations)
 #' @param pca.dims How many pca dimensions to use
-#' @param n.trees See \code{\link{randomProjectionTreeSearch}}.
-#' @param tree.threshold See \code{\link{randomProjectionTreeSearch}}.
+#' @param n.trees See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
+#' used in the examples in the original paper.
+#' @param tree.threshold See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
+#' in the input set, which is the setting used in the examples in the original paper.  Note the time and memory requirements:
+#' the first pass through the neighborhood exploration phases will involve up to \eqn{N * nTrees * threshold} comparisons.
 #' @param max.iter See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See paper
 #' @param sgd.batches See \code{\link{projectKNNs}}.
@@ -41,11 +44,11 @@
 #'
 #' @return A `largeVis` object with the following slots:
 #'  \itemize{
-#'    \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
+#'    \item{'knns'} {An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
 #'    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
-#'    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
+#'    \item{'wij'} {A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
 #'    \item{'call'}
-#'    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
+#'    \item{'coords'} {A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
 #'  }
 #'
 #'
@@ -59,19 +62,19 @@
 #'
 largeVis <- function(x,
                      dim = 2,
-                     K = 40, # number of knn edges per vertex
+                     K = 40,
 
                      check.assumptions = TRUE,
-                     pca.first = TRUE, # whether to apply dimensional reduction first
+                     pca.first = TRUE,
                      pca.dims = 50,
 
-                     n.trees = 2, # in the random projection tree phase, how many trees to build
-                     tree.threshold = min(K * 1.5, nrow(x)), #the maximum number of nodes per leaf
-                     max.iter = 2, # in the neighborhood exploration phase, the number of iterations
+                     n.trees = 50,
+                     tree.threshold = max(10, if (pca.first) {pca.dims} else {ncol(x)}),
+                     max.iter = 3,
 
-                     perplexity = max(K, 50), # hyperparameter for calculating p(j|i)
+                     perplexity = 50,
 
-                     sgd.batches = nrow(x) * 10000,
+                     sgd.batches = nrow(x) * 20000,
                      M = 5,
                      weight.pos.samples = TRUE,
                      alpha = 2,
@@ -139,12 +142,13 @@ largeVis <- function(x,
   #######################################################
   # Calculate edge weights for candidate neighbors
   #######################################################
-  if (verbose[1]) cat("Calculating neighbor distances...")
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = N, format = 'Calculate neighbor distances [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
+  else ptick <- function(tick) {}
 
   xs <- rep(0, length(is)) # pre-allocate
-  distance(is, js, xs, shrunken.x)
+  distance(is, js, xs, shrunken.x, ptick)
 
-  if (verbose) cat("done!\n")
+  if (verbose) cat("\n")
   if ((any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
     stop("An error leaked into the distance calculation - check for duplicates")
 
@@ -166,7 +170,6 @@ largeVis <- function(x,
   })
   sigmas <- sapply(sigmas, `[[`, 1)
 
-  if (any(sigmas < 1) || any(sigmas > 9000)) warning("The estimated sigmas deviated from the expected range.")
   if (any(is.na(sigmas)) + any(is.infinite(sigmas)) + any(is.nan(sigmas)) + any((sigmas == 0)) > 0)
     stop("An error has propogated into the sigma vector.")
 
@@ -177,12 +180,13 @@ largeVis <- function(x,
   if (! require(Matrix,quietly=T)) stop("The Matrix package must be available.")
   if (verbose[1]) progress <- progress::progress_bar$new(total = length(xs) * 2, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else progress <- function(tick) {}
+
   wij <- distMatrixTowij(is, js, xs, sigmas, N, progress)
 
   if (any(is.na(wij@x)) + any(is.infinite(wij@x)) + any(is.nan(wij@x)) + any((wij@x == 0)) > 0)
     stop("An error has propogated into the w_{ij} vector.")
 
-  # Make the symmetricized wij a duplicative symmetric matrix
+  # Symmetricize
   wij <- wij + Matrix::t(wij)
 
   #######################################################
@@ -218,6 +222,10 @@ largeVis <- function(x,
   return(returnvalue)
 }
 
-# pji <- function(x_i, sigma)  exp(- (x_i^2) / sigma) / sum(exp(- (x_i^2) / sigma))
-# perp <- function(x_i, sigma) - sum(log2(pji(x_i, sigma))) / length(x_i)
-# pdiff <- function(x_i, sigma, perplexity) (perplexity - perp(x_i, sigma))^2
+##########################################
+# Some helper functions useful for debugging
+##########################################
+
+pji <- function(x_i, sigma)  exp(- (x_i^2) / sigma) / sum(exp(- (x_i^2) / sigma))
+perp <- function(x_i, sigma) - sum(log2(pji(x_i, sigma))) / length(x_i)
+pdiff <- function(x_i, sigma, perplexity) (perplexity - perp(x_i, sigma))^2
