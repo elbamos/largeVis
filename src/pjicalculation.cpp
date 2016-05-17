@@ -35,12 +35,12 @@ arma::sp_mat distMatrixTowij(
   int i, j;
   double pji;
   // Compute pji, accumulate rowSums at the same time
-#pragma omp parallel for shared(pjis, rowSums) private(pji, i)
+  #pragma omp parallel for shared(pjis, rowSums) private(pji, i)
   for (int e=0; e < pjis.length(); e++) {
     i = is[e];
     pji = exp(- pow(xs[e], 2)) / sigmas[i];
     pjis[e] = pji;
-#pragma omp atomic
+    #pragma omp atomic
     rowSums[i] = rowSums[i] + pji;
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
@@ -65,7 +65,7 @@ arma::sp_mat distMatrixTowij(
 
 // [[Rcpp::export]]
 double sigFunc(double sigma, NumericVector x_i, double perplexity) {
-  NumericVector xs = exp(- x_i / sigma);
+  NumericVector xs = exp(- pow(x_i,2) / sigma);
   NumericVector softxs = xs / sum(xs);
   double p2 = - sum(log(softxs) / log(2)) / xs.length();
   return pow(perplexity - p2, 2);

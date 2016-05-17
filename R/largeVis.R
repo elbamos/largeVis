@@ -115,8 +115,10 @@ largeVis <- function(x,
   # Clean knns
   #############################################
   if (verbose[1]) cat("Calculating edge weights...")
-
-    is <- rep(0:(N-1), each = K)
+  # These vectors are analogous to the components of a sparse matrix,
+  # but both triple and C-compressed forms are created.
+  # The i and j vectors are 0-indexed while p is 1-indexed.
+  is <- rep(0:(N-1), each = K)
   js <- as.vector(knns)
   is <- is[! js == -1]
   js <- js[! js == -1]
@@ -160,11 +162,11 @@ largeVis <- function(x,
     ret <- optimize(f = sigFunc,
              x = x_i,
              perplexity = perplexity,
-             interval = c(0,1.2))
+             interval = c(0,10000))
   })
   sigmas <- sapply(sigmas, `[[`, 1)
 
-    if (any(sigmas > 1.1)) stop("There was an error in calculating sigma")
+  if (any(sigmas < 1) || any(sigmas > 9000)) warning("The estimated sigmas deviated from the expected range.")
   if (any(is.na(sigmas)) + any(is.infinite(sigmas)) + any(is.nan(sigmas)) + any((sigmas == 0)) > 0)
     stop("An error has propogated into the sigma vector.")
 
@@ -173,7 +175,7 @@ largeVis <- function(x,
   # Calculate w_{ij}
   #######################################################
   if (! require(Matrix,quietly=T)) stop("The Matrix package must be available.")
-  if (verbose[1]) progress <- progress::progress_bar$new(total = N, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
+  if (verbose[1]) progress <- progress::progress_bar$new(total = length(xs) * 2, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else progress <- function(tick) {}
   wij <- distMatrixTowij(is, js, xs, sigmas, N, progress)
 
@@ -216,6 +218,6 @@ largeVis <- function(x,
   return(returnvalue)
 }
 
-# pji <- function(x_i, sigma)  exp(- x_i / sigma) / sum(exp(- x_i / sigma))
+# pji <- function(x_i, sigma)  exp(- (x_i^2) / sigma) / sum(exp(- (x_i^2) / sigma))
 # perp <- function(x_i, sigma) - sum(log2(pji(x_i, sigma))) / length(x_i)
 # pdiff <- function(x_i, sigma, perplexity) (perplexity - perp(x_i, sigma))^2
