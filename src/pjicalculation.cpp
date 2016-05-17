@@ -46,6 +46,8 @@ arma::sp_mat distMatrixTowij(
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
   // Now convert p(j|i) to w_{ij} by symmetrizing.
+  // At this point, if both ij and ji are edges, tehre will be two entries in the data structures.
+  // Loop through the structure, and place each in the lower-triangle of the sparse matrix.
   arma::sp_mat wij = arma::sp_mat(N, N);
   for (int e=0; e < pjis.length(); e++) {
     int newi = is[e], newj = js[e];
@@ -55,10 +57,7 @@ arma::sp_mat distMatrixTowij(
       newj = t;
     }
     if (rowSums[is[e]] == 0) Rcout << "\nWarning: Found node with no neighbors.\n";
-    const double oldw = wij(newi, newj);
-    wij(newi, newj) = (oldw > 0) ?
-    (oldw / 2) + ((pjis[e] / rowSums[is[e]]) / (2 * N )) :
-      (pjis[e] / rowSums[is[e]]) / N;
+    wij(newi, newj) +=  ((pjis[e] / rowSums[is[e]]) / (2 * N));
     if (e > 0 && e % 1000 == 0) callback(1000);
   }
   return wij;
