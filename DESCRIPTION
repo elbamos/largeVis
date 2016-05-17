@@ -17,3 +17,5 @@ Imports: proxy,
 LinkingTo: Rcpp,RcppArmadillo
 Suggests: testthat,
     covr
+URL: https://github.com/elbamos/largeVis
+BugReports: https://github.com/elbamos/largeVis/issues
