@@ -15,4 +15,5 @@ Imports: proxy,
     Rcpp (>= 0.12.4),
     RcppArmadillo
 LinkingTo: Rcpp,RcppArmadillo
-Suggests: testthat
+Suggests: testthat,
+    covr

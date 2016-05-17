@@ -1,23 +1,9 @@
 #' Apply the LargeVis algorithm for visualizing large high-dimensional datasets.
 #'
-#' Implements the \code{largeVis} algorithm by Tang et al.
-#'
-#' \code{largeVis} estimates a low-dimensional embedding for high-dimensional data, where the distance between vertices
-#' in the low-dimensional space is proportional to the distance between them in the high-dimensional space. The algorithm
-#' works in 4 phases:
-#'
-#' \itemize{
-#' \item  Estimate candidate nearest-neighbors for each vertex by building \code{n.trees} random projection trees.
-#' \item  Estimate \code{K} nearest-neighbors for each vertex by visiting each vertex' 2d-degree neighbors (its neighbors' neighbors).
-#' This is repeated \code{max.iter} times.  Note that the original paper suggested a \code{max.iter} of 1, however a larger number
-#' may be appropriate for some datasets if the algorithm has trouble finding K neighbors for every vertex.
-#' \item Estimate \eqn{p_{j|i}}, the conditional probability that each edge found in the previous step is actually to a
-#' nearest neighbor of each of its nodes.
-#' \item Using stochastic gradient descent, estimate an embedding for each vertex in the low-dimensional space.
-#' }
+#' Implements the \code{largeVis}
 #'
 #' Note that this implementation expects the data to be free of \code{NaN}'s, \code{NA}'s, \code{Inf}'s, and duplicate rows.
-#' If any of these assumptions are violated, the algorithm will fail. It is also usually a good idea to sale the input data
+#' If any of these assumptions are violated, the algorithm will fail. It is also usually a good idea to scale the input data
 #' to have unit norm and mean 0. If there are large values in the input matrix, some computations may oveflow.
 #'
 #' @param x A matrix. Ideally, the columns should be scaled and normalized to avoid the risk of errors caused by overflow.
@@ -56,6 +42,7 @@
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 #'
 #' @examples
+#' # iris
 #' data(iris)
 #' dat <- as.matrix(iris[,1:4])
 #' dat <- scale(dat)
@@ -65,6 +52,7 @@
 #'                      max.iter = 20, sgd.batches = 800000,
 #'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
 #'
+#'  # mnist
 #'  load("./mnist.Rda")
 #'  dat <- mnist$images
 #'  dim(dat) <- c(42000, 28 * 28)
@@ -73,8 +61,6 @@
 #'                   n.tree = 10, tree.th = 40,
 #'                   K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
 #'
-#' @useDynLib largeVis
-#' @importFrom Rcpp sourceCpp
 #'
 largeVis <- function(x,
                      dim = 2,
@@ -116,7 +102,7 @@ largeVis <- function(x,
 
   if (check.assumptions)   {
     if (any(duplicated(shrunken.x))) stop("Duplicates found.")
-    if ((any(is.na(shrunken.x)) + any(is.infinite(shrunken.x)) + any(is.nan(shrunken.x)) + any(shrunken.x == 0)) > 0)
+    if ((any(is.na(shrunken.x)) + any(is.infinite(shrunken.x)) + any(is.nan(shrunken.x))) > 0)
       stop("Missing values present in input matrix.")
   }
 
@@ -162,7 +148,7 @@ largeVis <- function(x,
   else ptick <- function(tick) {}
 
   xs <- rep(0, length(is)) # pre-allocate
-  distance(is, js, xs, shrunken.x, ptick)
+  largeVis:::distance(is, js, xs, shrunken.x, ptick)
 
   if (verbose) cat("\n")
   if ((any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
@@ -179,7 +165,7 @@ largeVis <- function(x,
   sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
     ptick(1)
     x_i <- xs[ps[idx]:(ps[idx + 1] - 1)]
-    ret <- optimize(f = sigFunc,
+    ret <- optimize(f = largeVis:::sigFunc,
              x = x_i,
              perplexity = perplexity,
              interval = c(0,10000))
@@ -197,10 +183,10 @@ largeVis <- function(x,
   if (verbose[1]) progress <- progress::progress_bar$new(total = length(xs) * 2, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else progress <- function(tick) {}
 
-  wij <- distMatrixTowij(is, js, xs, sigmas, N, progress)
+  wij <- largeVis:::distMatrixTowij(is, js, xs, sigmas, N, progress)
 
-  if (any(is.na(wij@x)) + any(is.infinite(wij@x)) + any(is.nan(wij@x)) + any((wij@x == 0)) > 0)
-    stop("An error has propogated into the w_{ij} vector.")
+  if (any(is.na(wij@x)) || any(is.infinite(wij@x)) || any(is.nan(wij@x)) || any((wij@x == 0)) > 0)
+    stop("An error has propogated into the w_{ij} vector.  This probably means the input data wasn't scaled.")
 
   # Symmetricize
   wij <- wij + Matrix::t(wij)

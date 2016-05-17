@@ -54,6 +54,7 @@ arma::sp_mat distMatrixTowij(
       newi = newj;
       newj = t;
     }
+    if (rowSums[is[e]] == 0) Rcout << "\nWarning: Found node with no neighbors.\n";
     const double oldw = wij(newi, newj);
     wij(newi, newj) = (oldw > 0) ?
     (oldw / 2) + ((pjis[e] / rowSums[is[e]]) / (2 * N )) :

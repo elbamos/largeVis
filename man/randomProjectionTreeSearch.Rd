@@ -33,6 +33,7 @@ This is a very fast and accurate algorithm for finding k-nearest neighbors.
 library(kknn) # Shamelessly borrowing sample data from another package
 data(miete)
 miete <- model.matrix(~ ., miete)
+system.time(neighbors <- randomProjectionTreeSearch(miete))
 
 }
 
