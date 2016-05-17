@@ -56,6 +56,22 @@
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 #'
 #' @examples
+#' data(iris)
+#' dat <- as.matrix(iris[,1:4])
+#' dat <- scale(dat)
+#' dupes = which(duplicated(dat))
+#' dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
+#' visObject <- largeVis(dat, pca.first = F,
+#'                      max.iter = 20, sgd.batches = 800000,
+#'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
+#'
+#'  load("./mnist.Rda")
+#'  dat <- mnist$images
+#'  dim(dat) <- c(42000, 28 * 28)
+#'  dat <- (dat / 255) - 0.5
+#'  coords <- largeVis(dat, pca.f = F,
+#'                   n.tree = 10, tree.th = 40,
+#'                   K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
 #'
 #' @useDynLib largeVis
 #' @importFrom Rcpp sourceCpp

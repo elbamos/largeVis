@@ -139,23 +139,29 @@ void searchTree(int threshold,
                 const arma::mat& data,
                 arma::imat& output,
                 Function callback) {
-  if (indices.size() < threshold) {
+  if (indices.size() < 2) return;
 #pragma omp critical
 {
-  int i = 0;
-  do {
-    int j = i + 1;
+  if (indices.size() == 2) {
+    output(0, indices[0]) = indices[1];
+    output(0, indices[1]) = indices[0];
+    return;
+  }
+  if (indices.size() < threshold) {
+    int i = 0;
     do {
-      output(j, indices[i]) = indices[j];
-      output(i, indices[j]) = indices[i];
-      j++;
-    } while (j < indices.size());
-    i++;
-  } while(i < indices.size() - 1);
-}
+      int j = i + 1;
+      do {
+        output(j, indices[i]) = indices[j];
+        output(i, indices[j]) = indices[i];
+        j++;
+      } while (j < indices.size());
+      i++;
+    } while(i < indices.size() - 1);
     callback(indices.size());
     return;
   }
+}
   // Get hyperplane
   arma::uvec selections = indices.elem(arma::randi<arma::uvec>(2, arma::distr_param(0, indices.size() - 1)));
   arma::vec v =  data.col(selections[1]) - data.col(selections[0]);
@@ -164,14 +170,13 @@ void searchTree(int threshold,
   arma::vec direction = arma::vec(indices.size());
   for (int i = 0; i < indices.size(); i++) direction[i] = sum(data.col(indices[i]) % v) - mv;
 
-  // TODO: REENABLE OMP HERE
-  //  #pragma omp parallel sections
+  #pragma omp parallel sections
   {
-    //    #pragma omp section
+        #pragma omp section
     {
       searchTree(threshold, indices.elem(arma::find(direction > 0)), data, output, callback);
     }
-    //    #pragma omp section
+        #pragma omp section
     {
       searchTree(threshold, indices.elem(arma::find(direction <= 0)), data, output, callback);
     }
@@ -184,7 +189,7 @@ arma::mat searchTrees(int threshold,
                       NumericMatrix data, Function callback) {
   arma::mat inputData = as<arma::mat>(data).t();
   std::vector<std::set<int> > heap = std::vector<std::set<int> >(inputData.n_cols);
-#pragma omp parallel for
+#pragma omp parallel for shared(heap)
   for (int t = 0; t < n_trees; t++) {
     arma::imat output = arma::imat(threshold + 1, inputData.n_cols);
     output.fill(-1);
@@ -197,6 +202,7 @@ arma::mat searchTrees(int threshold,
       for (int j = 0; j <= threshold; j++)
         if (output(j,i) != -1) heap[i].insert(output(j,i));
   }
+
   int sz = 0;
   for (int i = 0; i < heap.size(); i++) if (heap[i].size() > sz) sz = heap[i].size();
   arma::mat output = arma::mat(sz, inputData.n_cols).fill(-1);

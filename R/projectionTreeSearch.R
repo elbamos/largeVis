@@ -16,11 +16,15 @@
 #' @export
 #'
 #' @examples
+#' library(kknn) # Shamelessly borrowing sample data from another package
+#' data(miete)
+#' miete <- model.matrix(~ ., miete)
+#' system.time(neighbors <- randomProjectionTreeSearch(miete))
 #'
 randomProjectionTreeSearch <- function(x,
                                        K = 5, #
                                        n.trees = 2, # how many trees to build
-                                       tree.threshold =  max(10, if (pca.first) {pca.dims} else {ncol(x)}), # the maximum number of nodes per leaf
+                                       tree.threshold =  max(10, ncol(x)), # the maximum number of nodes per leaf
                                        max.iter = 2, # in the neighborhood exploration phase, the number of iterations
                                        verbose= TRUE) {
   N <- nrow(x)

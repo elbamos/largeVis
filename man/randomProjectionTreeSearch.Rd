@@ -5,8 +5,7 @@
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
 randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = max(10,
-  if (pca.first) {     pca.dims } else {     ncol(x) }), max.iter = 2,
-  verbose = TRUE)
+  ncol(x)), max.iter = 2, verbose = TRUE)
 }
 \arguments{
 \item{x}{A matrix}
@@ -31,6 +30,9 @@ A [N, K] integer matrix showing the estimated K nearest neighbors for each verte
 This is a very fast and accurate algorithm for finding k-nearest neighbors.
 }
 \examples{
+library(kknn) # Shamelessly borrowing sample data from another package
+data(miete)
+miete <- model.matrix(~ ., miete)
 
 }
 

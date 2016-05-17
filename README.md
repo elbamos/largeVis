@@ -7,11 +7,14 @@ The inner loops for nearest-neighbor search and gradient descent are implemented
 
 #### Project Status & Caveats
 
--   This project is under heavy development. It is likely that there are still bugs in the math.
--   Currently, the code is tested to perform correctly with small datasets, and I am attempting to replicate the results in the paper using larger datasets.
--   My intention is, once I am satisfied that the implementation is accurate to the paper, to submit to CRAN after implementing tests.
+-   It works!
+-   This project is under heavy development.
+-   I am attempting to replicate the paper's results with larger and larger datasets. This takes time because my hardware is not as powerful as the authors'. If you have any to volunteer, please contact me!
+-   Note that your installation of R must be configured to work with OpenMP. I have had a report that on Federa 22, even small datasets could not be processed because of exceeding the C stack space. If you experience any compilation issues or similar crashes, please create an issue.
 
 #### Examples:
+
+##### Iris
 
 ``` r
 library(largeVis,quietly=T)
@@ -25,6 +28,19 @@ visObject <- largeVis(dat, pca.first = F,
                    K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
 ```
 
-    ## Loading required package: ggplot2
-
 ![](README_files/figure-markdown_github/showiris-1.png)
+
+##### MNIST
+
+``` r
+load("./mnist.Rda")
+dat <- mnist$images
+dim(dat) <- c(42000, 28 * 28)
+dat <- (dat / 255) - 0.5
+coords <- largeVis(dat, pca.f = F, 
+                   n.tree = 10, tree.th = 40, 
+                   K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
+save(coords, file = "./mnistcoords.Rda")
+```
+
+![](README_files/figure-markdown_github/drawmnist-1.png)
