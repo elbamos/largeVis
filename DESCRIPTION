@@ -5,7 +5,7 @@ Version: 0.1.0
 Author: Amos B. Elberg
 Maintainer: Amos Elberg <amos.elberg@gmail.com>
 Description: Implements the largeVis algorithm for visualizing very large high-dimensional datasets. Also very fast search for approximate nearest neighbors.
-License: GPLv3
+License: GPL-3
 LazyData: TRUE
 RoxygenNote: 5.0.1
 Imports: proxy,

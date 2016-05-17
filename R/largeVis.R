@@ -1,6 +1,6 @@
 #' Apply the LargeVis algorithm for visualizing large high-dimensional datasets.
 #'
-#' Implements the \code{largeVis}
+#' Implements the \code{vis}
 #'
 #' Note that this implementation expects the data to be free of \code{NaN}'s, \code{NA}'s, \code{Inf}'s, and duplicate rows.
 #' If any of these assumptions are violated, the algorithm will fail. It is also usually a good idea to scale the input data
@@ -24,6 +24,8 @@
 #' @param weight.pos.samples See \code{\link{projectKNNs}}.
 #' @param alpha See \code{\link{projectKNNs}}.
 #' @param gamma See \code{\link{projectKNNs}}.
+#' @param rho See \code{\link{projectKNNs}}.
+#' @param min.rho \code{\link{projectKNNs}}.
 #' @param coords A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.
 #' @param verbose Verbosity
 #' @param ... See paper
@@ -39,6 +41,7 @@
 #'
 #'
 #' @export
+#' @importFrom stats optimize princomp
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 #'
 #' @examples
@@ -48,21 +51,21 @@
 #' dat <- scale(dat)
 #' dupes = which(duplicated(dat))
 #' dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
-#' visObject <- largeVis(dat, pca.first = F,
+#' visObject <- vis(dat, pca.first = FALSE,
 #'                      max.iter = 20, sgd.batches = 800000,
-#'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
+#'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
 #'
 #'  # mnist
 #'  load("./mnist.Rda")
 #'  dat <- mnist$images
 #'  dim(dat) <- c(42000, 28 * 28)
 #'  dat <- (dat / 255) - 0.5
-#'  coords <- largeVis(dat, pca.f = F,
-#'                   n.tree = 10, tree.th = 40,
+#'  coords <- vis(dat, pca.first = FALSE,
+#'                   n.tree = 10, tree.threshold = 40,
 #'                   K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
 #'
 #'
-largeVis <- function(x,
+vis <- function(x,
                      dim = 2,
                      K = 40,
 
@@ -148,7 +151,7 @@ largeVis <- function(x,
   else ptick <- function(tick) {}
 
   xs <- rep(0, length(is)) # pre-allocate
-  largeVis:::distance(is, js, xs, shrunken.x, ptick)
+  distance(is, js, xs, shrunken.x, ptick)
 
   if (verbose) cat("\n")
   if ((any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
@@ -165,7 +168,7 @@ largeVis <- function(x,
   sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
     ptick(1)
     x_i <- xs[ps[idx]:(ps[idx + 1] - 1)]
-    ret <- optimize(f = largeVis:::sigFunc,
+    ret <- optimize(f = sigFunc,
              x = x_i,
              perplexity = perplexity,
              interval = c(0,10000))
@@ -179,11 +182,11 @@ largeVis <- function(x,
   #######################################################
   # Calculate w_{ij}
   #######################################################
-  if (! require(Matrix,quietly=T)) stop("The Matrix package must be available.")
+  if (! requireNamespace(Matrix,quietly=T)) stop("The Matrix package must be available.")
   if (verbose[1]) progress <- progress::progress_bar$new(total = length(xs) * 2, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else progress <- function(tick) {}
 
-  wij <- largeVis:::distMatrixTowij(is, js, xs, sigmas, N, progress)
+  wij <- distMatrixTowij(is, js, xs, sigmas, N, progress)
 
   if (any(is.na(wij@x)) || any(is.infinite(wij@x)) || any(is.nan(wij@x)) || any((wij@x == 0)) > 0)
     stop("An error has propogated into the w_{ij} vector.  This probably means the input data wasn't scaled.")

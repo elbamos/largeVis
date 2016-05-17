@@ -30,6 +30,7 @@
 #'
 #' @return A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.
 #' @export
+#' @importFrom stats rnorm
 #'
 
 projectKNNs <- function(wij, # sparse matrix
