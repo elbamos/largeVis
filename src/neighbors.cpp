@@ -163,12 +163,7 @@ void searchTree(int threshold,
   double mv = dot(m,v); // This is the hyperplane
   arma::vec direction = arma::vec(indices.size());
   for (int i = 0; i < indices.size(); i++) direction[i] = sum(data.col(indices[i]) % v) - mv;
-  int branch = sum(direction > 0);
-  // Don't create branches that have only 2 nodes; if the split is that lopsided, recurse and try again
-  if (branch < threshold / 3 || branch > indices.size() - (threshold / 3)) {
-    searchTree(threshold, indices, data, output, callback);
-    return;
-  }
+
   // TODO: REENABLE OMP HERE
   //  #pragma omp parallel sections
   {
