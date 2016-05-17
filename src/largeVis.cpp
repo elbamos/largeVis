@@ -95,7 +95,8 @@ arma::mat sgd(NumericMatrix coords,
     const double w = (useWeights) ? ws[e_ij] : 1;
     // TODO: RE-ADD TO USE EXP IF ALPHA = 0
     const double dist_ij = sqrt(dist(y_i, y_j));
-    const arma::vec d_dist_ij = (y_i - y_j) / dist_ij;
+    // Note - when it worked, did not have sqrt in the below
+    const arma::vec d_dist_ij = (y_i - y_j) / sqrt(dist_ij);
     const double p_ij = //(alpha == 0) ?  (1 / (1 + exp(pow(dist_ij,2)))):
                                         1 / (1 + (alpha * pow(dist_ij,2)));
     arma::vec d_p_ij;
@@ -132,7 +133,8 @@ arma::mat sgd(NumericMatrix coords,
       arma::vec y_k = coordinates.col(k);
       const double dist_ik = sqrt(dist(y_i, y_k));
       if (dist_ik == 0) continue;
-      const arma::vec d_dist_ik = (y_i - y_k) / dist_ik;
+      // note added sqrt back
+      const arma::vec d_dist_ik = (y_i - y_k) / sqrt(dist_ik);
       const double p_ik = 1 - (1 / (1 + (alpha * pow(dist_ik,2))));
       const arma::vec d_p_ik = d_dist_ik * (1 / ((pow(dist_ik,2) * pow(alpha, 2)) + alpha));
     //  const double o_ik = log(p_ik);

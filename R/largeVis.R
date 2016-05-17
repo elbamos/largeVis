@@ -154,7 +154,7 @@ largeVis <- function(x,
   # TODO: MAKE SURE THAT THE C++ CODE HANDLES THE SITUATION WHERE A COLUMN IS EMPTY (HAS NO PRESENCE IN P)
 
   perplexity = log2(perplexity)
-  sigmas <- parallel:mclapply(1:N, FUN = function(idx) {
+  sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
     ptick(1)
     x_i <- xs[ps[idx]:(ps[idx + 1] - 1)]
     ret <- optimize(f = sigFunc,
