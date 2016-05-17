@@ -7,52 +7,43 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 
 The inner loops for nearest-neighbor search and gradient descent are implemented in C++ using `Rcpp` and `RcppArmadillo`.  (If you get an error that a `NULL value passed as symbol address` this relates to `Rcpp` and please open an issue here.)
 
-This has been tested and confirmed to work in many circumstances.  More extensive documentation and examples are being prepared. 
-
-Please note that this package is under development (the paper is only two weeks old) so it is likely that implementation bugs will be found and changes made to the api.
-
-#### Project Status
-
-Most of the computationally intensive code has been re-written in C++, and I am experimenting with larger datasets and the datasets from the original paper for testing and to attempt to reproduce the results. 
-
-#### Some Notes:
-* I see very occasional seg faults running in Rstudio (never in console) that appear to be related to OpenMP but I have not yet been able to track down. 
-* Several phases are implemented with `parallel::mclapply`.  The number of parallel threads can be adjusted with `options(mc.cores = n)`.
+#### Project Status & Caveats
+* This project is under heavy development.  It is likely that there are still bugs in the math. 
+* Currently, the code is tested to perform correctly with small datasets. 
+* Performance in the neighborhood exploration phase is unusually slow; I am working on tracing the cause. 
 
 #### Examples:
 
-```{r iris,eval=F}
-library(largeVis)
+```{r iris,eval=T}
+library(largeVis,quietly=T)
 data(iris)
 dat <- as.matrix(iris[,1:4])
 dat <- scale(dat)
 dupes = which(duplicated(dat))
 dat <- dat[-dupes,]
 visObject <- largeVis(dat, pca.first = F, 
-                   max.iter = 20, sgd.batches = 2000000, 
-                   K = 30,  gamma = 7, rho = 1)
-plot(visObject$coords)
+                   max.iter = 20, sgd.batches = 800000, 
+                   K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
+```
+```{r echo=F}
 coords <- data.frame(visObject$coords)
 colnames(coords) <- c("X", "Y")
 coords$Species <- iris$Species[-dupes]
 coords$algo <- "largeVis"
-```{r iristsne,eval=F}
-library(Rtsne)
+```
+```{r iristsne,echo=F}
+library(Rtsne,quietly=T)
 more <- Rtsne(dat, initial_dims = 4, pca = F)$Y
 more <- data.frame(X = more[,1], Y = more[,2], algo = "B-H t-SNE")
 more$Species <- iris$Species[-dupes]
 coords <- rbind(coords, more)
 coords$algo <- factor(coords$algo)
-save(coords, file = "iriscoords.Rda")
-```
-```{r loadiris,echo=F,warning=F,message=F}
-load("iriscoords.Rda")
 require(ggplot2)
 ```
-```{r showiris}
+```{r showiris,echo=F}
 ggplot(coords, aes(x = X, y = Y, color = Species)) + 
   geom_point(size = 0.5) + 
-  facet_grid(~ algo) + 
+  facet_grid(~ algo, scales = 'free') + 
   ggtitle("The Iris Dataset largeVis vs. t-SNE")
 ```
 

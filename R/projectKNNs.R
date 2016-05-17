@@ -7,9 +7,7 @@
 #'
 #' The objective function is: \deqn{ O = \sum_{(i,j)\in E} w_{ij} (\log p(e_{ij} = 1) + \sum_{k=1}^{M} E_{jk~P_{n}(j)} \gamma \log(1 - p(e_{ij_k} - 1)))  }
 
-#' @param i The i-vector component of a sparse triplet matrix
-#' @param j the j-vector component of a sparse triplet matrix
-#' @param x the x-vector component of a sparse triplet matrix. See \link{Matrix::sparseMatrix}
+#' @param wij A sparse matrix of edge weights.
 #' @param dim The number of dimensions for the projection space
 #' @param sgd.batches The number of edges to process during SGD; defaults to 10000 * the number of rows in x
 #' @param M The number of negative edges to sample for each positive edge
@@ -17,9 +15,10 @@
 #' function \eqn{1 / 1 + exp(||y_i - y_j||^2)} is used instead.  These functions relate the distance between points in the low-dimensional projection to the likelihood
 #' that they two points are nearest neighbors.
 #' @param gamma Hyperparameter analogous to the strength of the force operating to push-away negative examples.
-#' @param weight.pos.samples Whether to sample positive edges according to their edge weights (the default) or multiply the edge-loss by the edge-weight in the objective function.
+#' @param weight.pos.samples Whether to sample positive edges according to their edge weights (the default) or take the
+#' weights into account when calculating gradients
 #' @param rho Initial learning rate.
-#' @param min.rho Final learning rate. The learning rate declines non-linearly.  \eqn{\rho_t = \rho_{t-1} - ((\rho_{t-1} - \rho_{min}) / sgd.batches)}
+#' @param min.rho Final learning rate.
 #' @param .coords An initialized coordinate matrix.
 #' @param verbose Verbosity
 #'

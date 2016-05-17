@@ -43,8 +43,7 @@
 #'  \itemize{
 #'    \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
 #'    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
-#'    \item{'wij'}{A list of the components (i,j,p,s) needed to create a sparse [N,N] symmetric identity matrix
-#'    where each cell represents \eqn{w_{ij}}. Both j and p are provided for convenience.}
+#'    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
 #'    \item{'call'}
 #'    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
 #'  }
@@ -75,7 +74,7 @@ largeVis <- function(x,
                      sgd.batches = nrow(x) * 10000,
                      M = 5,
                      weight.pos.samples = TRUE,
-                     alpha = 1,
+                     alpha = 2,
                      gamma = 7,
                      rho = 1,
                      min.rho = 0,
@@ -113,48 +112,49 @@ largeVis <- function(x,
                                      verbose = verbose)
 
   #############################################
-  # Clean knns and calculate edge distances
+  # Clean knns
   #############################################
   if (verbose[1]) cat("Calculating edge weights...")
-  # calculate distance for knns
-  is <- rep(1:N, each = K)
+
+    is <- rep(0:(N-1), each = K)
   js <- as.vector(knns)
-  is <- is[! js == 0]
-  js <- js[! js == 0]
+  is <- is[! js == -1]
+  js <- js[! js == -1]
   dupes <- duplicated(data.frame(is, js))
   is <- is[! dupes]
   js <- js[! dupes]
-  # make sure that the vectors are sorted by i's, so we can build a p-vector later
-  # note that is, js, and ps are 1-indexed
   ord <- order(is)
   is <- is[ord]
   js <- js[ord]
-  # calculate a 1-indexed p-vector as would appear in a C-indexed sparse matrix
   ps <- rep(NA,N + 1)
   diffs <- diff(is)
-  ps[is[which(diffs > 0)] + 1] <- which(diffs > 0) + 1
+  ps[is[which(diffs > 0)] + 2] <- which(diffs > 0) + 1
   good <- cumsum(!is.na(ps))
   ps <- ps[good + 1]
   ps[1] <- 1
-  ps[length(ps) + 1] <- length(ps)
-  # build xs, which is a distance vector corresponding to is, js (and ps)
+  ps[length(ps) + 1] <- length(is)
+
+  #######################################################
+  # Calculate edge weights for candidate neighbors
+  #######################################################
   if (verbose[1]) cat("Calculating neighbor distances...")
+
   xs <- rep(0, length(is)) # pre-allocate
   distance(is, js, xs, shrunken.x)
-  if (verbose) cat("done!\n")
 
+  if (verbose) cat("done!\n")
   if ((any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
     stop("An error leaked into the distance calculation - check for duplicates")
 
   ########################################################
   # Estimate sigmas
   ########################################################
-  # select denominators sigma to match distributions to given perplexity
   if (verbose[1]) ptick <- progress::progress_bar$new(total = N, format = 'Calculate sigmas [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else ptick <- function(tick) {}
   # TODO: MAKE SURE THAT THE C++ CODE HANDLES THE SITUATION WHERE A COLUMN IS EMPTY (HAS NO PRESENCE IN P)
+
   perplexity = log2(perplexity)
-  sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
+  sigmas <- parallel:mclapply(1:N, FUN = function(idx) {
     ptick(1)
     x_i <- xs[ps[idx]:(ps[idx + 1] - 1)]
     ret <- optimize(f = sigFunc,
@@ -163,9 +163,8 @@ largeVis <- function(x,
              interval = c(0,1.2))
   })
   sigmas <- sapply(sigmas, `[[`, 1)
-  if (any(sigmas > 1.1)) stop("There was an error in calculating sigma")
-  # note that sigmas are actually (2 * (sigmas^2))
-  # TODO:  Consider taking sigmas that are > 1 and setting them to mean sigmas
+
+    if (any(sigmas > 1.1)) stop("There was an error in calculating sigma")
   if (any(is.na(sigmas)) + any(is.infinite(sigmas)) + any(is.nan(sigmas)) + any((sigmas == 0)) > 0)
     stop("An error has propogated into the sigma vector.")
 
@@ -173,16 +172,16 @@ largeVis <- function(x,
   #######################################################
   # Calculate w_{ij}
   #######################################################
+  if (! require(Matrix,quietly=T)) stop("The Matrix package must be available.")
   if (verbose[1]) progress <- progress::progress_bar$new(total = N, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
   else progress <- function(tick) {}
-  if (! require(Matrix)) stop("The Matrix package must be available.")
   wij <- distMatrixTowij(is, js, xs, sigmas, N, progress)
+
   if (any(is.na(wij@x)) + any(is.infinite(wij@x)) + any(is.nan(wij@x)) + any((wij@x == 0)) > 0)
     stop("An error has propogated into the w_{ij} vector.")
 
   # Make the symmetricized wij a duplicative symmetric matrix
   wij <- wij + Matrix::t(wij)
-  # Object a j-vector for the (transposed) triplet form of wij
 
   #######################################################
   # Estimate embeddings
@@ -203,7 +202,7 @@ largeVis <- function(x,
   #######################################################
   # Cleanup
   #######################################################
-  knns[knns == 0] <- NA
+  knns[knns == -1] <- NA
 
   returnvalue <- list(
     knns = t(knns),
@@ -216,3 +215,7 @@ largeVis <- function(x,
   class(returnvalue) <- 'largeVis'
   return(returnvalue)
 }
+
+# pji <- function(x_i, sigma)  exp(- x_i / sigma) / sum(exp(- x_i / sigma))
+# perp <- function(x_i, sigma) - sum(log2(pji(x_i, sigma))) / length(x_i)
+# pdiff <- function(x_i, sigma, perplexity) (perplexity - perp(x_i, sigma))^2

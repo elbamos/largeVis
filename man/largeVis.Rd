@@ -7,7 +7,7 @@
 largeVis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
   pca.dims = 50, n.trees = 2, tree.threshold = min(K * 1.5, nrow(x)),
   max.iter = 2, perplexity = max(K, 50), sgd.batches = nrow(x) * 10000,
-  M = 5, weight.pos.samples = TRUE, alpha = 1, gamma = 7, rho = 1,
+  M = 5, weight.pos.samples = TRUE, alpha = 2, gamma = 7, rho = 1,
   min.rho = 0, coords = NULL, verbose = TRUE, ...)
 }
 \arguments{
@@ -52,8 +52,7 @@ A `largeVis` object with the following slots:
  \itemize{
    \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
-   \item{'wij'}{A list of the components (i,j,p,s) needed to create a sparse [N,N] symmetric identity matrix
-   where each cell represents \eqn{w_{ij}}. Both j and p are provided for convenience.}
+   \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
    \item{'call'}
    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
  }

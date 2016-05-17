@@ -26,16 +26,17 @@ randomProjectionTreeSearch <- function(x,
   if (any(is.nan(x))) stop("NaNs detected in x.")
   if (any(is.na(x))) stop("NAs detected in x.")
   if (any(is.infinite(x))) stop("Infs detected in x.")
+
+
+
   # random projection trees
-  tree_assignments <- list()
   if (verbose[1]) ptick <- progress::progress_bar$new(total = n.trees * N, format = 'Random projection trees [:bar] :percent/:elapsed eta: :eta', clear = FALSE)$tick
   else ptick <- function(ticks) {}
   ptick(0)
 
   knns <- searchTrees(tree.threshold, n.trees, x, callback = ptick)
 
-  knns <- knns + 1
-  outputKnns <- matrix(0, nrow = K, ncol = N)
+  outputKnns <- matrix(-1, nrow = K, ncol = N)
 
   if (verbose[1]) ptick <- progress::progress_bar$new(total = max.iter * N, format = 'Neighbors [:bar] :percent/:elapsed eta: :eta', clear = FALSE)$tick
   else ptick <- function(ticks) {}

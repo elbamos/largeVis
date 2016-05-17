@@ -9,13 +9,16 @@ projectKNNs(wij, dim, sgd.batches = nrow(N) * 10000, M = 5,
   .coords = NULL, min.rho = 0.1, verbose = TRUE)
 }
 \arguments{
+\item{wij}{A sparse matrix of edge weights.}
+
 \item{dim}{The number of dimensions for the projection space}
 
 \item{sgd.batches}{The number of edges to process during SGD; defaults to 10000 * the number of rows in x}
 
 \item{M}{The number of negative edges to sample for each positive edge}
 
-\item{weight.pos.samples}{Whether to sample positive edges according to their edge weights (the default) or multiply the edge-loss by the edge-weight in the objective function.}
+\item{weight.pos.samples}{Whether to sample positive edges according to their edge weights (the default) or take the
+weights into account when calculating gradients}
 
 \item{gamma}{Hyperparameter analogous to the strength of the force operating to push-away negative examples.}
 
@@ -27,15 +30,9 @@ that they two points are nearest neighbors.}
 
 \item{.coords}{An initialized coordinate matrix.}
 
-\item{min.rho}{Final learning rate. The learning rate declines non-linearly.  \eqn{\rho_t = \rho_{t-1} - ((\rho_{t-1} - \rho_{min}) / sgd.batches)}}
+\item{min.rho}{Final learning rate.}
 
 \item{verbose}{Verbosity}
-
-\item{i}{The i-vector component of a sparse triplet matrix}
-
-\item{j}{the j-vector component of a sparse triplet matrix}
-
-\item{x}{the x-vector component of a sparse triplet matrix. See \link{Matrix::sparseMatrix}}
 }
 \value{
 A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.
