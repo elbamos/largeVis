@@ -20,8 +20,8 @@ test_that("largeVis works", {
   dat <- scale(dat)
   dupes = which(duplicated(dat))
   dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
-  visObject <- largeVis(dat, pca.first = F,
-                        max.iter = 20, sgd.batches = 800000,
+  visObject <- vis(dat, pca.first = F,
+                        max.iter = 20, sgd.batches = 1000,
                         K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
   expect_equal(sum(any(is.na(visObject$coords)) + any(is.nan(visObject$coords)) + any(is.infinite(visObject$coords))), 0)
 })

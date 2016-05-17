@@ -25,7 +25,7 @@
 #' weights into account when calculating gradient.  Note:  Applying weights to the gradients is not yet implemented.
 #' @param rho Initial learning rate.
 #' @param min.rho Final learning rate.
-#' @param .coords An initialized coordinate matrix.
+#' @param coords An initialized coordinate matrix.
 #' @param verbose Verbosity
 #'
 #' @return A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.
