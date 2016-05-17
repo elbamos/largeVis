@@ -30,16 +30,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // neighbors_inner
-void neighbors_inner(int maxIter, NumericMatrix old_knns, NumericMatrix data, NumericMatrix outputKnns, Function callback);
-RcppExport SEXP largeVis_neighbors_inner(SEXP maxIterSEXP, SEXP old_knnsSEXP, SEXP dataSEXP, SEXP outputKnnsSEXP, SEXP callbackSEXP) {
+void neighbors_inner(int maxIter, NumericMatrix old_knns, NumericMatrix data, NumericMatrix outputKnns, bool prefilter, Function callback);
+RcppExport SEXP largeVis_neighbors_inner(SEXP maxIterSEXP, SEXP old_knnsSEXP, SEXP dataSEXP, SEXP outputKnnsSEXP, SEXP prefilterSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< int >::type maxIter(maxIterSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type old_knns(old_knnsSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type outputKnns(outputKnnsSEXP);
+    Rcpp::traits::input_parameter< bool >::type prefilter(prefilterSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    neighbors_inner(maxIter, old_knns, data, outputKnns, callback);
+    neighbors_inner(maxIter, old_knns, data, outputKnns, prefilter, callback);
     return R_NilValue;
 END_RCPP
 }

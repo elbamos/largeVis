@@ -42,19 +42,55 @@ void neighbors_inner( int maxIter,
                       NumericMatrix old_knns,
                       NumericMatrix data,
                       NumericMatrix outputKnns,
+                      bool prefilter,
                       Function callback) {
   int N = old_knns.ncol();
   int K = outputKnns.nrow();
 
   arma::mat knns = as<arma::mat>(old_knns);
 
+  // Pre-filter to reduce the number of comparisons
+  if (prefilter) {
+    arma::mat old_knns = knns;
+    knns = arma::mat(K,N);
+    knns.fill(-1);
+
+    #pragma omp parallel for shared(knns)
+    for (int i = 0; i < N; i++) {
+      if (i > 0 && i % 1000 == 0) callback(10);
+      NumericVector x_i = data.row(i);
+
+      std::set<int> seen;
+      std::priority_queue<heapObject> heap;
+
+      seen.insert(i);
+      arma::vec neighbors = old_knns.col(i);
+      for (int jidx = 0; jidx < old_knns.n_rows; jidx++) {
+        const int j = neighbors[jidx];
+        if (j == -1) break;
+        if (j != i && seen.insert(j).second) {
+          const double d = dist(x_i, data.row(j));
+          if (d != 0) {
+            heap.push(heapObject(d, j));
+            if (heap.size() > K) heap.pop();
+          }
+        }
+      }
+      int j = 0;
+      while (j < K && ! heap.empty()) {
+        knns(j, i) = heap.top().n;
+        heap.pop();
+        j++;
+      }
+    }
+  }
+
   for (int T = 0; T < maxIter; T++) {
     arma::mat old_knns = knns;
     knns = arma::mat(K,N);
     knns.fill(-1);
-#pragma omp parallel for shared(knns)
+    #pragma omp parallel for shared(knns)
     for (int i = 0; i < N; i++) {
-      int j, k;
       double d;
       if (i > 0 && i % 1000 == 0) callback(1000);
       NumericVector x_i = data.row(i);
@@ -63,9 +99,9 @@ void neighbors_inner( int maxIter,
       std::priority_queue<heapObject> heap;
 
       seen.insert(i);
-
+      const arma::vec neighborhood = old_knns.col(i);
       for (int jidx = 0; jidx < old_knns.n_rows; jidx++) {
-        j = old_knns.col(i)[jidx];
+        const int j = neighborhood[jidx];
         if (j == -1) break;
         if (j != i && seen.insert(j).second) {
           d = dist(x_i, data.row(j));
@@ -74,9 +110,9 @@ void neighbors_inner( int maxIter,
             if (heap.size() > K) heap.pop();
           }
         }
-
+        const arma::vec locality = old_knns.col(j);
         for (int kidx = 0; kidx < old_knns.n_rows; kidx++) {
-          k = old_knns.col(j)[kidx];
+          const int k = locality[kidx];
           if (k == -1) break;
           if (k != i && seen.insert(k).second) {
             d = dist(x_i, data.row(k));
@@ -87,7 +123,7 @@ void neighbors_inner( int maxIter,
           }
         }
       }
-      j = 0;
+      int j = 0;
       while (j < K && ! heap.empty()) {
         knns(j, i) = heap.top().n;
         heap.pop();

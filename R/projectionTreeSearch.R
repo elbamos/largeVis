@@ -44,7 +44,7 @@ randomProjectionTreeSearch <- function(x,
   else ptick <- function(ticks) {}
   ptick(0)
 
-  neighbors_inner(max.iter, knns, x, outputKnns, ptick)
+  neighbors_inner(max.iter, knns, x, outputKnns, T, ptick)
 
   if (sum(colSums(outputKnns) == 0) + sum(is.na(outputKnns)) + sum(is.nan(outputKnns)) > 0)
     stop("After neighbor search, no candidates for some nodes.")

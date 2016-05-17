@@ -5,8 +5,8 @@ sgd <- function(coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWe
     .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWeights, M, alpha, callback)
 }
 
-neighbors_inner <- function(maxIter, old_knns, data, outputKnns, callback) {
-    invisible(.Call('largeVis_neighbors_inner', PACKAGE = 'largeVis', maxIter, old_knns, data, outputKnns, callback))
+neighbors_inner <- function(maxIter, old_knns, data, outputKnns, prefilter, callback) {
+    invisible(.Call('largeVis_neighbors_inner', PACKAGE = 'largeVis', maxIter, old_knns, data, outputKnns, prefilter, callback))
 }
 
 searchTrees <- function(threshold, n_trees, data, callback) {

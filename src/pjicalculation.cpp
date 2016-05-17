@@ -35,13 +35,11 @@ arma::sp_mat distMatrixTowij(
   NumericVector rowSums = NumericVector(N);
   NumericVector pjis = NumericVector(is.length());
   for (int idx=0; idx < N; idx++) rowSums[idx] = 0;
-  int i, j;
-  double pji;
   // Compute pji, accumulate rowSums at the same time
-  #pragma omp parallel for shared(pjis, rowSums) private(pji, i)
+  #pragma omp parallel for shared(pjis, rowSums)
   for (int e=0; e < pjis.length(); e++) {
-    i = is[e];
-    pji = exp(- pow(xs[e], 2)) / sigmas[i];
+    const int i = is[e];
+    const double pji = exp(- pow(xs[e], 2)) / sigmas[i];
     pjis[e] = pji;
     #pragma omp atomic
     rowSums[i] = rowSums[i] + pji;
@@ -52,11 +50,11 @@ arma::sp_mat distMatrixTowij(
   for (int e=0; e < pjis.length(); e++) {
     int newi = is[e], newj = js[e];
     if (newi < newj) {
-      int t = newi;
+      const int t = newi;
       newi = newj;
       newj = t;
     }
-    double oldw = wij(newi, newj);
+    const double oldw = wij(newi, newj);
     wij(newi, newj) = (oldw > 0) ?
     (oldw / 2) + ((pjis[e] / rowSums[is[e]]) / (2 * N )) :
       (pjis[e] / rowSums[is[e]]) / N;
