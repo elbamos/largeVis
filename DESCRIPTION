@@ -16,6 +16,9 @@ Imports: proxy,
     RcppArmadillo
 LinkingTo: Rcpp,RcppArmadillo
 Suggests: testthat,
-    covr
+    covr,
+    knitr,
+    rmarkdown
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
+VignetteBuilder: knitr
