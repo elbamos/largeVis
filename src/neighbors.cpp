@@ -64,21 +64,20 @@ void searchTree(int threshold,
   }
   // Get hyperplane
   arma::uvec selections = indices.elem(arma::randi<arma::uvec>(2, arma::distr_param(0, indices.size() - 1)));
- // NumericVector v =  data.row(selections[1]) - data.row(selections[0]);
   NumericVector x1 = data.row(selections[1]);
   NumericVector x2 = data.row(selections[0]);
   NumericVector m =  (x1 + x2) / 2; // Base point of hyperplane
-  NumericVector v =  (x1 - x2) / sqrt(sum(pow(x1 - x2,2)));
+  NumericVector v =  (x1 - x2) / sqrt(sum(pow(x1 - x2,2))); // Unit vector
   arma::vec direction = arma::vec(indices.size());
   for (int i = 0; i < indices.size(); i++) direction[i] =  sum((data.row(indices[i]) - m) * v);
 
   #pragma omp parallel sections
   {
-        #pragma omp section
+    #pragma omp section
     {
       searchTree(threshold, indices.elem(arma::find(direction > 0)), data, heap, iterations - 1, callback);
     }
-        #pragma omp section
+    #pragma omp section
     {
       searchTree(threshold, indices.elem(arma::find(direction <= 0)), data, heap, iterations - 1, callback);
     }
@@ -96,19 +95,23 @@ arma::mat searchTrees(int threshold,
   const int N = data.nrow();
   std::vector<std::set<int> > treeNeighborhoods = std::vector<std::set<int> >(N);
   // Search random projection trees search
+ // List phase = List::create();
+ // phase["phase"] = "Random projection trees";
+
   for (int t = 0; t < n_trees; t++)
     searchTree(threshold,
                arma::regspace<arma::uvec>(0, N - 1),
                data,
                treeNeighborhoods,
                max_recursion_degree, // maximum permitted level of recursion
-               callback);
+               callback//,
+               //phase
+               );
 
-
-  // Pre-filter to reduce the number of comparisons
+  //phase["phase"] = "Filtering Tree Nodes";
   arma::mat knns = arma::mat(threshold,N);
   knns.fill(-1);
-#pragma omp parallel for shared(knns)
+  #pragma omp parallel for shared(knns)
   for (int i = 0; i < N; i++) {
     NumericVector x_i = data.row(i);
     std::priority_queue<heapObject> maxHeap = std::priority_queue<heapObject>();
@@ -127,7 +130,8 @@ arma::mat searchTrees(int threshold,
     stack.insert(i);
     if (i > 0 && i % 1000 == 0) callback(1000);
   }
-  // Explore neighborhoods
+
+  //phase["phase"] = "Exploring Neighborhoods";
   for (int T = 0; T < maxIter; T++) {
     arma::mat old_knns = knns;
     knns = arma::mat(K,N);

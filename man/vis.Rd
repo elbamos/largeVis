@@ -4,11 +4,10 @@
 \alias{vis}
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
-vis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
-  pca.dims = 50, n.trees = 50, tree.threshold = max(10, if (pca.first) {  
-    pca.dims } else {     ncol(x) }), max.iter = 3, perplexity = 50,
-  sgd.batches = nrow(x) * 20000, M = 5, weight.pos.samples = TRUE,
-  alpha = 2, gamma = 7, rho = 1, min.rho = 0, coords = NULL,
+vis(x, dim = 2, K = 40, check.assumptions = TRUE, n_trees = 50,
+  tree_threshold = max(10, ncol(x)), max_iter = 3, perplexity = 50,
+  sgd_batches = nrow(x) * 20000, M = 5, weight_pos_samples = TRUE,
+  alpha = 2, gamma = 7, rho = 1, min_rho = 0, coords = NULL,
   verbose = TRUE, ...)
 }
 \arguments{
@@ -20,26 +19,22 @@ vis(x, dim = 2, K = 40, check.assumptions = TRUE, pca.first = TRUE,
 
 \item{check.assumptions}{Whether to check the input matrix for duplicates, \code{NA}`s, etc.}
 
-\item{pca.first}{Whether to apply pca first (can speed-up distance calculations)}
-
-\item{pca.dims}{How many pca dimensions to use}
-
-\item{n.trees}{See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
+\item{n_trees}{See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 used in the examples in the original paper.}
 
-\item{tree.threshold}{See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
+\item{tree_threshold}{See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
 in the input set, which is the setting used in the examples in the original paper.  Note the time and memory requirements:
 the first pass through the neighborhood exploration phases will involve up to \eqn{N * nTrees * threshold} comparisons.}
 
-\item{max.iter}{See \code{\link{randomProjectionTreeSearch}}.}
+\item{max_iter}{See \code{\link{randomProjectionTreeSearch}}.}
 
 \item{perplexity}{See paper}
 
-\item{sgd.batches}{See \code{\link{projectKNNs}}.}
+\item{sgd_batches}{See \code{\link{projectKNNs}}.}
 
 \item{M}{See \code{\link{projectKNNs}}.}
 
-\item{weight.pos.samples}{See \code{\link{projectKNNs}}.}
+\item{weight_pos_samples}{See \code{\link{projectKNNs}}.}
 
 \item{alpha}{See \code{\link{projectKNNs}}.}
 
@@ -47,7 +42,7 @@ the first pass through the neighborhood exploration phases will involve up to \e
 
 \item{rho}{See \code{\link{projectKNNs}}.}
 
-\item{min.rho}{\code{\link{projectKNNs}}.}
+\item{min_rho}{\code{\link{projectKNNs}}.}
 
 \item{coords}{A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.}
 
@@ -80,8 +75,7 @@ dat <- as.matrix(iris[,1:4])
 dat <- scale(dat)
 dupes = which(duplicated(dat))
 dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
-visObject <- vis(dat, pca.first = FALSE,
-                     max.iter = 20, sgd.batches = 800000,
+visObject <- vis(dat, max_iter = 20, sgd_batches = 800000,
                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
 \dontrun{
 # mnist
@@ -89,9 +83,8 @@ load("./mnist.Rda")
 dat <- mnist$images
 dim(dat) <- c(42000, 28 * 28)
 dat <- (dat / 255) - 0.5
-coords <- vis(dat, pca.first = FALSE,
-                     n.tree = 10, tree.threshold = 40,
-                     K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
+coords <- vis(dat, n.tree = 10, tree_threshold = 40,
+                     K = 40, sgd = 20000 * 42000, alpha = 1, max_iter = 10)
 }
 
 }

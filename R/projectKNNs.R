@@ -14,17 +14,17 @@
 
 #' @param wij A sparse matrix of edge weights.
 #' @param dim The number of dimensions for the projection space.
-#' @param sgd.batches The number of edges to process during SGD; defaults to 20000 * the number of rows in x, as recommended
+#' @param sgd_batches The number of edges to process during SGD; defaults to 20000 * the number of rows in x, as recommended
 #' by the paper authors.
 #' @param M The number of negative edges to sample for each positive edge.
 #' @param alpha Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  If \code{alpha} is 0, the alternative distance
 #' function \eqn{1 / 1 + exp(||y_i - y_j||^2)} is used instead.  These functions relate the distance between points in the low-dimensional projection to the likelihood
 #' that they two points are nearest neighbors. Note: the alternative probabilistic distance function is not yet implemented.
 #' @param gamma Hyperparameter analogous to the strength of the force operating to push-away negative examples.
-#' @param weight.pos.samples Whether to sample positive edges according to their edge weights (the default) or take the
+#' @param weight_pos_samples Whether to sample positive edges according to their edge weights (the default) or take the
 #' weights into account when calculating gradient.  Note:  Applying weights to the gradients is not yet implemented.
 #' @param rho Initial learning rate.
-#' @param min.rho Final learning rate.
+#' @param min_rho Final learning rate.
 #' @param coords An initialized coordinate matrix.
 #' @param verbose Verbosity
 #'
@@ -35,19 +35,18 @@
 
 projectKNNs <- function(wij, # sparse matrix
                         dim = 2, # dimension of the projection space
-                        sgd.batches = nrow(N) * 20000,
+                        sgd_batches = nrow(N) * 20000,
                         M = 5,
-                        weight.pos.samples = TRUE,
+                        weight_pos_samples = TRUE,
                         gamma = 7,
                         alpha = 2,
                         rho = 1,
                         coords = NULL,
-                        min.rho = 0.1,
+                        min_rho = 0.1,
                         verbose = TRUE) {
   N <- length(wij@p) - 1
-  nnzs <- diff(wij@p)
-  js = rep(0:(N-1), diff(wij@p))
-  is = wij@i
+  js <- rep(0:(N-1), diff(wij@p))
+  is <- wij@i
 
   ##############################################
   # Initialize coordinate matrix
@@ -58,8 +57,8 @@ projectKNNs <- function(wij, # sparse matrix
   # SGD
   #################################################
   callback <- function(tick) {}
-  progress <- #utils::txtProgressBar(min = 0, max = sgd.batches, style = 3)
-    progress::progress_bar$new(total = sgd.batches, format = 'SGD [:bar] :percent/:elapsed eta: :eta', clear=FALSE)
+  progress <- #utils::txtProgressBar(min = 0, max = sgd_batches, style = 3)
+    progress::progress_bar$new(total = sgd_batches, format = 'SGD [:bar] :percent/:elapsed eta: :eta', clear=FALSE)
   if (verbose[1]) callback <- progress$tick
   callback(0)
   sgd(coords,
@@ -67,8 +66,8 @@ projectKNNs <- function(wij, # sparse matrix
               js = js,
               ps = wij@p,
               ws = wij@x,
-              gamma = gamma, rho = rho, minRho = min.rho,
-              useWeights = ! weight.pos.samples, nBatches = sgd.batches,
+              gamma = gamma, rho = rho, minRho = min_rho,
+              useWeights = ! weight_pos_samples, nBatches = sgd_batches,
               M = M, alpha = alpha, callback = callback)
 
   return(coords)

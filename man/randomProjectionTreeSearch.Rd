@@ -4,20 +4,20 @@
 \alias{randomProjectionTreeSearch}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
-randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = max(10,
-  ncol(x)), max.iter = 2, verbose = TRUE)
+randomProjectionTreeSearch(x, K = 5, n_trees = 2, tree_threshold = max(10,
+  ncol(x)), max_iter = 2, verbose = TRUE)
 }
 \arguments{
 \item{x}{A matrix}
 
 \item{K}{How many nearest neighbors to seek for each node}
 
-\item{n.trees}{The number of trees to build}
+\item{n_trees}{The number of trees to build}
 
-\item{tree.threshold}{The threshold for creating a new branch.  The paper authors suggest
+\item{tree_threshold}{The threshold for creating a new branch.  The paper authors suggest
 using a value equivalent to the number of features in the input set.}
 
-\item{max.iter}{Number of iterations in the neighborhood exploration phase}
+\item{max_iter}{Number of iterations in the neighborhood exploration phase}
 
 \item{verbose}{Whether to print verbose logging using the \code{progress} package}
 }

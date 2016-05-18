@@ -4,21 +4,21 @@
 \alias{projectKNNs}
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
-projectKNNs(wij, dim = 2, sgd.batches = nrow(N) * 20000, M = 5,
-  weight.pos.samples = TRUE, gamma = 7, alpha = 2, rho = 1,
-  coords = NULL, min.rho = 0.1, verbose = TRUE)
+projectKNNs(wij, dim = 2, sgd_batches = nrow(N) * 20000, M = 5,
+  weight_pos_samples = TRUE, gamma = 7, alpha = 2, rho = 1,
+  coords = NULL, min_rho = 0.1, verbose = TRUE)
 }
 \arguments{
 \item{wij}{A sparse matrix of edge weights.}
 
 \item{dim}{The number of dimensions for the projection space.}
 
-\item{sgd.batches}{The number of edges to process during SGD; defaults to 20000 * the number of rows in x, as recommended
+\item{sgd_batches}{The number of edges to process during SGD; defaults to 20000 * the number of rows in x, as recommended
 by the paper authors.}
 
 \item{M}{The number of negative edges to sample for each positive edge.}
 
-\item{weight.pos.samples}{Whether to sample positive edges according to their edge weights (the default) or take the
+\item{weight_pos_samples}{Whether to sample positive edges according to their edge weights (the default) or take the
 weights into account when calculating gradient.  Note:  Applying weights to the gradients is not yet implemented.}
 
 \item{gamma}{Hyperparameter analogous to the strength of the force operating to push-away negative examples.}
@@ -31,7 +31,7 @@ that they two points are nearest neighbors. Note: the alternative probabilistic 
 
 \item{coords}{An initialized coordinate matrix.}
 
-\item{min.rho}{Final learning rate.}
+\item{min_rho}{Final learning rate.}
 
 \item{verbose}{Verbosity}
 }
