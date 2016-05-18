@@ -35,11 +35,11 @@ inline double dist(arma::vec i, arma::vec j) {
 }
 
 void searchTree(int threshold,
-                const arma::uvec& indices,
-                NumericMatrix data,
+                const std::vector<int>& indices,
+                const NumericMatrix& data,
                 std::vector<std::set<int> >& heap,
-                int iterations,
-                Function callback) {
+                const int& iterations,
+                Function& callback) {
   const int I = indices.size();
   if (I < 2) return;
   if (I == 2) {
@@ -62,24 +62,43 @@ void searchTree(int threshold,
     callback(I);
     return;
   }
-  // Get hyperplane
-  arma::uvec selections = indices.elem(arma::randi<arma::uvec>(2, arma::distr_param(0, indices.size() - 1)));
-  NumericVector x1 = data.row(selections[1]);
-  NumericVector x2 = data.row(selections[0]);
-  NumericVector m =  (x1 + x2) / 2; // Base point of hyperplane
-  NumericVector v =  (x1 - x2) / sqrt(sum(pow(x1 - x2,2))); // Unit vector
-  arma::vec direction = arma::vec(indices.size());
-  for (int i = 0; i < indices.size(); i++) direction[i] =  sum((data.row(indices[i]) - m) * v);
+  std::vector<int> left = std::vector<int>();
+  std::vector<int> right = std::vector<int>();
+  int x1idx, x2idx;
+  do {
+    const arma::vec selections = arma::randu(2) * (indices.size() - 1);
+    x1idx = indices[selections[0]];
+    x2idx = indices[selections[1]];
+  } while (x1idx == x2idx);
+
+  {
+    const NumericVector x2 = data.row(x2idx);
+    const NumericVector x1 = data.row(x1idx);
+    // Get hyperplane
+    const NumericVector m =  (x1 + x2) / 2; // Base point of hyperplane
+    const NumericVector v =  (x1 - x2) / sqrt(sum(pow(x1 - x2,2))); // Unit vector
+
+    for (int i = 0; i < indices.size(); i++) {
+      const int I = indices[i];
+      if (sum((data(I,_) - m) * v) > 0) {
+        left.push_back(I);
+      } else {
+        right.push_back(I);
+      };
+    }
+  }
+  left.shrink_to_fit();
+  right.shrink_to_fit();
 
   #pragma omp parallel sections
   {
     #pragma omp section
     {
-      searchTree(threshold, indices.elem(arma::find(direction > 0)), data, heap, iterations - 1, callback);
+      searchTree(threshold, left, data, heap, iterations - 1, callback);
     }
     #pragma omp section
     {
-      searchTree(threshold, indices.elem(arma::find(direction <= 0)), data, heap, iterations - 1, callback);
+      searchTree(threshold, right, data, heap, iterations - 1, callback);
     }
   }
 };
@@ -94,26 +113,24 @@ arma::mat searchTrees(int threshold,
                       Function callback) {
   const int N = data.nrow();
   std::vector<std::set<int> > treeNeighborhoods = std::vector<std::set<int> >(N);
-  // Search random projection trees search
- // List phase = List::create();
- // phase["phase"] = "Random projection trees";
+
+  std::vector<int> indices = std::vector<int>(N);
+  std::iota(indices.begin(), indices.end(), 0);
 
   for (int t = 0; t < n_trees; t++)
     searchTree(threshold,
-               arma::regspace<arma::uvec>(0, N - 1),
+               indices,
                data,
                treeNeighborhoods,
                max_recursion_degree, // maximum permitted level of recursion
-               callback//,
-               //phase
+               callback
                );
 
-  //phase["phase"] = "Filtering Tree Nodes";
   arma::mat knns = arma::mat(threshold,N);
   knns.fill(-1);
   #pragma omp parallel for shared(knns)
   for (int i = 0; i < N; i++) {
-    NumericVector x_i = data.row(i);
+    const NumericVector x_i = data.row(i);
     std::priority_queue<heapObject> maxHeap = std::priority_queue<heapObject>();
     std::set<int> stack = treeNeighborhoods[i];
     for (std::set<int>::iterator it = stack.begin(); it != stack.end(); it++) {
@@ -140,7 +157,7 @@ arma::mat searchTrees(int threshold,
     for (int i = 0; i < N; i++) {
       double d;
       if (i > 0 && i % 1000 == 0) callback(1000);
-      NumericVector x_i = data.row(i);
+      const NumericVector x_i = data.row(i);
 
       std::priority_queue<heapObject> heap;
 

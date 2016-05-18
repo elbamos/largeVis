@@ -5,7 +5,7 @@
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
 randomProjectionTreeSearch(x, K = 5, n_trees = 2, tree_threshold = max(10,
-  ncol(x)), max_iter = 2, verbose = TRUE)
+  ncol(x)), max_iter = 2, max_depth = 32, verbose = TRUE)
 }
 \arguments{
 \item{x}{A matrix}
@@ -18,6 +18,8 @@ randomProjectionTreeSearch(x, K = 5, n_trees = 2, tree_threshold = max(10,
 using a value equivalent to the number of features in the input set.}
 
 \item{max_iter}{Number of iterations in the neighborhood exploration phase}
+
+\item{max_depth}{The maximum level of recursion (relates to memory consumption during the tree search)}
 
 \item{verbose}{Whether to print verbose logging using the \code{progress} package}
 }

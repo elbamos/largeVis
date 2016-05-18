@@ -5,10 +5,10 @@
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
 vis(x, dim = 2, K = 40, check.assumptions = TRUE, n_trees = 50,
-  tree_threshold = max(10, ncol(x)), max_iter = 3, perplexity = 50,
-  sgd_batches = nrow(x) * 20000, M = 5, weight_pos_samples = TRUE,
-  alpha = 2, gamma = 7, rho = 1, min_rho = 0, coords = NULL,
-  verbose = TRUE, ...)
+  tree_threshold = max(10, ncol(x)), max_iter = 3, max_depth = 32,
+  perplexity = 50, sgd_batches = nrow(x) * 20000, M = 5,
+  weight_pos_samples = TRUE, alpha = 2, gamma = 7, rho = 1,
+  min_rho = 0, coords = NULL, verbose = TRUE, ...)
 }
 \arguments{
 \item{x}{A matrix. Ideally, the columns should be scaled and normalized to avoid the risk of errors caused by overflow.}
@@ -27,6 +27,8 @@ in the input set, which is the setting used in the examples in the original pape
 the first pass through the neighborhood exploration phases will involve up to \eqn{N * nTrees * threshold} comparisons.}
 
 \item{max_iter}{See \code{\link{randomProjectionTreeSearch}}.}
+
+\item{max_depth}{See \code{\link{randomProjectionTreeSearch}}}
 
 \item{perplexity}{See paper}
 

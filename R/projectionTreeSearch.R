@@ -8,6 +8,7 @@
 #' @param tree_threshold The threshold for creating a new branch.  The paper authors suggest
 #' using a value equivalent to the number of features in the input set.
 #' @param max_iter Number of iterations in the neighborhood exploration phase
+#' @param max_depth The maximum level of recursion (relates to memory consumption during the tree search)
 #' @param verbose Whether to print verbose logging using the \code{progress} package
 #'
 #' @return A [K, N] matrix of the approximate K nearest neighbors for each vertex.
@@ -26,6 +27,7 @@ randomProjectionTreeSearch <- function(x,
                                        n_trees = 2,
                                        tree_threshold =  max(10, ncol(x)),
                                        max_iter = 2,
+                                       max_depth = 32,
                                        verbose= TRUE) {
   N <- nrow(x)
 
@@ -35,7 +37,8 @@ randomProjectionTreeSearch <- function(x,
                 format = "Looking for Neighbors[:bar] :percent/:elapsed eta: :eta", clear = FALSE)$tick
   else ptick <- function(ticks) {}
   ptick(0)
-  knns <- searchTrees(tree_threshold, n_trees, K, 32, max_iter, x, callback = ptick)
+  # QUESTION -- IS PEAK RAM CONSUMPTION PROPORTIONAL TO DEPTH?
+  knns <- searchTrees(tree_threshold, n_trees, K, max_depth, max_iter, x, callback = ptick)
 
   if (sum(colSums(knns != -1) == 0) + sum(is.na(knns)) + sum(is.nan(knns)) > 0)
     stop ("After neighbor search, no candidates for some nodes.")

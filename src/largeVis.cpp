@@ -94,7 +94,7 @@ void sgd(NumericMatrix coords,
     int k;
     int e_ij;
     if (useWeights) {
-      e_ij = posTarget * posSampleLength;
+      e_ij = posTarget * (posSampleLength - 1);
     } else {
       e_ij = std::distance(positiveEdgeWeights.begin(),
                            std::upper_bound(positiveEdgeWeights.begin(),

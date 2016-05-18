@@ -15,6 +15,7 @@
 #' @param tree_threshold See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
 #' in the input set, which is the setting used in the examples in the original paper.  Note the time and memory requirements:
 #' the first pass through the neighborhood exploration phases will involve up to \eqn{N * nTrees * threshold} comparisons.
+#' @param max_depth See \code{\link{randomProjectionTreeSearch}}
 #' @param max_iter See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See paper
 #' @param sgd_batches See \code{\link{projectKNNs}}.
@@ -71,6 +72,7 @@ vis <- function(x,
                      n_trees = 50,
                      tree_threshold = max(10, ncol(x)),
                      max_iter = 3,
+                     max_depth = 32,
 
                      perplexity = 50,
 
@@ -104,6 +106,7 @@ vis <- function(x,
                                      tree_threshold = tree_threshold,
                                      K = K,
                                      max_iter = max_iter,
+                                     max_depth = max_depth,
                                      verbose = verbose)
 
   #############################################
