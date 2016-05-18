@@ -3,3 +3,5 @@
 ^\.travis\.yml$
 ^\./README\.Rmd$
 ^\./README_files$
+^revdep$
+^.*\.RData

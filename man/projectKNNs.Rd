@@ -4,43 +4,43 @@
 \alias{projectKNNs}
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
-projectKNNs(wij, dim = 2, sgd.batches = nrow(N) * 20000, M = 5,
-  weight.pos.samples = TRUE, gamma = 7, alpha = 2, rho = 1,
-  coords = NULL, min.rho = 0.1, verbose = TRUE)
+projectKNNs(wij, dim = 2, sgd_batches = nrow(wij) * 20000, M = 5,
+  weight_pos_samples = TRUE, gamma = 7, alpha = 2, rho = 1,
+  coords = NULL, min_rho = 0.1, verbose = TRUE)
 }
 \arguments{
-\item{wij}{A sparse matrix of edge weights.}
+\item{wij}{A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.}
 
 \item{dim}{The number of dimensions for the projection space.}
 
-\item{sgd.batches}{The number of edges to process during SGD; defaults to 20000 * the number of rows in x, as recommended
+\item{sgd_batches}{The number of edges to process during SGD; defaults to 20000 * the number of rows in x, as recommended
 by the paper authors.}
 
 \item{M}{The number of negative edges to sample for each positive edge.}
 
-\item{weight.pos.samples}{Whether to sample positive edges according to their edge weights (the default) or take the
-weights into account when calculating gradient.  Note:  Applying weights to the gradients is not yet implemented.}
+\item{weight_pos_samples}{Whether to sample positive edges according to their edge weights (the default) or take the
+weights into account when calculating gradient.  See also the Details section.}
 
-\item{gamma}{Hyperparameter analogous to the strength of the force operating to push-away negative examples.}
+\item{gamma}{The strength of the force pushing non-neighbor nodes apart.}
 
 \item{alpha}{Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  If \code{alpha} is 0, the alternative distance
 function \eqn{1 / 1 + exp(||y_i - y_j||^2)} is used instead.  These functions relate the distance between points in the low-dimensional projection to the likelihood
-that they two points are nearest neighbors. Note: the alternative probabilistic distance function is not yet implemented.}
+that they two points are nearest neighbors.}
 
 \item{rho}{Initial learning rate.}
 
 \item{coords}{An initialized coordinate matrix.}
 
-\item{min.rho}{Final learning rate.}
+\item{min_rho}{Final learning rate.}
 
 \item{verbose}{Verbosity}
 }
 \value{
-A dense [nrow(x),dim] matrix of the coordinates projecting x into the lower-dimensional space.
+A dense [N,D] matrix of the coordinates projecting the w_ij matrix into the lower-dimensional space.
 }
 \description{
-The input is a sparse triplet matrix showing the weights to give the edges, which are presumably estimated
-k-nearest-neighbors.
+Takes as input a sparse matrix of the edge weights connecting each node to its nearest neighbors, and outputs
+a matrix of coordinates embedding the inputs in a lower-dimensional space.
 }
 \details{
 The algorithm attempts to estimate a \code{dim}-dimensional embedding using stochastic gradient descent and
@@ -49,5 +49,21 @@ negative sampling.
 The objective function is: \deqn{ O = \sum_{(i,j)\in E} w_{ij} (\log f(||p(e_{ij} = 1||) + \sum_{k=1}^{M} E_{jk~P_{n}(j)} \gamma \log(1 - f(||p(e_{ij_k} - 1||)))}
 where \eqn{f()} is a probabilistic function relating the distance between two points in the low-dimensional projection space,
 and the probability that they are nearest neighbors.  See the discussion of the alpha parameter below.
+
+The \code{weight_pos_samples} parameter controls how to handle edge-weights.  The paper authors recommend using a weighted
+sampling approach to select edges, and treating edge-weight as binary in calculating the objective. This is the default.
+
+However, the algorithm for drawing weighted samples runs in \eqn{O(n \log n)}. The alternative approach, which runs in
+\eqn{O(n)}, is to draw unweighted samples and include \eqn{w_{ij}} in the objective function.
+
+Note that the input matrix should be symmetric.  If any columns in the matrix are empty, the function will fail.
+}
+\examples{
+\dontrun{
+data(wiki)
+coords <- projectKNNs(wiki)
+coords <- scale(coords)
+plot(coords, xlim = c(-1.5,1.5), ylim = c(-1.5,1.5))
+}
 }
 

@@ -8,6 +8,8 @@ Description: Implements the largeVis algorithm for visualizing very large high-d
 License: GPL-3
 LazyData: TRUE
 RoxygenNote: 5.0.1
+Depends:
+    R (>= 2.10)
 Imports: proxy,
     progress,
     Matrix,
@@ -16,6 +18,8 @@ Imports: proxy,
     RcppArmadillo
 LinkingTo: Rcpp,RcppArmadillo
 Suggests: testthat,
-    covr
+    covr,
+    knitr,
+    rmarkdown
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues

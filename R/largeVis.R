@@ -10,22 +10,21 @@
 #' @param dim The number of dimensions in the output
 #' @param K The number of nearest-neighbors to use in computing the kNN graph
 #' @param check.assumptions Whether to check the input matrix for duplicates, \code{NA}`s, etc.
-#' @param pca.first Whether to apply pca first (can speed-up distance calculations)
-#' @param pca.dims How many pca dimensions to use
-#' @param n.trees See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
+#' @param n_trees See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 #' used in the examples in the original paper.
-#' @param tree.threshold See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
+#' @param tree_threshold See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
 #' in the input set, which is the setting used in the examples in the original paper.  Note the time and memory requirements:
 #' the first pass through the neighborhood exploration phases will involve up to \eqn{N * nTrees * threshold} comparisons.
-#' @param max.iter See \code{\link{randomProjectionTreeSearch}}.
+#' @param max_depth See \code{\link{randomProjectionTreeSearch}}
+#' @param max_iter See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See paper
-#' @param sgd.batches See \code{\link{projectKNNs}}.
+#' @param sgd_batches See \code{\link{projectKNNs}}.
 #' @param M See \code{\link{projectKNNs}}.
-#' @param weight.pos.samples See \code{\link{projectKNNs}}.
+#' @param weight_pos_samples See \code{\link{projectKNNs}}.
 #' @param alpha See \code{\link{projectKNNs}}.
 #' @param gamma See \code{\link{projectKNNs}}.
 #' @param rho See \code{\link{projectKNNs}}.
-#' @param min.rho \code{\link{projectKNNs}}.
+#' @param min_rho \code{\link{projectKNNs}}.
 #' @param coords A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.
 #' @param verbose Verbosity
 #' @param ... See paper
@@ -51,8 +50,7 @@
 #' dat <- scale(dat)
 #' dupes = which(duplicated(dat))
 #' dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
-#' visObject <- vis(dat, pca.first = FALSE,
-#'                      max.iter = 20, sgd.batches = 800000,
+#' visObject <- vis(dat, max_iter = 20, sgd_batches = 800000,
 #'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
 #'\dontrun{
 #' # mnist
@@ -60,63 +58,55 @@
 #' dat <- mnist$images
 #' dim(dat) <- c(42000, 28 * 28)
 #' dat <- (dat / 255) - 0.5
-#' coords <- vis(dat, pca.first = FALSE,
-#'                      n.tree = 10, tree.threshold = 40,
-#'                      K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
-#'}
+#' coords <- vis(dat, check=FALSE,
+#'              n_tree = 50, tree_th = 200,
+#'              K = 50, alpha = 2, max.iter = 4)
+#' }
 #'
 vis <- function(x,
                      dim = 2,
                      K = 40,
 
                      check.assumptions = TRUE,
-                     pca.first = TRUE,
-                     pca.dims = 50,
 
-                     n.trees = 50,
-                     tree.threshold = max(10, if (pca.first) {pca.dims} else {ncol(x)}),
-                     max.iter = 3,
+                     n_trees = 50,
+                     tree_threshold = max(10, ncol(x)),
+                     max_iter = 3,
+                     max_depth = 32,
 
                      perplexity = 50,
 
-                     sgd.batches = nrow(x) * 20000,
+                     sgd_batches = nrow(x) * 20000,
                      M = 5,
-                     weight.pos.samples = TRUE,
+                     weight_pos_samples = TRUE,
                      alpha = 2,
                      gamma = 7,
                      rho = 1,
-                     min.rho = 0,
+                     min_rho = 0,
 
                      coords = NULL,
 
                      verbose = TRUE,
                     ...) {
-  N = nrow(x)
-  # Handle pca.first
-  shrunken.x <- x
-  if (pca.first) {
-    if (pca.dims >= ncol(x)) stop("Called for dimensional reduction from ", ncol(x), " to ", pca.dims, " using pca.")
-    if (verbose[1]) cat("PCA...")
-    shrunken.x <- princomp(x, scores = TRUE)$scores[,1:pca.dims]
-    shrunken.x <- scale(shrunken.x)
-    if(any(is.nan(shrunken.x))) stop("NaNs in the pca-reduced matrix imply features with 0 variance.")
-    if (verbose[1]) cat("done\n")
-  }
+  N <- nrow(x)
 
   if (check.assumptions)   {
-    if (any(duplicated(shrunken.x))) stop("Duplicates found.")
-    if ((any(is.na(shrunken.x)) + any(is.infinite(shrunken.x)) + any(is.nan(shrunken.x))) > 0)
+    if (any(duplicated(x))) stop("Duplicates found.")
+    if ((any(is.na(x)) +
+         any(is.infinite(x)) +
+         any(is.nan(x))) > 0)
       stop("Missing values present in input matrix.")
   }
 
   #############################################
   # Search for kNearestNeighbors
   #############################################
-  knns <- randomProjectionTreeSearch(shrunken.x,
-                                     n.trees = n.trees,
-                                     tree.threshold = tree.threshold,
+  knns <- randomProjectionTreeSearch(x,
+                                     n_trees = n_trees,
+                                     tree_threshold = tree_threshold,
                                      K = K,
-                                     max.iter = max.iter,
+                                     max_iter = max_iter,
+                                     max_depth = max_depth,
                                      verbose = verbose)
 
   #############################################
@@ -147,11 +137,12 @@ vis <- function(x,
   #######################################################
   # Calculate edge weights for candidate neighbors
   #######################################################
-  if (verbose[1]) ptick <- progress::progress_bar$new(total = N, format = 'Calculate neighbor distances [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = N + 100,
+      format = "Calculate neighbor distances [:bar] :percent :elapsed/:eta", clear=FALSE)$tick
   else ptick <- function(tick) {}
 
   xs <- rep(0, length(is)) # pre-allocate
-  distance(is, js, xs, shrunken.x, ptick)
+  distance(is, js, xs, x, ptick)
 
   if (verbose) cat("\n")
   if ((any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
@@ -160,12 +151,13 @@ vis <- function(x,
   ########################################################
   # Estimate sigmas
   ########################################################
-  if (verbose[1]) ptick <- progress::progress_bar$new(total = N, format = 'Calculate sigmas [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = N + 100,
+       format = 'Calculate sigmas [:bar] :percent :elapsed/:eta', clear=FALSE)$tick
   else ptick <- function(tick) {}
   # TODO: MAKE SURE THAT THE C++ CODE HANDLES THE SITUATION WHERE A COLUMN IS EMPTY (HAS NO PRESENCE IN P)
 
   perplexity = log2(perplexity)
-  sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
+  sigmas <- lapply(1:N, FUN = function(idx) {
     ptick(1)
     x_i <- xs[ps[idx]:(ps[idx + 1] - 1)]
     ret <- optimize(f = sigFunc,
@@ -182,32 +174,36 @@ vis <- function(x,
   #######################################################
   # Calculate w_{ij}
   #######################################################
-  if (! requireNamespace('Matrix',quietly=T)) stop("The Matrix package must be available.")
-  if (verbose[1]) progress <- progress::progress_bar$new(total = length(xs) * 2, format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
-  else progress <- function(tick) {}
 
-  wij <- distMatrixTowij(is, js, xs, sigmas, N, progress)
+  if (! requireNamespace('Matrix',quietly=T)) stop("The Matrix package must be available.")
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = 1000 + (length(xs) * 2),
+          format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent :elapsed/:eta',
+          clear=FALSE)$tick
+  else ptick <- function(tick) {}
+
+  wij <- distMatrixTowij(is, js, xs, sigmas, N, ptick)
 
   if (any(is.na(wij@x)) || any(is.infinite(wij@x)) || any(is.nan(wij@x)) || any((wij@x == 0)) > 0)
     stop("An error has propogated into the w_{ij} vector.  This probably means the input data wasn't scaled.")
 
   # Symmetricize
   wij <- wij + Matrix::t(wij)
+  rm(xs, js, is)
 
   #######################################################
   # Estimate embeddings
   #######################################################
   coords <- projectKNNs(wij = wij,
                         dim = dim,
-                        sgd.batches = sgd.batches,
+                        sgd_batches = sgd_batches,
                         M = M,
-                        weight.pos.samples = weight.pos.samples,
+                        weight_pos_samples = weight_pos_samples,
                         gamma = gamma,
                         verbose = verbose,
                         alpha = alpha,
                         coords = coords,
                         rho = rho,
-                        min.rho = min.rho,
+                        min_rho = min_rho,
                         ...)
 
   #######################################################

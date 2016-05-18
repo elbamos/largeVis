@@ -4,38 +4,38 @@
 \alias{randomProjectionTreeSearch}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
-randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = max(10,
-  ncol(x)), max.iter = 2, verbose = TRUE)
+randomProjectionTreeSearch(x, K = 5, n_trees = 2, tree_threshold = max(10,
+  ncol(x)), max_iter = 2, max_depth = 32, verbose = TRUE)
 }
 \arguments{
-\item{x}{A matrix}
+\item{x}{A matrix.}
 
-\item{K}{How many nearest neighbors to seek for each node}
+\item{K}{How many nearest neighbors to seek for each node.}
 
-\item{n.trees}{The number of trees to build}
+\item{n_trees}{The number of trees to build.}
 
-\item{tree.threshold}{The threshold for creating a new branch.  A value of 1.5 * K guarantees that
-the algorithm will return K candidate nearest neighbors for each vertex. The paper authors suggested
-using a value equivalent to the number of features in the input set.  However this can lead to very lengthy
-calculation times.}
+\item{tree_threshold}{The threshold for creating a new branch.  The paper authors suggest
+using a value equivalent to the number of features in the input set.}
 
-\item{max.iter}{Number of iterations in the neighborhood exploration phase}
+\item{max_iter}{Number of iterations in the neighborhood exploration phase.}
 
-\item{verbose}{Whether to print verbose logging using the \code{progress} package}
+\item{max_depth}{The maximum level of recursion.}
+
+\item{verbose}{Whether to print verbose logging using the \code{progress} package.}
 }
 \value{
-A [N, K] integer matrix showing the estimated K nearest neighbors for each vertex.
+A [K, N] matrix of the approximate K nearest neighbors for each vertex.
 }
 \description{
-This is a very fast and accurate algorithm for finding k-nearest neighbors.
+A fast and accurate algorithm for finding approximate k-nearest neighbors.
+}
+\details{
+Note that the algorithm does not guarantee that it will find K neighbors for each node. A
+warning will be issued if it finds fewer neighbors than requested. If the input data contains
+distinct partitionable clusters, try increasing the \code{tree_threshold} to increase the number
+of returned neighbors.
 }
 \examples{
-\dontrun{
-library(kknn) # Shamelessly borrowing sample data from another package
-data(miete)
-miete <- model.matrix(~ ., miete)
-system.time(neighbors <- randomProjectionTreeSearch(miete))
-}
 
 }
 
