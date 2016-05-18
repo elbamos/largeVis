@@ -138,30 +138,31 @@ void searchTree(int threshold,
                 const arma::uvec& indices,
                 const arma::mat& data,
                 arma::imat& output,
+                int iterations,
                 Function callback) {
-  if (indices.size() < 2) return;
-#pragma omp critical
-{
-  if (indices.size() == 2) {
+  const int I = indices.size();
+  if (I < 2) return;
+  if (I == 2) {
     output(0, indices[0]) = indices[1];
     output(0, indices[1]) = indices[0];
     return;
   }
-  if (indices.size() < threshold) {
+
+  if (I < threshold || iterations == 0) {
     int i = 0;
+    const int mx = (threshold < I) ? threshold : I;
     do {
       int j = i + 1;
       do {
-        output(j, indices[i]) = indices[j];
-        output(i, indices[j]) = indices[i];
+        output(j % threshold, indices[i]) = indices[j];
+        output(i % threshold, indices[j]) = indices[i];
         j++;
-      } while (j < indices.size());
+      } while (j < I && (j % output.n_rows) < mx);
       i++;
-    } while(i < indices.size() - 1);
-    callback(indices.size());
+    } while(i < I - 1);
+    callback(I);
     return;
   }
-}
   // Get hyperplane
   arma::uvec selections = indices.elem(arma::randi<arma::uvec>(2, arma::distr_param(0, indices.size() - 1)));
   arma::vec v =  data.col(selections[1]) - data.col(selections[0]);
@@ -169,16 +170,15 @@ void searchTree(int threshold,
   double mv = dot(m,v); // This is the hyperplane
   arma::vec direction = arma::vec(indices.size());
   for (int i = 0; i < indices.size(); i++) direction[i] = sum(data.col(indices[i]) % v) - mv;
-
   #pragma omp parallel sections
   {
         #pragma omp section
     {
-      searchTree(threshold, indices.elem(arma::find(direction > 0)), data, output, callback);
+      searchTree(threshold, indices.elem(arma::find(direction > 0)), data, output, iterations - 1, callback);
     }
         #pragma omp section
     {
-      searchTree(threshold, indices.elem(arma::find(direction <= 0)), data, output, callback);
+      searchTree(threshold, indices.elem(arma::find(direction <= 0)), data, output, iterations - 1, callback);
     }
   }
 };
@@ -186,6 +186,7 @@ void searchTree(int threshold,
 // [[Rcpp::export]]
 arma::mat searchTrees(int threshold,
                       int n_trees,
+                      int max_recursion_degree,
                       NumericMatrix data, Function callback) {
   arma::mat inputData = as<arma::mat>(data).t();
   std::vector<std::set<int> > heap = std::vector<std::set<int> >(inputData.n_cols);
@@ -197,6 +198,7 @@ arma::mat searchTrees(int threshold,
                arma::regspace<arma::uvec>(0, inputData.n_cols - 1),
                inputData,
                output,
+               max_recursion_degree, // maximum permitted level of recursion
                callback);
     for (int i = 0; i < inputData.n_cols; i++)
       for (int j = 0; j <= threshold; j++)
