@@ -39,10 +39,9 @@ load("./mnist.Rda")
 dat <- mnist$images
 dim(dat) <- c(42000, 28 * 28)
 dat <- (dat / 255) - 0.5
-coords <- vis(dat, pca_f = F, 
-                   n_tree = 10, tree_th = 40, 
-                   K = 40, sgd = 20000 * 42000, alpha = 1, max.iter = 10)
-save(coords, file = "./mnistcoords.Rda")
+coords <- vis(dat, check=FALSE,
+                   n_tree = 50, tree_th = 200, 
+                   K = 50, alpha = 2, max.iter = 4)
 ```
 
 ![](README_files/figure-markdown_github/drawmnist-1.png)

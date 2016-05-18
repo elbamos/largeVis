@@ -19,7 +19,7 @@ by the paper authors.}
 \item{M}{The number of negative edges to sample for each positive edge.}
 
 \item{weight_pos_samples}{Whether to sample positive edges according to their edge weights (the default) or take the
-weights into account when calculating gradient.  Note:  Applying weights to the gradients is not yet implemented.}
+weights into account when calculating gradient.  See also the Details section.}
 
 \item{gamma}{Hyperparameter analogous to the strength of the force operating to push-away negative examples.}
 
@@ -49,5 +49,11 @@ negative sampling.
 The objective function is: \deqn{ O = \sum_{(i,j)\in E} w_{ij} (\log f(||p(e_{ij} = 1||) + \sum_{k=1}^{M} E_{jk~P_{n}(j)} \gamma \log(1 - f(||p(e_{ij_k} - 1||)))}
 where \eqn{f()} is a probabilistic function relating the distance between two points in the low-dimensional projection space,
 and the probability that they are nearest neighbors.  See the discussion of the alpha parameter below.
+
+The \code{weight_pos_samples} parameter controls how to handle edge-weights.  The paper authors recommend using a weighted
+sampling approach to select edges, and treating edge-weight as binary in calculating the objective. This is the default.
+
+However, the algorithm for drawing weighted samples runs in \eqn{O(n *\log n)}. The alternative approach, which runs in
+\eqn{O(n)}, is to draw unweighted samples and include \eqn{w_{ij}} in the objective function.
 }
 

@@ -70,18 +70,21 @@ void sgd(NumericMatrix coords,
   // Calculate negative sample weights, d_{i}^0.75.
   // Stored as a vector of cumulative sums, normalized, so it can
   // be readily searched using binary searches.
-  // TODO:  CREATE A FORM FOR WHEN USEWEIGHTS = TRUE
   arma::vec negativeSampleWeights = pow(diff(ps), 0.75);
   const double scale = sum(negativeSampleWeights);
   negativeSampleWeights = negativeSampleWeights / scale;
   negativeSampleWeights = cumsum(negativeSampleWeights);
 
   // positive edges for sampling
-  const double posScale = sum(ws);
-  arma::vec positiveEdgeWeights = as<arma::vec>(ws);
-  positiveEdgeWeights = cumsum(positiveEdgeWeights / posScale);
+  arma::vec positiveEdgeWeights;
+  arma::vec positiveSamples;
   const int posSampleLength = min(1000000, nBatches);
-  arma::vec positiveSamples = arma::randu<arma::vec>(posSampleLength);
+  positiveSamples = arma::randu<arma::vec>(posSampleLength);
+  if (! useWeights) {
+    const double posScale = sum(ws);
+    positiveEdgeWeights = as<arma::vec>(ws);
+    positiveEdgeWeights = cumsum(positiveEdgeWeights / posScale);
+  }
 
   // Iterate through the edges in the positiveEdges vector
 #pragma omp parallel for shared(coords, positiveSamples)
@@ -89,10 +92,15 @@ void sgd(NumericMatrix coords,
     arma::vec::iterator posIt = positiveSamples.begin();
     const double posTarget = posIt[eIdx % posSampleLength];
     int k;
-    const int e_ij = std::distance(positiveEdgeWeights.begin(),
+    int e_ij;
+    if (useWeights) {
+      e_ij = posTarget * posSampleLength;
+    } else {
+      e_ij = std::distance(positiveEdgeWeights.begin(),
                            std::upper_bound(positiveEdgeWeights.begin(),
                                             positiveEdgeWeights.end(),
                                             posTarget));
+    }
     int i = is[e_ij];
     int j = js[e_ij];
 
