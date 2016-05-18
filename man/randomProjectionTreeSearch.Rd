@@ -14,17 +14,15 @@ randomProjectionTreeSearch(x, K = 5, n.trees = 2, tree.threshold = max(10,
 
 \item{n.trees}{The number of trees to build}
 
-\item{tree.threshold}{The threshold for creating a new branch.  A value of 1.5 * K guarantees that
-the algorithm will return K candidate nearest neighbors for each vertex. The paper authors suggested
-using a value equivalent to the number of features in the input set.  However this can lead to very lengthy
-calculation times.}
+\item{tree.threshold}{The threshold for creating a new branch.  The paper authors suggest
+using a value equivalent to the number of features in the input set.}
 
 \item{max.iter}{Number of iterations in the neighborhood exploration phase}
 
 \item{verbose}{Whether to print verbose logging using the \code{progress} package}
 }
 \value{
-A [N, K] integer matrix showing the estimated K nearest neighbors for each vertex.
+A [K, N] matrix of the approximate K nearest neighbors for each vertex.
 }
 \description{
 This is a very fast and accurate algorithm for finding k-nearest neighbors.

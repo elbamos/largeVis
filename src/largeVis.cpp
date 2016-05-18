@@ -52,7 +52,6 @@ void checkGrad(const arma::vec& x,
 
 // [[Rcpp::export]]
 void sgd(NumericMatrix coords,
-         NumericVector positiveEdges,
          NumericVector is, // vary randomly
          NumericVector js, // ordered
          NumericVector ps, // N+1 length vector of indices to start of each row j in vector is
@@ -61,29 +60,43 @@ void sgd(NumericMatrix coords,
          double rho,
          double minRho,
          bool useWeights,
+         int nBatches,
          int M,
          double alpha,
          Function callback) {
 
   int N = ps.size() - 1;
-  arma::vec i_idx = as<arma::vec>(is);
+  const arma::vec i_idx = as<arma::vec>(is);
   // Calculate negative sample weights, d_{i}^0.75.
   // Stored as a vector of cumulative sums, normalized, so it can
   // be readily searched using binary searches.
   // TODO:  CREATE A FORM FOR WHEN USEWEIGHTS = TRUE
   arma::vec negativeSampleWeights = pow(diff(ps), 0.75);
-  double scale = sum(negativeSampleWeights);
+  const double scale = sum(negativeSampleWeights);
   negativeSampleWeights = negativeSampleWeights / scale;
   negativeSampleWeights = cumsum(negativeSampleWeights);
 
+  // positive edges for sampling
+  const double posScale = sum(ws);
+  arma::vec positiveEdgeWeights = as<arma::vec>(ws);
+  positiveEdgeWeights = cumsum(positiveEdgeWeights / posScale);
+  const int posSampleLength = min(1000000, nBatches);
+  arma::vec positiveSamples = arma::randu<arma::vec>(posSampleLength);
+
   // Iterate through the edges in the positiveEdges vector
-#pragma omp parallel for shared(coords)
-  for (int eIdx=0; eIdx < positiveEdges.size(); eIdx++) {
-    const int e_ij = positiveEdges[eIdx];
+#pragma omp parallel for shared(coords, positiveSamples)
+  for (int eIdx=0; eIdx < nBatches; eIdx++) {
+    arma::vec::iterator posIt = positiveSamples.begin();
+    const double posTarget = posIt[eIdx % posSampleLength];
+    int k;
+    const int e_ij = std::distance(positiveEdgeWeights.begin(),
+                           std::upper_bound(positiveEdgeWeights.begin(),
+                                            positiveEdgeWeights.end(),
+                                            posTarget));
     int i = is[e_ij];
     int j = js[e_ij];
 
-    const double localRho = rho - ((rho - minRho) * eIdx / (positiveEdges.size()));
+    const double localRho = rho - ((rho - minRho) * eIdx / nBatches);
 
     if ((arma::randn<arma::vec>(1))[0] < 0) swap(i, j);
 
@@ -97,8 +110,8 @@ void sgd(NumericMatrix coords,
 
     const NumericVector d_dist_ij = (y_i - y_j) / sqrt(dist_ij);
     double p_ij;
-    if (alpha == 0) p_ij = 1 / (1 +      exp(pow(dist_ij,2)));
-    else            p_ij = 1 / (1 + (alpha * pow(dist_ij,2)));
+    if (alpha == 0)   p_ij =   1 / (1 +      exp(pow(dist_ij,2)));
+    else              p_ij =   1 / (1 + (alpha * pow(dist_ij,2)));
     NumericVector d_p_ij;
     if (alpha == 0) d_p_ij =   2 *  d_dist_ij * -exp(pow(dist_ij,2)) /    (1 + exp(pow(dist_ij,2)));
     else            d_p_ij =        d_dist_ij *     -pow(dist_ij,2)  / pow(1 +    (pow(dist_ij,2) * alpha),2);
@@ -108,13 +121,13 @@ void sgd(NumericMatrix coords,
     arma::vec samples = arma::randu<arma::vec>(M * 2);
     arma::vec::iterator targetIt = samples.begin();
     int sampleIdx = 1;
-    int m = 0;
     // The indices of the nodes with edges to i
     arma::vec searchVector = i_idx.subvec(ps[i], ps[i + 1] - 1);
     NumericVector d_i = d_ij;
+    int m = 0;
     while (m < M) {
       if (sampleIdx % (M * 2) == 0) samples.randu();
-      // binary search for lowest number greater than the sampled number
+      // binary search implementing weighted sampling
       const double target = targetIt[sampleIdx++ % (M * 2)];
       int k;
       if (useWeights) k = target * (N - 1);
@@ -145,6 +158,7 @@ void sgd(NumericMatrix coords,
     coords(j,_) = coords(j,_) - (d_ij * w * localRho);
     coords(i,_) = coords(i,_) + (d_i  * w * localRho);
     if (eIdx > 0 && eIdx % 10000 == 0) callback(10000);
+    if (eIdx >0 && eIdx % posSampleLength == 0) positiveSamples.randu();
   }
 };
 

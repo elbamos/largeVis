@@ -49,15 +49,6 @@ projectKNNs <- function(wij, # sparse matrix
   js = rep(0:(N-1), diff(wij@p))
   is = wij@i
 
-
-  ##############################################
-  # Prepare vector of positive samples
-  ##############################################
-  pos.edges <- NULL
-
-  if (weight.pos.samples) pos.edges <- sample(length(wij@x), sgd.batches, replace = T, prob = wij@x) - 1
-  else pos.edges <- sample(length(wij@x), sgd.batches, replace = T) - 1
-
   ##############################################
   # Initialize coordinate matrix
   ##############################################
@@ -72,14 +63,13 @@ projectKNNs <- function(wij, # sparse matrix
   if (verbose[1]) callback <- progress$tick
   callback(0)
   sgd(coords,
-              pos.edges,
               is = is,
               js = js,
               ps = wij@p,
               ws = wij@x,
               gamma = gamma, rho = rho, minRho = min.rho,
-              useWeights = ! weight.pos.samples, M = M,
-              alpha = alpha, callback = callback)
+              useWeights = ! weight.pos.samples, nBatches = sgd.batches,
+              M = M, alpha = alpha, callback = callback)
 
   return(coords)
 }
