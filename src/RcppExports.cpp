@@ -7,10 +7,9 @@
 using namespace Rcpp;
 
 // sgd
-arma::mat sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ps, NumericVector ws, double gamma, double rho, double minRho, bool useWeights, int M, double alpha, Function callback);
+void sgd(NumericMatrix coords, NumericVector positiveEdges, NumericVector is, NumericVector js, NumericVector ps, NumericVector ws, double gamma, double rho, double minRho, bool useWeights, int M, double alpha, Function callback);
 RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP positiveEdgesSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP psSEXP, SEXP wsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
-    Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< NumericMatrix >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type positiveEdges(positiveEdgesSEXP);
@@ -25,36 +24,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type M(MSEXP);
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    __result = Rcpp::wrap(sgd(coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWeights, M, alpha, callback));
-    return __result;
-END_RCPP
-}
-// neighbors_inner
-void neighbors_inner(int maxIter, NumericMatrix old_knns, NumericMatrix data, NumericMatrix outputKnns, bool prefilter, Function callback);
-RcppExport SEXP largeVis_neighbors_inner(SEXP maxIterSEXP, SEXP old_knnsSEXP, SEXP dataSEXP, SEXP outputKnnsSEXP, SEXP prefilterSEXP, SEXP callbackSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< int >::type maxIter(maxIterSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type old_knns(old_knnsSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type outputKnns(outputKnnsSEXP);
-    Rcpp::traits::input_parameter< bool >::type prefilter(prefilterSEXP);
-    Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    neighbors_inner(maxIter, old_knns, data, outputKnns, prefilter, callback);
+    sgd(coords, positiveEdges, is, js, ps, ws, gamma, rho, minRho, useWeights, M, alpha, callback);
     return R_NilValue;
 END_RCPP
 }
 // searchTrees
-arma::mat searchTrees(int threshold, int n_trees, NumericMatrix data, Function callback);
-RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP dataSEXP, SEXP callbackSEXP) {
+arma::mat searchTrees(int threshold, int n_trees, int K, int max_recursion_degree, int maxIter, NumericMatrix data, Function callback);
+RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP max_recursion_degreeSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP callbackSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< int >::type threshold(thresholdSEXP);
     Rcpp::traits::input_parameter< int >::type n_trees(n_treesSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type max_recursion_degree(max_recursion_degreeSEXP);
+    Rcpp::traits::input_parameter< int >::type maxIter(maxIterSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
     Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    __result = Rcpp::wrap(searchTrees(threshold, n_trees, data, callback));
+    __result = Rcpp::wrap(searchTrees(threshold, n_trees, K, max_recursion_degree, maxIter, data, callback));
     return __result;
 END_RCPP
 }
