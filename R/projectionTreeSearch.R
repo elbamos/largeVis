@@ -42,16 +42,13 @@ randomProjectionTreeSearch <- function(x,
                                                       format = 'Random projection trees [:bar] :percent/:elapsed eta: :eta', clear = FALSE)$tick
   else ptick <- function(ticks) {}
   ptick(0)
-
-  secondprogress = FALSE
-
   knns <- searchTrees(tree.threshold, n.trees, K, 32, max.iter, x, callback = ptick)
 
   if (sum(colSums(knns != -1) == 0) + sum(is.na(knns)) + sum(is.nan(knns)) > 0)
     stop("After neighbor search, no candidates for some nodes.")
-
   if (verbose[1] && sum(knns == -1) > 0)
     warning("Wanted to find", nrow(knns) * ncol(knns), " neighbors, but only found",
                   ((nrow(knns) * ncol(knns)) - sum(knns == -1)))
+
   return(knns)
 }

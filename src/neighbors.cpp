@@ -113,20 +113,11 @@ arma::mat searchTrees(int threshold,
     NumericVector x_i = data.row(i);
     std::priority_queue<heapObject> maxHeap = std::priority_queue<heapObject>();
     std::set<int> stack = treeNeighborhoods[i];
-    std::set<int>::iterator it = stack.begin();
-    double d = dist(x_i, data.row(*it));
-    maxHeap.push(heapObject(d, *it));
-
-    std::for_each(it++, stack.end(),
-                  [&](const int& candidate) {
-                    if (candidate != -1) {
-                      const double d = dist(x_i, data.row(candidate));
-                      if (d < maxHeap.top().d) {
-                        maxHeap.push(heapObject(d, candidate));
-                        if (maxHeap.size() > threshold) maxHeap.pop();
-                      }
-                    }
-                  });
+    for (std::set<int>::iterator it = stack.begin(); it != stack.end(); it++) {
+      double d = dist(x_i, data.row(*it));
+      maxHeap.push(heapObject(d, *it));
+      if (maxHeap.size() > threshold) maxHeap.pop();
+    }
     int j = 0;
     do {
       knns(j,i) = maxHeap.top().n;
@@ -152,9 +143,11 @@ arma::mat searchTrees(int threshold,
       std::set<int> pastVisitors = treeNeighborhoods[i];
 
       const arma::vec neighborhood = old_knns.col(i);
+      int cnt = sum(neighborhood == -1);
+      arma::vec locality;
       for (int jidx = 0; jidx < old_knns.n_rows; jidx++) {
         const int j = neighborhood[jidx];
-        if (j == -1) continue;
+        if (j == -1) break;
         if (j != i) {
           d = dist(x_i, data.row(j));
           if (d != 0) {
@@ -162,13 +155,13 @@ arma::mat searchTrees(int threshold,
             if (heap.size() > K) heap.pop();
           }
         }
-        const arma::vec locality = old_knns.col(j);
+        locality = old_knns.col(j);
         for (int kidx = 0; kidx < old_knns.n_rows; kidx++) {
           const int k = locality[kidx];
-          if (k == -1) continue;
+          if (k == -1) break;
           if (k != i && pastVisitors.insert(k).second) {
             d = dist(x_i, data.row(k));
-            if (d != 0) {
+            if (d != 0 && d < heap.top().d) {
               heap.push(heapObject(d, k));
               if (heap.size() > K) heap.pop();
             }
