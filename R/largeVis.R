@@ -137,8 +137,8 @@ vis <- function(x,
   #######################################################
   # Calculate edge weights for candidate neighbors
   #######################################################
-  if (verbose[1]) ptick <- progress::progress_bar$new(total = N,
-      format = "Calculate neighbor distances [:bar] :percent/:elapsed eta: :eta", clear=FALSE)$tick
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = N + 100,
+      format = "Calculate neighbor distances [:bar] :percent :elapsed/:eta", clear=FALSE)$tick
   else ptick <- function(tick) {}
 
   xs <- rep(0, length(is)) # pre-allocate
@@ -151,8 +151,8 @@ vis <- function(x,
   ########################################################
   # Estimate sigmas
   ########################################################
-  if (verbose[1]) ptick <- progress::progress_bar$new(total = N,
-       format = 'Calculate sigmas [:bar] :percent/:elapsed eta: :eta', clear=FALSE)$tick
+  if (verbose[1]) ptick <- progress::progress_bar$new(total = N + 100,
+       format = 'Calculate sigmas [:bar] :percent :elapsed/:eta', clear=FALSE)$tick
   else ptick <- function(tick) {}
   # TODO: MAKE SURE THAT THE C++ CODE HANDLES THE SITUATION WHERE A COLUMN IS EMPTY (HAS NO PRESENCE IN P)
 

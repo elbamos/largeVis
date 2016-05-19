@@ -34,11 +34,16 @@ randomProjectionTreeSearch <- function(x,
   # random projection trees
   if (verbose[1]) ptick <-
       progress::progress_bar$new(total = (n_trees * N) + (N * (max_iter + 2)),
-                format = "Looking for Neighbors[:bar] :percent/:elapsed eta: :eta", clear = FALSE)$tick
-  else ptick <- function(ticks) {}
-  ptick(0)
-  # QUESTION -- IS PEAK RAM CONSUMPTION PROPORTIONAL TO DEPTH?
-  knns <- searchTrees(tree_threshold, n_trees, K, max_depth, max_iter, x, callback = ptick)
+                format = ":phase [:bar] :percent/:elapsed eta: :eta", clear = FALSE)$tick
+  else ptick <- function(ticks, tokens) {}
+  ptick(0, tokens = list(phase = "Finding Neighbors"))
+
+  knns <- searchTrees(threshold = tree_threshold,
+                      n_trees = n_trees,
+                      K = K, max_recursion_degree = max_depth,
+                      maxIter = max_iter,
+                      data = x,
+                      callback = ptick)
 
   if (sum(colSums(knns != -1) == 0) + sum(is.na(knns)) + sum(is.nan(knns)) > 0)
     stop ("After neighbor search, no candidates for some nodes.")

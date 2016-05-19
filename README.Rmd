@@ -43,41 +43,6 @@ theme_set(
 )
 
 ```
-##### Iris
-
-```{r iris,eval=T}
-library(largeVis,quietly=T)
-data(iris)
-dat <- as.matrix(iris[,1:4])
-dat <- scale(dat)
-dupes = which(duplicated(dat))
-dat <- dat[-dupes,]
-visObject <- vis(dat, 
-                   max_iter = 20, sgd_batches = 800000, 
-                   K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=F)
-```
-```{r echo=F}
-coords <- data.frame(scale(visObject$coords))
-colnames(coords) <- c("X", "Y")
-coords$Species <- iris$Species[-dupes]
-coords$algo <- "largeVis"
-```
-```{r iristsne,echo=F}
-library(Rtsne,quietly=T)
-more <- scale(Rtsne(dat, initial_dims = 4, pca = F)$Y)
-more <- data.frame(X = more[,1], Y = more[,2], algo = "B-H t-SNE")
-more$Species <- iris$Species[-dupes]
-coords <- rbind(coords, more)
-coords$algo <- factor(coords$algo)
-```
-```{r showiris,echo=F}
-ggplot(coords, aes(x = X, y = Y, color = Species)) + 
-  geom_point(size = 0.5) + 
-  facet_grid(~ algo, scales = 'free') + 
-  scale_color_manual(values = colors_discrete(3)) + 
-  guides(colour = guide_legend(override.aes = list(size=5))) +
-  ggtitle("The Iris Dataset largeVis vs. t-SNE")
-```
 
 ##### MNIST
 

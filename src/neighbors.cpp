@@ -39,7 +39,8 @@ void searchTree(int threshold,
                 const NumericMatrix& data,
                 std::vector<std::set<int> >& heap,
                 const int& iterations,
-                Function& callback) {
+                Function& callback,
+                List& progressParams) {
   const int I = indices.size();
   if (I < 2) return;
   if (I == 2) {
@@ -59,14 +60,14 @@ void searchTree(int threshold,
       } while (j < I && (j % threshold) < mx);
       i++;
     } while(i < I - 1);
-    callback(I);
+    callback(I, _["tokens"] = progressParams);
     return;
   }
   std::vector<int> left = std::vector<int>();
   std::vector<int> right = std::vector<int>();
   int x1idx, x2idx;
   do {
-    const arma::vec selections = arma::randu(2) * (indices.size() - 1);
+    const arma::vec selections = arma::randu(2) * (I - 1);
     x1idx = indices[selections[0]];
     x2idx = indices[selections[1]];
   } while (x1idx == x2idx);
@@ -94,21 +95,21 @@ void searchTree(int threshold,
   {
     #pragma omp section
     {
-      searchTree(threshold, left, data, heap, iterations - 1, callback);
+      searchTree(threshold, left, data, heap, iterations - 1, callback, progressParams);
     }
     #pragma omp section
     {
-      searchTree(threshold, right, data, heap, iterations - 1, callback);
+      searchTree(threshold, right, data, heap, iterations - 1, callback, progressParams);
     }
   }
 };
 
 // [[Rcpp::export]]
-arma::mat searchTrees(int threshold,
-                      int n_trees,
-                      int K,
-                      int max_recursion_degree,
-                      int maxIter,
+arma::mat searchTrees(const int& threshold,
+                      const int& n_trees,
+                      const int& K,
+                      const int& max_recursion_degree,
+                      const int& maxIter,
                       NumericMatrix data,
                       Function callback) {
   const int N = data.nrow();
@@ -117,17 +118,22 @@ arma::mat searchTrees(int threshold,
   std::vector<int> indices = std::vector<int>(N);
   std::iota(indices.begin(), indices.end(), 0);
 
-  for (int t = 0; t < n_trees; t++)
+  Rcpp::List progressParams = Rcpp::List::create();
+
+  for (int t = 0; t < n_trees; t++) {
+    progressParams["phase"] = "Random Projection Tree " +  std::to_string(t + 1) + "/" + std::to_string(n_trees);
     searchTree(threshold,
                indices,
                data,
                treeNeighborhoods,
                max_recursion_degree, // maximum permitted level of recursion
-               callback
+               callback,
+               progressParams
                );
-
+  }
   arma::mat knns = arma::mat(threshold,N);
   knns.fill(-1);
+  progressParams["phase"] = "Reducing Tree Leaves";
   #pragma omp parallel for shared(knns)
   for (int i = 0; i < N; i++) {
     const NumericVector x_i = data.row(i);
@@ -145,22 +151,21 @@ arma::mat searchTrees(int threshold,
       j++;
     } while (j < threshold && ! maxHeap.empty());
     stack.insert(i);
-    if (i > 0 && i % 1000 == 0) callback(1000);
+    if (i > 0 && i % 1000 == 0) callback(1000, _["tokens"] = progressParams);
   }
 
-  //phase["phase"] = "Exploring Neighborhoods";
   for (int T = 0; T < maxIter; T++) {
+    progressParams["phase"] = "Exploring Neighborhood " + std::to_string(T + 1) + "/" +  std::to_string(maxIter);
     arma::mat old_knns = knns;
     knns = arma::mat(K,N);
     knns.fill(-1);
     #pragma omp parallel for shared(knns, treeNeighborhoods)
     for (int i = 0; i < N; i++) {
       double d;
-      if (i > 0 && i % 1000 == 0) callback(1000);
+      if (i > 0 && i % 1000 == 0) callback(1000, _["tokens"] = progressParams);
+
       const NumericVector x_i = data.row(i);
-
       std::priority_queue<heapObject> heap;
-
       std::set<int> pastVisitors = treeNeighborhoods[i];
 
       const arma::vec neighborhood = old_knns.col(i);

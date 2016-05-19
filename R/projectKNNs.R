@@ -62,11 +62,11 @@ projectKNNs <- function(wij, # sparse matrix
   #################################################
   # SGD
   #################################################
-  callback <- function(tick) {}
+  callback <- function(tick, tokens) {}
   progress <- #utils::txtProgressBar(min = 0, max = sgd_batches, style = 3)
-    progress::progress_bar$new(total = sgd_batches, format = 'SGD [:bar] :percent/:elapsed eta: :eta', clear=FALSE)
+    progress::progress_bar$new(total = sgd_batches, format = 'SGD [:bar] :percent :elapsed/:eta Training Loss: :loss', clear=FALSE)
   if (verbose[1]) callback <- progress$tick
-  callback(0)
+  callback(0, -Inf)
   sgd(coords,
               is = is,
               js = js,

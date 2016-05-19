@@ -86,8 +86,11 @@ void sgd(NumericMatrix coords,
     positiveEdgeWeights = cumsum(positiveEdgeWeights / posScale);
   }
 
+  Rcpp::List progressParams = Rcpp::List::create();
+  double trailingLoss = 0;
+
   // Iterate through the edges in the positiveEdges vector
-#pragma omp parallel for shared(coords, positiveSamples)
+#pragma omp parallel for shared(coords, positiveSamples, trailingloss)
   for (int eIdx=0; eIdx < nBatches; eIdx++) {
     arma::vec::iterator posIt = positiveSamples.begin();
     const double posTarget = posIt[eIdx % posSampleLength];
@@ -123,8 +126,9 @@ void sgd(NumericMatrix coords,
     NumericVector d_p_ij;
     if (alpha == 0) d_p_ij =   2 *  d_dist_ij * -exp(pow(dist_ij,2)) /    (1 + exp(pow(dist_ij,2)));
     else            d_p_ij =        d_dist_ij *     -pow(dist_ij,2)  / pow(1 +    (pow(dist_ij,2) * alpha),2);
- //   const double o_ij = log(p_ij);
+    const double o_ij = log(p_ij);
     const NumericVector d_ij = (1 / p_ij) * d_p_ij;
+    double o = o_ij;
 
     arma::vec samples = arma::randu<arma::vec>(M * 2);
     arma::vec::iterator targetIt = samples.begin();
@@ -156,16 +160,21 @@ void sgd(NumericMatrix coords,
       const NumericVector d_dist_ik = (y_i - y_k) / sqrt(dist_ik);
       const double p_ik = 1 - (1 / (1 + (alpha * pow(dist_ik,2))));
       const NumericVector d_p_ik = d_dist_ik * (1 / ((pow(dist_ik,2) * pow(alpha, 2)) + alpha));
-    //  const double o_ik = log(p_ik);
+      const double o_ik = log(p_ik);
       const NumericVector d_ik = (gamma / p_ik) * d_p_ik;
 
+      o += o_ij;
       d_i = d_i + d_ik;
       coords(k,_) = coords(k,_) - (d_ik * localRho * w);
       m++;
     }
     coords(j,_) = coords(j,_) - (d_ij * w * localRho);
     coords(i,_) = coords(i,_) + (d_i  * w * localRho);
-    if (eIdx > 0 && eIdx % 10000 == 0) callback(10000);
+    if (eIdx > 0 && eIdx % 100000 == 0) {
+      trailingLoss = (trailingLoss * .9) + (o * .1);
+      progressParams["loss"] = trailingLoss;
+      callback(100000, _["tokens"] = progressParams);
+    }
     if (eIdx >0 && eIdx % posSampleLength == 0) positiveSamples.randu();
   }
 };
