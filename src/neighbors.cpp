@@ -56,19 +56,11 @@ void searchTree(const int& threshold,
   if (I < threshold || iterations == 0) {
     #pragma omp critical
     {
-      int i = 0;
-      const int mx = (threshold < I) ? threshold : I;
-      do {
-        int j = i + 1;
-        do {
-          heap[indices[i]].insert(indices[j]);
-          heap[indices[j]].insert(indices[i]);
-          j++;
-        } while (j < I && (j % threshold) < mx);
-        i++;
-        } while(i < I - 1);
-      progress.increment(indices.size());
+      for (int i = 0; i < I; i++)
+        for (int j = 0; j < I; j++)
+          if (i != j) heap[indices[i]].insert(indices[j]);
     }
+    progress.increment(I);
     return;
   }
   arma::vec direction = arma::vec(indices.size());

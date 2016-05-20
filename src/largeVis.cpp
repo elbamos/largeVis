@@ -130,7 +130,7 @@ arma::mat sgd(arma::mat coords,
 
       // wij
       const double w = (useWeights) ? ws[e_ij] : 1;
-      // TODO: RE-ADD TO USE EXP IF ALPHA = 0
+
       const double dist_ij = (alpha == 0) ? std::min(16.0, sqrt(dist(y_i, y_j))) : sqrt(dist(y_i, y_j));
 
       const arma::vec d_dist_ij = (y_i - y_j) / sqrt(dist_ij);
