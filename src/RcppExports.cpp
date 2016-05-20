@@ -7,11 +7,12 @@
 using namespace Rcpp;
 
 // sgd
-void sgd(NumericMatrix coords, const NumericVector is, const NumericVector js, const NumericVector ps, const NumericVector ws, const double gamma, const double rho, const double minRho, const bool useWeights, const int nBatches, const int M, const double alpha, const Function callback);
-RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP psSEXP, SEXP wsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP nBatchesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP callbackSEXP) {
+arma::mat sgd(arma::mat coords, const NumericVector is, const NumericVector js, const NumericVector ps, const NumericVector ws, const double gamma, const double rho, const double minRho, const bool useWeights, const int nBatches, const int M, const double alpha, bool verbose);
+RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP psSEXP, SEXP wsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP nBatchesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< NumericMatrix >::type coords(coordsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type is(isSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type js(jsSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type ps(psSEXP);
@@ -23,14 +24,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type nBatches(nBatchesSEXP);
     Rcpp::traits::input_parameter< const int >::type M(MSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const Function >::type callback(callbackSEXP);
-    sgd(coords, is, js, ps, ws, gamma, rho, minRho, useWeights, nBatches, M, alpha, callback);
-    return R_NilValue;
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(sgd(coords, is, js, ps, ws, gamma, rho, minRho, useWeights, nBatches, M, alpha, verbose));
+    return __result;
 END_RCPP
 }
 // searchTrees
-arma::mat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& max_recursion_degree, const int& maxIter, NumericMatrix data, Function callback);
-RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP max_recursion_degreeSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP callbackSEXP) {
+arma::mat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& max_recursion_degree, const int& maxIter, const arma::mat& data, bool verbose);
+RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP max_recursion_degreeSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -39,29 +40,29 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
     Rcpp::traits::input_parameter< const int& >::type max_recursion_degree(max_recursion_degreeSEXP);
     Rcpp::traits::input_parameter< const int& >::type maxIter(maxIterSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< Function >::type callback(callbackSEXP);
-    __result = Rcpp::wrap(searchTrees(threshold, n_trees, K, max_recursion_degree, maxIter, data, callback));
+    Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(searchTrees(threshold, n_trees, K, max_recursion_degree, maxIter, data, verbose));
     return __result;
 END_RCPP
 }
 // distance
-void distance(const NumericVector is, const NumericVector js, NumericVector xs, const NumericMatrix data, const Function callback);
-RcppExport SEXP largeVis_distance(SEXP isSEXP, SEXP jsSEXP, SEXP xsSEXP, SEXP dataSEXP, SEXP callbackSEXP) {
+arma::vec distance(const NumericVector is, const NumericVector js, const arma::mat& data, bool verbose);
+RcppExport SEXP largeVis_distance(SEXP isSEXP, SEXP jsSEXP, SEXP dataSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< const NumericVector >::type is(isSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type js(jsSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type xs(xsSEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const Function >::type callback(callbackSEXP);
-    distance(is, js, xs, data, callback);
-    return R_NilValue;
+    Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(distance(is, js, data, verbose));
+    return __result;
 END_RCPP
 }
 // distMatrixTowij
-arma::sp_mat distMatrixTowij(const NumericVector is, const NumericVector js, const NumericVector xs, const NumericVector sigmas, const int N, const Function callback);
-RcppExport SEXP largeVis_distMatrixTowij(SEXP isSEXP, SEXP jsSEXP, SEXP xsSEXP, SEXP sigmasSEXP, SEXP NSEXP, SEXP callbackSEXP) {
+arma::sp_mat distMatrixTowij(const NumericVector is, const NumericVector js, const NumericVector xs, const NumericVector sigmas, const int N, bool verbose);
+RcppExport SEXP largeVis_distMatrixTowij(SEXP isSEXP, SEXP jsSEXP, SEXP xsSEXP, SEXP sigmasSEXP, SEXP NSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -70,8 +71,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector >::type xs(xsSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type sigmas(sigmasSEXP);
     Rcpp::traits::input_parameter< const int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< const Function >::type callback(callbackSEXP);
-    __result = Rcpp::wrap(distMatrixTowij(is, js, xs, sigmas, N, callback));
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(distMatrixTowij(is, js, xs, sigmas, N, verbose));
     return __result;
 END_RCPP
 }

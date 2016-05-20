@@ -50,7 +50,7 @@
 
 projectKNNs <- function(wij, # symmetric sparse matrix
                         dim = 2, # dimension of the projection space
-                        sgd_batches = nrow(wij) * 20000,
+                        sgd_batches = (length(wij@p) -1) * 20000,
                         M = 5,
                         weight_pos_samples = TRUE,
                         gamma = 7,
@@ -59,31 +59,27 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                         coords = NULL,
                         min_rho = 0.1,
                         verbose = TRUE) {
-  N <- length(wij@p) - 1
+  N <-  (length(wij@p) -1)
   js <- rep(0:(N-1), diff(wij@p))
   is <- wij@i
 
   ##############################################
   # Initialize coordinate matrix
   ##############################################
-  if (is.null(coords)) coords <- matrix(rnorm(N * dim), ncol = dim)
+  if (is.null(coords)) coords <- matrix(rnorm(N * dim), nrow = dim)
 
   #################################################
   # SGD
   #################################################
-  callback <- function(tick, tokens) {}
-  progress <- #utils::txtProgressBar(min = 0, max = sgd_batches, style = 3)
-    progress::progress_bar$new(total = sgd_batches, format = 'SGD [:bar] :percent :elapsed/:eta Training Loss: :loss', clear=FALSE)
-  if (verbose[1]) callback <- progress$tick
-  callback(0, tokens = list(loss = -Inf))
-  sgd(coords,
+  if (verbose) cat("Estimating embeddings.\n")
+  coords <- sgd(coords,
               is = is,
               js = js,
               ps = wij@p,
               ws = wij@x,
               gamma = gamma, rho = rho, minRho = min_rho,
               useWeights = ! weight_pos_samples, nBatches = sgd_batches,
-              M = M, alpha = alpha, callback = callback)
+              M = M, alpha = alpha, verbose = verbose)
 
   return(coords)
 }

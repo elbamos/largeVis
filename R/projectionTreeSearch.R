@@ -25,25 +25,20 @@
 randomProjectionTreeSearch <- function(x,
                                        K = 5, #
                                        n_trees = 2,
-                                       tree_threshold =  max(10, ncol(x)),
+                                       tree_threshold =  max(10, nrow(x)),
                                        max_iter = 2,
                                        max_depth = 32,
                                        verbose= TRUE) {
   N <- nrow(x)
 
-  # random projection trees
-  if (verbose[1]) ptick <-
-      progress::progress_bar$new(total = (n_trees * N) + (N * (max_iter + 2)),
-                format = ":phase [:bar] :percent/:elapsed eta: :eta", clear = FALSE)$tick
-  else ptick <- function(ticks, tokens) {}
-  ptick(0, tokens = list(phase = "Finding Neighbors"))
+  if (verbose) cat("Searching for neighbors.\n")
 
   knns <- searchTrees(threshold = tree_threshold,
                       n_trees = n_trees,
                       K = K, max_recursion_degree = max_depth,
                       maxIter = max_iter,
                       data = x,
-                      callback = ptick)
+                      verbose = verbose)
 
   if (sum(colSums(knns != -1) == 0) + sum(is.na(knns)) + sum(is.nan(knns)) > 0)
     stop ("After neighbor search, no candidates for some nodes.")

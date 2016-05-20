@@ -5,13 +5,13 @@
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
 vis(x, dim = 2, K = 40, check.assumptions = TRUE, n_trees = 50,
-  tree_threshold = max(10, ncol(x)), max_iter = 3, max_depth = 32,
-  perplexity = 50, sgd_batches = nrow(x) * 20000, M = 5,
+  tree_threshold = max(10, nrow(x)), max_iter = 3, max_depth = 32,
+  perplexity = 50, sgd_batches = ncol(x) * 20000, M = 5,
   weight_pos_samples = TRUE, alpha = 2, gamma = 7, rho = 1,
   min_rho = 0, coords = NULL, verbose = TRUE, ...)
 }
 \arguments{
-\item{x}{A matrix. Ideally, the columns should be scaled and normalized to avoid the risk of errors caused by overflow.}
+\item{x}{A matrix, where the features are rows and the examples are columns.}
 
 \item{dim}{The number of dimensions in the output}
 
@@ -77,6 +77,7 @@ dat <- as.matrix(iris[,1:4])
 dat <- scale(dat)
 dupes = which(duplicated(dat))
 dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
+dat <- t(dat)
 visObject <- vis(dat, max_iter = 20, sgd_batches = 800000,
                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
 \dontrun{
@@ -85,6 +86,7 @@ load("./mnist.Rda")
 dat <- mnist$images
 dim(dat) <- c(42000, 28 * 28)
 dat <- (dat / 255) - 0.5
+dat <- t(dat)
 coords <- vis(dat, check=FALSE,
              n_tree = 50, tree_th = 200,
              K = 50, alpha = 2, max.iter = 4)

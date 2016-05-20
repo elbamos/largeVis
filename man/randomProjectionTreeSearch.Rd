@@ -5,7 +5,7 @@
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
 randomProjectionTreeSearch(x, K = 5, n_trees = 2, tree_threshold = max(10,
-  ncol(x)), max_iter = 2, max_depth = 32, verbose = TRUE)
+  nrow(x)), max_iter = 2, max_depth = 32, verbose = TRUE)
 }
 \arguments{
 \item{x}{A matrix.}

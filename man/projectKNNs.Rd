@@ -4,8 +4,8 @@
 \alias{projectKNNs}
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
-projectKNNs(wij, dim = 2, sgd_batches = nrow(wij) * 20000, M = 5,
-  weight_pos_samples = TRUE, gamma = 7, alpha = 2, rho = 1,
+projectKNNs(wij, dim = 2, sgd_batches = (length(wij@p) - 1) * 20000,
+  M = 5, weight_pos_samples = TRUE, gamma = 7, alpha = 2, rho = 1,
   coords = NULL, min_rho = 0.1, verbose = TRUE)
 }
 \arguments{

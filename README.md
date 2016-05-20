@@ -10,6 +10,10 @@ The inner loops for nearest-neighbor search and gradient descent are implemented
 #### Project Status & Caveats
 
 -   It works!
+-   The version originally uploaded had issues with OpenMP on some systems. While I work on fixing that, OpenMP is disabled in the current version. Other changes:
+    -   The input matrix to the `randomProjectionTreeSearch` function should now be transposed so examples are columns and rows are features.
+    -   The alternative distance function where *α* = 0 is partially implemented.
+    -   Progress now depends on `RcppProgress` instead of `progress`. These progress reports are substantially less pretty -- but much faster, and the `progress` package was causing crashes in some cases.
 -   This project is under heavy development.
 -   I am attempting to replicate the paper's results with larger and larger datasets. This takes time because my hardware is not as powerful as the authors'. If you have any to volunteer, please contact me!
 -   The algorithm is memory intensive. Processing mnist, memory usage peaked at approximately 8GB. I would appreciate any reports using it with larger datasets.
@@ -24,8 +28,9 @@ load("./mnist.Rda")
 dat <- mnist$images
 dim(dat) <- c(42000, 28 * 28)
 dat <- (dat / 255) - 0.5
+dat <- t(dat)
 coords <- vis(dat, check=FALSE,
-                   n_tree = 50, tree_th = 200, 
+                   n_tree = 50, tree_th = 100, 
                    K = 50, alpha = 2, max.iter = 4)
 ```
 

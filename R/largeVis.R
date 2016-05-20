@@ -6,7 +6,7 @@
 #' If any of these assumptions are violated, the algorithm will fail. It is also usually a good idea to scale the input data
 #' to have unit norm and mean 0. If there are large values in the input matrix, some computations may oveflow.
 #'
-#' @param x A matrix. Ideally, the columns should be scaled and normalized to avoid the risk of errors caused by overflow.
+#' @param x A matrix, where the features are rows and the examples are columns.
 #' @param dim The number of dimensions in the output
 #' @param K The number of nearest-neighbors to use in computing the kNN graph
 #' @param check.assumptions Whether to check the input matrix for duplicates, \code{NA}`s, etc.
@@ -41,6 +41,7 @@
 #'
 #' @export
 #' @importFrom stats optimize princomp
+#' @importFrom utils setTxtProgressBar txtProgressBar
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 #'
 #' @examples
@@ -50,6 +51,7 @@
 #' dat <- scale(dat)
 #' dupes = which(duplicated(dat))
 #' dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
+#' dat <- t(dat)
 #' visObject <- vis(dat, max_iter = 20, sgd_batches = 800000,
 #'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
 #'\dontrun{
@@ -58,6 +60,7 @@
 #' dat <- mnist$images
 #' dim(dat) <- c(42000, 28 * 28)
 #' dat <- (dat / 255) - 0.5
+#' dat <- t(dat)
 #' coords <- vis(dat, check=FALSE,
 #'              n_tree = 50, tree_th = 200,
 #'              K = 50, alpha = 2, max.iter = 4)
@@ -70,13 +73,13 @@ vis <- function(x,
                      check.assumptions = TRUE,
 
                      n_trees = 50,
-                     tree_threshold = max(10, ncol(x)),
+                     tree_threshold = max(10, nrow(x)),
                      max_iter = 3,
                      max_depth = 32,
 
                      perplexity = 50,
 
-                     sgd_batches = nrow(x) * 20000,
+                     sgd_batches = ncol(x) * 20000,
                      M = 5,
                      weight_pos_samples = TRUE,
                      alpha = 2,
@@ -88,10 +91,9 @@ vis <- function(x,
 
                      verbose = TRUE,
                     ...) {
-  N <- nrow(x)
+  N <- ncol(x)
 
   if (check.assumptions)   {
-    if (any(duplicated(x))) stop("Duplicates found.")
     if ((any(is.na(x)) +
          any(is.infinite(x)) +
          any(is.nan(x))) > 0)
@@ -137,28 +139,25 @@ vis <- function(x,
   #######################################################
   # Calculate edge weights for candidate neighbors
   #######################################################
-  if (verbose[1]) ptick <- progress::progress_bar$new(total = N + 100,
-      format = "Calculate neighbor distances [:bar] :percent :elapsed/:eta", clear=FALSE)$tick
-  else ptick <- function(tick) {}
+  if (verbose) cat("Calculating neighbor distances.\n")
 
-  xs <- rep(0, length(is)) # pre-allocate
-  distance(is, js, xs, x, ptick)
+  xs <- distance(is, js, x, verbose)[,1]
 
   if (verbose) cat("\n")
+
   if ((any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
-    stop("An error leaked into the distance calculation - check for duplicates")
+  stop("An error leaked into the distance calculation - check for duplicates")
 
   ########################################################
   # Estimate sigmas
   ########################################################
-  if (verbose[1]) ptick <- progress::progress_bar$new(total = N + 100,
-       format = 'Calculate sigmas [:bar] :percent :elapsed/:eta', clear=FALSE)$tick
-  else ptick <- function(tick) {}
-  # TODO: MAKE SURE THAT THE C++ CODE HANDLES THE SITUATION WHERE A COLUMN IS EMPTY (HAS NO PRESENCE IN P)
+  if (verbose) progress = txtProgressBar(max = N, title = "Calculating sigmas.")
+
+    # TODO: MAKE SURE THAT THE C++ CODE HANDLES THE SITUATION WHERE A COLUMN IS EMPTY (HAS NO PRESENCE IN P)
 
   perplexity = log2(perplexity)
-  sigmas <- lapply(1:N, FUN = function(idx) {
-    ptick(1)
+  sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
+    if (verbose) setTxtProgressBar(progress, idx)
     x_i <- xs[ps[idx]:(ps[idx + 1] - 1)]
     ret <- optimize(f = sigFunc,
              x = x_i,
@@ -167,21 +166,19 @@ vis <- function(x,
   })
   sigmas <- sapply(sigmas, `[[`, 1)
 
+  if (verbose) close(progress)
+
   if (any(is.na(sigmas)) + any(is.infinite(sigmas)) + any(is.nan(sigmas)) + any((sigmas == 0)) > 0)
     stop("An error has propogated into the sigma vector.")
-
 
   #######################################################
   # Calculate w_{ij}
   #######################################################
 
   if (! requireNamespace('Matrix',quietly=T)) stop("The Matrix package must be available.")
-  if (verbose[1]) ptick <- progress::progress_bar$new(total = 1000 + (length(xs) * 2),
-          format = 'Calculate p_{j|i} and w_{ij} [:bar] :percent :elapsed/:eta',
-          clear=FALSE)$tick
-  else ptick <- function(tick) {}
 
-  wij <- distMatrixTowij(is, js, xs, sigmas, N, ptick)
+  if (verbose) cat("Calculating w_{ij}.\n")
+  wij <- distMatrixTowij(is, js, xs, sigmas, N, verbose)
 
   if (any(is.na(wij@x)) || any(is.infinite(wij@x)) || any(is.nan(wij@x)) || any((wij@x == 0)) > 0)
     stop("An error has propogated into the w_{ij} vector.  This probably means the input data wasn't scaled.")

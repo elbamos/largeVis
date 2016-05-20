@@ -1,5 +1,6 @@
 #include <RcppArmadillo.h>
-// [[Rcpp::plugins(openmp,cpp11)]]
+// [[Rcpp::plugins(openmp)]]
+#include "progress.hpp"
 #include <omp.h>
 #include <math.h>
 #include <algorithm>
@@ -34,38 +35,43 @@ inline double dist(arma::vec i, arma::vec j) {
   return sum(pow(i - j, 2));
 }
 
-void searchTree(int threshold,
-                const std::vector<int>& indices,
-                const NumericMatrix& data,
+void searchTree(const int& threshold,
+                const arma::vec& indices,
+                const arma::mat& data,
                 std::vector<std::set<int> >& heap,
                 const int& iterations,
-                Function& callback,
-                List& progressParams) {
+                Progress& progress) {
   const int I = indices.size();
-  const int cols = data.ncol();
+  const int D = data.n_rows;
+  if (progress.check_abort()) return;
   if (I < 2) return;
   if (I == 2) {
+      #pragma omp critical
+      {
       heap[indices[0]].insert(indices[1]);
       heap[indices[1]].insert(indices[0]);
+      }
       return;
   }
   if (I < threshold || iterations == 0) {
-    int i = 0;
-    const int mx = (threshold < I) ? threshold : I;
-    do {
-      int j = i + 1;
+    #pragma omp critical
+    {
+      int i = 0;
+      const int mx = (threshold < I) ? threshold : I;
       do {
-        heap[indices[i]].insert(indices[j]);
-        heap[indices[j]].insert(indices[i]);
-        j++;
-      } while (j < I && (j % threshold) < mx);
-      i++;
-    } while(i < I - 1);
-    callback(I, _["tokens"] = progressParams);
+        int j = i + 1;
+        do {
+          heap[indices[i]].insert(indices[j]);
+          heap[indices[j]].insert(indices[i]);
+          j++;
+        } while (j < I && (j % threshold) < mx);
+        i++;
+        } while(i < I - 1);
+      progress.increment(indices.size());
+    }
     return;
   }
-  std::vector<int> left = std::vector<int>();
-  std::vector<int> right = std::vector<int>();
+  arma::vec direction = arma::vec(indices.size());
   int x1idx, x2idx;
   do {
     const arma::vec selections = arma::randu(2) * (I - 1);
@@ -74,37 +80,21 @@ void searchTree(int threshold,
   } while (x1idx == x2idx);
 
   {
-    const arma::vec x2 = data.row(x2idx);
-    const arma::vec x1 = data.row(x1idx);
+    const arma::vec x2 = data.col(x2idx);
+    const arma::vec x1 = data.col(x1idx);
     // Get hyperplane
     const arma::vec m =  (x1 + x2) / 2; // Base point of hyperplane
     const arma::vec v =  ((x1 - x2) / sqrt(sum(pow(x1 - x2,2)))); // Unit vector
 
     for (int i = 0; i < indices.size(); i++) {
       const int I = indices[i];
-      arma::vec localRow = arma::vec(cols);
-      for (int j = 0; j < cols; j++) localRow[j] = data(i,j);
-      if (sum((localRow - m).t() * v) > 0) {
-        left.push_back(I);
-      } else {
-        right.push_back(I);
-      };
+      const arma::vec X = data.col(I);
+      direction[i] = sum((X - m).t() * v);
     }
   }
-  left.shrink_to_fit();
-  right.shrink_to_fit();
 
-  #pragma omp parallel sections
-  {
-    #pragma omp section
-    {
-      searchTree(threshold, left, data, heap, iterations - 1, callback, progressParams);
-    }
-    #pragma omp section
-    {
-      searchTree(threshold, right, data, heap, iterations - 1, callback, progressParams);
-    }
-  }
+  searchTree(threshold, indices(arma::find(direction > 0)), data, heap, iterations - 1, progress);
+  searchTree(threshold, indices(arma::find(direction <= 0)), data, heap, iterations - 1, progress);
 };
 
 // [[Rcpp::export]]
@@ -113,38 +103,39 @@ arma::mat searchTrees(const int& threshold,
                       const int& K,
                       const int& max_recursion_degree,
                       const int& maxIter,
-                      NumericMatrix data,
-                      Function callback) {
-  const int N = data.nrow();
-  Rcpp::List progressParams = Rcpp::List::create();
+                      const arma::mat& data,
+                      bool verbose) {
+
+  const int N = data.n_cols;
+
+  Progress p((N * n_trees) + (N) + (N * maxIter), verbose);
 
   std::vector<std::set<int> > treeNeighborhoods = std::vector<std::set<int> >(N);
 
   { // Artificial scope to destroy indices
-    std::vector<int> indices = std::vector<int>(N);
-    std::iota(indices.begin(), indices.end(), 0);
-    for (int t = 0; t < n_trees; t++) {
-      progressParams["phase"] = "Random Projection Tree " +  std::to_string(t + 1) + "/" + std::to_string(n_trees);
+    arma::vec indices = arma::regspace<arma::vec>(0, N - 1);
+   #pragma omp parallel for shared(indices,treeNeighborhoods)
+    for (int t = 0; t < n_trees; t++) if (! p.check_abort())
       searchTree(threshold,
                  indices,
                  data,
                  treeNeighborhoods,
                  max_recursion_degree, // maximum permitted level of recursion
-                 callback,
-                 progressParams
+                 p
                  );
-    }
   }
+  if (p.check_abort()) return arma::mat(0);
+
   arma::mat knns = arma::mat(threshold,N);
   knns.fill(-1);
-  progressParams["phase"] = "Reducing Tree Leaves";
+
   #pragma omp parallel for shared(knns)
-  for (int i = 0; i < N; i++) {
-    const arma::vec x_i = data.row(i);
+  for (int i = 0; i < N; i++) if (p.increment()){
+    const arma::vec x_i = data.col(i);
     std::priority_queue<heapObject> maxHeap = std::priority_queue<heapObject>();
     std::set<int> stack = treeNeighborhoods[i];
     for (std::set<int>::iterator it = stack.begin(); it != stack.end(); it++) {
-      const double d = dist(x_i, data.row(*it));
+      const double d = dist(x_i, data.col(*it));
       maxHeap.push(heapObject(d, *it));
       if (maxHeap.size() > threshold) maxHeap.pop();
     }
@@ -155,20 +146,18 @@ arma::mat searchTrees(const int& threshold,
       j++;
     } while (j < threshold && ! maxHeap.empty());
     stack.insert(i);
-    if (i > 0 && i % 1000 == 0) callback(1000, _["tokens"] = progressParams);
   }
+  if (p.check_abort()) return arma::mat(0);
 
   for (int T = 0; T < maxIter; T++) {
-    progressParams["phase"] = "Exploring Neighborhood " + std::to_string(T + 1) + "/" +  std::to_string(maxIter);
     arma::mat old_knns = knns;
     knns = arma::mat(K,N);
     knns.fill(-1);
-    #pragma omp parallel for shared(knns, treeNeighborhoods)
-    for (int i = 0; i < N; i++) {
+   #pragma omp parallel for shared(knns, treeNeighborhoods)
+    for (int i = 0; i < N; i++) if (p.increment()) {
       double d;
-      if (i > 0 && i % 1000 == 0) callback(1000, _["tokens"] = progressParams);
 
-      const arma::vec x_i = data.row(i);
+      const arma::vec x_i = data.col(i);
       std::priority_queue<heapObject> heap;
       std::set<int> pastVisitors = treeNeighborhoods[i];
 
@@ -178,7 +167,7 @@ arma::mat searchTrees(const int& threshold,
         const int j = neighborhood[jidx];
         if (j == -1) break;
         if (j != i) {
-          d = dist(x_i, data.row(j));
+          d = dist(x_i, data.col(j));
           if (d != 0) {
             heap.push(heapObject(d, j));
             if (heap.size() > K) heap.pop();
@@ -189,7 +178,7 @@ arma::mat searchTrees(const int& threshold,
           const int k = locality[kidx];
           if (k == -1) break;
           if (k != i && pastVisitors.insert(k).second) {
-            d = dist(x_i, data.row(k));
+            d = dist(x_i, data.col(k));
             if (d != 0 && d < heap.top().d) {
               heap.push(heapObject(d, k));
               if (heap.size() > K) heap.pop();
