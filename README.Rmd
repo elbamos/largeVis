@@ -25,27 +25,23 @@ The inner loops for nearest-neighbor search and gradient descent are implemented
 ```{r setup,eval=T,echo=F,warning=F,error=F,message=F}
 # Note to reader:  Please don't steal the semi-distinctive visual style I spent several hours creating for myself.
 library(RColorBrewer,quietly=T)
-library(wesanderson,quietly=T)
-colors_discrete <- function(x) wes_palette("Darjeeling", n = x)
 colors_divergent_discrete <- function(x) grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
-colors_continuous <-  function(x) wes_palette(name= "Zissou",n = x, type= "continuous")
-nacol <- colors_discrete(4)[4]
 require(ggplot2,quietly = T)
 library(largeVis)
 theme_set(
-        theme_bw() %+replace%
-        theme(
-                                legend.key.size=unit(4,"mm"), 
-                                legend.title=element_text(size=rel(0.8), face = "bold"),
-                                legend.margin=unit(0,"cm"),
-                                legend.key.size=unit(0.5,"lines"),
-                                legend.text=element_text(size = unit(10, "points")), 
-                                axis.title.y = element_text(angle=90),
-                                axis.text = element_text(size=rel(0.7)),
-                                plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 
-                                axis.title=element_text(size=rel(0.8),face="bold"),
-        title = element_text(size=rel(0.9))
-                                ) 
+  theme_bw() %+replace%
+  theme(
+    legend.key.size=unit(4,"mm"), 
+    legend.title=element_text(size=rel(0.8), face = "bold"),
+    legend.margin=unit(0,"cm"),
+    legend.key.size=unit(0.5,"lines"),
+    legend.text=element_text(size = unit(10, "points")), 
+    axis.title.y = element_text(angle=90),
+    axis.text = element_text(size=rel(0.7)),
+    plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 
+    axis.title=element_text(size=rel(0.8),face="bold"),
+  title = element_text(size=rel(0.9))
+                          ) 
 )
 
 ```

@@ -12,8 +12,8 @@ using namespace Rcpp;
 using namespace std;
 
 /*
- * Functions for identifying candidate nearest neighbors using random projection trees and neighborhood exploration.
- */
+* Functions for identifying candidate nearest neighbors using random projection trees and neighborhood exploration.
+*/
 
 struct heapObject {
   double d;
@@ -38,7 +38,7 @@ inline double dist(arma::vec i, arma::vec j) {
 void searchTree(const int& threshold,
                 const arma::vec& indices,
                 const arma::mat& data,
-                std::vector<std::set<int> >& heap,
+                std::vector<std::vector<int>* >& heap,
                 const int& iterations,
                 Progress& progress) {
   const int I = indices.size();
@@ -46,19 +46,21 @@ void searchTree(const int& threshold,
   if (progress.check_abort()) return;
   if (I < 2) return;
   if (I == 2) {
-      #pragma omp critical
-      {
-      heap[indices[0]].insert(indices[1]);
-      heap[indices[1]].insert(indices[0]);
-      }
-      return;
+    #pragma omp critical
+    {
+      heap[indices[0]] -> push_back(indices[1]);
+      heap[indices[1]] -> push_back(indices[0]);
+    }
+    return;
   }
   if (I < threshold || iterations == 0) {
     #pragma omp critical
     {
-      for (int i = 0; i < I; i++)
+      for (int i = 0; i < I; i++) {
+        heap[indices[i]] -> reserve(I);
         for (int j = 0; j < I; j++)
-          if (i != j) heap[indices[i]].insert(indices[j]);
+          if (i != j) heap[indices[i]] -> push_back(indices[j]);
+      }
     }
     progress.increment(I);
     return;
@@ -102,31 +104,51 @@ arma::mat searchTrees(const int& threshold,
 
   Progress p((N * n_trees) + (N) + (N * maxIter), verbose);
 
-  std::vector<std::set<int> > treeNeighborhoods = std::vector<std::set<int> >(N);
+  std::vector<std::vector<int>* > treeNeighborhoods = std::vector<std::vector<int>* >(N);
+  for (int i = 0; i < N; i++) {
+    int seed[] = {i};
+    treeNeighborhoods[i] = new std::vector<int>(seed, seed + sizeof(seed) / sizeof(int));
+  }
 
   { // Artificial scope to destroy indices
     arma::vec indices = arma::regspace<arma::vec>(0, N - 1);
-   #pragma omp parallel for shared(indices,treeNeighborhoods)
-    for (int t = 0; t < n_trees; t++) if (! p.check_abort())
+
+    #pragma omp parallel for shared(indices,treeNeighborhoods)
+    for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
       searchTree(threshold,
                  indices,
                  data,
                  treeNeighborhoods,
                  max_recursion_degree, // maximum permitted level of recursion
                  p
-                 );
+      );
+
+      if (t > 0 && ! p.check_abort())
+      #pragma omp critical
+      {
+        for (int i = 0; i < N; i++) {
+          std::vector<int>* neighbors = treeNeighborhoods[i];
+          std::sort(neighbors -> begin(), neighbors -> end());
+          std::vector<int>::iterator theEnd = std::unique(neighbors -> begin(), neighbors -> end());
+          neighbors -> erase(theEnd, neighbors -> end());
+        }
+      }
+    }
   }
+
   if (p.check_abort()) return arma::mat(0);
 
+  // Initialize the knn matrix, and reduce the number of candidate neighbors per node
+  // to K.  Otherwise the first neighborhood exploration pass takes N * trees * (threshold + 1),
+  // instead of (N * K), which is prohibitive of large thresholds.
   arma::mat knns = arma::mat(threshold,N);
   knns.fill(-1);
-
   #pragma omp parallel for shared(knns)
   for (int i = 0; i < N; i++) if (p.increment()){
     const arma::vec x_i = data.col(i);
     std::priority_queue<heapObject> maxHeap = std::priority_queue<heapObject>();
-    std::set<int> stack = treeNeighborhoods[i];
-    for (std::set<int>::iterator it = stack.begin(); it != stack.end(); it++) {
+    std::vector<int>* stack = treeNeighborhoods[i];
+    for (std::vector<int>::iterator it = stack -> begin(); it != stack -> end(); it++) {
       const double d = dist(x_i, data.col(*it));
       maxHeap.push(heapObject(d, *it));
       if (maxHeap.size() > threshold) maxHeap.pop();
@@ -137,7 +159,6 @@ arma::mat searchTrees(const int& threshold,
       maxHeap.pop();
       j++;
     } while (j < threshold && ! maxHeap.empty());
-    stack.insert(i);
   }
   if (p.check_abort()) return arma::mat(0);
 
@@ -145,36 +166,48 @@ arma::mat searchTrees(const int& threshold,
     arma::mat old_knns = knns;
     knns = arma::mat(K,N);
     knns.fill(-1);
-   #pragma omp parallel for shared(knns, treeNeighborhoods)
+    #pragma omp parallel for shared(knns, treeNeighborhoods)
     for (int i = 0; i < N; i++) if (p.increment()) {
       double d;
 
-      const arma::vec x_i = data.col(i);
-      std::priority_queue<heapObject> heap;
-      std::set<int> pastVisitors = treeNeighborhoods[i];
-
       const arma::vec neighborhood = old_knns.col(i);
-      int cnt = sum(neighborhood == -1);
+      const arma::vec x_i = data.col(i);
+
+      std::priority_queue<heapObject> heap;
+      std::vector<int> pastVisitors = *(treeNeighborhoods[i]);
+      // Loop through immediate neighbors of i
       for (int jidx = 0; jidx < old_knns.n_rows; jidx++) {
         const int j = neighborhood[jidx];
         if (j == -1) break;
-        if (j != i) {
-          d = dist(x_i, data.col(j));
-          if (d != 0) {
-            heap.push(heapObject(d, j));
-            if (heap.size() > K) heap.pop();
-          }
+        if (j == i) continue; // This should never happen
+        d = dist(x_i, data.col(j));
+        if (d != 0) { // This should never happen
+          heap.push(heapObject(d, j));
+          if (heap.size() > K) heap.pop();
         }
+
+        pastVisitors.reserve(K);
+        // For each immediate neighbor j, loop through its neighbors
         const arma::vec locality = old_knns.col(j);
         for (int kidx = 0; kidx < old_knns.n_rows; kidx++) {
           const int k = locality[kidx];
           if (k == -1) break;
-          if (k != i && pastVisitors.insert(k).second) {
-            d = dist(x_i, data.col(k));
-            if (d != 0 && d < heap.top().d) {
-              heap.push(heapObject(d, k));
-              if (heap.size() > K) heap.pop();
-            }
+          if (k == i) continue;
+          // Check if this is a neighbor we've already seen.  O(log k)
+          std::pair<std::vector<int>::iterator,
+                    std::vector<int>::iterator > firstlast = std::equal_range(pastVisitors.begin(),
+                                                                              pastVisitors.end(),
+                                                                              k);
+          if (*(firstlast.first) == k) continue; // Found
+          #pragma omp critical
+          {
+            if (firstlast.second == pastVisitors.end()) pastVisitors.push_back(k);
+            else pastVisitors.insert(firstlast.second, k);
+          }
+          d = dist(x_i, data.col(k));
+          if (d != 0 && d < heap.top().d) {
+            heap.push(heapObject(d, k));
+            if (heap.size() > K) heap.pop();
           }
         }
       }
@@ -184,6 +217,7 @@ arma::mat searchTrees(const int& threshold,
         heap.pop();
         j++;
       }
+      std::vector<int>(pastVisitors).swap(pastVisitors);
     }
   }
   return knns;

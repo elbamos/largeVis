@@ -44,22 +44,35 @@ arma::sp_mat distMatrixTowij(
   arma::vec pjis = arma::vec(is.length());
   for (int idx=0; idx < N; idx++) rowSums[idx] = 0;
   // Compute pji, accumulate rowSums at the same time
+  #pragma omp parallel for shared(pjis, rowSums)
   for (int e=0; e < pjis.size(); e++) if (p.increment()){
     const int i = is[e];
     const double pji = exp(- pow(xs[e], 2)) / sigmas[i];
     pjis[e] = pji;
-    rowSums[i] = rowSums[i] + pji;
+    #pragma omp atomic
+    rowSums[i] += pji;
   }
   if (p.check_abort()) return arma::sp_mat(0);
   // Now convert p(j|i) to w_{ij} by symmetrizing.
-  // At this point, if both ij and ji are edges, tehre will be two entries in the data structures.
-  // Loop through the structure, and place each in the lower-triangle of the sparse matrix.
-  arma::sp_mat wij = arma::sp_mat(N, N);
-  for (int e=0; e < pjis.size(); e++) if (p.increment()) {
+  // Loop through the edges, and populate a location matrix and value vector for
+  // the arma::sp_mat batch insertion constructor.  Put all coordinates in the
+  // lower triangle.  The constructor will automatically add duplicates.
+  arma::vec values = arma::vec(pjis.size());
+  arma::umat locations = arma::umat(2, pjis.size());
+  #pragma omp parallel for shared(locations, values)
+  for (int e = 0; e < pjis.size(); e++) if (p.increment()) {
     int newi = is[e], newj = js[e];
     if (newi < newj) std::swap(newi, newj);
-    wij(newi, newj) +=  ((pjis[e] / rowSums[is[e]]) / (2 * N));
+    values[e] =  ((pjis[e] / rowSums[is[e]]) / (2 * N));
+    locations(1,e) = newi;
+    locations(0,e) = newj;
   }
+  arma::sp_mat wij = arma::sp_mat(
+    true, // add_values
+    locations,
+    values,
+    N, N // n_col and n_row
+    );
   return wij;
 };
 

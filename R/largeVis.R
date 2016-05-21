@@ -151,9 +151,10 @@ vis <- function(x,
   ########################################################
   # Estimate sigmas
   ########################################################
-  if (verbose) progress = txtProgressBar(max = N, title = "Calculating sigmas.")
-
-    # TODO: MAKE SURE THAT THE C++ CODE HANDLES THE SITUATION WHERE A COLUMN IS EMPTY (HAS NO PRESENCE IN P)
+  if (verbose) {
+    progress = txtProgressBar(max = N, title = "sigmas")
+    cat("Estimating sigmas\n")
+  }
 
   perplexity = log2(perplexity)
   sigmas <- parallel::mclapply(1:N, FUN = function(idx) {
