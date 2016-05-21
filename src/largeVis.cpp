@@ -131,16 +131,16 @@ arma::mat sgd(arma::mat coords,
       // wij
       const double w = (useWeights) ? ws[e_ij] : 1;
 
-      const double dist_ij = (alpha == 0) ? std::min(16.0, sqrt(dist(y_i, y_j))) : sqrt(dist(y_i, y_j));
+      const double dist_ij = (alpha == 0) ? std::min(8.0, sqrt(dist(y_i, y_j))) : sqrt(dist(y_i, y_j));
 
       const arma::vec d_dist_ij = (y_i - y_j) / sqrt(dist_ij);
       double p_ij;
-      if (alpha == 0)   p_ij =   1 / (1 +      exp(pow(dist_ij,2)));
+      if (alpha == 0)   p_ij =   1 / (1 +     exp( pow(dist_ij,2)));
       else              p_ij =   1 / (1 + (alpha * pow(dist_ij,2)));
 
       arma::vec d_p_ij;
-      if (alpha == 0) d_p_ij =  - 2 * d_dist_ij * dist_ij * exp(pow(dist_ij,2)) / pow(1 + exp(pow(dist_ij,2)), 2);
-      else            d_p_ij =  - 2 * d_dist_ij * dist_ij * alpha               / pow(1 +    (pow(dist_ij,2) * alpha),2);
+      if (alpha == 0) d_p_ij =  d_dist_ij * -2 * dist_ij * exp(pow(dist_ij,2)) / pow(1 + exp(pow(dist_ij,2)), 2);
+      else            d_p_ij =  d_dist_ij * -2 * dist_ij * alpha               / pow(1 +    (pow(dist_ij,2) * alpha),2);
 
       //double o = log(p_ij);
       const arma::vec d_j = (1 / p_ij) * d_p_ij;
@@ -170,20 +170,18 @@ arma::mat sgd(arma::mat coords,
         arma::vec y_k = arma::vec(D);
         for (int idx = 0; idx < D; idx++) y_k[idx] = coords(idx,k);
 
-        double dist_ik = sqrt(dist(y_i, y_k));
+        const double dist_ik = (alpha == 0) ? std::min(8.0, sqrt(dist(y_i, y_k))) : sqrt(dist(y_i, y_k));
         if (dist_ik == 0) continue; // Duplicates
-        if (alpha == 0 && dist_ik > 16) dist_ik = 16; // Avoids numeric overflow
 
         const arma::vec d_dist_ik = (y_i - y_k) / sqrt(dist_ik);
 
         double p_ik;
-        if (alpha == 0) p_ik  =  1 - (1 / (1 +      exp(pow(dist_ik,2))));
+        if (alpha == 0) p_ik  =  1 - (1 / (1 +     exp( pow(dist_ik,2))));
         else            p_ik  =  1 - (1 / (1 + (alpha * pow(dist_ik,2))));
 
         arma::vec d_p_ik;
-        if (alpha == 0) d_p_ik = 2 * d_dist_ik * p_ik * exp(pow(dist_ik,2)) / pow(1 +      exp(pow(dist_ik,2)),2);
-        else            d_p_ik = 2 * d_dist_ik * p_ik * alpha               / pow(1 + (alpha * pow(dist_ik,2)),2);
-
+        if (alpha == 0) d_p_ik =  d_dist_ik * 2 * dist_ik * exp(pow(dist_ik,2)) / pow(1 +      exp(pow(dist_ik,2)),2);
+        else            d_p_ik =  d_dist_ik * 2 * dist_ik * alpha               / pow(1 + (alpha * pow(dist_ik,2)),2);
         //o += (gamma * log(p_ik));
 
         const arma::vec d_k = (gamma / p_ik) * d_p_ik;
@@ -204,7 +202,3 @@ arma::mat sgd(arma::mat coords,
   }
   return coords;
 };
-
-
-
-

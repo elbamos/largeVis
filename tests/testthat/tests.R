@@ -41,15 +41,5 @@ test_that("largeVis works without weights", {
   expect_equal(sum(any(visObject$coords > 10) + any(visObject$coords < -10)), 0)
 })
 
-test_that("largeVis works when alpha = 0", {
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes = which(duplicated(dat))
-  dat <- dat[-dupes,]
-  dat <- t(dat)
-  visObject <- vis(dat, alpha = 0,verbose=FALSE, sgd_batches=1000)
-  expect_equal(sum(any(is.na(visObject$coords)) + any(is.nan(visObject$coords)) + any(is.infinite(visObject$coords))), 0)
-})
 
 

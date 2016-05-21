@@ -10,15 +10,14 @@ The inner loops for nearest-neighbor search and gradient descent are implemented
 #### Project Status & Caveats
 
 -   It works!
--   The version originally uploaded had issues with OpenMP on some systems. While I work on fixing that, OpenMP is disabled in the current version. Other changes:
-    -   The input matrix to the `randomProjectionTreeSearch` function should now be transposed so examples are columns and rows are features.
-    -   The alternative distance function where *α* = 0 is partially implemented.
-    -   Progress now depends on `RcppProgress` instead of `progress`. These progress reports are substantially less pretty -- but much faster, and the `progress` package was causing crashes in some cases.
--   The map visualization works, but is only tested for the case where the images are presented as an array of greyscale images.
+-   The OpenMP issues in the original upload have been resolved, and OpenMP re-enabled.
+-   Memory efficiency has been *vastly* improved in 0.1.3. Peak memory consumption on MNIST is now closer to 2GB (down from 8GB). Several phases of the algorithm are also now much faster.
+-   Not yet working:
+    -   The alternative distance function (*α* = 0) is not fully implemented.
+    -   The visualization map function has had minimal testing, and the transparency feature does not yet work as intended.
 -   This project is under heavy development.
 -   I am attempting to replicate the paper's results with larger and larger datasets. This takes time because my hardware is not as powerful as the authors'. If you have any to volunteer, please contact me!
--   The algorithm is memory intensive. Processing mnist, memory usage peaked at approximately 8GB. I would appreciate any reports using it with larger datasets.
--   Note that your installation of R must be configured to work with OpenMP. I have had a report that on Federa 22, even small datasets could not be processed because of exceeding the C stack space. If you experience any compilation issues or similar crashes, please create an issue.
+-   Please let me know if you have issues compiling it to work with OpenMP. I had some early reports of issues on Fedora 22, but they seem to have been resolved with version 0.1.1.
 
 #### Examples:
 
@@ -31,8 +30,8 @@ dim(dat) <- c(42000, 28 * 28)
 dat <- (dat / 255) - 0.5
 dat <- t(dat)
 coords <- vis(dat, check=FALSE,
-                   n_tree = 50, tree_th = 100, 
-                   K = 50, alpha = 2, max.iter = 4)
+                   n_tree = 50, tree_th = 700,
+                   K = 50, alpha = 1, max.iter = 4)
 ```
 
 ![](README_files/figure-markdown_github/drawmnist-1.png)
@@ -53,7 +52,9 @@ manifoldMap(coords,
     scale = 0.005,
     transparency = F,
     images = mnistimages,
-    xlab=NULL, ylab=NULL)
+    xlab="", ylab="",
+    xlim = c(-2.5, 2.5), 
+    ylim = c(-2.5, 2.5))
 ```
 
 ![](README_files/figure-markdown_github/mnistvis-1.png)
