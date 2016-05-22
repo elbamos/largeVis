@@ -8,22 +8,29 @@
 #include <queue>
 #include <vector>
 #include <set>
+#include "helpers.hpp"
 using namespace Rcpp;
 using namespace std;
 
 /*
- * Fast calculation of pairwise euclidean distances with the result stored in a pre-allocated vector.
+ * Fast calculation of pairwise distances with the result stored in a pre-allocated vector.
  */
 // [[Rcpp::export]]
 arma::vec distance(const NumericVector is,
               const NumericVector js,
               const arma::mat& data,
+              const std::string& distMethod,
               bool verbose) {
 
   Progress p(is.size(), verbose);
   arma::vec xs = arma::vec(is.size());
+  double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j);
+  if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = dist;
+  else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = cosDist;
+
   #pragma omp parallel for shared (xs)
-  for (int i=0; i < is.length(); i++) if (p.increment()) xs[i] = sqrt(sum(pow(data.col(is[i]) - data.col(js[i]), 2)));
+  for (int i=0; i < is.length(); i++) if (p.increment()) xs[i] =
+    distanceFunction(data.col(is[i]), data.col(js[i]));
   return xs;
 };
 
@@ -73,6 +80,7 @@ arma::sp_mat distMatrixTowij(
     values,
     N, N // n_col and n_row
     );
+  wij = wij + wij.t();
   return wij;
 };
 

@@ -5,12 +5,12 @@ sgd <- function(coords, is, js, ps, ws, gamma, rho, minRho, useWeights, nBatches
     .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, is, js, ps, ws, gamma, rho, minRho, useWeights, nBatches, M, alpha, verbose)
 }
 
-searchTrees <- function(threshold, n_trees, K, max_recursion_degree, maxIter, data, verbose) {
-    .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, max_recursion_degree, maxIter, data, verbose)
+searchTrees <- function(threshold, n_trees, K, max_recursion_degree, maxIter, data, distMethod, verbose) {
+    .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, max_recursion_degree, maxIter, data, distMethod, verbose)
 }
 
-distance <- function(is, js, data, verbose) {
-    .Call('largeVis_distance', PACKAGE = 'largeVis', is, js, data, verbose)
+distance <- function(is, js, data, distMethod, verbose) {
+    .Call('largeVis_distance', PACKAGE = 'largeVis', is, js, data, distMethod, verbose)
 }
 
 distMatrixTowij <- function(is, js, xs, sigmas, N, verbose) {

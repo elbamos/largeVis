@@ -9,7 +9,7 @@ The inner loops for nearest-neighbor search and gradient descent are implemented
 
 #### Project Status & Caveats
 
--   It works!
+-   It works! I have now tested with datasets of up to 1 Million rows.
 -   The OpenMP issues in the original upload have been resolved, and OpenMP re-enabled.
 -   Memory efficiency has been *vastly* improved in 0.1.3. Peak memory consumption on MNIST is now closer to 2GB (down from 8GB). Several phases of the algorithm are also now much faster.
 -   Not yet working:
@@ -31,7 +31,7 @@ dat <- (dat / 255) - 0.5
 dat <- t(dat)
 coords <- vis(dat, check=FALSE,
                    n_tree = 50, tree_th = 700,
-                   K = 50, alpha = 1, max.iter = 4)
+                   K = 100,  max.iter = 1)
 ```
 
 ![](README_files/figure-markdown_github/drawmnist-1.png)
@@ -48,9 +48,9 @@ dim(mnistimages) <- c(42000, 28, 28)
 coords <- as.matrix(coords[,1:2])
 coords <- scale(coords)
 manifoldMap(coords,
-    n = 3000,
+    n = 5000,
     scale = 0.005,
-    transparency = F,
+    transparency = FALSE,
     images = mnistimages,
     xlab="", ylab="",
     xlim = c(-2.5, 2.5), 

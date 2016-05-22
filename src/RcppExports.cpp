@@ -30,8 +30,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // searchTrees
-arma::mat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& max_recursion_degree, const int& maxIter, const arma::mat& data, bool verbose);
-RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP max_recursion_degreeSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP verboseSEXP) {
+arma::mat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& max_recursion_degree, const int& maxIter, const arma::mat& data, const std::string& distMethod, bool verbose);
+RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP max_recursion_degreeSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -41,22 +41,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type max_recursion_degree(max_recursion_degreeSEXP);
     Rcpp::traits::input_parameter< const int& >::type maxIter(maxIterSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(searchTrees(threshold, n_trees, K, max_recursion_degree, maxIter, data, verbose));
+    __result = Rcpp::wrap(searchTrees(threshold, n_trees, K, max_recursion_degree, maxIter, data, distMethod, verbose));
     return __result;
 END_RCPP
 }
 // distance
-arma::vec distance(const NumericVector is, const NumericVector js, const arma::mat& data, bool verbose);
-RcppExport SEXP largeVis_distance(SEXP isSEXP, SEXP jsSEXP, SEXP dataSEXP, SEXP verboseSEXP) {
+arma::vec distance(const NumericVector is, const NumericVector js, const arma::mat& data, const std::string& distMethod, bool verbose);
+RcppExport SEXP largeVis_distance(SEXP isSEXP, SEXP jsSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< const NumericVector >::type is(isSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type js(jsSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(distance(is, js, data, verbose));
+    __result = Rcpp::wrap(distance(is, js, data, distMethod, verbose));
     return __result;
 END_RCPP
 }

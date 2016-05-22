@@ -42,10 +42,10 @@ manifoldMap <- function(x,
                       scale = 1,
                       transparency = FALSE,
                       ...) {
-  if (class(x) == 'largeVis') x <- t(x$coords)
+  if (class(x) == "largeVis") x <- t(x$coords)
   if (ncol(x) != 2) stop("Can only visualize in 2-D.")
   N <- nrow(x)
-  if (class(images) == 'list' && N != length(images)) stop("Number of images doesn't equal number of points.")
+  if (class(images) == "list" && N != length(images)) stop("Number of images doesn't equal number of points.")
   if (N != nrow(images)) stop("Number of images doesn't equal number of points.")
 
   D <- length(dim(images)) -1
@@ -56,15 +56,15 @@ manifoldMap <- function(x,
   selections <- sample(N, n, replace = F)
   lowerscale <- min(images)
   upperscale <- max(images)
-  plot(x[selections,], pch = NA, ...)
+  plot(x[selections, ], pch = NA, ...)
 
   for (i in selections) {
     if (D == 2) {
-      imageData <- images[i,,]
+      imageData <- images[i, , ]
     } else {
-      imageData <- images[i,,,]
+      imageData <- images[i, , , ]
     }
-    imageData <- 1 - ((imageData - lowerscale) / upperscale)
+    imageData <- 1 - ( (imageData - lowerscale) / upperscale)
     if (transparency) {
       if (length(dim(imageData)) == 2)
         imageData <- abind::abind(imageData,
@@ -73,7 +73,7 @@ manifoldMap <- function(x,
                                   imageData,
                                   along = 3)
       else if (length(dim(imageData)) == 3) {
-        alpha <- apply(imageData, MARGIN, FUN = sum)
+        alpha <- apply(imageData, MARGIN = 3, FUN = sum)
         alpha <- alpha / max(alpha)
         imageData <- abind::abind(imageData, alpha, along = 3)
       }
@@ -82,10 +82,10 @@ manifoldMap <- function(x,
     offsetx <- (nrow(image) * scale) / 2
     offsety <- (ncol(image) * scale) / 2
     graphics::rasterImage(image,
-                          x[i,1] - offsetx,
-                          x[i,2] - offsety,
-                          x[i,1] + offsetx,
-                          x[i,2] + offsety,
+                          x[i, 1] - offsetx,
+                          x[i, 2] - offsety,
+                          x[i, 1] + offsetx,
+                          x[i, 2] + offsety,
                           interpolate = TRUE
                           )
   }

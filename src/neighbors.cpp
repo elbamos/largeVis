@@ -8,6 +8,7 @@
 #include <queue>
 #include <vector>
 #include <set>
+#include "helpers.hpp"
 using namespace Rcpp;
 using namespace std;
 
@@ -26,13 +27,8 @@ struct heapObject {
   }
 };
 
-// The Euclidean distance between two vectors
-inline double dist(NumericVector i, NumericVector j) {
-  return sum(pow(i - j, 2));
-}
-
-inline double dist(arma::vec i, arma::vec j) {
-  return sum(pow(i - j, 2));
+double relDist(const arma::vec& i, const arma::vec& j) {
+  return sum(square(i - j));
 }
 
 void searchTree(const int& threshold,
@@ -85,11 +81,16 @@ void searchTree(const int& threshold,
       const arma::vec X = data.col(I);
       direction[i] = sum((X - m).t() * v);
     }
+    // Normalize direction
+    const double middle = arma::median(direction);
+    direction = direction - middle;
   }
 
   searchTree(threshold, indices(arma::find(direction > 0)), data, heap, iterations - 1, progress);
   searchTree(threshold, indices(arma::find(direction <= 0)), data, heap, iterations - 1, progress);
 };
+
+
 
 // [[Rcpp::export]]
 arma::mat searchTrees(const int& threshold,
@@ -98,9 +99,15 @@ arma::mat searchTrees(const int& threshold,
                       const int& max_recursion_degree,
                       const int& maxIter,
                       const arma::mat& data,
+                      const std::string& distMethod,
                       bool verbose) {
 
   const int N = data.n_cols;
+
+  double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j);
+  if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = relDist;
+  else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = cosDist;
+  else distanceFunction = relDist;
 
   Progress p((N * n_trees) + (N) + (N * maxIter), verbose);
 
@@ -149,7 +156,7 @@ arma::mat searchTrees(const int& threshold,
     std::priority_queue<heapObject> maxHeap = std::priority_queue<heapObject>();
     std::vector<int>* stack = treeNeighborhoods[i];
     for (std::vector<int>::iterator it = stack -> begin(); it != stack -> end(); it++) {
-      const double d = dist(x_i, data.col(*it));
+      const double d = distanceFunction(x_i, data.col(*it));
       maxHeap.push(heapObject(d, *it));
       if (maxHeap.size() > threshold) maxHeap.pop();
     }
@@ -180,8 +187,8 @@ arma::mat searchTrees(const int& threshold,
         const int j = neighborhood[jidx];
         if (j == -1) break;
         if (j == i) continue; // This should never happen
-        d = dist(x_i, data.col(j));
-        if (d != 0) { // This should never happen
+        d = distanceFunction(x_i, data.col(j));
+        if (d != 0) {
           heap.push(heapObject(d, j));
           if (heap.size() > K) heap.pop();
         }
@@ -199,12 +206,11 @@ arma::mat searchTrees(const int& threshold,
                                                                               pastVisitors.end(),
                                                                               k);
           if (*(firstlast.first) == k) continue; // Found
-          #pragma omp critical
-          {
-            if (firstlast.second == pastVisitors.end()) pastVisitors.push_back(k);
-            else pastVisitors.insert(firstlast.second, k);
-          }
-          d = dist(x_i, data.col(k));
+
+          if (firstlast.second == pastVisitors.end()) pastVisitors.push_back(k);
+          else pastVisitors.insert(firstlast.second, k);
+
+          d = distanceFunction(x_i, data.col(k));
           if (d != 0 && d < heap.top().d) {
             heap.push(heapObject(d, k));
             if (heap.size() > K) heap.pop();
@@ -217,7 +223,7 @@ arma::mat searchTrees(const int& threshold,
         heap.pop();
         j++;
       }
-      std::vector<int>(pastVisitors).swap(pastVisitors);
+      std::vector<int>(pastVisitors).swap(pastVisitors); // pre-C++11 shrink
     }
   }
   return knns;

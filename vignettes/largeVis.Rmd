@@ -1,0 +1,223 @@
+---
+title: "largeVis"
+author: "Amos Elberg"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    fig_caption: yes
+  rmarkdown::pdf_document:
+    fig_caption: yes
+references:
+- id: Tang
+  title: Visualizing Large-scale and High-dimensional Data
+  author:
+  - family: Tang
+    given: Jian 
+  - family: Liu
+    given: Jingzhou
+  - family: Zhang
+    given: Ming
+  - family: Mei
+    given: Qiaozhu
+  URL: 'https://arxiv.org/abs/1602.00370'
+  type: article
+  issued:
+    year: 2016
+    month: 4
+vignette: >
+  %\VignetteIndexEntry{LargeVis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup,eval=T,echo=F,warning=F,error=F,message=F}
+# Note to reader:  Please don't steal the semi-distinctive visual style I spent several minutes creating for myself.
+library(RColorBrewer,quietly=T)
+library(wesanderson,quietly=T)
+colors_discrete <- function(x) wes_palette("Darjeeling", n = x)
+colors_divergent_discrete <- function(x) grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
+colors_continuous <-  function(x) wes_palette(name= "Zissou",n = x, type= "continuous")
+nacol <- colors_discrete(4)[4]
+require(ggplot2,quietly = T)
+theme_set(
+  theme_bw() %+replace%
+  theme(
+    legend.key.size=unit(4,"mm"), 
+    legend.title=element_text(size=rel(0.8), face = "bold"),
+    legend.margin=unit(0,"cm"),
+    legend.position="bottom",
+    legend.key.size=unit(0.5,"lines"),
+    legend.text=element_text(size = unit(10, "points")), 
+    axis.title.y = element_text(angle=90),
+    axis.text = element_text(size=rel(0.7)),
+    plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 
+    axis.title=element_text(size=rel(0.8),face="bold"),
+  title = element_text(size=rel(0.9))
+                          ) 
+)
+require(largeVis)
+```
+This Vingette provides an overview of the largeVis package.  
+
+## Overview
+
+The `largeVis` package offers four functions for visualizing high-dimensional datasets and finding approximate nearest neighbors, based on the `LargeVis` algorithm presented in @tang:
+
+1.  `randomProjectionTreeSearch`, a method for finding approximate nearest neighbors.
+2.  `projectKNNs`, which takes as input a weighted nearest-neighbor graph and estimates a projection into a low-dimensional space.
+3.  `vis`, which combines `randomProjectionTreeSearch` and `projectKNNs`, alonghttps://arxiv.org/abs/1602.00370https://arxiv.org/abs/1602.00370https://arxiv.org/abs/1602.00370 with additional code to implement the `LargeVis` algorithm.
+4.  `manifoldMap`, which produces a plot for visualizing embeddings of images. 
+
+See the (original paper)[@tang] for a detailed description of the algorithm. 
+
+### `randomProjectionTreeSearch`
+
+This function uses a two-phase algorithm to find approximate nearest neighbors. In the first phase, the algorithm creates `n_trees` binary trees dividing the space into leaves of at most `tree_threshold` nodes.  A node's candidate nearest neighbors are the union of all nodes with which it shared a leaf on any of the trees.  In the second phase, for each node, the algorithm looks at the candidate nearest neighbors for that node, as well as each of those nodes' candidate nearest neighbors. The logic of the algorithm is that a node's neighbors' neighbors are likely to be the node's own neighbors. In each iteration, the closest `K` candidate neighbors for each node are kept. 
+
+The authors of @tang suggest that a single iteration of the second phase is generally sufficient to obtain satisfactory performance. 
+
+The chart below illlustrates the trade-off between performance and accuracy for the nearest-neighbor search, using various hyperparameters.  The data was produced using the `benchmark.R` script in the `inst/` directory.  The test data is the 1-million vector, 128-feature (SIFT Dataset)[http://corpus-texmex.irisa.fr/], as per Erik Bern's (ANN Benchmark)[https://github.com/erikbern/ann-benchmarks] github. 
+
+```{r performance}
+load("../insta/performance.Rda")
+results$max_iterations <- factor(results$max_iterations)
+ggplot(results, aes(x = time, y = precision, 
+                    group = max_iterations, 
+                    color = max_iterations, 
+                    shape = max_iterations)) +
+  geom_point(size = 0.5) + geom_line() + 
+  scale_x_continuous("Time (miliseconds)") + 
+  scale_y_continuous("Precision", limits = c(0,1)) +
+  ggtitle("Time vs. Precision, 1-Million Vector SIFT Dataset, (K = 1000)")
+```
+
+### `projectKNNs`
+
+This function takes as its input a `Matrix::sparseMatrix`, of connections between nodes. The matrix must be symmetric. A non-zero cell implies that node `i` is a nearest neighbor of node `j`, vice-versa, or both. Non-zero values represent the strength of the connection relative to other nearest neighbors of the two nodes. 
+
+The `LargeVis` algorithm, explained in detail in @tang, estimates the embedding by sampling from the identitied nearest-neighbor connections. For each edge, the algorithm also samples `M` non-nearest neighbor negative samples. `M`, along with `$\gamma$` and `$\alpha$`, control the visualization. `$\alpha$` controls the desired distance between nearest neighbors. `$\gamma$` controls the relative strength of the attractive force between nearest neighbors and repulsive force between non-neighbors.
+
+The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperparameters, using the `wiki` dataset which is included with the package:
+
+```{r wikihyperparameters,echo=F,cache=TRUE,fig.width=6,fig.height=8}
+
+data(wiki)
+coords <- data.frame(x = numeric(0), 
+                     y = numeric(0), 
+                     a = numeric(0), 
+                     g = numeric(0))
+for (g in c(.5,1,7,14)) {
+  for (a in c(0,.1,1,5,10)) {
+    localcoords <- projectKNNs(wiki, alpha =  a, gamma = g,verbose=FALSE)
+    localcoords <- data.frame(scale(localcoords))
+    colnames(localcoords) <- c("x", "y")
+    localcoords$a <- a
+    localcoords$g <- g
+    localcoords$activity <- Matrix::colSums(wiki)
+    coords <- rbind(coords, localcoords)
+  }
+}
+ggplot(coords, 
+       aes(x = x, y = y, fill = log(activity))) + 
+  geom_point(alpha = 0.2, size = 0.05) +
+  facet_grid(a ~ g, 
+             labeller = label_bquote(alpha == .(a), gamma == .(g)), 
+             scales = 'free') +
+  scale_x_continuous(breaks=NULL,name="") + 
+  scale_y_continuous(breaks=NULL,name = "") +
+  scale_fill_gradientn(colors = colors_continuous(10)) +
+  ggtitle(expression(paste("Effect of", alpha, "vs.", gamma, sep = "  ")))
+```
+```{r,eval=F}
+save(coords, file="alphagammacoords.Rda")
+```
+
+The additional hyperparameters `$\rho$` and `min-$\rho$` control the starting and final learning rate for the stochastic gradient descent process. 
+
+The algorithm can treat positive edge weights in two different ways. The authors of @tang suggest that edge weights should be used to generate a weighted sampling.  However, the algorithm for taking a weighted sample runs in $O(n \log n)$.  Alternatively, the edge-weights can be applied to the gradients.  This is controlled by the `weight_pos_samples` parameter. 
+
+### `vis`
+
+The `vis` function combines `randomProjectionTreeSearch` and `projectKNNs`, along with additional logic for calculating edge weights, to implement the complete `LargeVis` algorithm. 
+
+The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset. 
+
+```{r iris,fig.weight=5,echo=F}
+Ks <- c(5, 10, 20, 40)
+Ms <- c(1, 5, 10, 20)
+data(iris)
+dat <- iris[,1:4]
+dupes <- duplicated(dat)
+dat <- dat[-dupes,]
+labels <- iris$Species[-dupes]
+dat <- scale(dat)
+dat <- as.matrix(dat)
+dat <- t(dat)
+
+coords <- data.frame(x = numeric(0), 
+                     y = numeric(0), 
+                     K = numeric(0), 
+                     M = numeric(0), 
+                     Species = integer(0))
+for (K in Ks) {
+  for (M in Ms) {
+    visO <- projectKNNs(dat, K = K, M = M, verbose=FALSE)
+    localcoords <- data.frame(scale(t(visO$coords))) 
+    colnames(localcoords) <- c("x", "y")
+    localcoords$K <- K
+    localcoords$M <- M
+    localcoords$Species <- as.integer(labels)
+    coords <- rbind(coords, localcoords)
+  }
+}
+
+ggplot(coords, 
+       aes(x = x,
+           y = y, 
+           color = factor(Species, levels = levels(iris$Species)))) + 
+         geom_point(size = 0.5) + 
+  scale_x_continuous("") +
+  scale_y_continuous("") + 
+  facet_wrap(K ~ M, scales = 'free') + 
+  scale_color_manual(values = colors_discrete(3)) + 
+  ggitle("Effect of M and K on Iris Dataset")
+```
+
+### `manifoldMap`
+
+The `manifoldMap` function is useful when the examples being clustered are themselves images. Given a coordinate matrix (as generated by `projectKNNs` or `vis`) and an `array` of `N` images, the function samples `n` images and plots them at the coordinates given in the matrix. If the `transparency` parameter is a number between 0 and 1, then the function adds to each image an alpha channel where the value per pixel is proportional to $transparency \dot$ the image content. 
+
+The function can plot both color and greyscale images. 
+
+The following plot illustrates this by plotting 5000 images sampled from the MNIST dataset at positions generated by `vis`:
+
+```{r manifoldMapMNIST,echo=F,fig.width=8}
+load("./mnist.Rda")
+load("./newmnistcoords.Rda")
+flip <- function(x) apply(x,2,rev)
+rotate <- function(x) t(flip(x))
+
+mnistimages <- apply(mnist$images,
+    MARGIN=1,
+    FUN = function(x) as.array(rotate(flip(x))))
+mnistimages <- t(mnistimages)
+dim(mnistimages) <- c(42000, 28, 28)
+coords <- as.matrix(coords[,1:2])
+coords <- scale(coords)
+manifoldMap(coords,
+    n = 5000,
+    scale = 0.003,
+    transparency = T,
+    images = mnistimages,
+    xlab="", ylab="",
+    xlim = c(-2.5, 2.5), 
+    ylim = c(-2.5, 2.5))
+```
+
+### Distance Methods
+
+The original `LargeVis` paper used Euclidean distances exclusively.  The `largeVis` package offers a choice between Euclidean and Cosine distances.  
+
+The formula used for the Cosine distance is:
+
+$$ D_{\vec{y_i}, \vec{y_j}} = 1 - \abs( \frac{\vec{y_i} \dot \vec{y_j}}{||\vec{y_i}|| \dot ||\vec{y_j}}|| ) $$
