@@ -57,11 +57,11 @@ the first pass through the neighborhood exploration phases will involve up to \e
 \value{
 A `largeVis` object with the following slots:
  \describe{
-   \item{'knns'} {An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
+   \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
-   \item{'wij'} {A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
-   \item{'call'}
-   \item{'coords'} {A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
+   \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
+   \item{'call'}{The call.}
+   \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
  }
 }
 \description{

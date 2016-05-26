@@ -70,8 +70,8 @@ coords$x <- scale(coords$x)
 coords$y <- scale(coords$y)
 ggplot(coords, aes(x = x, y = y, color = label)) +
   geom_point(size = 0.1, alpha = 0.3) +
-  scale_x_continuous(name = "", limits = c(-2.5, 2.5)) +
-  scale_y_continuous(name = "", limits = c(-2.5, 2.5)) +
+  scale_x_continuous(name = "", limits = c(-2.5, 2)) +
+  scale_y_continuous(name = "", limits = c(-2, 2.5)) +
   scale_color_manual(values = colors_divergent_discrete(10)(10)) +
   guides(colour = guide_legend(override.aes = list(size=5))) +
   ggtitle("42,000 Node MNIST Dataset (Kaggle Variant)")

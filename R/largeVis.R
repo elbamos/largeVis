@@ -32,11 +32,11 @@
 #'
 #' @return A `largeVis` object with the following slots:
 #'  \describe{
-#'    \item{'knns'} {An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
+#'    \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
 #'    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
-#'    \item{'wij'} {A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
-#'    \item{'call'}
-#'    \item{'coords'} {A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
+#'    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
+#'    \item{'call'}{The call.}
+#'    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
 #'  }
 #'
 #'
@@ -143,9 +143,12 @@ vis <- function(x,
 
   if ( (any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
   stop("An error leaked into the distance calculation - check for duplicates")
-  if (any(xs > 27)) stop(paste(
+  if (any(xs > 27)) { # nocov start
+    warning(paste(
     "The Distances between some neighbors are large enough to cause the calculation of p_{j|i} to overflow.",
-    "Consider scaling the data matrix or using an alternative distance function."))
+    "Scaling the distance vector."))
+    xs <- scale(xs, center = FALSE)
+  } # nocov end
 
   #######################################################
   # Get w_{ij}

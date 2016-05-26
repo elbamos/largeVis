@@ -1,9 +1,9 @@
 benchmark <- function(path,
                       samplepath,
                            K = 40,
-                           tree_range = c(10, 20, 30),
-                           thresholds = c(10, 20, 50, 100),
-                           iters = c(1,2),
+                           tree_range = c(10, 20),
+                           thresholds = c(10, 20, 30, 40, 50),
+                           iters = c(3),
                            n = 10) {
   data <- readr::read_delim(path, delim = " ", col_names = F)
   data <- as.matrix(data)
@@ -51,7 +51,7 @@ benchmark <- function(path,
                        max_iterations = max_iters,
                        tree_threshold = threshold)
     		print(one_result)
-    		readr::write_csv(one_result, path = "results.csv", appent = TRUE)
+    		readr::write_csv(one_result, path = "results.csv", append = TRUE)
   		}
   	}
   }

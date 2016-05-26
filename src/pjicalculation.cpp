@@ -8,7 +8,7 @@
 #include <queue>
 #include <vector>
 #include <set>
-#include "helpers.hpp"
+#include "helpers.h"
 using namespace Rcpp;
 using namespace std;
 

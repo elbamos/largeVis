@@ -41,7 +41,7 @@ manifoldMap <- function(x,
                       images,
                       scale = 1,
                       transparency = FALSE,
-                      ...) {
+                      ...) { #nocov start
   if (class(x) == "largeVis") x <- t(x$coords)
   if (ncol(x) != 2) stop("Can only visualize in 2-D.")
   N <- nrow(x)
@@ -56,7 +56,7 @@ manifoldMap <- function(x,
   selections <- sample(N, n, replace = F)
   lowerscale <- min(images)
   upperscale <- max(images)
-  plot(x[selections, ], pch = NA, ...)
+  graphics::plot(x[selections, ], pch = NA, ...)
 
   for (i in selections) {
     if (D == 2) {
@@ -89,6 +89,4 @@ manifoldMap <- function(x,
                           interpolate = TRUE
                           )
   }
-}
-
-rotate <- function(x) t(apply(x, 2, rev))
+} # nocov end

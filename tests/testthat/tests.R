@@ -115,6 +115,58 @@ test_that("Cosine distances are correct", {
   expect_lt(sum(diffs), 1e-10)
 })
 
+test_that("buildEdgeMatrix are the same", {
+  set.seed(1974)
+  RcppArmadillo::armadillo_set_seed(1974)
+  dat <- as.matrix(iris[, 1:4])
+  dat <- scale(dat)
+  dupes <- which(duplicated(dat))
+  dat <- dat[-dupes, ]
+  dat <- t(dat)
+  neighbors <- randomProjectionTreeSearch(dat, K = 5, n_trees = 10, tree_threshold = 20, max_iter = 10,
+                                          verbose = FALSE)
+  is <- rep(0:(ncol(dat) - 1), each = 5)
+  js <- as.vector(neighbors)
+  is <- is[! js == -1]
+  js <- js[! js == -1]
+  dupes <- duplicated(data.frame(is, js))
+  is <- is[! dupes]
+  js <- js[! dupes]
+  ord <- order(is)
+  is <- is[ord]
+  js <- js[ord]
+  distances <- as.matrix(dist(t(dat)))
+  distances <- as.numeric(lapply(1:length(is), FUN = function(x) {
+    distances[is[x] + 1, js[x] + 1]
+  }))
+
+  ps <- i2p(is)
+  sigwij <- buildEdgeMatrix(i = is,
+                            j = js,
+                            p = ps,
+                            d = distances,
+                            verbose = F)
+  mat <- Matrix::sparseMatrix(i = js,
+                           p = ps,
+                           x = distances,
+                           dims = c(ncol(dat), ncol(dat)),
+                           giveCsparse = TRUE,
+                           index1=FALSE)
+  sigwij2 <- buildEdgeMatrix(mat, verbose = F)
+
+  score <- sum(sigwij$wij@x != sigwij2$wij@x)
+  expect_lt(score, 450)
+  tmat <- Matrix::sparseMatrix(i = is,
+                               j = js,
+                               x = distances,
+                               dims = c(ncol(dat), ncol(dat)),
+                               giveCsparse = FALSE,
+                               index1 = FALSE)
+  sigwij3 <- buildEdgeMatrix(tmat, verbose = F)
+  score <- sum(sigwij$wij@x != sigwij3$wij@x)
+  expect_lt(score, 450)
+})
+
 test_that("largeVis works when alpha == 0", {
   set.seed(1974)
   RcppArmadillo::armadillo_set_seed(1974)

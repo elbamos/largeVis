@@ -114,12 +114,6 @@ arma::mat sgd(arma::mat coords,
 
       const arma::vec y_i = coords.col(i);
       const arma::vec y_j = coords.col(j);
-      // arma::vec y_i = arma::vec(D);
-      // arma::vec y_j = arma::vec(D);
-      // for (int idx = 0; idx < D; idx++) {
-      //   y_i[idx] = coords(idx,i);
-      //   y_j[idx] = coords(idx,j);
-      // }
 
       // wij
       const double w = (useWeights) ? ws[e_ij] : 1;
@@ -137,6 +131,7 @@ arma::mat sgd(arma::mat coords,
 
       //double o = log(p_ij);
       const arma::vec d_j = (1 / p_ij) * d_p_ij;
+      // alternative: d_i - 2 * alpha * (y_i - y_j) / (alpha * sum(square(y_i - y_j)))
 
       arma::vec samples = arma::randu<arma::vec>(M * 2);
       arma::vec::iterator targetIt = samples.begin();
@@ -161,8 +156,6 @@ arma::mat sgd(arma::mat coords,
             k == j ||
             sum(searchVector == k) > 0) continue;
         const arma::vec y_k = coords.col(k);
-        // arma::vec y_k = arma::vec(D);
-        // for (int idx = 0; idx < D; idx++) y_k[idx] = coords(idx,k);
 
         const double dist_ik = dist(y_i, y_k);
         if (dist_ik == 0) continue; // Duplicates
@@ -179,6 +172,7 @@ arma::mat sgd(arma::mat coords,
         //o += (gamma * log(p_ik));
 
         const arma::vec d_k = (gamma / p_ik) * d_p_ik;
+        // alternative:  d_k = 2 * alpha * (y_i - y_k) / (square(1 + (alpha * sum(square(y_i - y_k)))) * (1 - (1 / (alpha * sum(square(y_i - y_k))))))
 
         d_i += d_k;
         for (int idx = 0; idx < D; idx++) coords(idx,k) -= d_k[idx] * localRho * w;

@@ -6,7 +6,6 @@
 * Added option of Euclidean or Cosine distance. 
 * Now using the median in random projection trees, to make splits more even. This should eliminate the need for the
 max_depth parameter. 
-* The alternative (alpha == 0) probabilistic function now works. 
 * Benchmarks
 * Vignette
 * Vastly improved multi-threading performance
