@@ -7,13 +7,13 @@
 using namespace Rcpp;
 
 // sgd
-arma::mat sgd(arma::mat coords, const NumericVector is, const NumericVector js, const NumericVector ps, const NumericVector ws, const double gamma, const double rho, const double minRho, const bool useWeights, const int nBatches, const int M, const double alpha, bool verbose);
+arma::mat sgd(arma::mat coords, const arma::vec& is, const NumericVector js, const NumericVector ps, const NumericVector ws, const double gamma, const double rho, const double minRho, const bool useWeights, const long nBatches, const int M, const double alpha, bool verbose);
 RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP psSEXP, SEXP wsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP nBatchesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< arma::mat >::type coords(coordsSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type is(isSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type is(isSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type js(jsSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type ps(psSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type ws(wsSEXP);
@@ -21,7 +21,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< const double >::type minRho(minRhoSEXP);
     Rcpp::traits::input_parameter< const bool >::type useWeights(useWeightsSEXP);
-    Rcpp::traits::input_parameter< const int >::type nBatches(nBatchesSEXP);
+    Rcpp::traits::input_parameter< const long >::type nBatches(nBatchesSEXP);
     Rcpp::traits::input_parameter< const int >::type M(MSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
@@ -47,9 +47,9 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// distance
-arma::vec distance(const NumericVector is, const NumericVector js, const arma::mat& data, const std::string& distMethod, bool verbose);
-RcppExport SEXP largeVis_distance(SEXP isSEXP, SEXP jsSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
+// fastDistance
+arma::vec fastDistance(const NumericVector is, const NumericVector js, const arma::mat& data, const std::string& distMethod, bool verbose);
+RcppExport SEXP largeVis_fastDistance(SEXP isSEXP, SEXP jsSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -58,7 +58,41 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(distance(is, js, data, distMethod, verbose));
+    __result = Rcpp::wrap(fastDistance(is, js, data, distMethod, verbose));
+    return __result;
+END_RCPP
+}
+// fastCDistance
+arma::vec fastCDistance(const arma::vec& is, const arma::vec& js, const arma::uvec& i_locations, const arma::uvec& p_locations, const arma::vec& x, const std::string& distMethod, bool verbose);
+RcppExport SEXP largeVis_fastCDistance(SEXP isSEXP, SEXP jsSEXP, SEXP i_locationsSEXP, SEXP p_locationsSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const arma::vec& >::type is(isSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type i_locations(i_locationsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type p_locations(p_locationsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(fastCDistance(is, js, i_locations, p_locations, x, distMethod, verbose));
+    return __result;
+END_RCPP
+}
+// fastSDistance
+arma::vec fastSDistance(const arma::vec& is, const arma::vec& js, const arma::uvec& i_locations, const arma::uvec& j_locations, const arma::vec& x, const std::string& distMethod, bool verbose);
+RcppExport SEXP largeVis_fastSDistance(SEXP isSEXP, SEXP jsSEXP, SEXP i_locationsSEXP, SEXP j_locationsSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const arma::vec& >::type is(isSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type i_locations(i_locationsSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type j_locations(j_locationsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(fastSDistance(is, js, i_locations, j_locations, x, distMethod, verbose));
     return __result;
 END_RCPP
 }
@@ -88,6 +122,46 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector >::type x_i(x_iSEXP);
     Rcpp::traits::input_parameter< const double >::type perplexity(perplexitySEXP);
     __result = Rcpp::wrap(sigFunc(sigma, x_i, perplexity));
+    return __result;
+END_RCPP
+}
+// searchTreesCSparse
+arma::mat searchTreesCSparse(const int& threshold, const int& n_trees, const int& K, const int& max_recursion_degree, const int& maxIter, const arma::uvec& i, const arma::uvec& p, const arma::vec& x, const std::string& distMethod, bool verbose);
+RcppExport SEXP largeVis_searchTreesCSparse(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP max_recursion_degreeSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP pSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const int& >::type threshold(thresholdSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n_trees(n_treesSEXP);
+    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int& >::type max_recursion_degree(max_recursion_degreeSEXP);
+    Rcpp::traits::input_parameter< const int& >::type maxIter(maxIterSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type i(iSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(searchTreesCSparse(threshold, n_trees, K, max_recursion_degree, maxIter, i, p, x, distMethod, verbose));
+    return __result;
+END_RCPP
+}
+// searchTreesTSparse
+arma::mat searchTreesTSparse(const int& threshold, const int& n_trees, const int& K, const int& max_recursion_degree, const int& maxIter, const arma::uvec& i, const arma::uvec& j, const arma::vec& x, const std::string& distMethod, bool verbose);
+RcppExport SEXP largeVis_searchTreesTSparse(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP max_recursion_degreeSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP jSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const int& >::type threshold(thresholdSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n_trees(n_treesSEXP);
+    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int& >::type max_recursion_degree(max_recursion_degreeSEXP);
+    Rcpp::traits::input_parameter< const int& >::type maxIter(maxIterSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type i(iSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type j(jSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(searchTreesTSparse(threshold, n_trees, K, max_recursion_degree, maxIter, i, j, x, distMethod, verbose));
     return __result;
 END_RCPP
 }

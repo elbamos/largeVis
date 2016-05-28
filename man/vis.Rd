@@ -4,11 +4,11 @@
 \alias{vis}
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
-vis(x, dim = 2, K = 40, check.assumptions = TRUE, n_trees = 50,
-  tree_threshold = max(10, nrow(x)), max_iter = 3, max_depth = 32,
-  distance_method = "Euclidean", perplexity = 50, sgd_batches = ncol(x) *
-  20000, M = 5, weight_pos_samples = TRUE, alpha = 1, gamma = 7,
-  rho = 1, min_rho = 0, coords = NULL, verbose = TRUE, ...)
+vis(x, dim = 2, K = 40, n_trees = 50, tree_threshold = max(10, nrow(x)),
+  max_iter = 3, max_depth = 32, distance_method = "Euclidean",
+  perplexity = 50, sgd_batches = ncol(x) * 20000, M = 5,
+  weight_pos_samples = TRUE, alpha = 1, gamma = 7, rho = 1,
+  min_rho = 0, coords = NULL, verbose = TRUE, ...)
 }
 \arguments{
 \item{x}{A matrix, where the features are rows and the examples are columns.}
@@ -16,8 +16,6 @@ vis(x, dim = 2, K = 40, check.assumptions = TRUE, n_trees = 50,
 \item{dim}{The number of dimensions in the output}
 
 \item{K}{The number of nearest-neighbors to use in computing the kNN graph}
-
-\item{check.assumptions}{Whether to check the input matrix for duplicates, \code{NA}`s, etc.}
 
 \item{n_trees}{See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 used in the examples in the original paper.}

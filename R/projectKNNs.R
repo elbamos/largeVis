@@ -67,6 +67,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   if (alpha == 0) warning("The alternative (alpha == 0) distance function is not fully implemented.")
   N <-  (length(wij@p) -1)
   js <- rep(0:(N - 1), diff(wij@p))
+  if (any(is.na(js))) stop("NAs in the index vector.")
   is <- wij@i
 
   ##############################################

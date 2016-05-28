@@ -1,108 +1,115 @@
----
-title: "largeVis"
-author: "Amos Elberg"
-date: "2016-05-19"
-output: 
-  rmarkdown::html_vignette:
-    fig_caption: yes
-  rmarkdown::pdf_document:
-    fig_caption: yes
-vignette: >
-  %\VignetteIndexEntry{LargeVis}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
+largeVis: An Implementation of the LargeVis Algorithm
+================
+Amos Elberg
+2016-05-28
 
+This Vingette provides an overview of the largeVis package.
 
-This Vingette provides an overview of the largeVis package.  
+Introduction
+------------
 
-### Manifold Embeddings
-Manifold embeddings attempt to find a low-dimensional (i.e., 2-D) representation of high-dimensional data that preserves the relationships among examples in the dataset. Examples that are similar to each other in high-dimensional space should appear close to each other in the low-dimensional space. 
+The `largeVis` package offers four functions for visualizing high-dimensional datasets and finding approximate nearest neighbors, based on the `LargeVis` algorithm presented in Tang et al. (2016):
 
-LargeVis is intended to overcome a significant limitation of prior methods, that they are impractical for large datasets because they run in $O(n^2)$ or, at best, $O(n \log n)$. LargeVis should run in $O(n)$.
+1.  `randomProjectionTreeSearch`, a method for finding approximate nearest neighbors.
+2.  `projectKNNs`, which takes as input a weighted nearest-neighbor graph and estimates a projection into a low-dimensional space.
+3.  `vis`, which combines `randomProjectionTreeSearch`, `buildEdgeMatrix`, and `projectKNNs`, along with additional code to implement the `LargeVis` algorithm.
+4.  `manifoldMap`, which produces a plot for visualizing embeddings of images.
 
-The neighboring nodes are used to estimate a probility distribution of each node's neighbors. 
+See the [original paper](@Tang) for a detailed description of the algorithm.
 
-Then, a lower dimensional embedding is estimated, first by random initialization.  Each node is assigned a position chosen at radnom. The embeddings are then updated to move similar nodes close together (and distant nodes further apart), according to a probabilstic functon that realates their distance in the low-dimensional space to the probability that the nodes are neighbors in the high-dimensional space. 
+Data Preparation
+----------------
 
-### Observations
+For input to `largeVis`, data should be scaled, NA's, Infs and NULL removed, and transposed from the R-standard so that examples are columns and features are rows. Duplicates should be removed as well.
 
-t-SNE embedding has proven effecitve in wide variety of data contexts. 
+If there are NA's, Infs, or NULLs in the input, `randomProjectionTreeSearch` will definitely fail.
 
-However, the t-SNE algorithm depends on the identifying each node's nearest neighbors, an $O(N^2)$ operation at best. 
+If the numerical range covered by the data is large, this can cause errors in or before the `buildEdgeMatrix` function. This is because the algorithm requires calculating \(\exp(||\vec{x_i}, \vec{x_j}||^2)\) in the high-dimensional space, which will overflow if the distance between any nearest neighbors exceeds about 26.
 
-## Vignette Info
+If there are duplicates in the input data, while the implementation tries to filter duplicates, it is likely to lead to problems. If the number of duplicates is large, this can cause the random projection tree search to fail. If the number is small, the algorithm may identify a sufficient number of neighbors, but an error may then occur during `buildEdgeMatrix`, or stochastic gradient descent.
 
+Memory Consumption
+------------------
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+The algorithm is necessarily memory-intensive for large datasets. `neighborsToVectors`, `distance`, and `buildEdgeMatrix` are available as separate functions to facilitate memory-efficient handling of large datasets, because the high-dimensional dataset is not needed after distances have been calculated. In this case, the workflow is:
 
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Effect of Hyperparameters
-
-The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperparameters on the `wiki` dataset:
-
-
-```
-## Loading required package: largeVis
+``` r
+neighbors <- randomProjectionTreeSearch(largeDataset)
+neighborIndices <- neighborsToVectors(neighbors)
+rm(neighbors)
+distances <- distance(neighborIndices$i, 
+                      neighborIndices$j,
+                      largeDataset)
+rm(largeDataset)
+wij <- buildEdgeMatrix(i = neighborIndices$i, 
+                       j = neighborIndices$j, 
+                       d = distances)
+rm(distances, neighborIndices)
+coords <- projectKNNs(wij$wij)
 ```
 
-```
-## Warning: Removed 11372 rows containing missing values (geom_point).
-```
+In testing, this method reduced peak RAM requirements by more than 70%.
 
-![plot of chunk wikihyperparameters](figure/wikihyperparameters-1.png)
+Overview of Functions and Hyperparameters
+-----------------------------------------
 
-($\alpha = 0$ uses the alternate probabilistic distance function, $p(e_{ij} = 1) = f(1 / (1 + \exp(||\vec(y_1) - \vec(y_2)||^2)))$).
+### `randomProjectionTreeSearch`
 
-## Figures
+This function uses a two-phase algorithm to find approximate nearest neighbors. In the first phase, the algorithm creates `n_trees` binary trees dividing the space into leaves of at most `tree_threshold` nodes. A node's candidate nearest neighbors are the union of all nodes with which it shared a leaf on any of the trees. In the second phase, for each node, the algorithm looks at the candidate nearest neighbors for that node, as well as each of those nodes' candidate nearest neighbors. The logic of the algorithm is that a node's neighbors' neighbors are likely to be the node's own neighbors. In each iteration, the closest `K` candidate neighbors for each node are kept.
 
+The authors of Tang et al. (2016) suggest that a single iteration of the second phase is generally sufficient to obtain satisfactory performance.
 
+The chart below illlustrates the trade-off between performance and accuracy for the nearest-neighbor search, using various hyperparameters. The data was produced using the `benchmark.R` script in the `inst/` directory. The test data is the 1-million vector, 128-feature [SIFT Dataset](http://corpus-texmex.irisa.fr/), as per Erik Bernhardsson's [ANN Benchmark](https://github.com/erikbern/ann-benchmarks) github.
 
+![](largeVis_files/figure-markdown_github/performance-1.png)
 
-The figure sizes have been customised so that you can easily put two images side-by-side. 
+If `randomProjectionTreeSearch` fails to find the desired number of neighbors, usually the best result is obtained by increasing the tree threshold. If `randomProjectionTreeSearch` fails with an error that no neighbors were found for some nodes, and the tree threshold is already reasonable, this may be an indication that duplicates remain in the input data.
 
+### `projectKNNs`
 
-```r
-plot(1:10)
-plot(10:1)
-```
+This function takes as its input a `Matrix::sparseMatrix`, of connections between nodes. The matrix must be symmetric. A non-zero cell implies that node `i` is a nearest neighbor of node `j`, vice-versa, or both. Non-zero values represent the strength of the connection relative to other nearest neighbors of the two nodes.
 
-![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png)![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-2.png)
+The `LargeVis` algorithm, explained in detail in Tang et al. (2016), estimates the embedding by sampling from the identitied nearest-neighbor connections. For each edge, the algorithm also samples `M` non-nearest neighbor negative samples. `M`, along with \(\gamma\) and \(\alpha\), control the visualization. \(\alpha\) controls the desired distance between nearest neighbors. \(\gamma\) controls the relative strength of the attractive force between nearest neighbors and repulsive force between non-neighbors.
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+The following grid illustrates the effect of the \(\alpha\) and \(\gamma\) hyperparameters, using the `wiki` dataset which is included with the package:
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+![](largeVis_files/figure-markdown_github/drawwikihyperparameters-1.png)
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+The additional hyperparameters \(\rho\) and `min-`\(\rho\) control the starting and final learning rate for the stochastic gradient descent process.
 
-## More Examples
+The algorithm can treat positive edge weights in two different ways. The authors of Tang et al. (2016) suggest that edge weights should be used to generate a weighted sampling. However, the algorithm for taking a weighted sample runs in \(O(n \log n)\). Alternatively, the edge-weights can be applied to the gradients. This is controlled by the `weight_pos_samples` parameter.
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+### `vis`
 
+The `vis` function combines `randomProjectionTreeSearch` and `projectKNNs`, along with additional logic for calculating edge weights, to implement the complete `LargeVis` algorithm.
 
-|                  |  mpg| cyl|  disp|  hp| drat|    wt|  qsec| vs| am| gear| carb|
-|:-----------------|----:|---:|-----:|---:|----:|-----:|-----:|--:|--:|----:|----:|
-|Mazda RX4         | 21.0|   6| 160.0| 110| 3.90| 2.620| 16.46|  0|  1|    4|    4|
-|Mazda RX4 Wag     | 21.0|   6| 160.0| 110| 3.90| 2.875| 17.02|  0|  1|    4|    4|
-|Datsun 710        | 22.8|   4| 108.0|  93| 3.85| 2.320| 18.61|  1|  1|    4|    1|
-|Hornet 4 Drive    | 21.4|   6| 258.0| 110| 3.08| 3.215| 19.44|  1|  0|    3|    1|
-|Hornet Sportabout | 18.7|   8| 360.0| 175| 3.15| 3.440| 17.02|  0|  0|    3|    2|
-|Valiant           | 18.1|   6| 225.0| 105| 2.76| 3.460| 20.22|  1|  0|    3|    1|
-|Duster 360        | 14.3|   8| 360.0| 245| 3.21| 3.570| 15.84|  0|  0|    3|    4|
-|Merc 240D         | 24.4|   4| 146.7|  62| 3.69| 3.190| 20.00|  1|  0|    4|    2|
-|Merc 230          | 22.8|   4| 140.8|  95| 3.92| 3.150| 22.90|  1|  0|    4|    2|
-|Merc 280          | 19.2|   6| 167.6| 123| 3.92| 3.440| 18.30|  1|  0|    4|    4|
+The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset.
 
-Also a quote using `>`:
+![](largeVis_files/figure-markdown_github/plotiris-1.png)
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+### `manifoldMap`
+
+The `manifoldMap` function is useful when the examples being clustered are themselves images. Given a coordinate matrix (as generated by `projectKNNs` or `vis`) and an `array` of `N` images, the function samples `n` images and plots them at the coordinates given in the matrix. If the `transparency` parameter is a number between 0 and 1, then the function adds to each image an alpha channel where the value per pixel is proportional to \(transparency *\) the image content.
+
+The function can plot both color and greyscale images.
+
+The following plot illustrates this by plotting 5000 images sampled from the MNIST dataset at positions generated by `vis`:
+
+![](largeVis_files/figure-markdown_github/drawmanifoldmap-1.png)
+
+Support for Sparse Matrices
+---------------------------
+
+`largeVis` supports sparse matrices. Besides facilitating very large datasets, this makes it practicable to visualize term-document-matrices. The workflow can be something like this:
+
+![](largeVis_files/figure-markdown_github/drawtdm-1.png)
+
+Distance Methods
+----------------
+
+The original `LargeVis` paper used Euclidean distances exclusively. The `largeVis` package offers a choice among Euclidean and Cosine distance measures.
+
+Bibliography
+------------
+
+Tang, Jian, Jingzhou Liu, Ming Zhang, and Qiaozhu Mei. 2016. “Visualization Large-Scale and High-Dimensional Data.” *CoRR* abs/1602.00370. <http://arxiv.org/abs/1602.00370>.

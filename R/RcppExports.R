@@ -9,8 +9,16 @@ searchTrees <- function(threshold, n_trees, K, max_recursion_degree, maxIter, da
     .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, max_recursion_degree, maxIter, data, distMethod, verbose)
 }
 
-distance <- function(is, js, data, distMethod, verbose) {
-    .Call('largeVis_distance', PACKAGE = 'largeVis', is, js, data, distMethod, verbose)
+fastDistance <- function(is, js, data, distMethod, verbose) {
+    .Call('largeVis_fastDistance', PACKAGE = 'largeVis', is, js, data, distMethod, verbose)
+}
+
+fastCDistance <- function(is, js, i_locations, p_locations, x, distMethod, verbose) {
+    .Call('largeVis_fastCDistance', PACKAGE = 'largeVis', is, js, i_locations, p_locations, x, distMethod, verbose)
+}
+
+fastSDistance <- function(is, js, i_locations, j_locations, x, distMethod, verbose) {
+    .Call('largeVis_fastSDistance', PACKAGE = 'largeVis', is, js, i_locations, j_locations, x, distMethod, verbose)
 }
 
 distMatrixTowij <- function(is, js, xs, sigmas, N, verbose) {
@@ -19,5 +27,13 @@ distMatrixTowij <- function(is, js, xs, sigmas, N, verbose) {
 
 sigFunc <- function(sigma, x_i, perplexity) {
     .Call('largeVis_sigFunc', PACKAGE = 'largeVis', sigma, x_i, perplexity)
+}
+
+searchTreesCSparse <- function(threshold, n_trees, K, max_recursion_degree, maxIter, i, p, x, distMethod, verbose) {
+    .Call('largeVis_searchTreesCSparse', PACKAGE = 'largeVis', threshold, n_trees, K, max_recursion_degree, maxIter, i, p, x, distMethod, verbose)
+}
+
+searchTreesTSparse <- function(threshold, n_trees, K, max_recursion_degree, maxIter, i, j, x, distMethod, verbose) {
+    .Call('largeVis_searchTreesTSparse', PACKAGE = 'largeVis', threshold, n_trees, K, max_recursion_degree, maxIter, i, j, x, distMethod, verbose)
 }
 

@@ -1,5 +1,5 @@
 #include <RcppArmadillo.h>
-// [[Rcpp::plugins(openmp)]]
+// [[Rcpp::plugins(openmp,cpp11)]]
 #include "progress.hpp"
 #include <omp.h>
 #include <math.h>
@@ -16,7 +16,7 @@ using namespace std;
  * Fast calculation of pairwise distances with the result stored in a pre-allocated vector.
  */
 // [[Rcpp::export]]
-arma::vec distance(const NumericVector is,
+arma::vec fastDistance(const NumericVector is,
               const NumericVector js,
               const arma::mat& data,
               const std::string& distMethod,
@@ -33,6 +33,52 @@ arma::vec distance(const NumericVector is,
     distanceFunction(data.col(is[i]), data.col(js[i]));
   return xs;
 };
+
+arma::vec fastSparseDistance(const arma::vec& is,
+                             const arma::vec& js,
+                             const arma::sp_mat& data,
+                             const std::string& distMethod,
+                             bool verbose) {
+
+  Progress p(is.size(), verbose);
+  arma::vec xs = arma::vec(is.size());
+  double (*distanceFunction)(
+      const arma::sp_mat& x_i,
+      const arma::sp_mat& x_j);
+  if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = sparseDist;
+  else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = sparseCosDist;
+
+#pragma omp parallel for shared (xs)
+  for (int i=0; i < is.size(); i++) if (p.increment()) xs[i] =
+    distanceFunction(data.col(is[i]), data.col(js[i]));
+  return xs;
+};
+
+// [[Rcpp::export]]
+arma::vec fastCDistance(const arma::vec& is,
+                       const arma::vec& js,
+                       const arma::uvec& i_locations,
+                       const arma::uvec& p_locations,
+                       const arma::vec& x,
+                       const std::string& distMethod,
+                       bool verbose) {
+  const int N = p_locations.size() - 1;
+  const arma::sp_mat data = arma::sp_mat(i_locations, p_locations, x, N, N);
+  return fastSparseDistance(is,js,data,distMethod,verbose);
+}
+
+// [[Rcpp::export]]
+arma::vec fastSDistance(const arma::vec& is,
+                        const arma::vec& js,
+                        const arma::uvec& i_locations,
+                        const arma::uvec& j_locations,
+                        const arma::vec& x,
+                        const std::string& distMethod,
+                        bool verbose) {
+  const arma::umat locations = arma::join_cols(i_locations, j_locations);
+  const arma::sp_mat data = arma::sp_mat(locations, x);
+  return fastSparseDistance(is,js,data,distMethod,verbose);
+}
 
 // Take four vectors (i indices, j indices, edge distances, and sigmas), and calculate
 // p(j|i) and then w_{ij}.

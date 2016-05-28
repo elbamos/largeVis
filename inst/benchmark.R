@@ -62,5 +62,5 @@ require( largeVis )
 path <- "/mnt/hfsshare/DATASETS/sift/siftknns.txt"
 samplepath <- "./samples.Rda"
 
-results <- benchmark(path, samplepath, n = 10000, K = 100)
+results <- benchmark(path, samplepath, n = 10000, K = 100, tree_range = 10, thresholds = 20, iters = 2)
 print(results)

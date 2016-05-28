@@ -26,10 +26,11 @@ buildEdgeMatrix <- function(x,i,j,p,d,perplexity,verbose) UseMethod("buildEdgeMa
 buildEdgeMatrix.default <- function(x = NULL,
                                     i,
                                     j,
-                                    p,
+                                    p = NULL,
                                     d,
                                     perplexity = 50,
                                     verbose = TRUE) {
+  if (is.null(p)) p <- i2p(i)
   N <- max(max(i), max(j)) + 1
 
   if (verbose) {
