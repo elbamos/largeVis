@@ -26,7 +26,8 @@ randomProjectionTreeSearch <- function(x,
                                        max_iter = 2,
                                        max_depth = 32,
                                        distance_method = "Euclidean",
-                                       verbose= TRUE) UseMethod('randomProjectionTreeSearch')
+                                       verbose= TRUE)
+  UseMethod("randomProjectionTreeSearch")
 
 #' @export
 #' @rdname randomProjectionTreeSearch
@@ -53,8 +54,9 @@ randomProjectionTreeSearch.matrix <- function(x,
   if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
     stop ("NAs or nans in neighbor graph.")
   if (verbose[1] && sum(knns == -1) > 0)
-    warning ("Wanted to find", nrow(knns) * ncol(knns), " neighbors, but only found",
-                  ((nrow(knns) * ncol(knns)) - sum(knns == -1)))
+    warning ("Wanted to find", nrow(knns) * ncol(knns),
+             " neighbors, but only found",
+                  ( (nrow(knns) * ncol(knns)) - sum(knns == -1)))
 
   return(knns)
 }
@@ -86,8 +88,9 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
   if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
     stop ("NAs or nans in neighbor graph.")
   if (verbose[1] && sum(knns == -1) > 0)
-    warning ("Wanted to find", nrow(knns) * ncol(knns), " neighbors, but only found",
-             ((nrow(knns) * ncol(knns)) - sum(knns == -1)))
+    warning ("Wanted to find", nrow(knns) * ncol(knns),
+             " neighbors, but only found",
+             ( (nrow(knns) * ncol(knns)) - sum(knns == -1)))
 
   return(knns)
 }
@@ -119,8 +122,9 @@ randomProjectionTreeSearch.TsparseMatrix <- function(x,
   if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
     stop ("NAs or nans in neighbor graph.")
   if (verbose[1] && sum(knns == -1) > 0)
-    warning ("Wanted to find", nrow(knns) * ncol(knns), " neighbors, but only found",
-             ((nrow(knns) * ncol(knns)) - sum(knns == -1)))
+    warning ("Wanted to find", nrow(knns) * ncol(knns),
+             " neighbors, but only found",
+             ( (nrow(knns) * ncol(knns) ) - sum(knns == -1)))
 
   return(knns)
 }

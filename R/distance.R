@@ -12,33 +12,57 @@
 #'
 #' @return A vector of the distances between the columns in `x` indexed by `i` and `j`.
 #' @export
-distance <- function(x,i,j,distance_method,verbose) UseMethod('distance')
+distance <- function(x,
+                     i,
+                     j,
+                     distance_method,
+                     verbose) UseMethod("distance")
 
 #' @export
 #' @rdname distance
 distance.matrix <- function(x,
                      i,
                      j,
-                     distance_method = 'Euclidean',
+                     distance_method = "Euclidean",
                      verbose = TRUE) {
-  return (fastDistance(i,j,x,distance_method,verbose))
+  return (fastDistance(i,
+                       j,
+                       x,
+                       distance_method,
+                       verbose))
 }
 
 #' @export
 #' @rdname distance
 distance.CsparseMatrix <- function(x,
                                    i,
-                     j,
-                     distance_method = 'Euclidean',
-                     verbose = TRUE) {
-  return(fastCDistance(i,j,x@i,x@p,x@x,distance_method,verbose))
+                                   j,
+                                   distance_method = "Euclidean",
+                                   verbose = TRUE) {
+  return(fastCDistance(i,
+                       j,
+                       x@i,
+                       x@p,
+                       x@x,
+                       distance_method,
+                       verbose))
 }
 
 #' @export
 #' @rdname distance
 distance.TsparseMatrix <- function(
-  x,i,j,distance_method='Euclidean', verbose=TRUE) {
-  return(fastSDistance(i,j,x@i,x@j,x@p,distance_method,verbose))
+                                  x,
+                                  i,
+                                  j,
+                                  distance_method="Euclidean",
+                                  verbose=TRUE) {
+  return(fastSDistance(i,
+                       j,
+                       x@i,
+                       x@j,
+                       x@p,
+                       distance_method,
+                       verbose))
 }
 
 #' A utility function to convert a k-NN graph to a pair of 0-indexed vectors of indices.
@@ -56,8 +80,8 @@ distance.TsparseMatrix <- function(
 #' }
 #' @export
 neighborsToVectors <- function(x) {
-  K = nrow(x)
-  N = ncol(x)
+  K <- nrow(x)
+  N <- ncol(x)
   is <- rep(0:(N - 1), each = K)
   js <- as.vector(x)
   is <- is[! js == -1]

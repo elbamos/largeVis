@@ -9,13 +9,13 @@ License: GPL-3
 LazyData: TRUE
 RoxygenNote: 5.0.1
 Depends:
-    R (>= 2.10)
-Imports:
+    R (>= 2.10),
     Matrix,
+    RcppProgress (>= 0.2.1),
+    RcppArmadillo (>= 0.7.100.3.0)
+Imports:
     parallel,
     Rcpp (>= 0.12.4),
-    RcppProgress (>= 0.2.1),
-    RcppArmadillo (>= 0.7.100.3.0),
     abind
 LinkingTo: Rcpp,RcppProgress,RcppArmadillo
 Suggests: testthat,
@@ -23,13 +23,8 @@ Suggests: testthat,
     knitr,
     rmarkdown,
     ggplot2,
-    readr,
     wesanderson,
-    RColorBrewer,
-    RANN,
-    stm,
-    darch,
-    slam
+    RColorBrewer
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes

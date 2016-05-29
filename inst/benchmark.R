@@ -16,7 +16,7 @@ benchmark <- function(path,
     samples <- sample(nrow(data), n, replace = F)
 
     actualneighbors <- RANN::nn2(
-      data, data[samples, ], k = K, treetype='kd',
+      data, data[samples, ], k = K, treetype = "kd",
     )$nn.idx - 1
 
     savedsamples <- list(samples = samples, neighbors = actualneighbors)
@@ -33,27 +33,28 @@ benchmark <- function(path,
                         tree_threshold = numeric(0))
 
   for (n_trees in tree_range) {
-	  for (max_iters in iters) {
-		  for (threshold in thresholds) {
-    		print(paste(n_trees, max_iters, threshold))
-    		time <- system.time(
-      		knns <- randomProjectionTreeSearch(data,
+    for (max_iters in iters) {
+      for (threshold in thresholds) {
+        print(paste(n_trees, max_iters, threshold))
+        time <- system.time(
+          knns <- randomProjectionTreeSearch(data,
                                          K, n_trees, threshold, max_iters,
                                          verbose = TRUE)
-    		)
-    		precision <- lapply(1:n,
-                        FUN = function(x)  sum(knns[, savedsamples$samples[x]] %in% savedsamples$neighbors[x, ]))
+          )
+        precision <- lapply(1:n,
+          FUN = function(x)
+            sum(knns[, savedsamples$samples[x]] %in% savedsamples$neighbors[x, ]))
 
-   			one_result <- data.frame(
+        one_result <- data.frame(
                        time = time[1] + time[5],
                        precision = sum(as.numeric(precision)) / n,
                        n_trees = n_trees,
                        max_iterations = max_iters,
                        tree_threshold = threshold)
-    		print(one_result)
-    		readr::write_csv(one_result, path = "results.csv", append = TRUE)
-  		}
-  	}
+        print(one_result)
+        readr::write_csv(one_result, path = "results.csv", append = TRUE)
+      }
+    }
   }
   return(results)
 }
@@ -62,5 +63,11 @@ require( largeVis )
 path <- "/mnt/hfsshare/DATASETS/sift/siftknns.txt"
 samplepath <- "./samples.Rda"
 
-results <- benchmark(path, samplepath, n = 10000, K = 100, tree_range = 10, thresholds = 20, iters = 2)
+results <- benchmark(path,
+                     samplepath,
+                     n = 10000,
+                     K = 100,
+                     tree_range = 10,
+                     thresholds = 20,
+                     iters = 2)
 print(results)

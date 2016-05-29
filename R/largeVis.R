@@ -38,10 +38,7 @@
 #'    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
 #'  }
 #'
-#'
 #' @export
-#' @importFrom stats optimize princomp
-#' @importFrom utils setTxtProgressBar txtProgressBar
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 #'
 #' @examples
@@ -90,7 +87,6 @@ vis <- function(x,
 
                      verbose = TRUE,
                     ...) {
-  N <- ncol(x)
 
   #############################################
   # Search for kNearestNeighbors
@@ -108,18 +104,25 @@ vis <- function(x,
   # Clean knns
   #############################################
   if (verbose[1]) cat("Calculating edge weights...")
-  neighborIndices <- neighborsToVectors(knns)
+  neighbor_indices <- neighborsToVectors(knns)
 
   #######################################################
   # Calculate edge weights for candidate neighbors
   #######################################################
   if (verbose) cat("Calculating neighbor distances.\n")
 
-  xs <- distance(x = x, neighborIndices$i, neighborIndices$j, distance_method,verbose)[, 1]
+  xs <- distance(x = x,
+                 neighbor_indices$i,
+                 neighbor_indices$j,
+                 distance_method,
+                 verbose)[, 1]
 
   if (verbose) cat("\n")
 
-  if ( (any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
+  if ( (any(is.na(xs)) +
+        any(is.infinite(xs)) +
+        any(is.nan(xs)) +
+        any(xs == 0)) > 0)
   stop("An error leaked into the distance calculation - check for duplicates")
   if (any(xs > 27)) { # nocov start
     warning(paste(
@@ -132,13 +135,13 @@ vis <- function(x,
   # Get w_{ij}
   #######################################################
 
-  sigwij <- buildEdgeMatrix(i = neighborIndices$i,
-                         j = neighborIndices$j,
+  sigwij <- buildEdgeMatrix(i = neighbor_indices$i,
+                         j = neighbor_indices$j,
                          d = xs,
                          perplexity = perplexity,
                          verbose = verbose)
 
-  rm(neighborIndices)
+  rm(neighbor_indices)
   #######################################################
   # Estimate embeddings
   #######################################################
@@ -176,6 +179,9 @@ vis <- function(x,
 # Some helper functions useful for debugging
 ##########################################
 
-pji <- function(x_i, sigma)  exp(- (x_i^2) / sigma) / sum(exp(- (x_i^2) / sigma))
-perp <- function(x_i, sigma) - sum(log2(pji(x_i, sigma))) / length(x_i)
-pdiff <- function(x_i, sigma, perplexity) (perplexity - perp(x_i, sigma))^2
+pji <- function(x_i, sigma)
+  exp(- (x_i^2) / sigma) / sum(exp(- (x_i^2) / sigma))
+perp <- function(x_i, sigma)
+  - sum(log2(pji(x_i, sigma))) / length(x_i)
+pdiff <- function(x_i, sigma, perplexity)
+  (perplexity - perp(x_i, sigma))^2
