@@ -5,11 +5,11 @@ date: '`r Sys.Date()`'
 output:
   rmarkdown::html_vignette:
     fig_caption: yes
-  rmarkdown::pdf_document:
-    fig_caption: yes
 bibliography: TangLZM16.bib
-vignette: |
-  %\VignetteIndexEntry{largeVis}   %\VignetteEngine{knitr::rmarkdown}   %\VignetteEncoding{UTF-8}
+vignette: >
+  %\VignetteIndexEntry{largeVis}   
+  %\VignetteEngine{knitr::rmarkdown}   
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup,eval=T,echo=F,warning=F,error=F,message=F}
@@ -31,7 +31,7 @@ theme_set(
     legend.margin=unit(0,"cm"),
     legend.position="bottom",
     legend.key.size=unit(0.5,"lines"),
-    legend.text=element_text(size = unit(10, "points")), 
+    legend.text=element_text(size = unit(8, "points")), 
     axis.title.y = element_text(angle=90),
     axis.text = element_text(size=rel(0.7)),
     plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 
@@ -43,19 +43,18 @@ require(largeVis)
 ```
 This Vingette provides an overview of the largeVis package.  
 
-## Overview
+## Introduction
 
 The `largeVis` package offers four functions for visualizing high-dimensional datasets and finding approximate nearest neighbors, based on the `LargeVis` algorithm presented in @TangLZM16:
 
 1.  `randomProjectionTreeSearch`, a method for finding approximate nearest neighbors.
 2.  `projectKNNs`, which takes as input a weighted nearest-neighbor graph and estimates a projection into a low-dimensional space.
-3.  `buildEdgeMatrix`, a utility function that converts a nearest-neighbor distance graph into a weighted graph of the form required by `LargeVis`. 
-4.  `vis`, which combines `randomProjectionTreeSearch`, `buildEdgeMatrix`, and `projectKNNs`, along with additional code to implement the `LargeVis` algorithm.
-5.  `manifoldMap`, which produces a plot for visualizing embeddings of images. 
+3.  `vis`, which combines `randomProjectionTreeSearch`, `buildEdgeMatrix`, and `projectKNNs`, along with additional code to implement the `LargeVis` algorithm.
+4.  `manifoldMap`, which produces a plot for visualizing embeddings of images. 
 
-See the [original paper](@Tang) for a detailed description of the algorithm. 
+See the [original paper](https://arxiv.org/abs/1602.00370) for a detailed description of the algorithm. 
 
-### Data Preparation
+## Data Preparation
 
 For input to `largeVis`, data should be scaled, NA's, Infs and NULL removed, and transposed from the R-standard so that examples are columns and features are rows. Duplicates should be removed as well.
 
@@ -63,7 +62,77 @@ If there are NA's, Infs, or NULLs in the input, `randomProjectionTreeSearch` wil
 
 If the numerical range covered by the data is large, this can cause errors in or before the `buildEdgeMatrix` function. This is because the algorithm requires calculating $\exp(||\vec{x_i}, \vec{x_j}||^2)$ in the high-dimensional space, which will overflow if the distance between any nearest neighbors exceeds about 26.  
 
-If there are duplicates in the input data, this is likely to result in an error either before `buildEdgeMatrix`, or during stochastic gradient descent. 
+If there are duplicates in the input data, while the implementation tries to filter duplicates, it is likely to lead to problems. If the number of duplicates is large, this can cause the random projection tree search to fail. If the number is small, the algorithm may identify a sufficient number of neighbors, but an error may then occur during `buildEdgeMatrix`, or stochastic gradient descent. 
+
+## Examples
+
+```{r MNIST,echo=F,message=F,warning=F,results='hide',eval=F}
+darch::provideMNIST(download=T)
+load("data/train.RData")
+
+mnistCoords <- vis(t(trainData) - 0.5, K = 40, tree_threshold = 700, 
+                   n_trees = 40, max_iter = 2, verbose=F)
+mnistCoords <- mnistCoords$coords
+mnistCoords <- scale(t(mnistCoords))
+mnistCoords <- data.frame(mnistCoords)
+colnames(mnistCoords) <- c("x", "y")
+labs <- apply(trainLabels, MARGIN=1, FUN=function(x) which(x == 1))
+mnistCoords$labels <- factor(labs - 1)
+```
+
+```{r drawmnist,echo=F,warning=F,fig.width=3.5,fig.height=4,fig.align='center',fig.show='hold'}
+load(system.file("extdata", "mnistcoords.Rda", package="largeVis"))
+ggplot(mnistCoords, aes(x = x, y = y, color = labels)) +
+  geom_point(size = 0.1, alpha = 0.3) +
+  scale_x_continuous(name = "", limits = c(-2.5, 2), breaks = NULL) +
+  scale_y_continuous(name = "", limits = c(-2, 2.5), breaks = NULL) +
+  scale_color_manual(values = colors_divergent_discrete(10)(10)) +
+  guides(colour = guide_legend(override.aes = list(size=5))) +
+  ggtitle("MNIST")
+```
+
+```{r ldafromldavis,echo=F,eval=F}
+library(LDAvis)
+data("TwentyNewsgroups")
+theta <- scale(t(TwentyNewsgroups$theta))
+visObj <- vis(theta, K = 100, n_trees = 20, tree_threshold = 100, 
+              max_iter = 2)
+
+ngcoords <- scale(t(visObj$coords))
+ngcoords <- data.frame(ngcoords)
+colnames(ngcoords) <- c("x", "y")
+library(lda)
+data("newsgroup.train.labels")
+ngcoords$label <- factor(newsgroup.train.labels)[-1]
+```
+```{r draw20ng,fig.align='center',echo=F,fig.width=3.5,fig.height=4,eval=T,warning=FALSE,error=FALSE,message=FALSE,fig.show='hold'}
+load(system.file("extdata", "ngcoords.Rda", package="largeVis"))
+ggplot(ngcoords, 
+       aes(x = x, y = y, color = label)) +
+  geom_point(size = 0.4, alpha = 0.5) + 
+  scale_color_manual(values = colors_divergent_discrete(20)(20),
+                     guide=FALSE) +
+  scale_x_continuous(name = "", limits = c(-2, 2.5), breaks = NULL) +
+  scale_y_continuous(name = "", limits = c(-2, 2.5), breaks = NULL) +
+  ggtitle("20 Newsgroups")
+```
+
+```{r 3draw,webgl=TRUE,echo=F,eval=F,results='asis'}
+# d3coords <- projectKNNs(visObj$wij, dim = 3)
+# d3coords <- data.frame(scale(t(d3coords)))
+# colnames(d3coords) <- c("x", "y", "z")
+# d3coords$label <- factor(newsgroup.train.labels)[-1]
+# library(threejs)
+# rgl::plot3d(x = d3coords[,1],
+#             y = d3coords[,2],
+#             z = d3coords[,3],
+#            main = "20 Newsgroups", 
+#            type = "p",
+#            col = c(newsgroup.train.labels, 
+#                      newsgroup.test.labels))
+```
+
+## Overview of Functions and Hyperparameters
 
 ### `randomProjectionTreeSearch`
 
@@ -71,18 +140,21 @@ This function uses a two-phase algorithm to find approximate nearest neighbors. 
 
 The authors of @TangLZM16 suggest that a single iteration of the second phase is generally sufficient to obtain satisfactory performance. 
 
-The chart below illlustrates the trade-off between performance and accuracy for the nearest-neighbor search, using various hyperparameters.  The data was produced using the `benchmark.R` script in the `inst/` directory.  The test data is the 1-million vector, 128-feature [SIFT Dataset](http://corpus-texmex.irisa.fr/), as per Erik Bern's [ANN Benchmark](https://github.com/erikbern/ann-benchmarks) github. 
+The chart below illlustrates the trade-off between performance and accuracy for the nearest-neighbor search, using various hyperparameters.  The data was produced using the `benchmark.R` script in the `inst/` directory.  The test data is the 1-million vector, 128-feature [SIFT Dataset](http://corpus-texmex.irisa.fr/), as per Erik Bernhardsson's [ANN Benchmark](https://github.com/erikbern/ann-benchmarks) github. 
 
-```{r performance,echo=F,fig.width=6,fig.height=6}
-results <- readr::read_csv("../inst/results.csv")
-colnames(results) <- c("time", 
+```{r performance,echo=F,eval=F}
+benchmark <- readr::read_csv(system.file("extdata", "results.csv", package="largeVis"))
+colnames(benchmark) <- c("time", 
                        "precision", 
                        "n_trees", 
                        "max_iters", 
                        "threshold")
-results$series <- factor(paste(results$n_trees, "trees,", 
-                               results$max_iters, "iterations."))
-ggplot(results, aes(x = time, y = precision / 100, 
+benchmark$series <- factor(paste(benchmark$n_trees, "trees,", 
+                               benchmark$max_iters, "iterations."))
+```
+```{r plotpeformance,echo=F,fig.width=3.5,fig.height=4,fig.align='center'}
+load(system.file("extdata", "benchmark.Rda", package = "largeVis"))
+ggplot(benchmark, aes(x = time, y = precision / 100, 
                     group = series, color = series, 
                     shape = series,
                     label =threshold)) +
@@ -91,10 +163,16 @@ ggplot(results, aes(x = time, y = precision / 100,
   scale_x_continuous("Time (relative)") + 
   scale_y_log10("Precision", limits = c(0.1,1), 
                 breaks = c(.1, .25, .5, .8, .9, .99)) +
-  scale_color_manual(values = colors_divergent_discrete(nlevels(results$series))(nlevels(results$series))) +
-  ggtitle(expression(atop("Time vs. Precision 1-Million Vector SIFT Dataset, (K = 1000)", 
-                     atop(italic("Labelled by Tree Threshold")))))
+  scale_color_manual(values =      colors_divergent_discrete(nlevels(benchmark$series))(nlevels(benchmark$series))) +
+  guides(color = guide_legend(nrow=3)) +
+  ggtitle(expression(
+    atop("Time vs. Precision (K = 1000)",
+         atop(italic("Labelled by Tree Threshold"))
+         )
+    ))
 ```
+
+If `randomProjectionTreeSearch` fails to find the desired number of neighbors, usually the best result is obtained by increasing the tree threshold. If `randomProjectionTreeSearch` fails with an error that no neighbors were found for some nodes, and the tree threshold is already reasonable, this may be an indication that duplicates remain in the input data. 
 
 ### `projectKNNs`
 
@@ -104,7 +182,7 @@ The `LargeVis` algorithm, explained in detail in @TangLZM16, estimates the embed
 
 The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperparameters, using the `wiki` dataset which is included with the package:
 
-```{r wikihyperparameters,echo=F,cache=TRUE,eval=F}
+```{r wikihyperparameters,echo=F,eval=F}
 data(wiki)
 
 inputs <- data.frame(
@@ -112,7 +190,7 @@ inputs <- data.frame(
   a = rep(c(.1,1,5,10), each = 4)
 )
 
-coords <- do.call(rbind, lapply(1:nrow(inputs), FUN = function(x) {
+agcoords <- do.call(rbind, lapply(1:nrow(inputs), FUN = function(x) {
   a <- inputs[x, 'a']
   g <- inputs[x, 'g']
   localcoords <- projectKNNs(wiki, alpha =  a, gamma = g,verbose=FALSE)
@@ -123,11 +201,10 @@ coords <- do.call(rbind, lapply(1:nrow(inputs), FUN = function(x) {
   localcoords$activity <- log(Matrix::colSums(wiki))
   localcoords  
 }))
-save(coords, file="alphagammacoords.Rda")
 ```
-```{r drawwikihyperparameters,echo=F,fig.width=4,fig.height=5}
-load("alphagammacoords.Rda")
-ggplot(coords,
+```{r drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center'}
+load(system.file("extdata", "agcoords.Rda", package="largeVis"))
+ggplot(agcoords,
        aes(x = x, y = y, color = activity)) +
   geom_point(alpha = 0.2, size = 0.05) +
   facet_grid(a ~ g,
@@ -149,7 +226,8 @@ The `vis` function combines `randomProjectionTreeSearch` and `projectKNNs`, alon
 
 The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset. 
 
-```{r iris,echo=F,eval=F}
+```{r iris,echo=F,fig.width=5,fig.height=5,eval=F}
+data(iris)
 Ks <- c(5, 10, 20, 40)
 Ms <- c(1, 5, 10, 20)
 data(iris)
@@ -165,7 +243,7 @@ inputs <- data.frame(
   K = rep(Ks, length(Ms)), 
   M = rep(Ms, each = length(Ks))
 )
-coords <- do.call(rbind, lapply(1:nrow(inputs), FUN = function(x) {
+iriscoords <- do.call(rbind, lapply(1:nrow(inputs), FUN = function(x) {
   K <- inputs[x, 'K']
   M <- inputs[x, 'M']
   visO <- vis(dat, K = K, M = M, verbose=FALSE)
@@ -176,20 +254,19 @@ coords <- do.call(rbind, lapply(1:nrow(inputs), FUN = function(x) {
   localcoords$Species <- as.integer(labels)
   localcoords
   }))
-save(coords, file = "iriscoords.Rda")
+iriscoords$Species <- factor(iriscoords$Species)
+levels(iriscoords$Species) <- levels(iris$Species)
 ```
-```{r plotiris,fig.width=5,fig.height=5,echo=F}
-load("iriscoords.Rda")
-coords$Species <- factor(coords$Species)
-levels(coords$Species) <- levels(iris$Species)
-ggplot(coords,
+```{r drawiriscoords,echo=F,fig.width=4,fig.height=4.5,fig.align='center'}
+load(system.file("extdata", "iriscoords.Rda", package="largeVis"))
+ggplot(iriscoords,
        aes(x = x,
            y = y,
            color =Species)) +
          geom_point(size = 0.5) +
   scale_x_continuous("", breaks = NULL) +
   scale_y_continuous("", breaks = NULL) +
-  facet_grid(K ~ M, scales = 'free', labeller = label_bquote(K == .(K), M == .(M)),) +
+  facet_grid(K ~ M, scales = 'free', labeller = label_bquote(K == .(K), M == .(M))) +
   scale_color_manual(values = colors_discrete(3)) +
   ggtitle("Effect of M and K on Iris Dataset")
 ```
@@ -200,30 +277,87 @@ The `manifoldMap` function is useful when the examples being clustered are thems
 
 The function can plot both color and greyscale images. 
 
-The following plot illustrates this by plotting 5000 images sampled from the MNIST dataset at positions generated by `vis`:
-
-```{r manifoldMapMNIST,echo=F,fig.width=8,fig.height=8,message=F,warning=F}
-darch::provideMNIST(download=T)
+The following code will plot 5000 images sampled from the MNIST dataset at positions generated by `vis`:
+```{r loadmnistimages,eval=F,echo=F}
 load("data/train.RData")
-mnistCoords <- vis(t(trainData) - 0.5, K = 40, tree_threshold = 700, 
-                   n_trees = 40, max_iter = 2, verbose=F)
-
-coords <- scale(t(mnistCoords$coords))
-
-dim(trainData) <- c(60000, 28, 28)
-
-manifoldMap(coords,
-    n = 5000,
-    scale = 0.003,
-    transparency = F,
-    images = trainData,
-    xlab="", ylab="",
-    xlim = c(-2, 2),
-    ylim = c(-2, 2))
+```
+```{r drawmanifoldmap,echo=T,fig.width=8,fig.height=8,message=F,warning=F,fig.align='center'}
+if (exists("trainData")) {
+  dim(trainData) <- c(60000, 28, 28)
+  manifoldMap(mnistCoords[,1:2],
+      n = 5000,
+      scale = 0.003,
+      transparency = F,
+      images = trainData,
+      xlab="", ylab="",
+      xlim = c(-2, 2),
+      ylim = c(-2, 2))
+} 
 ```
 
-### Distance Methods
+The code is disabled by default in this vignette for data size reasons.
+
+## Support for Sparse Matrices
+
+`largeVis` supports sparse matrices.  Besides facilitating very large datasets, this makes it practicable to visualize term-document-matrices.  
+
+For example, the following plot visualizes a tf-idf weighted document-term matrix for a corpus of 5000 political blog entries, as included with the `stm` package.  
+
+```{r tdm,echo=F,eval=F}
+library(stm)
+data("poliblog5k")
+p <- c(0, cumsum(as.numeric(lapply(poliblog5k.docs, function(x) ncol(x)))))
+i <- do.call("c", lapply(poliblog5k.docs, function(x) x[1,]))
+p[length(p)] <- length(i)
+j <- rep(0:(length(diff(p)) - 1), diff(p))
+v <- do.call("c", lapply(poliblog5k.docs, function(x) x[2,]))
+poli <- Matrix::sparseMatrix(i = i + 1, j = j + 1, x = v)
+dupes <- duplicated(slam::as.simple_triplet_matrix(Matrix::t(poli)))
+poli <- poli[, ! dupes]
+poli <- poli / log(Matrix::rowSums(poli > 0)) # tf-idf weight
+policoords <- vis(poli, K = 100, n_trees = 20, 
+              tree_threshold = 100, max_iter = 10,
+              M=10,gamma=15,
+            distance_method = 'Cosine',verbose=F)
+polidata <- data.frame(scale(t(policoords$coords)))
+colnames(polidata) <- c('x', 'y')
+polidata$rating <- poliblog5k.meta$rating[!dupes]
+polidata$blog <- poliblog5k.meta$blog[!dupes]
+```
+```{r drawtdm,echo=F,fig.height=4,fig.width=7}
+load(system.file("extdata", "polidata.Rda", package="largeVis"))
+ggplot(polidata, aes(x = x, y = y, color = blog)) +
+  geom_point(size = 0.3, alpha = 0.8) +
+  scale_color_manual(values = colors_divergent_discrete(6)(6)) +
+  facet_grid(. ~ rating, scale = 'free') +
+  scale_x_continuous("", breaks = NULL) +
+  scale_y_continuous("", breaks = NULL) +
+  ggtitle("Visualization of a tf-idf Matrix")
+```
+
+## Distance Methods
 
 The original `LargeVis` paper used Euclidean distances exclusively.  The `largeVis` package offers a choice among Euclidean and Cosine distance measures.  
+
+## Memory Consumption
+
+The algorithm is necessarily memory-intensive for large datasets. `neighborsToVectors`, `distance`, and `buildEdgeMatrix` are available as separate functions to facilitate memory-efficient handling of large datasets, because the high-dimensional dataset is not needed after distances have been calculated. In this case, the workflow is:
+
+```{r eval=F,echo=T}
+neighbors <- randomProjectionTreeSearch(largeDataset)
+neighborIndices <- neighborsToVectors(neighbors)
+rm(neighbors)
+distances <- distance(neighborIndices$i, 
+                      neighborIndices$j,
+                      largeDataset)
+rm(largeDataset)
+wij <- buildEdgeMatrix(i = neighborIndices$i, 
+                       j = neighborIndices$j, 
+                       d = distances)
+rm(distances, neighborIndices)
+coords <- projectKNNs(wij$wij)
+```
+
+In testing, this method reduced peak RAM requirements by more than 70%. 
 
 ## Bibliography

@@ -1,5 +1,14 @@
 
+### largeVis 0.1.5
 
+* Handles substantially larger datasets
+* Support for sparse matrices (for *much* larger datasets)
+* Added better error reporting for tree search
+* Handle situation in tree search where nodes are equidistant from the hyperplane
+* Broke-out several components as separate functions, which makes a more-memory-efficient mode of operation possible
+* Removed some unnecessary checking when processing neighbor graph
+* RcppArmadillo 0.7.100.3.0 is now required (this was necessary for support for larger datasets)
+* Added appveyor to check Windows compatibility
 
 ### largeVis 0.1.4
 

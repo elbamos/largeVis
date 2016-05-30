@@ -45,13 +45,16 @@ manifoldMap <- function(x,
   if (class(x) == "largeVis") x <- t(x$coords)
   if (ncol(x) != 2) stop("Can only visualize in 2-D.")
   N <- nrow(x)
-  if (class(images) == "list" && N != length(images)) stop("Number of images doesn't equal number of points.")
+  if (class(images) == "list" &&
+      N != length(images)) stop("Number of images doesn't equal number of points.")
   if (N != nrow(images)) stop("Number of images doesn't equal number of points.")
 
-  D <- length(dim(images)) -1
+  D <- length(dim(images)) - 1
 
   if (! (D == 2 || D == 3)) stop("Wrong number of dimensions.")
-  if (D == 3 && (dim(x)[3] < 2 || dim(x)[3] > 4)) stop("Wrong number of color layers.")
+  if (D == 3 &&
+      (dim(x)[3] < 2 ||
+       dim(x)[3] > 4)) stop("Wrong number of color layers.")
 
   selections <- sample(N, n, replace = F)
   lowerscale <- min(images)
@@ -60,25 +63,25 @@ manifoldMap <- function(x,
 
   for (i in selections) {
     if (D == 2) {
-      imageData <- images[i, , ]
+      image_data <- images[i,, ]
     } else {
-      imageData <- images[i, , , ]
+      image_data <- images[i,,, ]
     }
-    imageData <- 1 - ( (imageData - lowerscale) / upperscale)
+    image_data <- 1 - ( (image_data - lowerscale) / upperscale)
     if (transparency) {
-      if (length(dim(imageData)) == 2)
-        imageData <- abind::abind(imageData,
-                                  imageData,
-                                  imageData,
-                                  imageData,
+      if (length(dim(image_data)) == 2)
+        image_data <- abind::abind(image_data,
+                                  image_data,
+                                  image_data,
+                                  image_data,
                                   along = 3)
-      else if (length(dim(imageData)) == 3) {
-        alpha <- apply(imageData, MARGIN = 3, FUN = sum)
+      else if (length(dim(image_data)) == 3) {
+        alpha <- apply(image_data, MARGIN = 3, FUN = sum)
         alpha <- alpha / max(alpha)
-        imageData <- abind::abind(imageData, alpha, along = 3)
+        image_data <- abind::abind(image_data, alpha, along = 3)
       }
     }
-    image <- grDevices::as.raster(imageData)
+    image <- grDevices::as.raster(image_data)
     offsetx <- (nrow(image) * scale) / 2
     offsety <- (ncol(image) * scale) / 2
     graphics::rasterImage(image,

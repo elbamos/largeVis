@@ -2,14 +2,29 @@
 % Please edit documentation in R/projectionTreeSearch.R
 \name{randomProjectionTreeSearch}
 \alias{randomProjectionTreeSearch}
+\alias{randomProjectionTreeSearch.CsparseMatrix}
+\alias{randomProjectionTreeSearch.TsparseMatrix}
+\alias{randomProjectionTreeSearch.matrix}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
 randomProjectionTreeSearch(x, K = 5, n_trees = 2, tree_threshold = max(10,
   nrow(x)), max_iter = 2, max_depth = 32, distance_method = "Euclidean",
   verbose = TRUE)
+
+\method{randomProjectionTreeSearch}{matrix}(x, K = 5, n_trees = 2,
+  tree_threshold = max(10, nrow(x)), max_iter = 2, max_depth = 32,
+  distance_method = "Euclidean", verbose = TRUE)
+
+\method{randomProjectionTreeSearch}{CsparseMatrix}(x, K = 5, n_trees = 2,
+  tree_threshold = max(10, nrow(x)), max_iter = 2, max_depth = 32,
+  distance_method = "Euclidean", verbose = TRUE)
+
+\method{randomProjectionTreeSearch}{TsparseMatrix}(x, K = 5, n_trees = 2,
+  tree_threshold = max(10, nrow(x)), max_iter = 2, max_depth = 32,
+  distance_method = "Euclidean", verbose = TRUE)
 }
 \arguments{
-\item{x}{A matrix.}
+\item{x}{A (potentially sparse) matrix, where examples are columnns and features are rows.}
 
 \item{K}{How many nearest neighbors to seek for each node.}
 
@@ -37,8 +52,5 @@ Note that the algorithm does not guarantee that it will find K neighbors for eac
 warning will be issued if it finds fewer neighbors than requested. If the input data contains
 distinct partitionable clusters, try increasing the \code{tree_threshold} to increase the number
 of returned neighbors.
-}
-\examples{
-
 }
 

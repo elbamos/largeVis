@@ -7,7 +7,7 @@
 #include <iterator>
 #include <queue>
 #include <vector>
-#include <set>
+#include <string>
 #include "helpers.h"
 using namespace Rcpp;
 using namespace std;
@@ -40,7 +40,7 @@ void searchTree(const int& threshold,
   const int I = indices.size();
   const int D = data.n_rows;
   if (progress.check_abort()) return;
-  if (I < 2) return;
+  if (I < 2) stop("Tree split failure.");
   if (I == 2) {
     #pragma omp critical
     {
@@ -53,41 +53,49 @@ void searchTree(const int& threshold,
     #pragma omp critical
     {
       for (int i = 0; i < I; i++) {
-        heap[indices[i]] -> reserve(I);
-        for (int j = 0; j < I; j++)
-          if (i != j) heap[indices[i]] -> push_back(indices[j]);
+        heap[indices[i]] -> reserve(I - 1);
+        for (int j = 0; j < I; j++) if (i != j) heap[indices[i]] -> push_back(indices[j]);
       }
     }
     progress.increment(I);
     return;
   }
   arma::vec direction = arma::vec(indices.size());
-  int x1idx, x2idx;
-  do {
-    const arma::vec selections = arma::randu(2) * (I - 1);
-    x1idx = indices[selections[0]];
-    x2idx = indices[selections[1]];
-  } while (x1idx == x2idx);
-
   {
-    const arma::vec x2 = data.col(x2idx);
-    const arma::vec x1 = data.col(x1idx);
-    // Get hyperplane
-    const arma::vec m =  (x1 + x2) / 2; // Base point of hyperplane
-    const arma::vec v =  ((x1 - x2) / sqrt(sum(pow(x1 - x2,2)))); // Unit vector
+    int x1idx, x2idx;
+    arma::vec v;
+    arma::vec m;
+    do {
+      const arma::vec selections = arma::randu(2) * (I - 1);
+      x1idx = indices[selections[0]];
+      x2idx = indices[selections[1]];
+      if (x1idx == x2idx) x2idx = indices[((int)selections[1] + 1) % indices.size()];
+      const arma::vec x2 = data.col(x2idx);
+      const arma::vec x1 = data.col(x1idx);
+      // Get hyperplane
+      m =  (x1 + x2) / 2; // Base point of hyperplane
+      const arma::vec d = x1 - x2;
+      v =  d / arma::as_scalar(arma::norm(d, 2)); // unit vector
+    } while (x1idx == x2idx);
 
     for (int i = 0; i < indices.size(); i++) {
       const int I = indices[i];
       const arma::vec X = data.col(I);
-      direction[i] = sum((X - m).t() * v);
+      direction[i] = dot((X - m), v);
     }
-    // Normalize direction
-    const double middle = arma::median(direction);
-    direction = direction - middle;
   }
+  // Normalize direction
+  const double middle = arma::median(direction);
 
-  searchTree(threshold, indices(arma::find(direction > 0)), data, heap, iterations - 1, progress);
-  searchTree(threshold, indices(arma::find(direction <= 0)), data, heap, iterations - 1, progress);
+  const arma::uvec left = arma::find(direction > middle);
+  const arma::uvec right = arma::find(direction <= middle);
+  if (left.size() >= 2 && right.size() >= 2) {
+    searchTree(threshold, indices(left), data, heap, iterations - 1, progress);
+    searchTree(threshold, indices(right), data, heap, iterations - 1, progress);
+  } else {
+    searchTree(threshold, indices.subvec(0, indices.size() / 2), data, heap, iterations - 1, progress);
+    searchTree(threshold, indices.subvec(indices.size() / 2, indices.size() - 1), data, heap, iterations - 1, progress);
+  }
 };
 
 
@@ -138,6 +146,7 @@ arma::mat searchTrees(const int& threshold,
           std::sort(neighbors -> begin(), neighbors -> end());
           std::vector<int>::iterator theEnd = std::unique(neighbors -> begin(), neighbors -> end());
           neighbors -> erase(theEnd, neighbors -> end());
+          if (neighbors -> size() < 3) stop("Tree failure.");
         }
       }
     }
@@ -166,6 +175,7 @@ arma::mat searchTrees(const int& threshold,
       maxHeap.pop();
       j++;
     } while (j < threshold && ! maxHeap.empty());
+    if (j == 1 && knns(0,i) == -1) stop("Bad neighbor matrix.");
   }
   if (p.check_abort()) return arma::mat(0);
 
@@ -182,18 +192,17 @@ arma::mat searchTrees(const int& threshold,
 
       std::priority_queue<heapObject> heap;
       std::vector<int> pastVisitors = *(treeNeighborhoods[i]);
+      pastVisitors.reserve((K + 1) * K);
       // Loop through immediate neighbors of i
       for (int jidx = 0; jidx < old_knns.n_rows; jidx++) {
         const int j = neighborhood[jidx];
         if (j == -1) break;
         if (j == i) continue; // This should never happen
         d = distanceFunction(x_i, data.col(j));
-        if (d != 0) {
-          heap.push(heapObject(d, j));
-          if (heap.size() > K) heap.pop();
-        }
+        if (d == 0) continue; // duplicate
+        heap.push(heapObject(d, j));
+        if (heap.size() > K) heap.pop();
 
-        pastVisitors.reserve(K);
         // For each immediate neighbor j, loop through its neighbors
         const arma::vec locality = old_knns.col(j);
         for (int kidx = 0; kidx < old_knns.n_rows; kidx++) {
@@ -211,7 +220,9 @@ arma::mat searchTrees(const int& threshold,
           else pastVisitors.insert(firstlast.second, k);
 
           d = distanceFunction(x_i, data.col(k));
-          if (d != 0 && d < heap.top().d) {
+          if (d == 0) continue;
+          if (heap.size() < K) heap.push(heapObject(d,k));
+          else if (d < heap.top().d) {
             heap.push(heapObject(d, k));
             if (heap.size() > K) heap.pop();
           }
@@ -223,6 +234,7 @@ arma::mat searchTrees(const int& threshold,
         heap.pop();
         j++;
       }
+      if (j == 0) stop("Failure in neighborhood exploration - this should never happen.");
       std::vector<int>(pastVisitors).swap(pastVisitors); // pre-C++11 shrink
     }
   }

@@ -50,7 +50,7 @@ void checkGrad(const arma::vec& x,
 
 // [[Rcpp::export]]
 arma::mat sgd(arma::mat coords,
-              const NumericVector is, // vary randomly
+              const arma::vec& is, // vary randomly
               const NumericVector js, // ordered
               const NumericVector ps, // N+1 length vector of indices to start of each row j in vector is
               const NumericVector ws, // w{ij}
@@ -58,7 +58,7 @@ arma::mat sgd(arma::mat coords,
               const double rho,
               const double minRho,
               const bool useWeights,
-              const int nBatches,
+              const long nBatches,
               const int M,
               const double alpha,
               bool verbose) {
@@ -68,7 +68,6 @@ arma::mat sgd(arma::mat coords,
   const int D = coords.n_rows;
   const int N = ps.size() - 1;
   const int E = ws.length();
-  const arma::vec i_idx = as<arma::vec>(is);
   // Calculate negative sample weights, d_{i}^0.75.
   // Stored as a vector of cumulative sums, normalized, so it can
   // be readily searched using binary searches.
@@ -87,12 +86,12 @@ arma::mat sgd(arma::mat coords,
       positiveEdgeWeights[idx] = positiveEdgeWeights[idx - 1] + (ws[idx] / posScale);
   }
 
-  const int posSampleLength = min(1000000, nBatches);
+  const int posSampleLength = ((nBatches > 1000000) ? 1000000 : (int) nBatches);
   arma::vec positiveSamples = arma::randu<arma::vec>(posSampleLength);
 
   // Iterate through the edges in the positiveEdges vector
 #pragma omp parallel for shared(coords, positiveSamples) schedule(static)
-  for (int eIdx=0; eIdx < nBatches; eIdx++) {
+  for (long eIdx=0; eIdx < nBatches; eIdx++) {
     if (progress.increment()) {
       const double posTarget = *(positiveSamples.begin() + (eIdx % posSampleLength));
       int k;
@@ -137,7 +136,7 @@ arma::mat sgd(arma::mat coords,
       arma::vec::iterator targetIt = samples.begin();
       int sampleIdx = 1;
       // The indices of the nodes with edges to i
-      arma::vec searchVector = i_idx.subvec(ps[i], ps[i + 1] - 1);
+      arma::vec searchVector = is.subvec(ps[i], ps[i + 1] - 1);
       arma::vec d_i = d_j;
       int m = 0;
       while (m < M) {

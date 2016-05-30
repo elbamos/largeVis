@@ -9,8 +9,8 @@
 \usage{
 buildEdgeMatrix(x, i, j, p, d, perplexity, verbose)
 
-\method{buildEdgeMatrix}{default}(x = NULL, i, j, p, d, perplexity = 50,
-  verbose = TRUE)
+\method{buildEdgeMatrix}{default}(x = NULL, i, j, p = NULL, d,
+  perplexity = 50, verbose = TRUE)
 
 \method{buildEdgeMatrix}{CsparseMatrix}(x, i = NULL, j = NULL, p = NULL,
   d = NULL, perplexity = 50, verbose = TRUE)

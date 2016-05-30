@@ -12,13 +12,23 @@
 #' @details Implements the portion of the LargeVis algorithm that converts distances between nearest neighbors to an
 #' edge-weight graph.
 #'
+#' @importFrom stats optimize
+#' @importFrom utils setTxtProgressBar txtProgressBar
+#'
 #' @return A list containing: \describe{
 #' \item{"sigmas"}{A vector of \eqn{2 \dot \sigma^2} calculated for each node.}
 #' \item{"wij"}{A symmetric, sparse matrix of the weights for each edge between nearest neighbors.}
 #' }
-#'
+#' @importClassesFrom Matrix CsparseMatrix
+#' @importClassesFrom Matrix TsparseMatrix
 #' @export
-buildEdgeMatrix <- function(x,i,j,p,d,perplexity,verbose) UseMethod("buildEdgeMatrix")
+buildEdgeMatrix <- function(x,
+                            i,
+                            j,
+                            p,
+                            d,
+                            perplexity,
+                            verbose) UseMethod("buildEdgeMatrix")
 
 
 #' @export
@@ -26,10 +36,11 @@ buildEdgeMatrix <- function(x,i,j,p,d,perplexity,verbose) UseMethod("buildEdgeMa
 buildEdgeMatrix.default <- function(x = NULL,
                                     i,
                                     j,
-                                    p,
+                                    p = NULL,
                                     d,
                                     perplexity = 50,
                                     verbose = TRUE) {
+  if (is.null(p)) p <- i2p(i)
   N <- max(max(i), max(j)) + 1
 
   if (verbose) {
@@ -37,7 +48,7 @@ buildEdgeMatrix.default <- function(x = NULL,
     cat("Estimating sigmas\n")
   }
 
-  perplexity = log2(perplexity)
+  perplexity <- log2(perplexity)
   sigmas <- parallel::mclapply(1:N, FUN = function(idx) { # nocov start
     if (verbose) setTxtProgressBar(progress, idx)
     x_i <- d[(p[idx] + 1):(p[idx + 1])]
@@ -50,19 +61,27 @@ buildEdgeMatrix.default <- function(x = NULL,
 
   if (verbose) close(progress)
 
-  if (any(is.na(sigmas)) + any(is.infinite(sigmas)) + any(is.nan(sigmas)) + any( (sigmas == 0)) > 0)
+  if (any(is.na(sigmas)) +
+      any(is.infinite(sigmas)) +
+      any(is.nan(sigmas)) +
+      any( (sigmas == 0)) > 0)
     stop("An error has propogated into the sigma vector.")
 
   if (length(sigmas) != N) stop("Wrong sigma count")
 
-  if (! requireNamespace("Matrix", quietly = T)) stop("The Matrix package must be available.")
+  if (! requireNamespace("Matrix", quietly = T))
+    stop("The Matrix package must be available.")
 
   if (verbose) cat("Calculating w_{ij}.\n")
 
   wij <- distMatrixTowij(i, j, d, sigmas, N, verbose)
 
-  if (any(is.na(wij@x)) || any(is.infinite(wij@x)) || any(is.nan(wij@x)) || any( (wij@x == 0)) > 0)
-    stop("An error has propogated into the w_{ij} vector.  This probably means the input data wasn't scaled.")
+  if (any(is.na(wij@x)) +
+      any(is.infinite(wij@x)) +
+      any(is.nan(wij@x)) +
+      any( (wij@x == 0)) > 0)
+    stop(paste("An error has propogated into the w_{ij} vector.",
+              "This probably means the input data wasn't scaled."))
 
   return(list(sigmas = sigmas, wij = wij))
 }

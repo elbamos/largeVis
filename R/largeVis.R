@@ -9,7 +9,6 @@
 #' @param x A matrix, where the features are rows and the examples are columns.
 #' @param dim The number of dimensions in the output
 #' @param K The number of nearest-neighbors to use in computing the kNN graph
-#' @param check.assumptions Whether to check the input matrix for duplicates, \code{NA}`s, etc.
 #' @param n_trees See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 #' used in the examples in the original paper.
 #' @param tree_threshold See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
@@ -39,10 +38,7 @@
 #'    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
 #'  }
 #'
-#'
 #' @export
-#' @importFrom stats optimize princomp
-#' @importFrom utils setTxtProgressBar txtProgressBar
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 #'
 #' @examples
@@ -71,8 +67,6 @@ vis <- function(x,
                      dim = 2,
                      K = 40,
 
-                     check.assumptions = TRUE,
-
                      n_trees = 50,
                      tree_threshold = max(10, nrow(x)),
                      max_iter = 3,
@@ -93,14 +87,6 @@ vis <- function(x,
 
                      verbose = TRUE,
                     ...) {
-  N <- ncol(x)
-
-  if (check.assumptions)   {
-    if ( (any(is.na(x)) +
-         any(is.infinite(x)) +
-         any(is.nan(x))) > 0)
-      stop("Missing values present in input matrix.")
-  }
 
   #############################################
   # Search for kNearestNeighbors
@@ -118,30 +104,25 @@ vis <- function(x,
   # Clean knns
   #############################################
   if (verbose[1]) cat("Calculating edge weights...")
-  # These vectors are analogous to the components of a sparse matrix,
-  # but both triple and C-compressed forms are created.
-  # The i and j vectors are 0-indexed while p is 1-indexed.
-  is <- rep(0:(N - 1), each = K)
-  js <- as.vector(knns)
-  is <- is[! js == -1]
-  js <- js[! js == -1]
-  dupes <- duplicated(data.frame(is, js))
-  is <- is[! dupes]
-  js <- js[! dupes]
-  ord <- order(is)
-  is <- is[ord]
-  js <- js[ord]
+  neighbor_indices <- neighborsToVectors(knns)
 
   #######################################################
   # Calculate edge weights for candidate neighbors
   #######################################################
   if (verbose) cat("Calculating neighbor distances.\n")
 
-  xs <- distance(is, js, x, distance_method,verbose)[, 1]
+  xs <- distance(x = x,
+                 neighbor_indices$i,
+                 neighbor_indices$j,
+                 distance_method,
+                 verbose)[, 1]
 
   if (verbose) cat("\n")
 
-  if ( (any(is.na(xs)) + any(is.infinite(xs)) + any(is.nan(xs)) + any(xs == 0)) > 0)
+  if ( (any(is.na(xs)) +
+        any(is.infinite(xs)) +
+        any(is.nan(xs)) +
+        any(xs == 0)) > 0)
   stop("An error leaked into the distance calculation - check for duplicates")
   if (any(xs > 27)) { # nocov start
     warning(paste(
@@ -154,15 +135,13 @@ vis <- function(x,
   # Get w_{ij}
   #######################################################
 
-  ps <- i2p(is)
-  sigwij <- buildEdgeMatrix(i = is,
-                         j = js,
-                         p = ps,
+  sigwij <- buildEdgeMatrix(i = neighbor_indices$i,
+                         j = neighbor_indices$j,
                          d = xs,
                          perplexity = perplexity,
                          verbose = verbose)
 
-
+  rm(neighbor_indices)
   #######################################################
   # Estimate embeddings
   #######################################################
@@ -200,6 +179,9 @@ vis <- function(x,
 # Some helper functions useful for debugging
 ##########################################
 
-pji <- function(x_i, sigma)  exp(- (x_i^2) / sigma) / sum(exp(- (x_i^2) / sigma))
-perp <- function(x_i, sigma) - sum(log2(pji(x_i, sigma))) / length(x_i)
-pdiff <- function(x_i, sigma, perplexity) (perplexity - perp(x_i, sigma))^2
+pji <- function(x_i, sigma)
+  exp(- (x_i^2) / sigma) / sum(exp(- (x_i^2) / sigma))
+perp <- function(x_i, sigma)
+  - sum(log2(pji(x_i, sigma))) / length(x_i)
+pdiff <- function(x_i, sigma, perplexity)
+  (perplexity - perp(x_i, sigma))^2
