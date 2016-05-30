@@ -198,16 +198,18 @@ ggplot(iriscoords,
 ## ----loadmnistimages,eval=F,echo=F---------------------------------------
 #  load("data/train.RData")
 
-## ----drawmanifoldmap,echo=T,fig.width=8,fig.height=8,message=F,warning=F,eval=T,fig.align='center'----
-dim(trainData) <- c(60000, 28, 28)
-manifoldMap(mnistCoords[,1:2],
-    n = 5000,
-    scale = 0.003,
-    transparency = F,
-    images = trainData,
-    xlab="", ylab="",
-    xlim = c(-2, 2),
-    ylim = c(-2, 2))
+## ----drawmanifoldmap,echo=T,fig.width=8,fig.height=8,message=F,warning=F,fig.align='center'----
+if (exists("trainData")) {
+  dim(trainData) <- c(60000, 28, 28)
+  manifoldMap(mnistCoords[,1:2],
+      n = 5000,
+      scale = 0.003,
+      transparency = F,
+      images = trainData,
+      xlab="", ylab="",
+      xlim = c(-2, 2),
+      ylim = c(-2, 2))
+} 
 
 ## ----tdm,echo=F,eval=F---------------------------------------------------
 #  library(stm)

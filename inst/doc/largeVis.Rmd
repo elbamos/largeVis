@@ -54,7 +54,7 @@ The `largeVis` package offers four functions for visualizing high-dimensional da
 3.  `vis`, which combines `randomProjectionTreeSearch`, `buildEdgeMatrix`, and `projectKNNs`, along with additional code to implement the `LargeVis` algorithm.
 4.  `manifoldMap`, which produces a plot for visualizing embeddings of images. 
 
-See the [original paper](@Tang) for a detailed description of the algorithm. 
+See the [original paper](https://arxiv.org/abs/1602.00370) for a detailed description of the algorithm. 
 
 ## Data Preparation
 
@@ -283,16 +283,18 @@ The following code will plot 5000 images sampled from the MNIST dataset at posit
 ```{r loadmnistimages,eval=F,echo=F}
 load("data/train.RData")
 ```
-```{r drawmanifoldmap,echo=T,fig.width=8,fig.height=8,message=F,warning=F,eval=T,fig.align='center'}
-dim(trainData) <- c(60000, 28, 28)
-manifoldMap(mnistCoords[,1:2],
-    n = 5000,
-    scale = 0.003,
-    transparency = F,
-    images = trainData,
-    xlab="", ylab="",
-    xlim = c(-2, 2),
-    ylim = c(-2, 2))
+```{r drawmanifoldmap,echo=T,fig.width=8,fig.height=8,message=F,warning=F,fig.align='center'}
+if (exists("trainData")) {
+  dim(trainData) <- c(60000, 28, 28)
+  manifoldMap(mnistCoords[,1:2],
+      n = 5000,
+      scale = 0.003,
+      transparency = F,
+      images = trainData,
+      xlab="", ylab="",
+      xlim = c(-2, 2),
+      ylim = c(-2, 2))
+} 
 ```
 
 The code is disabled by default in this vignette for data size reasons.

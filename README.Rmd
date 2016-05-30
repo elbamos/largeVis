@@ -1,6 +1,7 @@
 ---
 title: "largeVis"
 output: github_document
+bibliography: vignettes/TangLZM16.bib
 ---
 
 [![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=0.1.5)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/0.1.5.svg)](https://codecov.io/github/elbamos/largeVis?branch=0.1.5)[![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=0.1.5&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis)
@@ -9,91 +10,17 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 
 The inner loops for nearest-neighbor search and gradient descent are implemented in C++ using `Rcpp` and `RcppArmadillo`.
 
-For details of usage and examples, see the vignette [here](vignettes/largeVis.md).
-
 #### Project Status & Caveats
 * Support for sparse matrices!
 * Now tested with (dense) matrices > 1 Million rows, and sparse matrices with > 10,000 features. 
 * Memory efficiency and performance are excellent. Memory efficiency can be improved further by using utility functions to perform the algorithm in stages. (Explained in the vignette.)
-* Not yet working:
-     + The alternative distance function ($\alpha = 0$) is not fully implemented.
-     + The visualization map function has had minimal testing, and the transparency feature does not yet work as intended.
+* Not yet fully tested:
+     + The alternative distance function ($\alpha = 0$).
+     + Transparency in the visualization function.
+     + Multi-color images in the visualization function. 
 * I am attempting to replicate the paper's results with larger and larger datasets.  This takes time because my hardware is not as powerful as the authors'.  If you have any to volunteer, please contact me!
 
-#### Examples:
-```{r setup,eval=T,echo=F,warning=F,error=F,message=F}
-# Note to reader:  Please don't steal the semi-distinctive visual style I spent several minutes creating for myself.
-library(RColorBrewer,quietly=T)
-colors_divergent_discrete <- function(x) grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
-require(ggplot2,quietly = T)
-library(largeVis)
-theme_set(
-  theme_bw() %+replace%
-  theme(
-    legend.key.size=unit(4,"mm"),
-    legend.title=element_text(size=rel(0.8), face = "bold"),
-    legend.margin=unit(0,"cm"),
-    legend.key.size=unit(0.5,"lines"),
-    legend.text=element_text(size = unit(10, "points")),
-    axis.title.y = element_text(angle=90),
-    axis.text = element_text(size=rel(0.7)),
-    plot.margin = unit(c(0, 0.5, 1, 0), "lines"),
-    axis.title=element_text(size=rel(0.8),face="bold"),
-  title = element_text(size=rel(0.9))
-                          )
-)
+## Vignette
 
-```
-
-##### MNIST
-
-```{r mnist,eval=F}
-load("./mnist.Rda")
-dat <- mnist$images
-dim(dat) <- c(42000, 28 * 28)
-dat <- (dat / 255) - 0.5
-dat <- t(dat)
-coords <- vis(dat, check=FALSE,
-                   n_tree = 50, tree_th = 700,
-                   K = 100,  max.iter = 1)
-```
-```{r savemnist,eval=F,echo=F}
-save(coords, file = "./mnistcoords3.Rda")
-```
-```{r drawmnist,echo=F,warning=F,error=F,message=F}
-load("./mnist.Rda")
-load("./mnistcoords3.Rda")
-coords <- data.frame(t(coords$coords))
-coords <- cbind(coords, factor(mnist$labels))
-colnames(coords) <- c("x", "y", "label")
-coords$x <- scale(coords$x)
-coords$y <- scale(coords$y)
-ggplot(coords, aes(x = x, y = y, color = label)) +
-  geom_point(size = 0.1, alpha = 0.3) +
-  scale_x_continuous(name = "", limits = c(-2.5, 2)) +
-  scale_y_continuous(name = "", limits = c(-2, 2.5)) +
-  scale_color_manual(values = colors_divergent_discrete(10)(10)) +
-  guides(colour = guide_legend(override.aes = list(size=5))) +
-  ggtitle("42,000 Node MNIST Dataset (Kaggle Variant)")
-```
-
-```{r mnistvis,fig.height=8,fig.width=8}
-flip <- function(x) apply(x,2,rev)
-rotate <- function(x) t(flip(x))
-
-mnistimages <- apply(mnist$images,
-    MARGIN=1,
-    FUN = function(x) as.array(rotate(flip(x))))
-mnistimages <- t(mnistimages)
-dim(mnistimages) <- c(42000, 28, 28)
-coords <- as.matrix(coords[,1:2])
-coords <- scale(coords)
-manifoldMap(coords,
-    n = 5000,
-    scale = 0.005,
-    transparency = FALSE,
-    images = mnistimages,
-    xlab="", ylab="",
-    xlim = c(-2.5, 2.5), 
-    ylim = c(-2.5, 2.5))
+```{r child='vignettes/largeVis.Rmd'}
 ```
