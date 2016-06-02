@@ -1,6 +1,7 @@
 #include <RcppArmadillo.h>
-// [[Rcpp::plugins(openmp)]]
 #include "progress.hpp"
+// [[Rcpp::plugins(openmp)]]
+// [[Rcpp::depends("RcppArmadillo")]]
 #include <omp.h>
 #include <math.h>
 #include <algorithm>
@@ -9,8 +10,6 @@
 #include <vector>
 #include <string>
 #include "helpers.h"
-using namespace Rcpp;
-using namespace std;
 
 /*
 * Functions for identifying candidate nearest neighbors using random projection trees and neighborhood exploration.
@@ -42,7 +41,7 @@ void searchTree(const int& threshold,
   if (progress.check_abort()) return;
   if (I < 2) stop("Tree split failure.");
   if (I == 2) {
-    #pragma omp critical
+  //  #pragma omp critical
     {
       heap[indices[0]] -> push_back(indices[1]);
       heap[indices[1]] -> push_back(indices[0]);
@@ -53,8 +52,9 @@ void searchTree(const int& threshold,
     #pragma omp critical
     {
       for (int i = 0; i < I; i++) {
-        heap[indices[i]] -> reserve(I - 1);
-        for (int j = 0; j < I; j++) if (i != j) heap[indices[i]] -> push_back(indices[j]);
+        std::vector<int>* thisHeap = heap[indices[i]];
+        thisHeap -> reserve(I);
+        thisHeap -> insert(thisHeap -> end(), indices.begin(), indices.end());
       }
     }
     progress.increment(I);
@@ -137,18 +137,6 @@ arma::mat searchTrees(const int& threshold,
                  max_recursion_degree, // maximum permitted level of recursion
                  p
       );
-
-      if (t > 0 && ! p.check_abort())
-      #pragma omp critical
-      {
-        for (int i = 0; i < N; i++) {
-          std::vector<int>* neighbors = treeNeighborhoods[i];
-          std::sort(neighbors -> begin(), neighbors -> end());
-          std::vector<int>::iterator theEnd = std::unique(neighbors -> begin(), neighbors -> end());
-          neighbors -> erase(theEnd, neighbors -> end());
-          if (neighbors -> size() < 3) stop("Tree failure.");
-        }
-      }
     }
   }
 
@@ -163,8 +151,11 @@ arma::mat searchTrees(const int& threshold,
   for (int i = 0; i < N; i++) if (p.increment()){
     const arma::vec x_i = data.col(i);
     std::priority_queue<heapObject> maxHeap = std::priority_queue<heapObject>();
-    std::vector<int>* stack = treeNeighborhoods[i];
-    for (std::vector<int>::iterator it = stack -> begin(); it != stack -> end(); it++) {
+    std::vector<int>* neighbors = treeNeighborhoods[i];
+    std::sort(neighbors -> begin(), neighbors -> end());
+    std::vector<int>::iterator theEnd = std::unique(neighbors -> begin(), neighbors -> end());
+    neighbors -> erase(theEnd, neighbors -> end());
+    for (std::vector<int>::iterator it = neighbors -> begin(); it != neighbors -> end(); it++) {
       const double d = distanceFunction(x_i, data.col(*it));
       maxHeap.push(heapObject(d, *it));
       if (maxHeap.size() > threshold) maxHeap.pop();
