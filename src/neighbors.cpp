@@ -1,15 +1,17 @@
 #include <RcppArmadillo.h>
+// [[Rcpp::plugins(openmp,cpp11)]]
 #include "progress.hpp"
-// [[Rcpp::plugins(openmp)]]
-// [[Rcpp::depends("RcppArmadillo")]]
 #include <omp.h>
 #include <math.h>
 #include <algorithm>
 #include <iterator>
 #include <queue>
 #include <vector>
-#include <string>
+#include <set>
+#include <memory>
 #include "helpers.h"
+using namespace Rcpp;
+using namespace std;
 
 /*
 * Functions for identifying candidate nearest neighbors using random projection trees and neighborhood exploration.
@@ -26,36 +28,46 @@ struct heapObject {
   }
 };
 
-double relDist(const arma::vec& i, const arma::vec& j) {
-  return sum(square(i - j));
-}
+typedef std::priority_queue<heapObject> maxHeap;
+//typedef arma::ivec neighborhood;
 
 void searchTree(const int& threshold,
-                const arma::vec& indices,
+                const arma::ivec& indices,
                 const arma::mat& data,
-                std::vector<std::vector<int>* >& heap,
+            //    neighborhood* heap[],
+                std::vector<int>* heap[],
                 const int& iterations,
                 Progress& progress) {
   const int I = indices.size();
   const int D = data.n_rows;
   if (progress.check_abort()) return;
   if (I < 2) stop("Tree split failure.");
-  if (I == 2) {
-  //  #pragma omp critical
-    {
-      heap[indices[0]] -> push_back(indices[1]);
-      heap[indices[1]] -> push_back(indices[0]);
-    }
-    return;
-  }
-  if (I < threshold || iterations == 0) {
+  if (I <= threshold || iterations == 0) {
+    arma::ivec neighbors = arma::ivec(indices);
+    std::vector<int> tmpStorage = std::vector<int>();
     #pragma omp critical
     {
-      for (int i = 0; i < I; i++) {
-        std::vector<int>* thisHeap = heap[indices[i]];
-        thisHeap -> reserve(I);
-        thisHeap -> insert(thisHeap -> end(), indices.begin(), indices.end());
-      }
+        for (arma::ivec::iterator it = neighbors.begin();
+             it != neighbors.end();
+             it++) {
+          tmpStorage.clear();
+          tmpStorage.swap(*heap[*it]);
+          heap[*it] -> reserve(tmpStorage.size() + I);
+          arma::ivec::iterator newIt = neighbors.begin();
+          arma::ivec::iterator newEnd = neighbors.end();
+          std::vector<int>::iterator oldIt = tmpStorage.begin();
+          std::vector<int>::iterator oldEnd = tmpStorage.end();
+          int last = -1;
+          int best = -1;
+          while (oldIt != oldEnd || newIt != newEnd) {
+            if (oldIt == oldEnd) best = *newIt++;
+            else if (newIt == newEnd) best = *oldIt++;
+            else best = (*newIt < *oldIt) ? *newIt++ : *oldIt++;
+            if (best == last || best == *it) continue;
+            heap[*it] -> push_back(best);
+            last = best;
+          }
+        }
     }
     progress.increment(I);
     return;
@@ -98,26 +110,34 @@ void searchTree(const int& threshold,
   }
 };
 
-template <class T, class S, class C>
-S& Container(std::priority_queue<T, S, C>& q) {
-  struct HackedQueue : private std::priority_queue<T, S, C> {
-    static S& Container(std::priority_queue<T, S, C>& q) {
-      return q.*&HackedQueue::c;
-    }
-  };
-  return HackedQueue::Container(q);
-}
+typedef std::vector< arma::imat::col_iterator > positionVector;
 
-template <class T>
-T front(std::set<T>& q) {
-  return * q.begin();
-}
+class radix_test {
+  const int bit;
+public:
+  radix_test(int offset) : bit(offset) {}
 
-typedef std::priority_queue<heapObject, std::set<heapObject> > maxHeap;
-typedef std::vector< maxHeap* > heapVector;
+  bool operator()(int value) const {
+    return !(value &(1 << bit));
+  }
+};
+
+void msd_radix_sort(arma::imat::col_iterator first,
+                    arma::imat::col_iterator last,
+                    int msb) {
+  // Rcout << "\n" << msb << " " << (first == last);
+  if (first != last && msb >=0) {
+    arma::imat::col_iterator mid = std::partition(first, last, radix_test(msb));
+    // Rcout << "\n" << msb << " " << std::distance(first, last) << " to (" <<
+    //   std::distance(first, mid) << "," << std::distance(mid, last) << ")";
+    msb--;
+    msd_radix_sort(first, mid, msb);
+    msd_radix_sort(mid, last, msb);
+  }
+}
 
 // [[Rcpp::export]]
-arma::mat searchTrees(const int& threshold,
+arma::imat searchTrees(const int& threshold,
                       const int& n_trees,
                       const int& K,
                       const int& max_recursion_degree,
@@ -134,17 +154,19 @@ arma::mat searchTrees(const int& threshold,
   else distanceFunction = relDist;
 
   Progress p((N * n_trees) + (N) + (N * maxIter), verbose);
-  heapVector setOfHeaps = heapVector(N);
 
-  { // Artificial scope to destroy indices
-    std::vector<std::vector<int>* > treeNeighborhoods = std::vector<std::vector<int>* >(N);
+  std::set<int>** treeHolder = new std::set<int>*[N];
+  { // Artificial scope to destroy indices and treeneighborhoods
+    // array of vectors to hold lists of neighbors for each n from all trees
+//    std::unique_ptr< std::vector<int> > treeNeighborhoods = new std::unique_ptr< std::vector<int> >[N];
+    std::vector<int>** treeNeighborhoods = new std::vector<int>*[N];
     for (int i = 0; i < N; i++) {
       int seed[] = {i};
       treeNeighborhoods[i] = new std::vector<int>(seed, seed + sizeof(seed) / sizeof(int));
     }
-    arma::vec indices = arma::regspace<arma::vec>(0, N - 1);
+    const arma::ivec indices = arma::regspace<arma::ivec>(0, N - 1);
 
-    #pragma omp parallel for shared(indices,treeNeighborhoods)
+    #pragma omp parallel for shared(treeNeighborhoods)
     for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
       searchTree(threshold,
                  indices,
@@ -154,75 +176,135 @@ arma::mat searchTrees(const int& threshold,
                  p
       );
     }
-    if (p.check_abort()) return arma::mat(0);
-
-    #pragma omp parallel for shared(treeNeighborhoods)
-    for (int i = 0; i < N; i++) if (p.increment()){
-      std::vector<int>* neighbors = treeNeighborhoods[i];
-      const arma::vec x_i = data.col(i);
-      maxHeap *thisHeap = new maxHeap();
-
-      for (std::vector<int>::iterator it = neighbors -> begin(); it != neighbors -> end(); it++) {
-        if (*it == i) continue;
-        const double d = distanceFunction(x_i, data.col(*it));
-        if (d == 0) continue;
-        if (d < thisHeap -> top().d) {
-          thisHeap -> push(heapObject(d, *it));
-          if (thisHeap-> size() > K) thisHeap -> pop();
-        }
-      }
-      setOfHeaps[i] = thisHeap;
-    }
-  }
-
-  // Initialize the knn matrix, and reduce the number of candidate neighbors per node
-  // to K.  Otherwise the first neighborhood exploration pass takes N * trees * (threshold + 1),
-  // instead of (N * K), which is prohibitive of large thresholds.
-
-  if (p.check_abort()) return arma::mat(0);
-
-  for (int T = 0; T < maxIter; T++) {
-#pragma omp parallel for shared(setOfHeaps)
+    if (p.check_abort()) return arma::imat(0);
+    // Reduce size from threshold * n_trees to top K, and sort
+    treeHolder = new std::set<int>*[N];
+    #pragma omp parallel for shared(treeHolder, treeNeighborhoods)
     for (int i = 0; i < N; i++) if (p.increment()) {
-      double d;
-
-      std::set<heapObject> &oldNeighborhood = Container(*setOfHeaps[i]);
-      std::set<heapObject>::iterator oldIt = oldNeighborhood.end();
-      maxHeap *newiHeap = new maxHeap(oldNeighborhood.begin(),
-                                      oldIt);
+      maxHeap thisHeap = maxHeap();
       const arma::vec x_i = data.col(i);
-
-      for (std::set<heapObject>::iterator j = oldNeighborhood.begin();
-           j != oldIt;
+      std::vector<int> *neighborhood = treeNeighborhoods[i];
+      for (std::vector<int>::iterator j = neighborhood -> begin();
+           j != neighborhood -> end();
            j++) {
-        int jidx = j -> n;
 
-        std::set<heapObject> &nextNeighbors = Container(*setOfHeaps[jidx]);
-        for (std::set<heapObject>::iterator k = nextNeighbors.begin();
-             k != nextNeighbors.end();
-             k++) {
-          int kidx = k -> n;
-          if (kidx == i) continue;
-          d = distanceFunction(x_i, data.col(jidx));
-          if (d < newiHeap -> top().d) {
-            newiHeap -> push(heapObject(d, kidx));
-            if (newiHeap -> size() > K) newiHeap -> pop();
-          }
+        const double d = distanceFunction(x_i, data.col(*j));
+        if (d != 0) {
+          thisHeap.push(heapObject(d, *j));
+          if (thisHeap.size() > K) thisHeap.pop();
         }
       }
-      setOfHeaps[i] = newiHeap;
+      delete treeNeighborhoods[i];
+      treeHolder[i] = new std::set<int>();
+      // arma::sword maxSoFar = 0;
+      while (! thisHeap.empty()) {
+        arma::sword newOne = thisHeap.top().n;
+        treeHolder[i] -> insert(newOne);
+        // knns(j,i) = newOne;
+        // maxSoFar = (newOne > maxSoFar) ? newOne : maxSoFar;
+        thisHeap.pop();
+      }
     }
+    delete treeNeighborhoods;
   }
-  arma::mat knns = arma::mat(K, N);
+  arma::imat knns = arma::imat(K,N);
 #pragma omp parallel for
   for (int i = 0; i < N; i++) {
+    std::set<int>::iterator sortIterator = treeHolder[i] -> begin();
+    std::set<int>::iterator end = treeHolder[i] -> end();
     int j = 0;
-    maxHeap *thisHeap = setOfHeaps[i];
-    do {
-      knns(j, i) = thisHeap -> top().n;
-      j++;
-    } while (! thisHeap -> empty());
+    while (sortIterator != end) knns(j++, i) = *sortIterator++;
+    delete treeHolder[i];
+    if (j == 0) stop("Tree failure.");
+    while (j < K) knns(j++,i) = -1;
   }
 
+  if (p.check_abort()) return arma::imat(0);
+  arma::imat old_knns  = arma::imat(K,N);
+  for (int T = 0; T < maxIter; T++) if (! p.check_abort()) {
+    arma::imat tmp = old_knns;
+    old_knns = knns;
+    knns = tmp;
+  #pragma omp parallel for shared(old_knns, knns)
+    for (int i = 0; i < N; i++) if (p.increment()) {
+      double d;
+      maxHeap thisHeap = maxHeap();
+      const arma::vec x_i = data.col(i);
+
+      positionVector positions = positionVector();
+      positionVector ends = positionVector();
+
+      positions.push_back(old_knns.begin_col(i));
+      ends.push_back(old_knns.end_col(i));
+
+      for (arma::imat::col_iterator it = old_knns.begin_col(i);
+           it != ends[0] && *it != -1;
+           it++) {
+        positions.push_back(old_knns.begin_col(*it));
+        ends.push_back(old_knns.end_col(*it));
+      }
+
+      int lastOne = N + 1;
+      while (true) {
+        arma::imat::col_iterator whch = 0;
+
+        for (std::pair< positionVector::iterator, positionVector::iterator > it(positions.begin(), ends.begin());
+             it.first != positions.end();
+             it.first++, it.second++) while (*it.first != *it.second) { // For each neighborhood, keep going until
+                                                                        // we find a non-dupe or get to the end
+
+          if (**it.first == -1) std::advance(*it.first, std::distance(*it.first, *it.second));
+          else if (**it.first == i || **it.first == lastOne) std::advance(*it.first, 1);
+          else if (whch == 0 || **it.first < *whch) {
+            whch = *it.first;
+            break;
+          } else break;
+        }
+
+        if (whch == 0) break;
+        lastOne = *whch;
+        std::advance(whch, 1);
+
+        d = distanceFunction(x_i, data.col(lastOne));
+        if (d > 0) {
+          thisHeap.push(heapObject(d, lastOne));
+          if (thisHeap.size() > K) thisHeap.pop();
+        }
+      }
+
+      std::set<int> sorter = std::set<int>();
+      while (!thisHeap.empty()) {
+        sorter.insert(thisHeap.top().n);
+        thisHeap.pop();
+      }
+      std::set<int>::iterator sortIterator = sorter.begin();
+      int j = 0;
+      while (sortIterator != sorter.end()) knns(j++, i) = *sortIterator++;
+      if (j == 0) stop("Tree failure.");
+      while (j < K) {
+        knns(j,i) = -1;
+        j++;
+      }
+
+      // int j = 0;
+      // int maxSoFar = 0;
+      // int thisOne = 0;
+      // while (! thisHeap.empty()) {
+      //   thisOne = thisHeap.top().n;
+      //   knns(j,i) = thisOne;
+      //   maxSoFar = (thisOne > maxSoFar) ? thisOne : maxSoFar;
+      //   thisHeap.pop();
+      //   j++;
+      // }
+      // int msb = sizeof(int) - __builtin_clz(maxSoFar);
+      // msd_radix_sort(knns.begin_col(i), knns.begin_col(i) + (j - 1), msb);
+ //     std::sort(knns.begin_col(i), knns.begin_col(i) + (j - 1));
+      if (j == 0) stop("Neighbor exploration failure.");
+      while (j < K) {
+        knns(j,i) = -1;
+        j++;
+      }
+    }
+  }
   return knns;
 };
