@@ -99,7 +99,6 @@ vis <- function(x,
                                      max_depth = max_depth,
                                      distance_method = distance_method,
                                      verbose = verbose)
-
   #############################################
   # Clean knns
   #############################################
@@ -180,7 +179,7 @@ vis <- function(x,
 ##########################################
 
 pji <- function(x_i, sigma)
-  exp(- (x_i^2) / sigma) / sum(exp(- (x_i^2) / sigma))
+  exp(- (x_i ^ 2) / sigma) / sum(exp( - (x_i ^ 2) / sigma))
 perp <- function(x_i, sigma)
   - sum(log2(pji(x_i, sigma))) / length(x_i)
 pdiff <- function(x_i, sigma, perplexity)

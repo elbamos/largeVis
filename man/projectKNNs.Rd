@@ -5,9 +5,8 @@
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
 projectKNNs(wij, dim = 2, sgd_batches = (length(wij@p) - 1) * 20000,
-  M = 5, weight_pos_samples = if (alpha == 0) {     FALSE } else {     TRUE
-  }, gamma = 7, alpha = 1, rho = 1, coords = NULL, min_rho = 0,
-  verbose = TRUE)
+  M = 5, weight_pos_samples = TRUE, gamma = 7, alpha = 1, rho = 1,
+  coords = NULL, min_rho = 0, verbose = TRUE)
 }
 \arguments{
 \item{wij}{A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.}
@@ -19,7 +18,7 @@ by the paper authors.}
 
 \item{M}{The number of negative edges to sample for each positive edge.}
 
-\item{weight_pos_samples}{Whether to sample positive edges according to their edge weights (the default, unless alpha == 0) or take the
+\item{weight_pos_samples}{Whether to sample positive edges according to their edge weights (the default) or take the
 weights into account when calculating gradient.  See also the Details section.}
 
 \item{gamma}{The strength of the force pushing non-neighbor nodes apart.}
@@ -58,8 +57,7 @@ The \code{weight_pos_samples} parameter controls how to handle edge-weights.  Th
 sampling approach to select edges, and treating edge-weight as binary in calculating the objective. This is the default.
 
 However, the algorithm for drawing weighted samples runs in \eqn{O(n \log n)}. The alternative approach, which runs in
-\eqn{O(n)}, is to draw unweighted samples and include \eqn{w_{ij}} in the objective function. In addition, the
-alternative probabalistic function used when \eqn{\alpha == 0} tends to overflow unless edge weights are used.
+\eqn{O(n)}, is to draw unweighted samples and include \eqn{w_{ij}} in the objective function.
 
 Note that the input matrix should be symmetric.  If any columns in the matrix are empty, the function will fail.
 }

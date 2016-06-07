@@ -1,6 +1,7 @@
 #ifndef LARGEVISHELPERS
 #define LARGEVISHELPERS
-using namespace Rcpp;
+
+double relDist(const arma::vec& i, const arma::vec& j);
 
 double dist(const arma::vec& i, const arma::vec& j);
 

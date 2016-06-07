@@ -1,11 +1,9 @@
 largeVis
 ================
 
-[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=0.1.5)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/0.1.5.svg)](https://codecov.io/github/elbamos/largeVis?branch=0.1.5)[![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=0.1.5&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis)
+[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=0.1.6)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/0.1.6.svg)](https://codecov.io/github/elbamos/largeVis?branch=0.1.6)[![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=0.1.6&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis)
 
-This is an implementation of the `largeVis` algorithm described in (<https://arxiv.org/abs/1602.00370>). It also incorporates code for a very fast algorithm for estimating k-nearest neighbors, and for visualizing a map of the manifold.
-
-The inner loops for nearest-neighbor search and gradient descent are implemented in C++ using `Rcpp` and `RcppArmadillo`.
+This is an implementation of the `largeVis` algorithm described in (<https://arxiv.org/abs/1602.00370>). It also incorporates a very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`, and for visualizing a map of the manifold.
 
 #### Project Status & Caveats
 
@@ -17,6 +15,13 @@ The inner loops for nearest-neighbor search and gradient descent are implemented
     -   Transparency in the visualization function.
     -   Multi-color images in the visualization function.
 -   I am attempting to replicate the paper's results with larger and larger datasets. This takes time because my hardware is not as powerful as the authors'. If you have any to volunteer, please contact me!
+
+#### To-do's Before Submission to CRAN
+
+-   Demonstrate correctness by visualizing the wiki-doc and wiki-term datasets used in the paper.
+-   Compile more-complete benchmarks from a server.
+-   Confirm that the map visualization function works with color images.
+-   Give Erik and Dirk a few days to comment on the performance.
 
 Vignette
 --------
@@ -49,22 +54,30 @@ If there are duplicates in the input data, while the implementation tries to fil
 Examples
 --------
 
-<img src="README_files/figure-markdown_github/drawmnist-1.png" style="display: block; margin: auto;" />
+![](README_files/figure-markdown_github/drawmnist-1.png)
 
-<img src="README_files/figure-markdown_github/draw20ng-1.png" style="display: block; margin: auto;" />
+![](README_files/figure-markdown_github/draw20ng-1.png)
 
 Overview of Functions and Hyperparameters
 -----------------------------------------
 
 ### `randomProjectionTreeSearch`
 
-This function uses a two-phase algorithm to find approximate nearest neighbors. In the first phase, the algorithm creates `n_trees` binary trees dividing the space into leaves of at most `tree_threshold` nodes. A node's candidate nearest neighbors are the union of all nodes with which it shared a leaf on any of the trees. In the second phase, for each node, the algorithm looks at the candidate nearest neighbors for that node, as well as each of those nodes' candidate nearest neighbors. The logic of the algorithm is that a node's neighbors' neighbors are likely to be the node's own neighbors. In each iteration, the closest `K` candidate neighbors for each node are kept.
+This function uses a two-phase algorithm to find approximate nearest neighbors. In the first phase, which is based on [Erik Bernhardsson](http://erikbern.com)'s [Annoy](https://github.com/spotify/annoy) algorithm, `n_trees` trees are formed by recursively dividing the space by hyperplanes until at most `tree_threshold` nodes remain in a branch. A node's candidate nearest neighbors are the union of all nodes with which it shared a leaf on any of the trees. The `largeVis` algorithm adds a second phase, neighborhood exploration, which considers, for each node, whether the candidate neighbors of the node's candidate immediate neighbors are closer. The logic of the algorithm is that a node's neighbors' neighbors are likely to be the node's own neighbors. In each iteration, the closest `K` candidate neighbors for each node are kept.
+
+(Note that this implementation of `largeVis` differs from the approach taken by `Annoy`, in that `Annoy` always uses the number of features as the leaf threshold, where `largeVis` allows this to be an adjustable parameter.)
 
 The authors of Tang et al. (2016) suggest that a single iteration of the second phase is generally sufficient to obtain satisfactory performance.
 
 The chart below illlustrates the trade-off between performance and accuracy for the nearest-neighbor search, using various hyperparameters. The data was produced using the `benchmark.R` script in the `inst/` directory. The test data is the 1-million vector, 128-feature [SIFT Dataset](http://corpus-texmex.irisa.fr/), as per Erik Bernhardsson's [ANN Benchmark](https://github.com/erikbern/ann-benchmarks) github.
 
 <img src="README_files/figure-markdown_github/plotpeformance-1.png" style="display: block; margin: auto;" />
+
+The `largeVis` series are labelled by the number of neighbor-exploration iterations.
+
+The difference between `RcppAnnoy` and `RcppAnnoy-Full` is that `Annoy` is designed for the construction of a static tree that can then be queried, while `largeVis` finds nearest neighbors for all nodes at the same time. The times shown for `RcppAnnoy` are the times to fetch neighbors only for the 10000 rows that were used to test. `RcppAnnoy-full`, like `largeVis`, shows the time to fetch neighbors for the entire dataset.
+
+The data confirms the recommendation of the paper authors' concerning the number of iterations of neighborhood exploration: While the first iteration offers a substantial benefit, however it is more efficient to improve accuracy by increase the number of trees or size of the tree threshold than by adding iterations.
 
 If `randomProjectionTreeSearch` fails to find the desired number of neighbors, usually the best result is obtained by increasing the tree threshold. If `randomProjectionTreeSearch` fails with an error that no neighbors were found for some nodes, and the tree threshold is already reasonable, this may be an indication that duplicates remain in the input data.
 
@@ -86,7 +99,7 @@ The algorithm can treat positive edge weights in two different ways. The authors
 
 The `vis` function combines `randomProjectionTreeSearch` and `projectKNNs`, along with additional logic for calculating edge weights, to implement the complete `LargeVis` algorithm.
 
-The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset.
+The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset. Each row re-uses the same set of identified `K` neighbors, and initial coordinates.
 
 <img src="README_files/figure-markdown_github/drawiriscoords-1.png" style="display: block; margin: auto;" />
 
@@ -101,12 +114,14 @@ The following code will plot 5000 images sampled from the MNIST dataset at posit
 ``` r
 if (exists("trainData")) {
   dim(trainData) <- c(60000, 28, 28)
+  set.seed(1974)
   manifoldMap(mnistCoords[,1:2],
       n = 5000,
       scale = 0.003,
       transparency = F,
       images = trainData,
-      xlab="", ylab="",
+      xlab = "", 
+      ylab = "",
       xlim = c(-2, 2),
       ylim = c(-2, 2))
 } 
@@ -124,6 +139,44 @@ Support for Sparse Matrices
 For example, the following plot visualizes a tf-idf weighted document-term matrix for a corpus of 5000 political blog entries, as included with the `stm` package.
 
 ![](README_files/figure-markdown_github/drawtdm-1.png)
+
+Visualizing Graphs
+------------------
+
+The `largeVis` visualization algorithm can be used to visualize ordinary graphs. The included `wiki` dataset is an example.
+
+The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html).
+
+``` r
+pathToGraphFile <- 
+  "/mnt/hfsshare/DATASETS/YouTubeCommunities/com-youtube.ungraph.txt"
+pathToCommunities <- 
+  "/mnt/hfsshare/DATASETS/YouTubeCommunities/com-youtube.top5000.cmty.txt"
+
+youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
+youtube <- as.matrix(youtube)
+youtube <- Matrix::sparseMatrix(i = youtube[, 1],
+                                j = youtube[, 2],
+                                x = rep(1, nrow(youtube)), 
+                                dims = c(max(youtube), max(youtube)))
+youtube <- youtube + t(youtube)
+communities <- readr::read_lines(pathToCommunities)
+communities <- lapply(communities, 
+                      FUN = function(x) as.numeric(unlist(strsplit(x, "\t"))))
+community_assignments <- rep(0, 
+                             nrow(youtube))
+for (i in 1:length(communities)) community_assignments[communities[[i]]] <- i
+
+youTube_coordinates <- projectKNNs(youtube)
+youTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
+colnames(youTube_coordinates) <- c("x", "y")
+youTube_coordinates$community <- factor(community_assignments)
+youTube_coordinates$alpha <- factor(ifelse(youTube_coordinates$community == 0, 0.05, 0.2))
+```
+
+    #> Warning: Removed 16393 rows containing missing values (geom_point).
+
+![](README_files/figure-markdown_github/drawYouTube-1.png)
 
 Distance Methods
 ----------------
@@ -155,4 +208,4 @@ In testing, this method reduced peak RAM requirements by more than 70%.
 Bibliography
 ------------
 
-Tang, Jian, Jingzhou Liu, Ming Zhang, and Qiaozhu Mei. 2016. “Visualization Large-Scale and High-Dimensional Data.” *CoRR* abs/1602.00370. <http://arxiv.org/abs/1602.00370>.
+Tang, Jian, Jingzhou Liu, Ming Zhang, and Qiaozhu Mei. 2016. “Visualizing Large-Scale and High-Dimensional Data.” In *Proceedings of the 25th International Conference on World Wide Web*, 287–97. International World Wide Web Conferences Steering Committee.

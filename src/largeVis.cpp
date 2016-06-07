@@ -50,9 +50,9 @@ void checkGrad(const arma::vec& x,
 
 // [[Rcpp::export]]
 arma::mat sgd(arma::mat coords,
-              const arma::vec& is, // vary randomly
-              const NumericVector js, // ordered
-              const NumericVector ps, // N+1 length vector of indices to start of each row j in vector is
+              arma::ivec& is, // vary randomly
+              const IntegerVector js, // ordered
+              const IntegerVector ps, // N+1 length vector of indices to start of each row j in vector is
               const NumericVector ws, // w{ij}
               const double gamma,
               const double rho,
@@ -89,6 +89,11 @@ arma::mat sgd(arma::mat coords,
   const int posSampleLength = ((nBatches > 1000000) ? 1000000 : (int) nBatches);
   arma::vec positiveSamples = arma::randu<arma::vec>(posSampleLength);
 
+  // Cache some variables to make memory allocation cheaper
+  arma::vec::iterator posEnd = positiveEdgeWeights.end();
+  arma::vec::iterator negBegin = negativeSampleWeights.begin();
+  arma::vec::iterator negEnd = negativeSampleWeights.end();
+  arma::ivec::iterator searchBegin = is.begin();
   // Iterate through the edges in the positiveEdges vector
 #pragma omp parallel for shared(coords, positiveSamples) schedule(static)
   for (long eIdx=0; eIdx < nBatches; eIdx++) {
@@ -101,7 +106,7 @@ arma::mat sgd(arma::mat coords,
       } else {
         e_ij = std::distance(positiveEdgeWeights.begin(),
                              std::upper_bound(positiveEdgeWeights.begin(),
-                                              positiveEdgeWeights.end(),
+                                              posEnd,
                                               posTarget));
       }
       const int i = is[e_ij];
@@ -131,29 +136,36 @@ arma::mat sgd(arma::mat coords,
       //double o = log(p_ij);
       const arma::vec d_j = (1 / p_ij) * d_p_ij;
       // alternative: d_i - 2 * alpha * (y_i - y_j) / (alpha * sum(square(y_i - y_j)))
+      arma::vec d_i = d_j;
 
-      arma::vec samples = arma::randu<arma::vec>(M * 2);
+      // Setup negative search
+      arma::vec samples = arma::sort(arma::randu<arma::vec>(M * 2));
       arma::vec::iterator targetIt = samples.begin();
       int sampleIdx = 1;
       // The indices of the nodes with edges to i
-      arma::vec searchVector = is.subvec(ps[i], ps[i + 1] - 1);
-      arma::vec d_i = d_j;
       int m = 0;
+      arma::vec::iterator negativeIterator = negBegin;
       while (m < M) {
-        if (sampleIdx % (M * 2) == 0) samples.randu();
+        if (sampleIdx % (M * 2) == 0) {
+          samples.randu();
+          negativeIterator = negBegin;
+        }
         // binary search implementing weighted sampling
         const double target = targetIt[sampleIdx++ % (M * 2)];
         int k;
         if (useWeights) k = target * (N - 1);
-        else k = std::distance(negativeSampleWeights.begin(),
-                               std::upper_bound(negativeSampleWeights.begin(),
-                                                negativeSampleWeights.end(),
-                                                target)
-        );
+        else {
+          negativeIterator = std::upper_bound(negativeIterator,
+                                              negEnd,
+                                              target);
+          k = negativeIterator - negBegin;
+        }
 
         if (k == i ||
             k == j ||
-            sum(searchVector == k) > 0) continue;
+            std::binary_search(searchBegin + ps[i],
+                               searchBegin + ps[i + 1] - 1,
+                               k)) continue;
         const arma::vec y_k = coords.col(k);
 
         const double dist_ik = dist(y_i, y_k);
@@ -184,7 +196,8 @@ arma::mat sgd(arma::mat coords,
         coords(idx,i) +=  d_i[idx] * w * localRho;
       }
 
-      if (eIdx >0 && eIdx % posSampleLength == 0) positiveSamples.randu();
+      if (eIdx > 0 &&
+          eIdx % posSampleLength == 0) positiveSamples.randu();
     }
   }
   return coords;

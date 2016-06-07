@@ -46,8 +46,10 @@ manifoldMap <- function(x,
   if (ncol(x) != 2) stop("Can only visualize in 2-D.")
   N <- nrow(x)
   if (class(images) == "list" &&
-      N != length(images)) stop("Number of images doesn't equal number of points.")
-  if (N != nrow(images)) stop("Number of images doesn't equal number of points.")
+      N != length(images))
+    stop("Number of images doesn't equal number of points.")
+  if (N != nrow(images))
+    stop("Number of images doesn't equal number of points.")
 
   D <- length(dim(images)) - 1
 
@@ -63,9 +65,9 @@ manifoldMap <- function(x,
 
   for (i in selections) {
     if (D == 2) {
-      image_data <- images[i,, ]
+      image_data <- images[i, , ]
     } else {
-      image_data <- images[i,,, ]
+      image_data <- images[i, , , ]
     }
     image_data <- 1 - ( (image_data - lowerscale) / upperscale)
     if (transparency) {

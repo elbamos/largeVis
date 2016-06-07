@@ -6,16 +6,27 @@
 
 using namespace Rcpp;
 
+// readLINE
+NumericMatrix readLINE(std::string path);
+RcppExport SEXP largeVis_readLINE(SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    __result = Rcpp::wrap(readLINE(path));
+    return __result;
+END_RCPP
+}
 // sgd
-arma::mat sgd(arma::mat coords, const arma::vec& is, const NumericVector js, const NumericVector ps, const NumericVector ws, const double gamma, const double rho, const double minRho, const bool useWeights, const long nBatches, const int M, const double alpha, bool verbose);
+arma::mat sgd(arma::mat coords, arma::ivec& is, const IntegerVector js, const IntegerVector ps, const NumericVector ws, const double gamma, const double rho, const double minRho, const bool useWeights, const long nBatches, const int M, const double alpha, bool verbose);
 RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP isSEXP, SEXP jsSEXP, SEXP psSEXP, SEXP wsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP nBatchesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< arma::mat >::type coords(coordsSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type is(isSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type js(jsSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type ps(psSEXP);
+    Rcpp::traits::input_parameter< arma::ivec& >::type is(isSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector >::type ps(psSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type ws(wsSEXP);
     Rcpp::traits::input_parameter< const double >::type gamma(gammaSEXP);
     Rcpp::traits::input_parameter< const double >::type rho(rhoSEXP);
@@ -30,7 +41,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // searchTrees
-arma::mat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& max_recursion_degree, const int& maxIter, const arma::mat& data, const std::string& distMethod, bool verbose);
+arma::imat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& max_recursion_degree, const int& maxIter, const arma::mat& data, const std::string& distMethod, bool verbose);
 RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP max_recursion_degreeSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
@@ -113,14 +124,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // sigFunc
-double sigFunc(const double sigma, const NumericVector x_i, const double perplexity);
+double sigFunc(const double& sigma, const NumericVector& x_i, const double& perplexity);
 RcppExport SEXP largeVis_sigFunc(SEXP sigmaSEXP, SEXP x_iSEXP, SEXP perplexitySEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const double >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type x_i(x_iSEXP);
-    Rcpp::traits::input_parameter< const double >::type perplexity(perplexitySEXP);
+    Rcpp::traits::input_parameter< const double& >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type x_i(x_iSEXP);
+    Rcpp::traits::input_parameter< const double& >::type perplexity(perplexitySEXP);
     __result = Rcpp::wrap(sigFunc(sigma, x_i, perplexity));
     return __result;
 END_RCPP

@@ -43,7 +43,8 @@ randomProjectionTreeSearch.matrix <- function(x,
 
   knns <- searchTrees(threshold = tree_threshold,
                       n_trees = n_trees,
-                      K = K, max_recursion_degree = max_depth,
+                      K = K,
+                      max_recursion_degree = max_depth,
                       maxIter = max_iter,
                       data = x,
                       distance_method,
@@ -100,10 +101,12 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
 randomProjectionTreeSearch.TsparseMatrix <- function(x,
                                                      K = 5,
                                                      n_trees = 2,
-                                                     tree_threshold =  max(10, nrow(x)),
+                                                     tree_threshold =
+                                                       max(10, nrow(x)),
                                                      max_iter = 2,
                                                      max_depth = 32,
-                                                     distance_method = "Euclidean",
+                                                     distance_method =
+                                                       "Euclidean",
                                                      verbose= TRUE) {
   if (verbose) cat("Searching for neighbors.\n")
 
