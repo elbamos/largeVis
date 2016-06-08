@@ -3,12 +3,14 @@ title: "largeVis"
 output: github_document
 bibliography: vignettes/TangLZM16.bib
 ---
+```{r getversion,eval=T,echo=F,warning=F,error=F,message=F}
+branch <- system("git branch -v", intern=TRUE)
+branch <- branch[grep("\\*", branch)]
+poses <- regexpr("(?<=\\*\\s)(\\S+)(?=\\s)", perl = TRUE, branch)
+branch <- substr(branch, attr(poses, "capture.start"), attr(poses, "capture.start") + attr(poses, "capture.length"))
 
-[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=0.1.6)](https://travis-ci.org/elbamos/largeVis)[![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/0.1.6.svg)](https://codecov.io/github/elbamos/largeVis?branch=0.1.6) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=0.1.6&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis)
-
-```{r echo=F}
-#
 ```
+[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=`r branch`)](https://travis-ci.org/elbamos/largeVis)[![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/`r branch`.svg)](https://codecov.io/github/elbamos/largeVis?branch=0.1.6) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=`r branch`&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis)
 
 This is an implementation of the `largeVis` algorithm described in (https://arxiv.org/abs/1602.00370).  It also incorporates a very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`, and for visualizing a map of the manifold in the manner demonstrated by [Andrej Karpathy](http://cs.stanford.edu/people/karpathy/cnnembed/).
 
@@ -20,8 +22,7 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 * Not yet fully tested:
      + The alternative distance function ($\alpha = 0$).
      + Transparency in the visualization function.
-     + Multi-color images in the visualization function. 
-* I am attempting to replicate the paper's results with larger and larger datasets.  This takes time because my hardware is not as powerful as the authors'.  If you have any to volunteer, please contact me!
+* I am attempting to replicate the paper's results with larger datasets.  This takes time because my hardware is not as powerful as the authors'.  If you have any to volunteer, please contact me!
 
 #### To-do's Before Submission to CRAN
 * Demonstrate correctness by visualizing the wiki-doc and wiki-term datasets used in the paper. **Waiting on submission from paper authors so the data can be parsed properly.**
@@ -31,7 +32,7 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 
 ## Vignette
 
-```{r param}
+```{r param,echo=FALSE}
 buildManifolds=TRUE
 ```
 ```{r child='vignettes/largeVis.Rmd',}

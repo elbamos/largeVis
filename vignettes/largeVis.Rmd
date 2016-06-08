@@ -59,11 +59,25 @@ This Vingette provides an overview of the largeVis package.
 
 ## Introduction
 
-The `largeVis` package offers four functions for visualizing high-dimensional datasets and finding approximate nearest neighbors, based on the `LargeVis` algorithm presented in @tang2016visualizing:
+This package provides `LargeVis` visualizations and fast nearest-neighbor search.  The `LargeVis` algorithm, presented in @tang2016visualizing, creates high-quality low-dimensional representaitons of large, high-dimensional datasets, similar to [t-SNE](https://lvdmaaten.github.io/tsne/).  
+
+These visualizations are useful for data exploration, for visualizing complex non-linear functions, and especially for visualizing embeddings such as learned vectors for images. 
+
+A limitation of t-SNE is that because the algorithm has complexity order $O(n^2)$, it is not feasible for use on even moderately sized datasets.  [Barnes-Hut](https://arxiv.org/pdf/1301.3342.pdf), an approximation of t-SNE, has complexity $O(n \log n)$ but also quickly becomes infeasible as the size of data grows. `LargeVis` is intended to address the issue by operating in linear $O(n)$ time.  It has been benchmarked at more than 30x faster than Barnes-Hut on datasets of approximately 1-million rows, and scaled linearly as long as there is sufficient RAM. 
+
+In addition, `LargeVis` includes an algorithm for finding approximate k-Nearest Neighbors in $O(n)$ time. This algorithm turns out to be faster at finding accurate a-NNs than any other method I was able to test. 
+
+The package also includes a function for visualizing image embeddings by plotting images at the locations given by the `LargeVis` algorithm.
+
+For a detailed description of the algorithm, please see the original paper, @tang2016visualizing.
+
+## Package Overview
+
+The `largeVis` package offers four functions for visualizing high-dimensional datasets and finding approximate nearest neighbors (along with some helper functions):
 
 1.  `randomProjectionTreeSearch`, a method for finding approximate nearest neighbors.
 2.  `projectKNNs`, which takes as input a weighted nearest-neighbor graph and estimates a projection into a low-dimensional space.
-3.  `vis`, which combines `randomProjectionTreeSearch`, `buildEdgeMatrix`, and `projectKNNs`, along with additional code to implement the `LargeVis` algorithm.
+3.  `vis`, which implements the entire `LargeVis` algorithm.
 4.  `manifoldMap`, which produces a plot for visualizing embeddings of images. 
 
 See the [original paper](https://arxiv.org/abs/1602.00370) for a detailed description of the algorithm. 
@@ -202,7 +216,7 @@ ggplot(benchmark, aes(x = time,
          atop(italic("Annoy labels show n_trees, largeVis labels show n_trees,threshold"))
          )
     )) + 
-  scale_y_log10("Precision", 
+  scale_y_continuous("Precision", 
                 limits = c(0.1,1), 
                 breaks = c(.1, .25, .5, .8, .9, .99)) +
   scale_color_manual(values =      colors_divergent_discrete(nlevels(benchmark$series))(nlevels(benchmark$series))) +
@@ -401,7 +415,7 @@ faceCoords <- cbind(faceCoords, facevectors[,1:2])
 
 OpenFace embedding vectors encode an image in such a way that the embeddings for multiple images of the same person should be similar.  This is illustrated on the first plot below, which highlights the locations of the embedding vectors for images of 10 selected individuals.  (The 10 were selected on the basis that there are a large number of images of each in the dataset, and the author would reognize them.)
 
-```{r plotFaceVectors,echo=F,fig.width=5,fig.height=5}
+```{r plotFaceVectors,echo=F,fig.width=7,fig.height=5}
 load(system.file("extdata", "faces.Rda", package="largeVis"))
 faceCoCopy <- faceCoords
 lvs <- c("Tony_Bennette", 
@@ -518,10 +532,10 @@ stmdata$rating <- poliblog5k.meta$rating
 stmdata$blog <- poliblog5k.meta$blog
 ```
 
-```{r drawtdm,echo=F,fig.height=4,fig.width=7}
+```{r drawtdm,echo=F,fig.height=4,fig.width=7,warning=FALSE,message=FALSE,error=FALSE}
 load(system.file("extdata", "polidata.Rda", package="largeVis"))
 load(system.file("extdata", "stm.Rda", package="largeVis"))
-polidata$origin <- "tf-idf weighted term vectors"
+polidata$origin <- "tf-idf term vectors"
 stmdata$origin <- "stm topic vectors"
 
 polidata$x <- scale(polidata$x)
@@ -558,7 +572,7 @@ This facilitates evaluation of the effectiveness of a topic model.
 
 The `largeVis` visualization algorithm can be used to visualize ordinary graphs.  The included `wiki` dataset is an example.
 
-The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). 
+The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). The data and visualization are not included here for size reasons.
 
 ```{r youtube,eval=F,echo=T}
 pathToGraphFile <- 
@@ -585,10 +599,6 @@ youTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
 colnames(youTube_coordinates) <- c("x", "y")
 youTube_coordinates$community <- factor(community_assignments)
 youTube_coordinates$alpha <- factor(ifelse(youTube_coordinates$community == 0, 0.05, 0.2))
-```
-
-```{r drawYouTube,echo=F,warning=FALSE,message=FALSE}
-load(system.file("extdata", "youtube.Rda", package="largeVis"))
 ggplot(youTube_coordinates, aes( x = x, 
                       y = y, 
                       color = community, 
@@ -606,6 +616,7 @@ ggplot(youTube_coordinates, aes( x = x,
                      breaks = NULL, limits = c(-2.5,2.5)) +
   ggtitle("YouTube Communities")
 ```
+
 
 ```{r livejournal,eval=F,echo=T}
 pathToGraphFile <- 
