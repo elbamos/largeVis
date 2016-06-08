@@ -58,6 +58,23 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// searchTreesOne
+arma::imat searchTreesOne(const int& threshold, const int& n_trees, const int& K, const int& max_recursion_degree, const arma::mat& data, const std::string& distMethod, bool verbose);
+RcppExport SEXP largeVis_searchTreesOne(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP max_recursion_degreeSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const int& >::type threshold(thresholdSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n_trees(n_treesSEXP);
+    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int& >::type max_recursion_degree(max_recursion_degreeSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(searchTreesOne(threshold, n_trees, K, max_recursion_degree, data, distMethod, verbose));
+    return __result;
+END_RCPP
+}
 // fastDistance
 arma::vec fastDistance(const NumericVector is, const NumericVector js, const arma::mat& data, const std::string& distMethod, bool verbose);
 RcppExport SEXP largeVis_fastDistance(SEXP isSEXP, SEXP jsSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {

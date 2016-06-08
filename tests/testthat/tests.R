@@ -9,16 +9,16 @@ test_that("Trees does not error", {
   dupes <- which(duplicated(dat))
   dat <- dat[-dupes, ]
   dat <- t(dat)
-
   expect_silent(neighbors <- randomProjectionTreeSearch(dat,
                                                         K = 5,
                                                         n_trees = 10,
                                                         tree_threshold = 20,
                                                         max_iter = 0,
                                                         verbose = FALSE))
+
 })
 
-test_that("Trees does not error if neighbors are explored", {
+test_that("Trees does not error if neighbors are explored once", {
   data (iris)
   set.seed(1974)
   RcppArmadillo::armadillo_set_seed(1974)
@@ -33,6 +33,25 @@ test_that("Trees does not error if neighbors are explored", {
                                                         n_trees = 50,
                                                         tree_threshold = 20,
                                                         max_iter = 1,
+                                                        verbose = FALSE))
+
+})
+
+test_that("Trees does not error if neighbors are explored more than once", {
+  data (iris)
+  set.seed(1974)
+  RcppArmadillo::armadillo_set_seed(1974)
+  dat <- as.matrix(iris[, 1:4])
+  dat <- scale(dat)
+  dupes <- which(duplicated(dat))
+  dat <- dat[-dupes, ]
+  dat <- t(dat)
+
+  expect_silent(neighbors <- randomProjectionTreeSearch(dat,
+                                                        K = 5,
+                                                        n_trees = 50,
+                                                        tree_threshold = 20,
+                                                        max_iter = 2,
                                                         verbose = FALSE))
 })
 

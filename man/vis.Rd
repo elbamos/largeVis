@@ -5,7 +5,7 @@
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
 vis(x, dim = 2, K = 40, n_trees = 50, tree_threshold = max(10, nrow(x)),
-  max_iter = 3, max_depth = 32, distance_method = "Euclidean",
+  max_iter = 1, max_depth = 32, distance_method = "Euclidean",
   perplexity = 50, sgd_batches = ncol(x) * 20000, M = 5,
   weight_pos_samples = TRUE, alpha = 1, gamma = 7, rho = 1,
   min_rho = 0, coords = NULL, verbose = TRUE, ...)

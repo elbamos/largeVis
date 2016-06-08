@@ -69,7 +69,7 @@ vis <- function(x,
 
                      n_trees = 50,
                      tree_threshold = max(10, nrow(x)),
-                     max_iter = 3,
+                     max_iter = 1,
                      max_depth = 32,
                      distance_method = "Euclidean",
 

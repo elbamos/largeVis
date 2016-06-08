@@ -58,7 +58,6 @@ benchmark <- function(path,
       }
     }
   }
-  return(results)
 }
 
 benchmarkRANN <- function(path,
@@ -190,19 +189,19 @@ require( largeVis )
 path <- "/mnt/hfsshare/DATASETS/sift/siftknns.txt"
 samplepath <- "./samples.Rda"
 
-Annoyresults <- benchmarkAnnoy(path,
-                               samplepath,
-                               tree_range = c(10, 20, 50, 100, 200, 400),
-                               n = 10000,
-                               K = 100,
-                               full = FALSE)
-results <- benchmark(path,
-                     samplepath,
-                     n = 10000,
-                     tree_range = c(10, 20, 50, 100, 200),
-                     thresholds = c(128),
-                     iters = c(1, 0, 2, 3),
-                     K = 100)
+# Annoyresults <- benchmarkAnnoy(path,
+#                                samplepath,
+#                                tree_range = c(10, 20, 50, 100, 200, 400),
+#                                n = 10000,
+#                                K = 100,
+#                                full = FALSE)
+# results <- benchmark(path,
+#                      samplepath,
+#                      n = 10000,
+#                      tree_range = c(10, 20, 50, 100, 200),
+#                      thresholds = c(128),
+#                      iters = c(1, 0, 2, 3),
+#                      K = 100)
 results2 <- benchmark(path,
                      samplepath,
                      n = 10000,

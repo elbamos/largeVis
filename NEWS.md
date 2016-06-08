@@ -4,6 +4,8 @@
 * projectKNNs should be faster because of more efficient scanning for negative samples
 * Vignette tries to reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
 * Color manifold maps work
+* Tree search for cosine distances uses normalized vectors
+* Separate, optimized function for max_iters = 1
 
 ### largeVis 0.1.5
 

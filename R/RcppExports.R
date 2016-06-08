@@ -13,6 +13,10 @@ searchTrees <- function(threshold, n_trees, K, max_recursion_degree, maxIter, da
     .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, max_recursion_degree, maxIter, data, distMethod, verbose)
 }
 
+searchTreesOne <- function(threshold, n_trees, K, max_recursion_degree, data, distMethod, verbose) {
+    .Call('largeVis_searchTreesOne', PACKAGE = 'largeVis', threshold, n_trees, K, max_recursion_degree, data, distMethod, verbose)
+}
+
 fastDistance <- function(is, js, data, distMethod, verbose) {
     .Call('largeVis_fastDistance', PACKAGE = 'largeVis', is, js, data, distMethod, verbose)
 }

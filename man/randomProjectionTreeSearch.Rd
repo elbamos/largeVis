@@ -12,7 +12,7 @@ randomProjectionTreeSearch(x, K = 5, n_trees = 2, tree_threshold = max(10,
   verbose = TRUE)
 
 \method{randomProjectionTreeSearch}{matrix}(x, K = 5, n_trees = 2,
-  tree_threshold = max(10, nrow(x)), max_iter = 2, max_depth = 32,
+  tree_threshold = max(10, nrow(x)), max_iter = 1, max_depth = 32,
   distance_method = "Euclidean", verbose = TRUE)
 
 \method{randomProjectionTreeSearch}{CsparseMatrix}(x, K = 5, n_trees = 2,

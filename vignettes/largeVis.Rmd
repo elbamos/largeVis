@@ -59,11 +59,25 @@ This Vingette provides an overview of the largeVis package.
 
 ## Introduction
 
-The `largeVis` package offers four functions for visualizing high-dimensional datasets and finding approximate nearest neighbors, based on the `LargeVis` algorithm presented in @tang2016visualizing:
+This package provides `LargeVis` visualizations and fast nearest-neighbor search.  The `LargeVis` algorithm, presented in @tang2016visualizing, creates high-quality low-dimensional representaitons of large, high-dimensional datasets, similar to [t-SNE](https://lvdmaaten.github.io/tsne/).  
+
+These visualizations are useful for data exploration, for visualizing complex non-linear functions, and especially for visualizing embeddings such as learned vectors for images. 
+
+A limitation of t-SNE is that because the algorithm has complexity order $O(n^2)$, it is not feasible for use on even moderately sized datasets.  [Barnes-Hut](https://arxiv.org/pdf/1301.3342.pdf), an approximation of t-SNE, has complexity $O(n \log n)$ but also quickly becomes infeasible as the size of data grows. `LargeVis` is intended to address the issue by operating in linear $O(n)$ time.  It has been benchmarked at more than 30x faster than Barnes-Hut on datasets of approximately 1-million rows, and scaled linearly as long as there is sufficient RAM. 
+
+In addition, `LargeVis` includes an algorithm for finding approximate k-Nearest Neighbors in $O(n)$ time. This algorithm turns out to be faster at finding accurate a-NNs than any other method I was able to test. 
+
+The package also includes a function for visualizing image embeddings by plotting images at the locations given by the `LargeVis` algorithm.
+
+For a detailed description of the algorithm, please see the original paper, @tang2016visualizing.
+
+## Package Overview
+
+The `largeVis` package offers four functions for visualizing high-dimensional datasets and finding approximate nearest neighbors (along with some helper functions):
 
 1.  `randomProjectionTreeSearch`, a method for finding approximate nearest neighbors.
 2.  `projectKNNs`, which takes as input a weighted nearest-neighbor graph and estimates a projection into a low-dimensional space.
-3.  `vis`, which combines `randomProjectionTreeSearch`, `buildEdgeMatrix`, and `projectKNNs`, along with additional code to implement the `LargeVis` algorithm.
+3.  `vis`, which implements the entire `LargeVis` algorithm.
 4.  `manifoldMap`, which produces a plot for visualizing embeddings of images. 
 
 See the [original paper](https://arxiv.org/abs/1602.00370) for a detailed description of the algorithm. 
@@ -160,67 +174,7 @@ This function uses a two-phase algorithm to find approximate nearest neighbors. 
 
 The authors of @tang2016visualizing suggest that a single iteration of the second phase is generally sufficient to obtain satisfactory performance. 
 
-The chart below illlustrates the trade-off between performance and accuracy for the nearest-neighbor search, using various hyperparameters.  The data was produced using the `benchmark.R` script in the `inst/` directory.  The test data is the 1-million vector, 128-feature [SIFT Dataset](http://corpus-texmex.irisa.fr/), as per Erik Bernhardsson's [ANN Benchmark](https://github.com/erikbern/ann-benchmarks) github. 
-
-```{r performance,echo=F,eval=rebuild}
-benchmark <- readr::read_csv(system.file("extdata", "results.csv", package="largeVis"), 
-                             col_names = FALSE)
-
-colnames(benchmark) <- c("time", 
-                       "precision", 
-                       "n_trees", 
-                       "max_iters", 
-                       "threshold",
-                       "method", 
-                       "tree_type", 
-                       "search_type", 
-                       "eps")
-benchmark$series <- factor(paste(benchmark$method, 
-                                 benchmark$max_iters))
-benchmark$labels <- paste(benchmark$n_trees, ", ", 
-                         benchmark$threshold, sep = "")
-benchmark$labels[grepl("Annoy", 
-                      benchmark$series)] <-
-  benchmark$n_trees[grepl("Annoy", 
-                          benchmark$series)]
-benchmark$labels[benchmark$max_iters > 1] <- ""
-```
-```{r plotpeformance,echo=F,fig.width=5,fig.height=6,fig.align='center',warning=FALSE,message=FALSE}
-load(system.file("extdata", "benchmark.Rda", package = "largeVis"))
-ggplot(benchmark, aes(x = time, 
-                      y = precision / 100, 
-                      group = series, 
-                      color = series, 
-                      shape = series,
-                      label = labels)) +
-  geom_point(size = 1) + 
-  geom_line(size = 0.5) + 
-  geom_text(size = 3, 
-            nudge_x = 10) +
-  scale_x_continuous(name = expression(
-    atop("Time",
-         atop(italic("Annoy labels show n_trees, largeVis labels show n_trees,threshold"))
-         )
-    )) + 
-  scale_y_log10("Precision", 
-                limits = c(0.1,1), 
-                breaks = c(.1, .25, .5, .8, .9, .99)) +
-  scale_color_manual(values =      colors_divergent_discrete(nlevels(benchmark$series))(nlevels(benchmark$series))) +
-  guides(color = guide_legend(nrow=3)) +
-  ggtitle(expression(
-    atop("Time vs. Precision (K = 100, n = 10000)",
-         atop(italic("(Upper Left is Better"))
-         )
-    ))
-```
-
-The `largeVis` series are labelled by the number of neighbor-exploration iterations. 
-
-The difference between `RcppAnnoy` and `RcppAnnoy-Full` is that `Annoy` is designed for the construction of a static tree that can then be queried, while `largeVis` finds nearest neighbors for all nodes at the same time. The times shown for `RcppAnnoy` are the times to fetch neighbors only for the 10000 rows that were used to test. `RcppAnnoy-full`, like `largeVis`, shows the time to fetch neighbors for the entire dataset. 
-
-The data confirms the recommendation of the paper authors' concerning the number of iterations of neighborhood exploration: While the first iteration offers a substantial benefit, however it is more efficient to improve accuracy by increase the number of trees or size of the tree threshold than by adding iterations. 
-
-If `randomProjectionTreeSearch` fails to find the desired number of neighbors, usually the best result is obtained by increasing the tree threshold. If `randomProjectionTreeSearch` fails with an error that no neighbors were found for some nodes, and the tree threshold is already reasonable, this may be an indication that duplicates remain in the input data. 
+See the vignette "ANN Benchmarks" for additional information.
 
 ### `projectKNNs`
 
@@ -401,7 +355,7 @@ faceCoords <- cbind(faceCoords, facevectors[,1:2])
 
 OpenFace embedding vectors encode an image in such a way that the embeddings for multiple images of the same person should be similar.  This is illustrated on the first plot below, which highlights the locations of the embedding vectors for images of 10 selected individuals.  (The 10 were selected on the basis that there are a large number of images of each in the dataset, and the author would reognize them.)
 
-```{r plotFaceVectors,echo=F,fig.width=5,fig.height=5}
+```{r plotFaceVectors,echo=F,fig.width=7,fig.height=5}
 load(system.file("extdata", "faces.Rda", package="largeVis"))
 faceCoCopy <- faceCoords
 lvs <- c("Tony_Bennette", 
@@ -434,7 +388,7 @@ ggplot(faceCoCopy, aes(x = x,
   ggtitle("Positions of Embedding Vectors for Selected Individuals")
 ```
 
-The function of `manifoldMap` is illustrated in the following plot, which places 300 images from the dataset at the locations given by the `largeVis` map.  
+The function of `manifoldMap` is illustrated in the following plot, which places 500 images from the dataset at the locations given by the `largeVis` map.  
 
 The plot is disabled by default because it requires obtaining the face images directly from [Labelled Faces in the Wild](http://vis-www.cs.umass.edu/lfw/).
 
@@ -460,13 +414,26 @@ manifoldMap(x = faceCoords[facesToPlot,1:2],
             col.axis = 'gray5')
 ```
 
+```{r faceImages5000,eval=buildManifolds,echo=F,results='asis'}
+png(filename = "faceshighres.png", 
+    width = 5000, height = 5000, units = 'px', 
+    bg = 'grey5')
+manifoldMap(x = faceCoords[facesToPlot,1:2], 
+            n = n, images = 1 - faces, scale =  1 / 1000,
+            xlab = NULL, ylab = NULL, col.lab = 'gray5',
+            col.axis = 'gray5')
+cat("A high resolution version is available [here](vignettes/faceshighres.png)")
+```
+
+Note what the plot is showing. The positions of the faces in [Karpathy's embedding plots](http://cs.stanford.edu/people/karpathy/cnnembed/) are highly sensitive to the background and overall sense of each image, because Karpathy used embedding vectors produced by a general-purpose model. In the plot of the OpenFace vectors above, the positions are insensitive to the image backgrounds -- but pictures of the same individual are plotted close to each other, and close to similar-looking persons. 
+
 ## Support for Sparse Matrices
 
 `largeVis` supports sparse matrices.  Besides facilitating very large datasets, this makes it practicable to visualize term-document-matrices. 
 
 For example, the following plot visualizes a corpus of 5000 political blog entries, as included with the `stm` package.  The first row visualizes the blog entries as tf-idf weighted term vectors; the second, as topic vectors.
 
-```{r tdm,echo=F,eval=rebuild}
+```{r stm,echo=F,eval=rebuild}
 library(stm)
 data("poliblog5k")
 p <- c(0, cumsum(as.numeric(lapply(poliblog5k.docs, function(x) ncol(x)))))
@@ -481,26 +448,17 @@ dupes <- duplicated(slam::as.simple_triplet_matrix(Matrix::t(poli)))
 poli <- poli[, ! dupes]
 poli <- poli / log(Matrix::rowSums(poli > 0)) # tf-idf weight
 set.seed(1974)
-inputcoords <- matrix(rnorm(ncol(poli) * 2 ), nrow = 2)
+inputcoords <- matrix(rnorm(10000), nrow = 2)
 policoords <- vis(poli, 
                   K = 100, 
-                  n_trees = 20, 
+                  n_trees = 50, 
                   tree_threshold = 100, 
-                  max_iter = 10,
+                  max_iter = 1,
                   M = 10,
-                  gamma = 15,
                   distance_method = 'Cosine',
+                  coords = inputcoords,
                   verbose = FALSE)
-polidata <- data.frame(scale(t(policoords$coords)))
-colnames(polidata) <- c('x', 'y')
-polidata$rating <- poliblog5k.meta$rating[!dupes]
-polidata$blog <- poliblog5k.meta$blog[!dupes]
-```
 
-```{r stm,echo=F,eval=rebuild}
-library(stm)
-data(poliblog5k)
-set.seed(1974)
 stmmodel <- stm(poliblog5k.docs, poliblog5k.voc, K = 20, 
                 data = poliblog5k.meta, prevalence = ~ rating + s(day),
                 content = ~rating,
@@ -508,32 +466,41 @@ stmmodel <- stm(poliblog5k.docs, poliblog5k.voc, K = 20,
 
 stmvectors <- t(scale(stmmodel$theta))
 
-stmVis <- vis(stmvectors, K = 100, tree_threshold = 100, 
-    max_iter = 10, 
-    n_trees = 100)
+set.seed(1974)
+inputcoords <- matrix(rnorm(10000), nrow = 2)
+stmVis <- vis(stmvectors, 
+                  K = 100, 
+                  n_trees = 50, 
+                  tree_threshold = 100, 
+                  max_iter = 1,
+                  M = 10,
+                  distance_method = 'Cosine',
+                  coords = inputcoords,
+                  verbose = FALSE)
+
+polidata <- data.frame(scale(t(policoords$coords)))
+colnames(polidata) <- c('x', 'y')
+polidata$rating <- poliblog5k.meta$rating[!dupes]
+polidata$blog <- poliblog5k.meta$blog[!dupes]
 
 stmdata <- data.frame(scale(t(stmVis$coords)))
 colnames(stmdata) <- c('x', 'y')
 stmdata$rating <- poliblog5k.meta$rating
 stmdata$blog <- poliblog5k.meta$blog
-```
 
-```{r drawtdm,echo=F,fig.height=4,fig.width=7}
-load(system.file("extdata", "polidata.Rda", package="largeVis"))
-load(system.file("extdata", "stm.Rda", package="largeVis"))
-polidata$origin <- "tf-idf weighted term vectors"
+polidata$origin <- "tf-idf term vectors"
 stmdata$origin <- "stm topic vectors"
-
-polidata$x <- scale(polidata$x)
-polidata$y <- scale(polidata$y)
-stmdata$x <- scale(stmdata$x)
-stmdata$y <- scale(stmdata$y)
 
 combined <- rbind(polidata, 
                   stmdata)
 combined$origin <- factor(combined$origin)
 combined$origin <- factor(combined$origin, 
                           levels = rev(levels(combined$origin)))
+```
+
+
+```{r drawtdm,echo=F,fig.height=4,fig.width=7,warning=FALSE,message=FALSE,error=FALSE}
+load(system.file("extdata", "poliblog.Rda", package="largeVis"))
 
 ggplot(combined, aes(x = x, 
                      y = y, 
@@ -552,13 +519,13 @@ ggplot(combined, aes(x = x,
   ggtitle("5000 Political Blog Entries")
 ```
 
-This facilitates evaluation of the effectiveness of a topic model.
+This facilitates evaluation of the effectiveness of a topic model.  In the example above, `stm` is asked to create a 20-topic model that is aware that blogs marked "liberal" and blogs marked "conservative" may talk about the same topics in different ways.  As expected, the `largeVis` visualization of this model shows blog entries that group into 20 clusters, with "liberal" and "conservative" blogs each addressing, but placing different weights on, each of the 20 topics.
 
 ## Visualizing Graphs
 
 The `largeVis` visualization algorithm can be used to visualize ordinary graphs.  The included `wiki` dataset is an example.
 
-The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). 
+The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). The data and visualization are not included here for size reasons.
 
 ```{r youtube,eval=F,echo=T}
 pathToGraphFile <- 
@@ -585,10 +552,6 @@ youTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
 colnames(youTube_coordinates) <- c("x", "y")
 youTube_coordinates$community <- factor(community_assignments)
 youTube_coordinates$alpha <- factor(ifelse(youTube_coordinates$community == 0, 0.05, 0.2))
-```
-
-```{r drawYouTube,echo=F,warning=FALSE,message=FALSE}
-load(system.file("extdata", "youtube.Rda", package="largeVis"))
 ggplot(youTube_coordinates, aes( x = x, 
                       y = y, 
                       color = community, 
@@ -607,60 +570,12 @@ ggplot(youTube_coordinates, aes( x = x,
   ggtitle("YouTube Communities")
 ```
 
-```{r livejournal,eval=F,echo=T}
-pathToGraphFile <- 
-  "/mnt/hfsshare/DATASETS/livejournal/com-lj.ungraph.txt"
-pathToCommunities <- 
-  "/mnt/hfsshare/DATASETS/livejournal/com-lj.top5000.cmty.txt"
-
-livejournal <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
-livejournal <- as.matrix(livejournal) + 1
-livejournal <- Matrix::sparseMatrix(i = livejournal[, 1],
-                                j = livejournal[, 2],
-                                x = rep(1, nrow(livejournal)), 
-                                dims = c(max(livejournal), max(livejournal)))
-livejournal <- livejournal + t(livejournal)
-communities <- readr::read_lines(pathToCommunities)
-communities <- lapply(communities, 
-                      FUN = function(x) as.numeric(unlist(strsplit(x, "\t"))) + 1)
-community_assignments <- rep(0, 
-                             nrow(livejournal))
-for (i in 1:length(communities)) community_assignments[communities[[i]]] <- i
-
-todelete <- which(rowSums(livejournal) == 0)
-livejournal <- livejournal[- todelete, - todelete]
-community_assignments <- community_assignments[- todelete]
-
-livejournal_coordinates <- projectKNNs(livejournal)
-livejournalyouTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
-colnames(livejournal_coordinates) <- c("x", "y")
-livejournal_coordinates$community <- factor(community_assignments)
-livejournal_coordinates$alpha <- factor(ifelse(livejournal_coordinates$community == 0, 0.05, 0.2))
-```
-
-```{r drawLJ,echo=F,warning=FALSE,message=FALSE,eval=F}
-load(system.file("extdata", "livejournal.Rda", package="largeVis"))
-ggplot(livejournal_coordinates, aes( x = x, 
-                      y = y, 
-                      color = community, 
-                      alpha = alpha, 
-                      size = alpha)) +
-  geom_point() +
-  scale_color_manual(values = 
-                       c("black", colors_continuous(5000)),
-                     guide = FALSE) +
-  scale_alpha_manual(values = c(0.005, 0.2), guide = FALSE) +
-  scale_size_manual(values = c(0.03, 0.15), guide = FALSE) +
-  scale_x_continuous("", 
-                     breaks = NULL, limits = c(-2.5,2.5)) +
-  scale_y_continuous("", 
-                     breaks = NULL, limits = c(-2.5,2.5)) +
-  ggtitle("LiveJournal Communities")
-```
-
 ## Distance Methods
 
 The original `LargeVis` paper used Euclidean distances exclusively.  The `largeVis` package offers a choice among Euclidean and Cosine distance measures.  
+
+The implementation is not optimized for cosine distances. Using cosine distances will definitely be
+slower than using Euclidean distances. This is because the random projection tree algorithm for cosine distances requires that the input vectors in the data matrix be normalised. 
 
 ## Memory Consumption
 
@@ -670,9 +585,9 @@ The algorithm is necessarily memory-intensive for large datasets. `neighborsToVe
 neighbors <- randomProjectionTreeSearch(largeDataset)
 neighborIndices <- neighborsToVectors(neighbors)
 rm(neighbors)
-distances <- distance(neighborIndices$i, 
-                      neighborIndices$j,
-                      largeDataset)
+distances <- distance(x = largeDataset, 
+                      i = neighborIndices$i, 
+                      j =neighborIndices$j)
 rm(largeDataset)
 wij <- buildEdgeMatrix(i = neighborIndices$i, 
                        j = neighborIndices$j, 
