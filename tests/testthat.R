@@ -1,4 +1,4 @@
 library(testthat)
 library(largeVis)
 
-test_package("largeVis")
+test_check("largeVis")

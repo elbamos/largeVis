@@ -31,3 +31,4 @@ NeedsCompilation: yes
 OS_type: unix, windows
 BuildVignettes: FALSE
 VignetteBuilder: knitr
+SystemRequirements: C++11

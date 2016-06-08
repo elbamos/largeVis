@@ -3,6 +3,7 @@
 * Neighbor search is much, much faster and more efficient
 * projectKNNs should be faster because of more efficient scanning for negative samples
 * Vignette tries to reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
+* Color manifold maps work
 
 ### largeVis 0.1.5
 

@@ -14,6 +14,8 @@
 #' If the objects in the list are \code{matrix} objects, or the array is 3-dimensional, the images will be treated as
 #' greyscale. If there is an additional dimension, it must have a length of 3 and be RGB color layers.
 #'
+#' @references Andrej Karpapthy. \href{http://cs.stanford.edu/people/karpathy/cnnembed/}{t-SNE Visualization of CNN Codes.}
+#'
 #' @importFrom grDevices as.raster
 #' @importFrom graphics rasterImage
 #' @export
@@ -37,11 +39,11 @@
 #' }
 
 manifoldMap <- function(x,
-                      n,
-                      images,
-                      scale = 1,
-                      transparency = FALSE,
-                      ...) { #nocov start
+                        n = nrow(x),
+                        images,
+                        scale = 1,
+                        transparency = FALSE,
+                        ...) { #nocov start
   if (class(x) == "largeVis") x <- t(x$coords)
   if (ncol(x) != 2) stop("Can only visualize in 2-D.")
   N <- nrow(x)
@@ -55,13 +57,13 @@ manifoldMap <- function(x,
 
   if (! (D == 2 || D == 3)) stop("Wrong number of dimensions.")
   if (D == 3 &&
-      (dim(x)[3] < 2 ||
-       dim(x)[3] > 4)) stop("Wrong number of color layers.")
+      (dim(images)[4] < 2 ||
+       dim(images)[4] > 4)) stop("Wrong number of color layers.")
 
   selections <- sample(N, n, replace = F)
   lowerscale <- min(images)
   upperscale <- max(images)
-  graphics::plot(x[selections, ], pch = NA, ...)
+  graphics::plot(x[selections, ], pch = NA, type = 'n', ...)
 
   for (i in selections) {
     if (D == 2) {

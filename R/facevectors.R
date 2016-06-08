@@ -1,0 +1,10 @@
+#' Embedding vectors for faces in the Labelled Faces in the Wild dataset
+#'
+#' @format A data.frame where each row represents an image.  The first column is the name of the person in the image, the second column
+#' is the name of the image file, and the remaining columns are the columns of the embedding vector for each image as calculated with
+#' the OpenFace `batch-represent` function.  For details and discussion, see \url{https://cmusatyalab.github.io/openface/}.  For the
+#' original images, see \url{http://vis-www.cs.umass.edu/lfw/}.
+#'
+#' @source \url{http://openface-models.storage.cmusatyalab.org/lfw.nn4.small2.v1/labels.csv}
+#' @source \url{http://openface-models.storage.cmusatyalab.org/lfw.nn4.small2.v1/reps.csv}
+"facevectors"
