@@ -1,5 +1,5 @@
 #include <testthat.h>
-#include "largeVis.hpp"
+#include "largeVis.h"
 
 context("distances") {
 
