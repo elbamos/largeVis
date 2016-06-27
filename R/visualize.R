@@ -6,7 +6,6 @@
 #' @param n The number of images to sample.
 #' @param images The images. A 3-D or 4-D array.
 #' @param scale Proportion to scale the images to.
-#' @param transparency Whether to add an alpha channel to greyscale images.
 #' @param ... Addiitional parameters passed to \code{plot}.
 #'
 #' @details The images can be passed in either as a list or a 3- or 4-dimensional array. The first dimension is \code{n}.
@@ -42,7 +41,6 @@ manifoldMap <- function(x,
                         n = nrow(x),
                         images,
                         scale = 1,
-                        transparency = FALSE,
                         ...) { #nocov start
   if (class(x) == "largeVis") x <- t(x$coords)
   if (ncol(x) != 2) stop("Can only visualize in 2-D.")
@@ -72,19 +70,6 @@ manifoldMap <- function(x,
       image_data <- images[i, , , ]
     }
     image_data <- 1 - ( (image_data - lowerscale) / upperscale)
-    if (transparency) {
-      if (length(dim(image_data)) == 2)
-        image_data <- abind::abind(image_data,
-                                  image_data,
-                                  image_data,
-                                  image_data,
-                                  along = 3)
-      else if (length(dim(image_data)) == 3) {
-        alpha <- apply(image_data, MARGIN = 3, FUN = sum)
-        alpha <- alpha / max(alpha)
-        image_data <- abind::abind(image_data, alpha, along = 3)
-      }
-    }
     image <- grDevices::as.raster(image_data)
     offsetx <- (nrow(image) * scale) / 2
     offsety <- (ncol(image) * scale) / 2
@@ -94,6 +79,91 @@ manifoldMap <- function(x,
                           x[i, 1] + offsetx,
                           x[i, 2] + offsety,
                           interpolate = TRUE
-                          )
+    )
   }
+} # nocov end
+
+#' Visualize an embedding by ggplotting with images
+#'
+#' Identical to \link{manifoldMap}, but adds images to an existing \code{ggplot2} object or creates one.
+#'
+#' @param ggObject a \code{\link[ggplot2]{ggplot}} object.  If not provided, a new \code{ggplot}
+#' object with \code{\link[ggplot2]{geom_blank}} will be created.
+#' @param x A \code{largeVis} object or [N,D] matrix of coordinates.
+#' @param n The number of images to sample.
+#' @param images The images. A 3-D or 4-D array.
+#' @param scale Proportion to scale the images to.
+#' @param ... Addiitional parameters passed to \code{plot}.
+#' @return A \code{ggplot} object.
+#'
+#' @details See \code{\link{manifoldMap}}.  Note that this function can be considerably slower to display than \code{manifoldMap}.
+#' It therefore should only be used if other features of \code{ggplot2} are required.
+#'
+#' If the objects in the list are \code{matrix} objects, or the array is 3-dimensional, the images will be treated as
+#' greyscale. If there is an additional dimension, it must have a length of 3 and be RGB color layers.
+#'
+#' @importFrom grDevices as.raster
+#' @importFrom graphics rasterImage
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 geom_blank
+#' @importFrom ggplot2 annotation_raster
+#' @importFrom ggplot2 aes
+#' @export
+
+ggManifoldMap <- function(
+                          ggObject = NULL,
+                          x,
+                          n = nrow(x),
+                          images,
+                          scale = 1,
+                          ...) { #nocov start
+  if (class(x) == "largeVis") x <- t(x$coords)
+  if (ncol(x) != 2) stop("Can only visualize in 2-D.")
+  N <- nrow(x)
+  if (class(images) == "list" &&
+      N != length(images))
+    stop("Number of images doesn't equal number of points.")
+  if (N != nrow(images))
+    stop("Number of images doesn't equal number of points.")
+
+  D <- length(dim(images)) - 1
+
+  if (! (D == 2 || D == 3)) stop("Wrong number of dimensions.")
+  if (D == 3 &&
+      (dim(images)[4] < 2 ||
+       dim(images)[4] > 4)) stop("Wrong number of color layers.")
+
+  selections <- sample(N, n, replace = F)
+  lowerscale <- min(images)
+  upperscale <- max(images)
+  if (is.null(ggObject)) {
+    x <- data.frame(x)
+    colnames(x) <- c("x", "y")
+    ggObject = ggplot2::`%+%`(ggplot2::ggplot(x,
+                                              ggplot2::aes_(x = quote(x),
+                                                            y = quote(y))),
+                              geom_blank())
+  }
+
+  for (i in selections) {
+    if (D == 2) {
+      image_data <- images[i, , ]
+    } else {
+      image_data <- images[i, , , ]
+    }
+    image_data <- 1 - ( (image_data - lowerscale) / upperscale)
+    image <- grDevices::as.raster(image_data)
+    offsetx <- (nrow(image) * scale) / 2
+    offsety <- (ncol(image) * scale) / 2
+
+    ggObject <- ggplot2::`%+%`(ggObject, ggplot2::annotation_raster(
+      image,
+      xmin = x[i, 1] - offsetx,
+      ymin = x[i, 2] - offsety,
+      xmax = x[i, 1] + offsetx,
+      ymax = x[i, 2] + offsety,
+      interpolate = TRUE
+    ))
+  }
+  return(ggObject)
 } # nocov end

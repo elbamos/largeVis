@@ -4,9 +4,13 @@
 ^README\.Rmd$
 ^README\.md$
 ^README_files$
-^NEWS\.md$
 ^revdep$
 ^.*\.RData
+^ljc\.Rda
+^stmmodel\.Rda
+^stm\.Rda
+^wikiwij\.Rda
+^wikiwords\.Rda
 ^appveyor\.yml$
 ^vignettes/largeVis\.pdf$
 ^vignettes/largeVis\.md$
@@ -23,7 +27,7 @@
 ^data/train\.RData$
 ^libs$
 ^doc$
-^Rplots\.pdf$
+^Rplots\.pdf$^.*\.RData
 ^m./.Rda$
 ^./.bin$
 ^inst/samples.Rda$

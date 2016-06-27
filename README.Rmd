@@ -1,7 +1,6 @@
 ---
 title: "largeVis"
 output: github_document
-bibliography: vignettes/TangLZM16.bib
 ---
 ```{r getversion,eval=T,echo=F,warning=F,error=F,message=F}
 branch <- system("git branch -v", intern=TRUE)
@@ -23,14 +22,14 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 * Memory efficiency and performance are excellent. Memory efficiency can be improved further by using utility functions to perform the algorithm in stages. (Explained in the vignette.)
 * Not yet fully tested:
      + The alternative distance function ($\alpha = 0$).
-     + Transparency in the visualization function.
 * I am attempting to replicate the paper's results with larger datasets.  This takes time because my hardware is not as powerful as the authors'.  If you have any to volunteer, please contact me!
 
 #### To-do's Before Submission to CRAN
-* Demonstrate correctness by visualizing the wiki-doc and wiki-term datasets used in the paper. **Waiting on submission from paper authors so the data can be parsed properly.**
-* Compile more-complete benchmarks from a server. **In progress.**
+* Demonstrate correctness by visualizing the wiki-doc and wiki-term datasets used in the paper. **wikiwords done, pending wikidoc**
+* Compile more-complete benchmarks from a server. **Done, deciding how to visualize.**
 * Confirm that the map visualization function works with color images. **DONE**
-* Give Erik and Dirk a few days to comment on the performance. 
+* Give Erik B. a few days to comment on the performance. 
+* Reduce submission size
 
 ## Vignette
 

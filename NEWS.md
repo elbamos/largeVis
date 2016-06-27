@@ -1,11 +1,28 @@
 ### largeVis 0.1.6
 
-* Neighbor search is much, much faster and more efficient
-* projectKNNs should be faster because of more efficient scanning for negative samples
-* Vignette tries to reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
-* Color manifold maps work
-* Tree search for cosine distances uses normalized vectors
-* Separate, optimized function for max_iters = 1
+* Neighbor search:
+  + Much, much faster and more efficient
+  + Tree search for cosine distances uses normalized vectors
+* projectKNNs 
+  + faster because of more efficient scanning for negative samples
+  + Skips negative samples with already-large distances
+* Vignettes:
+  + Reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
+  + Benchmarks now a separate vignette, more detailed
+  + Added examples of manifold map with color faces using OpenFace vectors
+* Visualization
+  + Color manifold maps work
+  + Removed transparency parameter
+  + Added ggManifoldMap function for adding a manifold map to a ggplot2 plot
+* Dependencies & Build
+  + Many misc changes to simplify dependencies for CRAN
+  + Re-added ARMA_64BIT_WORD; otherwise, could exceed the limitation on size of an arma sparse matrix with moderately sized datasets (~ 1 M rows, K = 100)
+  + Consolidated C++ code into a single file to reduce library size
+  + Now depends on R >= 3.0.2, so RcppProgress and RcppArmadillo could be moved from the Depends section of the description file
+* Correctness and Testing
+  + Tested against the paper authors' wiki-doc and wiki-word datasets
+  + Tests are separated by subject
+  + Additional, more extensive tests with greater code coverage
 
 ### largeVis 0.1.5
 

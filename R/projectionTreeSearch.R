@@ -41,17 +41,7 @@ randomProjectionTreeSearch.matrix <- function(x,
                                        verbose= TRUE) {
   if (verbose) cat("Searching for neighbors.\n")
 
-  if (max_iter == 1) {
-    knns <-  searchTreesOne(
-                          threshold = tree_threshold,
-                          n_trees = n_trees,
-                          K = K,
-                          max_recursion_degree = max_depth,
-                          data = x,
-                          distance_method,
-                          verbose = verbose)
-  } else {
-    knns <- searchTrees(threshold = tree_threshold,
+  knns <- searchTrees(threshold = tree_threshold,
                       n_trees = n_trees,
                       K = K,
                       max_recursion_degree = max_depth,
@@ -59,7 +49,6 @@ randomProjectionTreeSearch.matrix <- function(x,
                       data = x,
                       distance_method,
                       verbose = verbose)
-  }
 
   if (sum(colSums(knns != -1) == 0) > 0)
     stop ("After neighbor search, no candidates for some nodes.")

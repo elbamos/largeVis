@@ -9,22 +9,24 @@ License: GPL-3
 LazyData: TRUE
 RoxygenNote: 5.0.1
 Depends:
-    R (>= 2.10),
-    Matrix,
-    RcppProgress (>= 0.2.1),
-    RcppArmadillo (>= 0.7.100.3.0)
+    R (>= 3.0.2),
+    Matrix
 Imports:
     parallel,
     Rcpp (>= 0.12.4),
-    abind
-LinkingTo: Rcpp,RcppProgress,RcppArmadillo
+    abind,
+    ggplot2 (>= 0.9.2.1)
+LinkingTo: Rcpp,RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.100.3.0)
 Suggests: testthat,
     covr,
     knitr,
     rmarkdown,
-    ggplot2,
     wesanderson,
-    RColorBrewer
+    RColorBrewer,
+    dplyr,
+    magrittr,
+    RcppProgress,
+    RcppArmadillo
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes
