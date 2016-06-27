@@ -2,7 +2,7 @@
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
-#include "largeVis.hpp"
+#include "largeVis.h"
 
 // utility function
 inline void multModify(double *col, int d, double adj) {
