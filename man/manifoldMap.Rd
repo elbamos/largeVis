@@ -49,4 +49,7 @@ manifoldMap(coords,
 \references{
 Andrej Karpapthy. \href{http://cs.stanford.edu/people/karpathy/cnnembed/}{t-SNE Visualization of CNN Codes.}
 }
+\seealso{
+\code{\link{ggManifoldMap}}
+}
 

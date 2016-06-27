@@ -25,17 +25,21 @@
 #' @param gamma See \code{\link{projectKNNs}}.
 #' @param rho See \code{\link{projectKNNs}}.
 #' @param min_rho \code{\link{projectKNNs}}.
+#' @param save_neighbors Whether to include in the output the adjacency matrix of nearest neighbors.
+#' @param save_sigmas Whether to include in the output the esimates values of sigma.
 #' @param coords A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.
 #' @param verbose Verbosity
 #' @param ... See paper
 #'
 #' @return A `largeVis` object with the following slots:
 #'  \describe{
-#'    \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
+#'    \item{'knns'}{An [N,K] 0-indexed integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
 #'    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
 #'    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
 #'    \item{'call'}{The call.}
 #'    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
+#'    \item{'sigmas'}{A [N] vector of the values of sigma estimated for each vertex. Primarily useful for debugging
+#'    purposes and therefore not returned by default.}
 #'  }
 #'
 #' @export
@@ -85,6 +89,9 @@ vis <- function(x,
 
                      coords = NULL,
 
+                     save_neighbors = TRUE,
+                     save_sigmas = FALSE,
+
                      verbose = TRUE,
                     ...) {
 
@@ -104,6 +111,8 @@ vis <- function(x,
   #############################################
   if (verbose[1]) cat("Calculating edge weights...")
   neighbor_indices <- neighborsToVectors(knns)
+  if (! save_neighbors) rm(knns)
+  gc()
 
   #######################################################
   # Calculate edge weights for candidate neighbors
@@ -140,7 +149,9 @@ vis <- function(x,
                          perplexity = perplexity,
                          verbose = verbose)
 
-  rm(neighbor_indices)
+  rm(neighbor_indices, xs)
+  if (! save_sigmas) sigwij$sigmas <- NULL
+  gc()
   #######################################################
   # Estimate embeddings
   #######################################################
@@ -160,15 +171,22 @@ vis <- function(x,
   #######################################################
   # Cleanup
   #######################################################
-  knns[knns == -1] <- NA
 
   returnvalue <- list(
     knns = t(knns),
     wij = sigwij$wij,
     call = sys.call(),
-    coords = coords,
-    sigmas = sqrt(sigwij$sigmas / 2)
+    coords = coords
   )
+
+  if (save_neighbors) {
+    knns[knns == -1] <- NA
+    returnvalue$knns <- t(knns)
+  }
+  if (save_sigmas) {
+    sigmas <- sqrt(sigwij$sigmas / 2)
+    returnvalue$sigmas <- sigmas
+  }
 
   class(returnvalue) <- "largeVis"
   return(returnvalue)

@@ -21,6 +21,7 @@
 #' }
 #' @importClassesFrom Matrix CsparseMatrix
 #' @importClassesFrom Matrix TsparseMatrix
+#' @importFrom stats optim
 #' @export
 buildEdgeMatrix <- function(x,
                             i,
@@ -49,13 +50,21 @@ buildEdgeMatrix.default <- function(x = NULL,
   }
 
   perplexity <- log2(perplexity)
+  testStarts <- c(0.05, 0.1, 1, 0.001, 10, 20)
   sigmas <- parallel::mclapply(1:N, FUN = function(idx) { # nocov start
     if (verbose) setTxtProgressBar(progress, idx)
-    x_i <- d[(p[idx] + 1):(p[idx + 1])]
-    ret <- optimize(f = sigFunc,
-                    x = x_i,
-                    perplexity = perplexity,
-                    interval = c(0, 10000))
+    x_i <- d[(p[idx] + 1):(p[idx + 1] - 1)]
+    start <- 0.5
+    startSig <- sigFunc(start, x_i = x_i, perplexity = perplexity)
+    if (is.nan(startSig) || is.infinite(startSig)) {
+      tst <- sapply(testStarts, FUN = sigFunc, x = x_i,
+             perplexity = perplexity, simplify = TRUE)
+      start <- testStarts[which(tst == min(tst, na.rm = TRUE))]
+    }
+    suppressWarnings(optim(par = start,
+          fn = sigFunc,
+          x_i = x_i,
+          perplexity = perplexity)$par)
   }) # nocov end
   sigmas <- sapply(sigmas, `[[`, 1)
 

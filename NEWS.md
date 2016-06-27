@@ -1,7 +1,7 @@
 ### largeVis 0.1.6
 
 * Neighbor search:
-  + Much, much faster and more efficient
+  + Dense search is much, much faster and more efficient
   + Tree search for cosine distances uses normalized vectors
 * projectKNNs 
   + faster because of more efficient scanning for negative samples
@@ -10,19 +10,31 @@
   + Reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
   + Benchmarks now a separate vignette, more detailed
   + Added examples of manifold map with color faces using OpenFace vectors
+* Sigmas
+  + Fixed longstanding bug
+  + Changed optimization method; pre-scan
+  + Sigma estimation could, in some cases involving very large datasets, could become unstable and settle into 
+  an edge of the interval. This should be resolved.  
 * Visualization
   + Color manifold maps work
+  + Ported Karpathy's function for non-overlapping embeddings (experimental)
   + Removed transparency parameter
   + Added ggManifoldMap function for adding a manifold map to a ggplot2 plot
+* vis
+  + Whether to return neighbors and sigmas now adjustable parameters, for memory reasons
+  + Runs gc() periodically
 * Dependencies & Build
   + Many misc changes to simplify dependencies for CRAN
   + Re-added ARMA_64BIT_WORD; otherwise, could exceed the limitation on size of an arma sparse matrix with moderately sized datasets (~ 1 M rows, K = 100)
   + Consolidated C++ code into a single file to reduce library size
-  + Now depends on R >= 3.0.2, so RcppProgress and RcppArmadillo could be moved from the Depends section of the description file
+  + Now depends on R >= 3.0.2, so RcppProgress and RcppArmadillo could be moved from the Depends section of the DESCRIPTION file
 * Correctness and Testing
   + Tested against the paper authors' wiki-doc and wiki-word datasets
+  + Tested with up to 2.5mm rows. 
   + Tests are separated by subject
   + Additional, more extensive tests with greater code coverage
+* OpenMP
+  + Will now compile on systems that lack OpenMP (e.g., OS X systems with old versions of xcode). 
 
 ### largeVis 0.1.5
 

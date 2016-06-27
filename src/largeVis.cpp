@@ -1,7 +1,9 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::plugins(openmp)]]
 // [[Rcpp::plugins(cpp11)]]
-#include <omp.h>
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 #include "progress.hpp"
 #include <math.h>
 #include <algorithm>
@@ -75,14 +77,16 @@ void searchTree(const int& threshold,
                                   const int& iterations,
                                   Progress& progress) {
   const int I = indices.size();
-  const int D = data.n_rows;
+  // const int D = data.n_rows;
   if (progress.check_abort()) return;
   if (I < 2) stop("Tree split failure.");
   if (I <= threshold || iterations == 0) {
     ivec neighbors = ivec(indices);
     neighborhood tmpStorage = neighborhood();
     ivec::iterator newEnd = neighbors.end();
-#pragma omp critical
+#ifdef _OPENMP
+  #pragma omp critical
+#endif
 {
   for (ivec::iterator it = neighbors.begin();
        it != newEnd;
@@ -178,8 +182,9 @@ arma::imat searchTrees(const int& threshold,
       treeNeighborhoods[i] = new vector<int>(seed, seed + sizeof(seed) / sizeof(int));
     }
     const ivec indices = regspace<ivec>(0, N - 1);
-
-#pragma omp parallel for shared(treeNeighborhoods)
+#ifdef _OPENMP
+  #pragma omp parallel for shared(treeNeighborhoods)
+#endif
     for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
       searchTree(threshold,
                  indices,
@@ -192,7 +197,9 @@ arma::imat searchTrees(const int& threshold,
     if (p.check_abort()) return knns;
     // Reduce size from threshold * n_trees to top K, and sort
     maxHeap thisHeap = maxHeap();
-#pragma omp parallel for shared(treeHolder, treeNeighborhoods) private(thisHeap)
+#ifdef _OPENMP
+  #pragma omp parallel for shared(treeHolder, treeNeighborhoods) private(thisHeap)
+#endif
     for (int i = 0; i < N; i++) if (p.increment()) {
       const vec x_i = data.col(i);
       vector<int> *neighborhood = treeNeighborhoods[i];
@@ -216,7 +223,9 @@ arma::imat searchTrees(const int& threshold,
     // Copy sorted neighborhoods into matrix. This is faster than
     // sorting in-place.
     knns = imat(K,N);
-#pragma omp parallel for
+#ifdef _OPENMP
+  #pragma omp parallel for
+#endif
     for (int i = 0; i < N; i++) if (p.increment()) {
       set<int>::iterator sortIterator = treeHolder[i] -> begin();
       set<int>::iterator end = treeHolder[i] -> end();
@@ -236,7 +245,9 @@ arma::imat searchTrees(const int& threshold,
     knns = tmp;
     maxHeap thisHeap = maxHeap();
     set<int> sorter = set<int>();
-#pragma omp parallel for shared(old_knns, knns) private(thisHeap, sorter)
+#ifdef _OPENMP
+  #pragma omp parallel for shared(old_knns, knns) private(thisHeap, sorter)
+#endif
     for (int i = 0; i < N; i++) if (p.increment()) {
       double d;
 
@@ -312,11 +323,13 @@ void searchTree(const int& threshold,
                 const int& iterations,
                 Progress& progress) {
   const int I = indices.size();
-  const int D = data.n_rows;
+  // const int D = data.n_rows;
   if (progress.check_abort()) return;
   if (I < 2) stop("Tree split failure.");
   if (I == 2) {
-#pragma omp critical
+#ifdef _OPENMP
+  #pragma omp critical
+#endif
 {
   heap[indices[0]] -> push_back(indices[1]);
   heap[indices[1]] -> push_back(indices[0]);
@@ -324,7 +337,9 @@ void searchTree(const int& threshold,
     return;
   }
   if (I < threshold || iterations == 0) {
-#pragma omp critical
+#ifdef _OPENMP
+  #pragma omp critical
+#endif
 {
   for (int i = 0; i < I; i++) {
     heap[indices[i]] -> reserve(I - 1);
@@ -399,8 +414,9 @@ arma::mat searchTreesSparse(const int& threshold,
 
   { // Artificial scope to destroy indices
     vec indices = regspace<vec>(0, N - 1);
-
-#pragma omp parallel for shared(indices,treeNeighborhoods)
+#ifdef _OPENMP
+  #pragma omp parallel for shared(indices,treeNeighborhoods)
+#endif
     for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
       searchTree(threshold,
                  indices,
@@ -411,7 +427,9 @@ arma::mat searchTreesSparse(const int& threshold,
       );
 
       if (t > 0 && ! p.check_abort())
-#pragma omp critical
+#ifdef _OPENMP
+  #pragma omp critical
+#endif
 {
   for (int i = 0; i < N; i++) {
     vector<int>* neighbors = treeNeighborhoods[i];
@@ -431,7 +449,9 @@ arma::mat searchTreesSparse(const int& threshold,
   // instead of (N * K), which is prohibitive of large thresholds.
   mat knns = mat(threshold,N);
   knns.fill(-1);
-#pragma omp parallel for shared(knns)
+#ifdef _OPENMP
+  #pragma omp parallel for shared(knns)
+#endif
   for (int i = 0; i < N; i++) if (p.increment()){
     const SpSubview<double> x_i = data.col(i);
     priority_queue<heapObject> maxHeap = priority_queue<heapObject>();
@@ -455,7 +475,9 @@ arma::mat searchTreesSparse(const int& threshold,
     mat old_knns = knns;
     knns = mat(K,N);
     knns.fill(-1);
-#pragma omp parallel for shared(knns, treeNeighborhoods)
+#ifdef _OPENMP
+  #pragma omp parallel for shared(knns, treeNeighborhoods)
+#endif
     for (int i = 0; i < N; i++) if (p.increment()) {
       double d;
 
@@ -561,8 +583,9 @@ arma::vec fastDistance(const NumericVector is,
   double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j);
   if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = dist;
   else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = cosDist;
-
-#pragma omp parallel for shared (xs)
+#ifdef _OPENMP
+  #pragma omp parallel for shared (xs)
+#endif
   for (int i=0; i < is.length(); i++) if (p.increment()) xs[i] =
     distanceFunction(data.col(is[i]), data.col(js[i]));
   return xs;
@@ -581,8 +604,9 @@ arma::vec fastSparseDistance(const arma::vec& is,
       const sp_mat& x_j);
   if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = sparseDist;
   else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = sparseCosDist;
-
-#pragma omp parallel for shared (xs)
+#ifdef _OPENMP
+  #pragma omp parallel for shared (xs)
+#endif
   for (int i=0; i < is.size(); i++) if (p.increment()) xs[i] =
     distanceFunction(data.col(is[i]), data.col(js[i]));
   return xs;
@@ -631,12 +655,16 @@ arma::sp_mat distMatrixTowij(
   vec pjis = vec(is.length());
   for (int idx=0; idx < N; idx++) rowSums[idx] = 0;
   // Compute pji, accumulate rowSums at the same time
-#pragma omp parallel for shared(pjis, rowSums)
+#ifdef _OPENMP
+  #pragma omp parallel for shared(pjis, rowSums)
+#endif
   for (int e=0; e < pjis.size(); e++) if (p.increment()){
     const int i = is[e];
     const double pji = exp(- pow(xs[e], 2)) / sigmas[i];
     pjis[e] = pji;
-#pragma omp atomic
+#ifdef _OPENMP
+  #pragma omp atomic
+#endif
     rowSums[i] += pji;
   }
   if (p.check_abort()) return sp_mat(0);
@@ -646,7 +674,9 @@ arma::sp_mat distMatrixTowij(
   // lower triangle.  The constructor will automatically add duplicates.
   vec values = vec(pjis.size());
   umat locations = umat(2, pjis.size());
-#pragma omp parallel for shared(locations, values)
+#ifdef _OPENMP
+  #pragma omp parallel for shared(locations, values)
+#endif
   for (int e = 0; e < pjis.size(); e++) if (p.increment()) {
     int newi = is[e], newj = js[e];
     if (newi < newj) swap(newi, newj);
@@ -670,10 +700,14 @@ double sigFunc(const double& sigma,
                const NumericVector& x_i,
                const double& perplexity) {
   const NumericVector xs = exp(- pow(x_i,2) / sigma);
+  // dxs_ds = xs * pow(x_i, 2)
   const NumericVector softxs = xs / sum(xs);
+  // dsoftxs_ds =
   const double p2 = - sum(log(softxs) / log(2)) / xs.length();
   return pow(perplexity - p2, 2);
 };
+
+
 
 /*
  * Some helper functions useful in debugging.
@@ -747,118 +781,136 @@ arma::mat sgd(arma::mat coords,
   const int posSampleLength = ((nBatches > 1000000) ? 1000000 : (int) nBatches);
   vec positiveSamples = randu<vec>(posSampleLength);
 
-  // Cache some variables to make memory allocation cheaper
+  // Cache some variables
   vec::iterator posEnd = positiveEdgeWeights.end();
+  vec::iterator posBegin = positiveEdgeWeights.begin();
   vec::iterator negBegin = negativeSampleWeights.begin();
   vec::iterator negEnd = negativeSampleWeights.end();
   ivec::iterator searchBegin = is.begin();
   // Iterate through the edges in the positiveEdges vector
-#pragma omp parallel for shared(coords, positiveSamples) schedule(static)
-  for (long eIdx=0; eIdx < nBatches; eIdx++) {
-    if (progress.increment()) {
-      const double posTarget = *(positiveSamples.begin() + (eIdx % posSampleLength));
-      int k;
-      int e_ij;
-      if (useWeights) {
-        e_ij = posTarget * (E - 1);
-      } else {
-        e_ij = distance(positiveEdgeWeights.begin(),
-                             upper_bound(positiveEdgeWeights.begin(),
-                                              posEnd,
-                                              posTarget));
-      }
-      const int i = is[e_ij];
-      const int j = js[e_ij];
-
-      const double localRho = rho - ((rho - minRho) * eIdx / nBatches);
-
-      //if ((randn<vec>(1))[0] < 0) swap(i, j);
-
-      const vec y_i = coords.col(i);
-      const vec y_j = coords.col(j);
-
-      // wij
-      const double w = (useWeights) ? ws[e_ij] : 1;
-
-      const double dist_ij = dist(y_i, y_j);
-
-      const vec d_dist_ij = (y_i - y_j) / sqrt(dist_ij);
-      double p_ij;
-      if (alpha == 0)   p_ij =   1 / (1 +      exp(dist_ij));
-      else              p_ij =   1 / (1 + (alpha * dist_ij));
-
-      vec d_p_ij;
-      if (alpha == 0) d_p_ij =  d_dist_ij * -2 * dist_ij * exp(dist_ij) / pow(1 + exp(dist_ij), 2);
-      else            d_p_ij =  d_dist_ij * -2 * dist_ij * alpha        / pow(1 +    (dist_ij * alpha),2);
-
-      //double o = log(p_ij);
-      const vec d_j = (1 / p_ij) * d_p_ij;
-      // alternative: d_i - 2 * alpha * (y_i - y_j) / (alpha * sum(square(y_i - y_j)))
-      vec d_i = d_j;
-
-      // Setup negative search
-      vec samples = sort(randu<vec>(M));
-      vec::iterator targetIt = samples.begin();
-      int sampleIdx = 0;
-      // The indices of the nodes with edges to i
-      int m = 0;
-      vec::iterator negativeIterator = negBegin;
-      while (m < M) {
-        if (sampleIdx % M == 0) {
-          samples.randu();
-          samples = sort(samples);
-          targetIt = samples.begin();
-          negativeIterator = negBegin;
-        }
-        // binary search implementing weighted sampling
-        const double target = targetIt[sampleIdx++ % M];
-        int k;
-        if (useWeights) k = target * (N - 1);
-        else {
-          negativeIterator = upper_bound(negativeIterator,
-                                              negEnd,
-                                              target);
-          k = negativeIterator - negBegin;
-        }
-
-        if (k == i ||
-            k == j ||
-            binary_search(searchBegin + ps[i],
-                               searchBegin + ps[i + 1] - 1,
-                               k)) continue;
-        const vec y_k = coords.col(k);
-
-        const double dist_ik = dist(y_i, y_k);
-        if (dist_ik == 0 || dist_ik > (14 * (1 + (int) (sampleIdx / M)))) continue; // Duplicates and distances too large to care
-
-        const vec d_dist_ik = (y_i - y_k) / sqrt(dist_ik);
-
-        double p_ik;
-        if (alpha == 0) p_ik  =  1 - (1 / (1 +      exp(dist_ik)));
-        else            p_ik  =  1 - (1 / (1 + (alpha * dist_ik)));
-
-        vec d_p_ik;
-        if (alpha == 0) d_p_ik =  d_dist_ik * 2 * dist_ik * exp(dist_ik) / pow(1 +      exp(dist_ik),2);
-        else            d_p_ik =  d_dist_ik * 2 * dist_ik * alpha        / pow(1 + (alpha * dist_ik),2);
-        //o += (gamma * log(p_ik));
-
-        const vec d_k = (gamma / p_ik) * d_p_ik;
-        // alternative:  d_k = 2 * alpha * (y_i - y_k) / (square(1 + (alpha * sum(square(y_i - y_k)))) * (1 - (1 / (alpha * sum(square(y_i - y_k))))))
-
-        d_i += d_k;
-        for (int idx = 0; idx < D; idx++) coords(idx,k) -= d_k[idx] * localRho * w;
-
-        m++;
-      }
-
-      for (int idx = 0; idx < D; idx++) {
-        coords(idx,j) -=  d_j[idx] * w * localRho;
-        coords(idx,i) +=  d_i[idx] * w * localRho;
-      }
-
-      if (eIdx > 0 &&
-          eIdx % posSampleLength == 0) positiveSamples.randu();
+#ifdef _OPENMP
+  #pragma omp parallel for shared(coords, positiveSamples) schedule(static)
+#endif
+  for (long eIdx=0; eIdx < nBatches; eIdx++) if (progress.increment()) {
+    const double posTarget = *(positiveSamples.begin() + (eIdx % posSampleLength));
+    int k;
+    int e_ij;
+    if (useWeights) {
+      e_ij = posTarget * (E - 1);
+    } else {
+      e_ij = distance(posBegin, upper_bound(posBegin,
+                                            posEnd,
+                                            posTarget));
     }
+    const int i = is[e_ij];
+    const int j = js[e_ij];
+    // Learning rate
+    const double localRho = rho - ((rho - minRho) * eIdx / nBatches);
+
+    vec y_i = coords.unsafe_col(i);
+    vec y_j = coords.unsafe_col(j);
+
+    // wij
+    const double w = (useWeights) ? ws[e_ij] : 1;
+    // Calculate the positive gradient, applying the chain rule
+    const double dist_ij = dist(y_i, y_j);
+
+    double p_ij;
+    if (alpha == 0)   p_ij =   1 / (1 +      exp(dist_ij));
+    else              p_ij =   1 / (1 + (alpha * dist_ij));
+
+    const vec d_j = (y_i - y_j) * -2 * dist_ij *
+            ((alpha == 0) ? exp(dist_ij) / pow(1 + exp(dist_ij), 2) :
+                            alpha        / pow(1 +    (dist_ij * alpha), 2)) /
+            (sqrt(dist_ij) * p_ij);
+
+    //double o = log(p_ij); // The objective function, which we don't need to calculate
+    // The gradient for j is the negative of the gradient for i, before counting negative
+    // samples.
+    // alternative: d_i - 2 * alpha * (y_i - y_j) / (alpha * sum(square(y_i - y_j)))
+    vec d_i = d_j;
+
+    /*
+     * The negative search needs M nodes that don't have edges with i,
+     * and the search is weighted unless useWeights == true.
+     *
+     * Generate M random numbers from a uniform [0,1) distribution,
+     * and sort them. Each draw, find the matching position in the
+     * negative weights vector by binary search, and keep the position
+     * of the iterator for the next draw. To determine if the draw has
+     * an edge with i, take advantage of the compressed-sparse column
+     * format of the input, using a binary search of the i's vector
+     * between indices given by ps[i] and ps[i + 1].
+     *
+     */
+    vec samples = vec(M);
+    vec::iterator targetIt = samples.begin();
+    vec::iterator endIt = samples.end();
+    int sampleIdx = 0;
+    ivec::iterator searchBegini = searchBegin + ps[i];
+    ivec::iterator searchEndi = searchBegin + ps[i + 1];
+    int m = 0;
+    vec::iterator negativeIterator;
+    while (m < M) {
+      if (sampleIdx % M == 0) {
+        samples.randu();
+        std::sort(targetIt, endIt);
+        negativeIterator = negBegin;
+      }
+      // binary search implementing weighted sampling
+      const double target = targetIt[sampleIdx++ % M];
+      int k;
+      if (useWeights) k = target * (N - 1);
+      else {
+        negativeIterator = upper_bound(negativeIterator,
+                                            negEnd,
+                                            target);
+        k = negativeIterator - negBegin;
+     }
+      // Check that the draw isn't one of i's edges
+      if (k == i ||
+          k == j ||
+          binary_search( searchBegini,
+                         searchEndi,
+                         k)) continue;
+      vec y_k = coords.unsafe_col(k);
+
+      const double dist_ik = dist(y_i, y_k);
+      /*
+       * Make sure the drawn vertex isn't in a position identical to i,
+       * which would cause the gradients to be ill-defined. Also, ignore
+       * negative examples that are beyond a distance threshold. Increment
+       * the distance threshold every M samples to avoid an infinite loop.
+       */
+      if (dist_ik == 0 ||
+          dist_ik > (14 * (1 + (int) (sampleIdx / M)))) continue;
+
+      double p_ik;
+      if (alpha == 0) p_ik  =  1 - (1 / (1 +      exp(dist_ik)));
+      else            p_ik  =  1 - (1 / (1 + (alpha * dist_ik)));
+
+      const vec grad = gamma *
+                (y_i - y_k) *
+                ((alpha == 0) ? 2 * dist_ik * exp(dist_ik) / pow(1 +      exp(dist_ik),2) :
+                                2 * dist_ik * alpha        / pow(1 + (alpha * dist_ik),2)) /
+                (sqrt(dist_ik) * p_ik);
+      // alternative:  d_k = 2 * alpha * (y_i - y_k) / (square(1 + (alpha * sum(square(y_i - y_k)))) * (1 - (1 / (alpha * sum(square(y_i - y_k))))))
+
+      d_i += grad;
+      y_k -= grad * localRho * w;
+
+      m++;
+    }
+  /*
+   * For whatever reason, setting the coordinates point-by-point is faster than
+   * using the underlying library to set the whole column at once.
+   *
+   */
+    y_j -= d_j * w * localRho;
+    y_i += d_i * w * localRho;
+
+    if (eIdx > 0 &&
+        eIdx % posSampleLength == 0) positiveSamples.randu();
   }
   return coords;
 };

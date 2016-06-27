@@ -2,7 +2,6 @@ context("sparse")
 
 test_that("buildEdgeMatrix are the same", {
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)
   dupes <- which(duplicated(dat))
@@ -59,7 +58,6 @@ test_that("buildEdgeMatrix are the same", {
 test_that("sparseDistances", {
   M <- 5
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   data (iris)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)
@@ -86,7 +84,6 @@ test_that("sparseDistances", {
 test_that("Can determine sparse iris neighbors accurately", {
   M <- 5
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   data (iris)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)

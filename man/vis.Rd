@@ -8,7 +8,8 @@ vis(x, dim = 2, K = 40, n_trees = 50, tree_threshold = max(10, ncol(x)),
   max_iter = 1, max_depth = 32, distance_method = "Euclidean",
   perplexity = 50, sgd_batches = ncol(x) * 20000, M = 5,
   weight_pos_samples = TRUE, alpha = 1, gamma = 7, rho = 1,
-  min_rho = 0, coords = NULL, verbose = TRUE, ...)
+  min_rho = 0, coords = NULL, save_neighbors = TRUE,
+  save_sigmas = FALSE, verbose = TRUE, ...)
 }
 \arguments{
 \item{x}{A matrix, where the features are rows and the examples are columns.}
@@ -48,6 +49,10 @@ the first pass through the neighborhood exploration phases will involve up to \e
 
 \item{coords}{A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.}
 
+\item{save_neighbors}{Whether to include in the output the adjacency matrix of nearest neighbors.}
+
+\item{save_sigmas}{Whether to include in the output the esimates values of sigma.}
+
 \item{verbose}{Verbosity}
 
 \item{...}{See paper}
@@ -55,11 +60,13 @@ the first pass through the neighborhood exploration phases will involve up to \e
 \value{
 A `largeVis` object with the following slots:
  \describe{
-   \item{'knns'}{An [N,K] integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
+   \item{'knns'}{An [N,K] 0-indexed integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
    \item{'call'}{The call.}
    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
+   \item{'sigmas'}{A [N] vector of the values of sigma estimated for each vertex. Primarily useful for debugging
+   purposes and therefore not returned by default.}
  }
 }
 \description{

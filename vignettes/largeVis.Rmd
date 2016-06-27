@@ -20,6 +20,8 @@ require(RColorBrewer,
         quietly = TRUE)
 require(wesanderson, 
         quietly = TRUE)
+library(jpeg,
+        quietly = TRUE)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>")
 colors_discrete <- function(x) rep(wes_palette("Darjeeling", 
@@ -128,21 +130,29 @@ ggplot(mnistCoords, aes(x = x, y = y, color = labels)) +
 ```{r ldafromldavis,echo=F,eval=rebuild}
 library(LDAvis)
 data("TwentyNewsgroups")
-theta <- scale(t(TwentyNewsgroups$theta))
+theta <- TwentyNewsgroups$theta
+dd <- duplicated(theta) # This step is very important
+theta <- theta[! dd, ]
 set.seed(1974)
 initialcoords <- matrix(rnorm(2 * ncol(theta)), ncol = ncol(theta))
-visObj <- vis(theta, 
-              K = 100, 
+visObj <- vis(t(scale(theta)), 
+              K = 50, 
               n_trees = 20, 
               tree_threshold = 100, 
-              max_iter = 2)
-
-ngcoords <- scale(t(visObj$coords))
-ngcoords <- data.frame(ngcoords)
-colnames(ngcoords) <- c("x", "y")
+              max_iter = 1, 
+              coords = initialcoords)
+library(Rtsne)
+tsneCoords <- data.frame(Rtsne(t(theta), pca = FALSE)$Y)
+tsneCoords$model <- 'tsne'
+ngcoords <- data.frame(scale(t(visObj$coords)))
+ngCoords$model <- 'largeVis'
 library(lda)
 data("newsgroup.train.labels")
-ngcoords$label <- factor(newsgroup.train.labels)[-1]
+ngcoords$label <- factor(newsgroup.train.labels)[-1][! dd]
+tsneCoords$label <- factor(newsgroup.train.labels)[-1][! dd]
+ngcoords <- rbind(ngcoords, tsneCoords)
+colnames(ngcoords) <- c("x", "y", "model")
+ngcoords$model <- factor(ngcoords$model)
 ```
 ```{r draw20ng,echo=F,warning=FALSE,error=FALSE,message=FALSE}
 load(system.file("extdata", "ngcoords.Rda", package = "largeVis"))
@@ -151,11 +161,14 @@ ggplot(ngcoords,
            y = y, 
            color = label)) +
   geom_point(size = 0.4, alpha = 0.5) + 
-  scale_color_manual(values = colors_divergent_discrete(20)(20),
-                     guide=FALSE) +
-  scale_x_continuous(name = "", limits = c(-2, 2.5), breaks = NULL) +
+  scale_color_discrete(guide = FALSE) +
+  scale_x_continuous(name = "", limits = c(-1.7, 2), breaks = NULL) +
   scale_y_continuous(name = "", limits = c(-2, 2.5), breaks = NULL) +
-  ggtitle("20 Newsgroups")
+  ggtitle(expression(
+    atop("20 Newsgroups LDA Vectors",
+         atop(italic("(n = 11268, K = 100, n_trees = 20, threshold = 100)"))
+         )
+    ))  
 ```
 
 ```{r wikiterms,eval=F,echo=F}
@@ -184,11 +197,11 @@ colnames(words) <- c('word', 'labelrow', 'label', 'x', 'y')
 ```{r drawwikiwords,echo=F,eval=T,warning=F,message=F}
 load(system.file("extdata", "wikiwords.Rda", package = "largeVis"))
 ggplot(words, aes(x = x, y = y, color = label)) + 
-  geom_point(size = 0.01, alpha = 0.5) +
+  geom_point(size = 0.001, alpha = 0.5) +
   scale_color_gradientn(colors = colors_divergent_discrete(11)(11)) +
   guides(color = FALSE) +
-  scale_x_continuous("", limits = c(-38, 38), breaks = NULL) + 
-  scale_y_continuous("", limits = c(-38, 38), breaks = NULL) +
+  scale_x_continuous("", limits = c(-3, 5), breaks = NULL) + 
+  scale_y_continuous("", limits = c(-4, 4), breaks = NULL) +
   ggtitle(expression(atop("Wiki Word Vectors", atop(paste(sep = " ", "K = 100,", gamma, 
                            "= 7, M = 5,", alpha, "= 1, n_trees = 50,",
                            "max_iters = 1, threshold = 100")))))
@@ -362,8 +375,10 @@ if (exists("trainData")) {
       ylim = c(-2, 2))
 } 
 ```
-
-The code is disabled by default in this vignette for data size reasons.
+```{r nomnist,eval=!buildManifolds,echo=F,results='asis'}
+cat("The plot is disabled by default because it requires the MNIST dataset.  To recreate the plot, change the vignette script to point to the downloaded images.\n")
+cat("The MNIST data may be obtained using the `darch` package, available on CRAN, with the commands `provideMNIST(folder = 'download location', download = TRUE)` followed by `readMNIST(folder = 'download location')`")
+```
 
 #### Example with Faces
 
@@ -383,7 +398,7 @@ colnames(faceCoords) <- c("x", "y")
 faceCoords <- cbind(faceCoords, facevectors[,1:2])
 ```
 
-OpenFace embedding vectors encode an image in such a way that the embeddings for multiple images of the same person should be similar.  This is illustrated on the first plot below, which highlights the locations of the embedding vectors for images of 10 selected individuals.  (The 10 were selected on the basis that there are a large number of images of each in the dataset, and the author would reognize them.)
+OpenFace embedding vectors encode an image in such a way that the embeddings for multiple images of the same person should be similar.  This is illustrated on the first plot below, which highlights the locations of the embedding vectors for images of 10 selected individuals. 
 
 ```{r plotFaceVectors,echo=F,fig.width=7,fig.height=5}
 load(system.file("extdata", "faces.Rda", package="largeVis"))
@@ -420,11 +435,8 @@ ggplot(faceCoCopy, aes(x = x,
 
 The function of `manifoldMap` is illustrated in the following plot, which places 500 images from the dataset at the locations given by the `largeVis` map.  
 
-The plot is disabled by default because it requires obtaining the face images directly from [Labelled Faces in the Wild](http://vis-www.cs.umass.edu/lfw/).
-
 ```{r faceImages,eval=buildManifolds,echo=F,fig.width=8,fig.height=8}
 load(system.file("extdata", "faceLabels.Rda", package="largeVis"))
-library(jpeg)
 set.seed(1974)
 n <- 500
 facesToPlot <- sample(nrow(faceCoords), n)
@@ -437,7 +449,6 @@ faces <- apply(faceLabels[facesToPlot,], MARGIN = 1, FUN = function(x) {
 })
 dim(faces) <- c(250, 250, 3, n)
 faces <- aperm(faces, c(4,1,2,3)) # n,h,w,c
-par(bg = 'grey5', mai=c(0.25, 0.25, 0.25, 0.25))
 ggManifoldMap(
   x = faceCoords[facesToPlot,1:2], 
   n = n, 
@@ -459,6 +470,9 @@ manifoldMap(x = faceCoords[facesToPlot,1:2],
 cat("A high resolution version is available [here](vignettes/faceshighres.png)")
 ```
 
+```{r noface,eval=!buildManifolds,results='asis',echo=F}
+cat("The plot is disabled by default because it requires face images from [Labeled Faces in the Wild](http://vis-www.cs.umass.edu/lfw/). To recreate the plot, change the vignette script to point to the downloaded images.")
+```
 Note what the plot is showing. The positions of the faces in [Karpathy's embedding plots](http://cs.stanford.edu/people/karpathy/cnnembed/) are highly sensitive to the background and overall sense of each image, because Karpathy used embedding vectors produced by a general-purpose model. In the plot of the OpenFace vectors above, the positions are insensitive to the image backgrounds -- but pictures of the same individual are plotted close to each other, and close to similar-looking persons. 
 
 ## Support for Sparse Matrices
@@ -613,23 +627,34 @@ slower than using Euclidean distances. This is because the random projection tre
 
 ## Memory Consumption
 
-The algorithm is necessarily memory-intensive for large datasets. `neighborsToVectors`, `distance`, and `buildEdgeMatrix` are available as separate functions to facilitate memory-efficient handling of large datasets, because the high-dimensional dataset is not needed after distances have been calculated. In this case, the workflow is:
+The algorithm is necessarily memory-intensive for large datasets. 
 
-```{r eval=rebuild,echo=T}
+A simple way to reduce peak memory usage, is to turn-off the `save_neighbors` and `save_sigmas` parameters when running `vis`. 
+
+If this is insufficient, the steps of the algorithm can be run separately with the `neighborsToVectors`, `distance`, and `buildEdgeMatrix` functions.  In this case, the workflow is:
+
+```{r lowmemexample,eval=F,echo=T}
 neighbors <- randomProjectionTreeSearch(largeDataset)
 neighborIndices <- neighborsToVectors(neighbors)
 rm(neighbors)
+gc()
 distances <- distance(x = largeDataset, 
                       i = neighborIndices$i, 
                       j =neighborIndices$j)
 rm(largeDataset)
+gc()
 wij <- buildEdgeMatrix(i = neighborIndices$i, 
                        j = neighborIndices$j, 
                        d = distances)
 rm(distances, neighborIndices)
+gc()
 coords <- projectKNNs(wij$wij)
 ```
 
+Note that `gc()` is being called explicitly. The reason is that R will not garbage collect while executing the package's C++ functions, which can require substantial temporary RAM. 
+
 In testing, this method reduced peak RAM requirements by more than 70%. 
 
-## Bibliography
+Memory requirements during the neighbor search may be managed by reducing `n_trees` and increasing the `tree_threshold`. The decrease in precision is marginal, and may be compensated-for by increasing `max_iters`.  See the benchmarks vignette for further detail.
+
+## References

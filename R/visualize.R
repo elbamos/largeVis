@@ -17,6 +17,7 @@
 #'
 #' @importFrom grDevices as.raster
 #' @importFrom graphics rasterImage
+#' @seealso \code{\link{ggManifoldMap}}
 #' @export
 #' @examples \dontrun{
 #' load("mnist.Rda")
@@ -109,7 +110,6 @@ manifoldMap <- function(x,
 #' @importFrom ggplot2 annotation_raster
 #' @importFrom ggplot2 aes
 #' @export
-
 ggManifoldMap <- function(
                           ggObject = NULL,
                           x,
@@ -167,3 +167,78 @@ ggManifoldMap <- function(
   }
   return(ggObject)
 } # nocov end
+
+#' manifoldMapStretch
+#'
+#' A manifold map that fills the full extent of the plot.
+#'
+#' Ported from \url{http://cs.stanford.edu/people/karpathy/cnnembed/}.  Each position is filled with its nearest neighbor.
+#'
+#' @param x A [N,D] matrix of coordinates.
+#' @param f A function that, called with the index number of a row of \code{x}, returns an R object representing
+#' an image. See the example.
+#' @param size_x The width of the requested plot, in pixels.
+#' @param size_y The height of the requested plot, in pixels.
+#' @param image_size The size to plot each image; each is plotted as a square.
+#' @param ... Additional parameters passed to \code{plot}.
+#'
+#' @note This function is experimental.
+#'
+#' @examples
+#' \dontrun{
+#' # Demonstration of f
+#' load(system.file("extdata", "faces.Rda", package="largeVis"))
+#'
+#' imagepaths <- paste("pathtoimages",
+#'    faceLabels[,1], sub("png", "jpg", faceLabels[,2]), sep = "/")
+#'
+#' manifoldMapStretch(as.matrix(faceCoords[,1:2]),
+#'    f = function(x) jpeg::readJPEG(imagePaths[x]),
+#'    size_x = 5000, size_y = 5000, image_size = 100)
+#' }
+#'
+#' @export
+manifoldMapStretch <- function(x,
+                               f,
+                               size_x = 500,
+                               size_y = 500,
+                               image_size = 50,
+                               ...) { #nocov start
+
+  xnum <- size_x / image_size
+  ynum <- size_y / image_size
+
+  coordsadj <-   x  - c(min(x[,1]), min(x[,2]))
+  coordsadj <- coordsadj * c(size_x / max(coordsadj[,1]),
+                             size_y / max(coordsadj[,2]))
+
+  graphics::plot(matrix(c(0, size_x,
+                          size_y, 0),
+                        ncol = 2),
+                 pch = NA,
+                 type = 'n', ...)
+
+  abes <- matrix(c(rep(1:xnum, ynum),
+                   rep(1:ynum, each = xnum)),
+                 ncol = 2)
+
+  for (i in 1:nrow(abes)) {
+    img_x <- abes[i, 1]
+    img_y <- abes[i, 2]
+    xf <- (img_x * image_size) - (image_size/2)
+    yf <- (img_y * image_size) - (image_size/2)
+    dd <- apply((coordsadj - c(xf, yf))^2,
+                MARGIN = 1,
+                FUN = sum)
+    selection <- which(dd == min(dd))
+    coordsadj[selection,] <- Inf
+    image <- f(selection)
+    rasterImage( image,
+                 xleft = xf - (image_size / 2),
+                 ybottom = yf - (image_size / 2),
+                 xright = xf + (image_size / 2),
+                 ytop = yf + (image_size / 2),
+                 interpolate = TRUE
+    )
+  }
+} #nocov end

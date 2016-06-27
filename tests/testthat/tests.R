@@ -3,7 +3,6 @@ context("neighbors")
 test_that("Trees does not error", {
   data (iris)
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)
   dupes <- which(duplicated(dat))
@@ -21,7 +20,6 @@ test_that("Trees does not error", {
 test_that("Trees does not error if neighbors are explored once", {
   data (iris)
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)
   dupes <- which(duplicated(dat))
@@ -40,7 +38,6 @@ test_that("Trees does not error if neighbors are explored once", {
 test_that("Trees does not error if neighbors are explored more than once", {
   data (iris)
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)
   dupes <- which(duplicated(dat))
@@ -58,7 +55,6 @@ test_that("Trees does not error if neighbors are explored more than once", {
 test_that("Can determine iris neighbors", {
   data (iris)
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)
   dupes <- which(duplicated(dat))
@@ -79,7 +75,6 @@ test_that("Can determine iris neighbors", {
 test_that("max threshold is sufficient to find all neighbors", {
   M <- 5
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   data (iris)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)
@@ -104,7 +99,6 @@ test_that("max threshold is sufficient to find all neighbors", {
 test_that("exploring after max threshold does not reduce accuracy", {
   M <- 5
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   data (iris)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)
@@ -140,7 +134,6 @@ test_that("exploring after max threshold does not reduce accuracy", {
 test_that("Can determine iris neighbors accurately", {
   M <- 5
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   data (iris)
   dat <- as.matrix(iris[, 1:4])
   dat <- scale(dat)
@@ -204,7 +197,6 @@ test_that("With a bigger dataset, increasing threshold improves result", {
 
   for (t in c(10, 30, 60, 90)) {
     set.seed(1974)
-    RcppArmadillo::armadillo_set_seed(1974)
     neighbors <- randomProjectionTreeSearch(dat,
                                             K = M,
                                             n_trees = 10,
@@ -223,7 +215,6 @@ test_that("With a bigger dataset, increasing threshold improves result", {
 test_that("With a bigger dataset, increasing n_trees improves result", {
   M <- 10
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   data (quakes)
   dat <- as.matrix(quakes)
   dat <- scale(dat)
@@ -253,7 +244,6 @@ test_that("With a bigger dataset, increasing n_trees improves result", {
 test_that("With a bigger dataset, increasing iters improves result", {
   M <- 10
   set.seed(1974)
-  RcppArmadillo::armadillo_set_seed(1974)
   data (quakes)
   dat <- as.matrix(quakes)
   dat <- scale(dat)
