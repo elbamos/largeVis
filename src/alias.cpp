@@ -2,7 +2,7 @@
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
-#include "largeVis.hpp"
+#include "largeVis.h"
 
 /*
  * Functions for implementing the alias algorithm to get weighted samples
