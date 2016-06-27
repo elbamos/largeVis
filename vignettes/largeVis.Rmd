@@ -53,7 +53,7 @@ theme_set(
   ) 
 )
 rebuild <- FALSE
-if (!exists("buildManifolds")) buildManifolds <- rebuild
+if (! exists("vdatapath")) vdatapath <- "../../largeVisData/vignettedata/"
 
 require(largeVis,quietly = TRUE)
 ```
@@ -96,115 +96,146 @@ If there are duplicates in the input data, while the implementation tries to fil
 
 ## Examples
 
-```{r MNIST,echo=F,message=F,warning=F,results='hide',eval=rebuild}
-darch::provideMNIST(download=T)
-load("data/train.RData")
-
-mnistCoords <- vis(t(trainData) - 0.5, 
-                   K = 40, 
-                   tree_threshold = 700, 
-                   n_trees = 40, 
-                   max_iter = 2, 
-                   verbose=F)
-mnistCoords <- mnistCoords$coords
-mnistCoords <- scale(t(mnistCoords))
-mnistCoords <- data.frame(mnistCoords)
-colnames(mnistCoords) <- c("x", "y")
-labs <- apply(trainLabels, 
-              MARGIN = 1, 
-              FUN = function(x) which(x == 1))
-mnistCoords$labels <- factor(labs - 1)
+```{r drawmnist,echo=F,warning=F,results='asis'}
+if (rebuild) {
+  require(darch, quietly = TRUE)
+  darch::provideMNIST(download=T)
+  load("data/train.RData")
+  set.seed(1974)
+  mnistCoords <- vis(t(trainData) - 0.5, 
+                     K = 100, 
+                     tree_threshold = 700, 
+                     n_trees = 40, 
+                     max_iter = 1, 
+                     verbose=FALSE)
+  mnistCoords <- mnistCoords$coords
+  mnistCoords <- t(mnistCoords)
+  mnistCoords <- data.frame(mnistCoords)
+  colnames(mnistCoords) <- c("x", "y")
+  labs <- apply(trainLabels, 
+                MARGIN = 1, 
+                FUN = function(x) which(x == 1))
+  mnistCoords$labels <- factor(labs - 1)
+  save(mnistCoords, file = paste(vdatapath, "mnistcoords.Rda", sep = ""))
+}
+if (file.exists(paste(vdatapath, "mnistcoords.Rda", sep = ""))) {
+  load(paste(vdatapath, "mnistcoords.Rda", sep = ""))
+  
+  ggplot(mnistCoords, aes(x = x, y = y, color = labels)) +
+    geom_point(size = 0.1, alpha = 0.3) +
+    scale_x_continuous(name = "", limits = c(-45, 35), breaks = NULL) +
+    scale_y_continuous(name = "", limits = c(-50, 60), breaks = NULL) +
+    scale_color_manual(values = colors_divergent_discrete(10)(10)) +
+    guides(colour = guide_legend(override.aes = list(size=5))) +
+    ggtitle(expression(
+      atop("MNIST",
+           italic("(n = 60000, K = 100, n_trees = 40, threshold = 700)")
+           )
+      ))
+} else {
+  cat("Examples that would require large datasets are disabled by default.  See the source code to activate.")
+}
 ```
 
-```{r drawmnist,echo=F,warning=F}
-load(system.file("extdata", "mnistcoords.Rda", package="largeVis"))
-ggplot(mnistCoords, aes(x = x, y = y, color = labels)) +
-  geom_point(size = 0.1, alpha = 0.3) +
-  scale_x_continuous(name = "", limits = c(-2, 2), breaks = NULL) +
-  scale_y_continuous(name = "", limits = c(-2, 2), breaks = NULL) +
-  scale_color_manual(values = colors_divergent_discrete(10)(10)) +
-  guides(colour = guide_legend(override.aes = list(size=5))) +
-  ggtitle("MNIST")
+```{r draw20ng,echo=F,warning=FALSE,error=FALSE,message=FALSE,results='asis',fig.width=8,fig.height=4}
+datapath <- paste(vdatapath, "ngcoords.Rda", sep = "")
+if (rebuild) {
+  library(LDAvis)
+  data("TwentyNewsgroups")
+  theta <- TwentyNewsgroups$theta
+  dd <- duplicated(theta) # This step is very important
+  theta <- t(theta[! dd, ])
+  visObj <- vis(t(theta), 
+                K = 50, 
+                n_trees = 40, 
+                tree_threshold = 100, 
+                max_iter = 1, 
+                coords = initialcoords)
+  library(Rtsne)
+  tsneCoords <- data.frame(scale(Rtsne(theta, pca = FALSE)$Y))
+  tsneCoords$model <- 'tsne'
+  ngcoords <- data.frame(scale(t(visObj$coords)))
+  ngcoords$model <- 'largeVis'
+  library(lda)
+  data("newsgroup.train.labels")
+  ngcoords$label <- factor(newsgroup.train.labels)[-1][! dd]
+  tsneCoords$label <- factor(newsgroup.train.labels)[-1][! dd]
+  ngcoords <- rbind(ngcoords, tsneCoords)
+  colnames(ngcoords) <- c("x", "y", "model", "label")
+  ngcoords$model <- factor(ngcoords$model)
+  save(ngcoords, file = datapath)
+} 
+# expression(atop("largeVis", italic("(K = 50, n_trees = 40, tree_threshold = 100, iters = 1)")))
+# expression(atop("B-H tsne",   italic("Rtsne default settings)")))
+if (file.exists(datapath)) {
+  load(datapath)
+  ggplot(ngcoords, 
+         aes(x = x, 
+             y = y, 
+             color = label)) +
+    geom_point(size = 0.4, alpha = 0.5) + 
+    scale_color_discrete(guide = FALSE) +
+    scale_x_continuous(name = "", limits = c(-1.7, 2), breaks = NULL) +
+    scale_y_continuous(name = "", limits = c(-2, 2.5), breaks = NULL) +
+    facet_grid(~ model, labeller = labeller(model = c( 
+      'largeVis' = expression(atop("largeVis", 
+                                   italic("(K = 50, n_trees = 40, tree_threshold = 100, iters = 1)"))),
+      'tsne' = expression(atop("B-H tsne",   italic("Rtsne default settings)")))))) +
+    ggtitle(expression(
+      atop("20 Newsgroups LDA Vectors",
+           italic("(n = 11268)")
+           )
+      ))  
+} else {
+  cat("Examples that would require large datasets or extended processing time are disabled by default.  See the source code to activate.")
+}
 ```
 
-```{r ldafromldavis,echo=F,eval=rebuild}
-library(LDAvis)
-data("TwentyNewsgroups")
-theta <- TwentyNewsgroups$theta
-dd <- duplicated(theta) # This step is very important
-theta <- theta[! dd, ]
-set.seed(1974)
-initialcoords <- matrix(rnorm(2 * ncol(theta)), ncol = ncol(theta))
-visObj <- vis(t(scale(theta)), 
-              K = 50, 
-              n_trees = 20, 
-              tree_threshold = 100, 
-              max_iter = 1, 
-              coords = initialcoords)
-library(Rtsne)
-tsneCoords <- data.frame(Rtsne(t(theta), pca = FALSE)$Y)
-tsneCoords$model <- 'tsne'
-ngcoords <- data.frame(scale(t(visObj$coords)))
-ngCoords$model <- 'largeVis'
-library(lda)
-data("newsgroup.train.labels")
-ngcoords$label <- factor(newsgroup.train.labels)[-1][! dd]
-tsneCoords$label <- factor(newsgroup.train.labels)[-1][! dd]
-ngcoords <- rbind(ngcoords, tsneCoords)
-colnames(ngcoords) <- c("x", "y", "model")
-ngcoords$model <- factor(ngcoords$model)
-```
-```{r draw20ng,echo=F,warning=FALSE,error=FALSE,message=FALSE}
-load(system.file("extdata", "ngcoords.Rda", package = "largeVis"))
-ggplot(ngcoords, 
-       aes(x = x, 
-           y = y, 
-           color = label)) +
-  geom_point(size = 0.4, alpha = 0.5) + 
-  scale_color_discrete(guide = FALSE) +
-  scale_x_continuous(name = "", limits = c(-1.7, 2), breaks = NULL) +
-  scale_y_continuous(name = "", limits = c(-2, 2.5), breaks = NULL) +
-  ggtitle(expression(
-    atop("20 Newsgroups LDA Vectors",
-         atop(italic("(n = 11268, K = 100, n_trees = 20, threshold = 100)"))
-         )
-    ))  
+```{r wikiterms,eval=F,echo=F,results='asis'}
+if (rebuild) {
+  # The data file must be obtained directly from the paper authors
+  wikiwords <- readr::read_delim("./Wiki_embedding/word_vec",delim= " ", 
+                                 col_names = FALSE, 
+                                 skip = 1)
+  wikiwords <- t(as.matrix(wikiwords[, 2:101]))
+  set.seed(1974)
+  initcoords <- matrix(rnorm(ncol(wikiwords) * 2), nrow = 2)
+  wikiVis <- vis(wikiwords, 
+                 coords = initcoords, 
+                 K = 100, 
+                 tree_threshold = 100, 
+                 n_trees = 50)
+  wikiwords <- readr::read_delim("./Wiki_embedding/word_vec",
+                                 delim= " ", col_names = FALSE, skip = 1)
+  wikiwords <- wikiwords[,1]
+  wikilabels <- readr::read_delim("./Wiki_embedding/wiki_word_label.txt", 
+                                  col_names = FALSE, delim = "\t")
+  words <- data.frame(word = wikiwords, 
+                      labelrow = match(wikiwords, wikilabels$X1))
+  words$label <- wikilabels$X2[words$labelrow]
+  words <- cbind(words, 
+                 data.frame(t(wikiVis$coords)))
+  colnames(words) <- c('word', 'labelrow', 'label', 'x', 'y')
+  save(words, file = datapath)
+}
 ```
 
-```{r wikiterms,eval=F,echo=F}
-# # The data file must be obtained directly from the paper authors
-wikiwords <- readr::read_delim("/mnt/hfsshare/DATASETS/Wiki_embedding/word_vec",delim= " ", col_names = FALSE, skip = 1)
-wikiwords <- t(as.matrix(wikiwords[, 2:101]))
-set.seed(1974)
-initcoords <- matrix(rnorm(ncol(wikiwords) * 2), nrow = 2)
-wikiVis <- vis(wikiwords, 
-               coords = initcoords, 
-               K = 100, 
-               tree_threshold = 100, 
-               n_trees = 50)
-wikiwords <- readr::read_delim("/mnt/hfsshare/DATASETS/Wiki_embedding/word_vec",delim= " ", col_names = FALSE, skip = 1)
-wikiwords <- wikiwords[,1]$X1
-wikilabels <- readr::read_delim("/mnt/hfsshare/DATASETS/Wiki_embedding/wiki_word_label.txt", 
-                                col_names = FALSE, delim = "\t")
-words <- data.frame(word = wikiwords, 
-                    labelrow = match(wikiwords, wikilabels$X1))
-words$label <- wikilabels$X2[words$labelrow]
-words <- cbind(words, 
-               data.frame(t(wikiVis$coords)))
-colnames(words) <- c('word', 'labelrow', 'label', 'x', 'y')
-```
-
-```{r drawwikiwords,echo=F,eval=T,warning=F,message=F}
-load(system.file("extdata", "wikiwords.Rda", package = "largeVis"))
-ggplot(words, aes(x = x, y = y, color = label)) + 
-  geom_point(size = 0.001, alpha = 0.5) +
-  scale_color_gradientn(colors = colors_divergent_discrete(11)(11)) +
-  guides(color = FALSE) +
-  scale_x_continuous("", limits = c(-3, 5), breaks = NULL) + 
-  scale_y_continuous("", limits = c(-4, 4), breaks = NULL) +
-  ggtitle(expression(atop("Wiki Word Vectors", atop(paste(sep = " ", "K = 100,", gamma, 
-                           "= 7, M = 5,", alpha, "= 1, n_trees = 50,",
-                           "max_iters = 1, threshold = 100")))))
+```{r drawwikiwords,echo=F,eval=T,warning=F,message=F,results='asis'}
+datapath <- paste(vdatapath, "wikiwords.Rda", sep = "")
+if (file.exists(datapath)) {
+  load(datapath) 
+  ggplot(words, aes(x = x, y = y, color = label)) + 
+    geom_point(size = 0.001, alpha = 0.5) +
+    scale_color_gradientn(colors = colors_divergent_discrete(11)(11)) +
+    guides(color = FALSE) +
+    scale_x_continuous("", limits = c(-25, 25), breaks = NULL) + 
+    scale_y_continuous("", limits = c(-25, 25), breaks = NULL) +
+    ggtitle(expression(atop("Wiki Word Vectors", atop(paste(sep = " ", "K = 100,", gamma, 
+                             "= 7, M = 5,", alpha, "= 1, n_trees = 50,",
+                             "max_iters = 1, threshold = 100")))))
+} else {
+  cat("Examples that would require large datasets or extended processing time are disabled by default.  See the source code to activate. In addition, the wiki-words dataset must be obtained directly from the paper authors.")
+} 
 ```
 
 
@@ -228,54 +259,61 @@ The `LargeVis` algorithm, explained in detail in @tang2016visualizing, estimates
 
 The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperparameters, using the `wiki` dataset which is included with the package:
 
-```{r wikihyperparameters,echo=F,eval=rebuild}
-data(wiki)
+```{r drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis'}
+datapath <- paste(vdatapath, "agcoords.Rda", sep = "")
+if (rebuild) {
+  data(wiki)
 
-inputs <- data.frame(
-  g = rep(c(.5,1,7,14), 4),
-  a = rep(c(.1,1,5,10), each = 4)
-)
-set.seed(1974)
-initialcoords <- matrix(rnorm(ncol(wiki) * 2), nrow = 2)
+  inputs <- data.frame(
+    g = rep(c(.5,1,7,14), 4),
+    a = rep(c(.1,1,5,10), each = 4)
+  )
+  set.seed(1974)
+  initialcoords <- matrix(rnorm(ncol(wiki) * 2), nrow = 2)
+  
+  agcoords <- do.call(rbind, 
+                      lapply(1:nrow(inputs), 
+                             FUN = function(x) {
+    a <- inputs[x, 'a']
+    g <- inputs[x, 'g']
+    newcoords <- initialcoords
+    localcoords <- projectKNNs(wiki, 
+                               alpha =  a, 
+                               gamma = g,
+                               verbose = FALSE, 
+                               coords = newcoords)
+    localcoords <- data.frame(scale(t(localcoords)))
+    colnames(localcoords) <- c("x", "y")
+    localcoords$a <- a
+    localcoords$g <- g
+    localcoords$activity <- log(Matrix::colSums(wiki))
+    localcoords  
+  }))
+  save(agcoords, file = datapath)
+} 
+if (file.exists(datapath)) {
+  load(datapath)
 
-agcoords <- do.call(rbind, 
-                    lapply(1:nrow(inputs), 
-                           FUN = function(x) {
-  a <- inputs[x, 'a']
-  g <- inputs[x, 'g']
-  newcoords <- initialcoords
-  localcoords <- projectKNNs(wiki, 
-                             alpha =  a, 
-                             gamma = g,
-                             verbose = FALSE, 
-                             coords = newcoords)
-  localcoords <- data.frame(scale(t(localcoords)))
-  colnames(localcoords) <- c("x", "y")
-  localcoords$a <- a
-  localcoords$g <- g
-  localcoords$activity <- log(Matrix::colSums(wiki))
-  localcoords  
-}))
-```
-```{r drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center'}
-load(system.file("extdata", "agcoords.Rda", package="largeVis"))
-ggplot(agcoords,
-       aes(x = x, 
-           y = y, 
-           color = activity)) +
-  geom_point(alpha = 0.2, 
-             size = 0.05) +
-  facet_grid(a ~ g,
-             labeller = label_bquote(alpha == .(a), 
-                                     gamma == .(g)),
-             scales = 'free') +
-  scale_x_continuous(breaks = NULL, 
-                     name = "") +
-  scale_y_continuous(breaks = NULL, 
-                     name = "") +
-  scale_color_gradientn(colors = colors_continuous(10), 
-                        guide=FALSE) +
-  ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  ")))
+  ggplot(agcoords,
+         aes(x = x, 
+             y = y, 
+             color = activity)) +
+    geom_point(alpha = 0.2, 
+               size = 0.05) +
+    facet_grid(a ~ g,
+               labeller = label_bquote(alpha == .(a), 
+                                       gamma == .(g)),
+               scales = 'free') +
+    scale_x_continuous(breaks = NULL, 
+                       name = "") +
+    scale_y_continuous(breaks = NULL, 
+                       name = "") +
+    scale_color_gradientn(colors = colors_continuous(10), 
+                          guide=FALSE) +
+    ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  ")))
+} else {
+    cat("Examples that would require large datasets or extended processing time are disabled by default.  See the source code to activate. In addition, the wiki-words dataset must be obtained directly from the paper authors.")
+}
 ```
 
 The additional hyperparameters $\rho$ and `min-`$\rho$ control the starting and final learning rate for the stochastic gradient descent process. 
@@ -288,64 +326,72 @@ The `vis` function combines `randomProjectionTreeSearch` and `projectKNNs`, alon
 
 The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset. Each row re-uses the same set of identified `K` neighbors, and initial coordinates. 
 
-```{r iris,echo=F,fig.width=5,fig.height=5,eval=rebuild}
-data(iris)
-Ks <- c(5, 10, 20, 30)
-Ms <- c(1, 5, 10, 20)
-data(iris)
-dat <- iris[,1:4]
-dupes <- duplicated(dat)
-dat <- dat[-dupes,]
-labels <- iris$Species[-dupes]
-dat <- scale(dat)
-dat <- as.matrix(dat)
-dat <- t(dat)
+```{r iris_mkhyperparams,echo=F,fig.width=4,fig.height=4.5,fig.align='center',results='asis'}
+datapath <- paste(vdatapath, "iriscoords.Rda", sep = "")
 
-set.seed(1974)
-coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
-
-iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
-  neighbors <- randomProjectionTreeSearch(dat, 
-                                          K = K, 
-                                          verbose = FALSE)
-  neighborIndices <- neighborsToVectors(neighbors)
-  distances <- largeVis::distance(x = dat, 
-                                  neighborIndices$i, 
-                                  neighborIndices$j)
-  wij <- buildEdgeMatrix(i = neighborIndices$i, 
-                       j = neighborIndices$j, 
-                       d = distances)
-  do.call(rbind, lapply(Ms, FUN = function(M) {
-    coords <- projectKNNs(wij = wij$wij, M = M, coords = coordsinput)
-    coords <- scale(t(coords))
-    coords <- data.frame(coords)
-    colnames(coords) <- c("x", "y")
-    coords$K <- K
-    coords$M <- M
-    coords$Species <- as.integer(labels)
-    coords
-  }))
-}))
+if (rebuild) {
+  data(iris)
+  Ks <- c(5, 10,20,30)
+  Ms <- c(5, 10, 20)
+  dat <- iris[,1:4]
+  dupes <- duplicated(dat)
+  dat <- dat[-dupes,]
+  labels <- iris$Species[-dupes]
+  dat <- as.matrix(dat)
+  dat <- t(dat)
   
-iriscoords$Species <- factor(iriscoords$Species)
-levels(iriscoords$Species) <- levels(iris$Species)
-```
-```{r drawiriscoords,echo=F,fig.width=4,fig.height=4.5,fig.align='center'}
-load(system.file("extdata", "iriscoords.Rda", package="largeVis"))
-ggplot(iriscoords,
-       aes(x = x,
-           y = y,
-           color = Species)) +
-         geom_point(size = 0.5) +
-  scale_x_continuous("", 
-                     breaks = NULL) +
-  scale_y_continuous("", 
-                     breaks = NULL) +
-  facet_grid(K ~ M, 
-             scales = 'free', 
-             labeller = label_bquote(K == .(K), M == .(M))) +
-  scale_color_manual(values = colors_discrete(3)) +
-  ggtitle("Effect of M and K on Iris Dataset")
+  set.seed(1974)
+  coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
+  neighbors <- randomProjectionTreeSearch(dat, 
+                                        K = max(Ks), 
+                                        verbose = FALSE)
+  
+  iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
+    neighborIndices <- neighborsToVectors(neighbors[1:K,])
+    distances <- largeVis::distance(x = dat, 
+                                    neighborIndices$i, 
+                                    neighborIndices$j,
+                                    verbose = FALSE)
+    wij <- buildEdgeMatrix(i = neighborIndices$i, 
+                         j = neighborIndices$j, 
+                         d = distances, verbose = FALSE)
+    do.call(rbind, lapply(Ms, FUN = function(M) {
+      coords <- projectKNNs(wij = wij$wij, M = M, 
+                            coords = coordsinput, 
+                            verbose = FALSE)
+      coords <- scale(t(coords))
+      coords <- data.frame(coords)
+      colnames(coords) <- c("x", "y")
+      coords$K <- K
+      coords$M <- M
+      coords$Species <- as.integer(labels)
+      coords
+    }))
+  }))
+  iriscoords$Species <- factor(iriscoords$Species)
+  levels(iriscoords$Species) <- levels(iris$Species)
+  save(iriscoords, file = datapath)
+} 
+if (file.exists(datapath)) {
+  load(datapath)
+
+  ggplot(iriscoords,
+         aes(x = x,
+             y = y,
+             color = Species)) +
+           geom_point(size = 0.5) +
+    scale_x_continuous("", 
+                       breaks = NULL) +
+    scale_y_continuous("", 
+                       breaks = NULL) +
+    facet_grid(K ~ M, 
+               scales = 'free', 
+               labeller = label_bquote(K == .(K), M == .(M))) +
+    scale_color_manual(values = colors_discrete(3)) +
+    ggtitle("Effect of M and K on Iris Dataset")
+} else {
+    cat("Examples that would require large datasets or extended processing time are disabled by default.  See the source code to activate. In addition, the wiki-words dataset must be obtained directly from the paper authors.")
+}
 ```
 
 ### `manifoldMap`
@@ -356,28 +402,37 @@ The function can plot both color and greyscale images.
 
 #### Example with MNIST Letters
 
-The following code will plot 5000 images sampled from the MNIST dataset at positions generated by `vis`:
-```{r loadmnistimages,eval=rebuild,echo=F}
-load("data/train.RData")
+5000 images sampled from the MNIST dataset, plotted at positions generated by `vis`:
+```{r echomanifold,echo=T,eval=F}
+dim(trainData) <- c(60000, 28, 28)
+aperm(trainData, perm = c(1,3,2), resize = FALSE)
+set.seed(1974)
+manifoldMap(mnistCoords[,1:2],
+    n = 5000,
+    scale = 0.1,
+    images = trainData,
+    xlab = "", 
+    ylab = "")
 ```
-```{r drawmanifoldmap,echo=T,fig.width=8,fig.height=8,message=F,warning=F,fig.align='center'}
-par(mai=c(0.25, 0.25, 0.25, 0.25))
-if (exists("trainData")) {
-  dim(trainData) <- c(60000, 28, 28)
-  set.seed(1974)
-  manifoldMap(mnistCoords[,1:2],
-      n = 5000,
-      scale = 0.003,
-      images = trainData,
-      xlab = "", 
-      ylab = "",
-      xlim = c(-2, 2),
-      ylim = c(-2, 2))
-} 
-```
-```{r nomnist,eval=!buildManifolds,echo=F,results='asis'}
-cat("The plot is disabled by default because it requires the MNIST dataset.  To recreate the plot, change the vignette script to point to the downloaded images.\n")
-cat("The MNIST data may be obtained using the `darch` package, available on CRAN, with the commands `provideMNIST(folder = 'download location', download = TRUE)` followed by `readMNIST(folder = 'download location')`")
+```{r drawmanifoldmap,echo=F,results='asis',fig.width=8,fig.height=8,message=F,warning=F,fig.align='center'}
+if (file.exists("data/train.RData") && exists("mnistCoords")) {
+  load("data/train.RData")
+  par(mai=c(0.25, 0.25, 0.25, 0.25))
+  if (exists("trainData")) {
+    dim(trainData) <- c(60000, 28, 28)
+    trainData <- aperm(trainData, perm = c(1,3,2), resize = FALSE)
+    set.seed(1974)
+    manifoldMap(mnistCoords[,1:2],
+        n = 5000,
+        scale = 0.1,
+        images = trainData,
+        xlab = "", 
+        ylab = "")
+  } 
+} else {
+  cat("The plot is disabled by default because it requires the MNIST dataset.  To recreate the plot, change the vignette script to point to the downloaded images.\n")
+  cat("The MNIST data may be obtained using the `darch` package, available on CRAN, with the commands `provideMNIST(folder = 'download location', download = TRUE)` followed by `readMNIST(folder = 'download location')`")
+}
 ```
 
 #### Example with Faces
@@ -393,7 +448,7 @@ faceVis <- vis(faceembeddings, K = 50,
                n_trees = 100, 
                distance_method = 'Cosine')
 
-faceCoords <- data.frame(scale(t(faceVis$coords)))
+faceCoords <- data.frame(t(faceVis$coords))
 colnames(faceCoords) <- c("x", "y")
 faceCoords <- cbind(faceCoords, facevectors[,1:2])
 ```
@@ -401,77 +456,84 @@ faceCoords <- cbind(faceCoords, facevectors[,1:2])
 OpenFace embedding vectors encode an image in such a way that the embeddings for multiple images of the same person should be similar.  This is illustrated on the first plot below, which highlights the locations of the embedding vectors for images of 10 selected individuals. 
 
 ```{r plotFaceVectors,echo=F,fig.width=7,fig.height=5}
-load(system.file("extdata", "faces.Rda", package="largeVis"))
-faceCoCopy <- faceCoords
-lvs <- c("Tony_Bennette", 
-         "Gloria_Gaynor", 
-         "Jennifer_Aniston", 
-         "Kobe_Bryant", 
-         "John_Nash",
-         "Jack_Smith", 
-         "Nancy_Kerrigan", 
-         "Nora_Ephron",
-         "Julianna_Margulies", 
-         "Abdullah_al-Attiyah")
-faceCoCopy$name[! faceCoCopy$name %in% lvs] <- "Other"
-faceCoCopy$name <- factor(faceCoCopy$name)
-faceCoCopy$alpha <- factor(ifelse(faceCoCopy$name == "Other", 0.05, 0.2))
-
-ggplot(faceCoCopy, aes(x = x, 
-                       y = y, 
-                       color = name,
-                       alpha = alpha,
-                       size = alpha)) + 
-  geom_point() +
-  scale_alpha_manual(values = c(0.2, 0.8), guide = FALSE) + 
-  scale_color_manual(values = c("grey", colors_divergent_discrete(10)(10))) +
-  scale_size_manual(values = c(0.2, 0.5), guide = FALSE) +
-  scale_x_continuous("", 
-                     breaks = NULL) +
-  scale_y_continuous("", 
-                     breaks = NULL) +
-  ggtitle("Positions of Embedding Vectors for Selected Individuals")
+datapath <- paste(vdatapath, "faces.Rda", sep = "")
+if (file.exists(datapath)) {
+  load(datapath)
+  faceCoCopy <- faceCoords
+  lvs <- c("Tony_Bennette", 
+           "Gloria_Gaynor", 
+           "Jennifer_Aniston", 
+           "Kobe_Bryant", 
+           "John_Nash",
+           "Jack_Smith", 
+           "Nancy_Kerrigan", 
+           "Nora_Ephron",
+           "Julianna_Margulies", 
+           "Abdullah_al-Attiyah")
+  faceCoCopy$name[! faceCoCopy$name %in% lvs] <- "Other"
+  faceCoCopy$name <- factor(faceCoCopy$name)
+  faceCoCopy$alpha <- factor(ifelse(faceCoCopy$name == "Other", 0.05, 0.2))
+  
+  ggplot(faceCoCopy, aes(x = x, 
+                         y = y, 
+                         color = name,
+                         alpha = alpha,
+                         size = alpha)) + 
+    geom_point() +
+    scale_alpha_manual(values = c(0.2, 0.8), guide = FALSE) + 
+    scale_color_manual(values = c("grey", colors_divergent_discrete(10)(10))) +
+    scale_size_manual(values = c(0.2, 0.5), guide = FALSE) +
+    scale_x_continuous("", 
+                       breaks = NULL) +
+    scale_y_continuous("", 
+                       breaks = NULL) +
+    ggtitle(expression(atop("OpenFace Embedding Vectors,  Selected Individuals"), 
+                       italic("(K = 50, n_trees = 100, cosine distances)")))
+}
 ```
 
 The function of `manifoldMap` is illustrated in the following plot, which places 500 images from the dataset at the locations given by the `largeVis` map.  
 
-```{r faceImages,eval=buildManifolds,echo=F,fig.width=8,fig.height=8}
-load(system.file("extdata", "faceLabels.Rda", package="largeVis"))
-set.seed(1974)
-n <- 500
-facesToPlot <- sample(nrow(faceCoords), n)
-
-faces <- apply(faceLabels[facesToPlot,], MARGIN = 1, FUN = function(x) {
-  ret <- readJPEG(paste("/mnt/hfsshare/DATASETS/lfw faces/lfw",
-                x[1], sub("png", "jpg", x[2]), sep = "/"))
-  dim(ret) <- c(250, 250, 3)
-  ret
-})
-dim(faces) <- c(250, 250, 3, n)
-faces <- aperm(faces, c(4,1,2,3)) # n,h,w,c
-ggManifoldMap(
-  x = faceCoords[facesToPlot,1:2], 
-  n = n, 
-  images = 1 - faces, 
-  scale =  1 / 1000) +
-  scale_y_continuous(name = "", breaks = NULL) +
-  scale_x_continuous(name = "", breaks = NULL) + 
-  ggtitle("Manifold Map of OpenFace Embeddings")
+```{r faceImages,eval=T,echo=F,fig.width=8,fig.height=8}
+datapath <- paste(vdatapath, "faces.Rda", sep = "")
+if (exists("faceCoords")) {
+  load(system.file("extdata", "faceLabels.Rda", package="largeVis"))
+  set.seed(1974)
+  n <- 500
+  facesToPlot <- sample(nrow(faceCoords), n)
+  
+  faces <- apply(faceLabels[facesToPlot,], MARGIN = 1, FUN = function(x) {
+    ret <- readJPEG(paste("/mnt/hfsshare/DATASETS/lfw faces/lfw",
+                  x[1], sub("png", "jpg", x[2]), sep = "/"))
+    dim(ret) <- c(250, 250, 3)
+    ret
+  })
+  dim(faces) <- c(250, 250, 3, n)
+  faces <- aperm(faces, c(4,1,2,3)) # n,h,w,c
+  ggManifoldMap(
+    x = faceCoords[facesToPlot,1:2], 
+    n = n, 
+    images = 1 - faces, 
+    scale =  1 / 80) +
+    scale_y_continuous(name = "", breaks = NULL) +
+    scale_x_continuous(name = "", breaks = NULL) + 
+    ggtitle("Manifold Map of OpenFace Embeddings")
+}
 ```
 
-```{r faceImages5000,eval=buildManifolds,echo=F,results='asis'}
-png(filename = "faceshighres.png", 
-    width = 5000, height = 5000, units = 'px', 
-    bg = 'grey5')
-manifoldMap(x = faceCoords[facesToPlot,1:2], 
-            n = n, images = 1 - faces, scale =  1 / 1000,
-            xlab = NULL, ylab = NULL, col.lab = 'gray5',
-            col.axis = 'gray5')
-cat("A high resolution version is available [here](vignettes/faceshighres.png)")
-```
-
-```{r noface,eval=!buildManifolds,results='asis',echo=F}
-cat("The plot is disabled by default because it requires face images from [Labeled Faces in the Wild](http://vis-www.cs.umass.edu/lfw/). To recreate the plot, change the vignette script to point to the downloaded images.")
+```{r faceImages5000,eval=T,echo=F,results='asis'}
+if (exists("faceLabels")) {
+  png(filename = "faceshighres.png", 
+      width = 5000, height = 5000, units = 'px', 
+      bg = 'grey5')
+  manifoldMap(x = faceCoords[facesToPlot,1:2], 
+              n = n, images = 1 - faces, scale =  1 / 100,
+              xlab = NULL, ylab = NULL, col.lab = 'gray5',
+              col.axis = 'gray5')
+  cat("A high resolution version is available [here](vignettes/faceshighres.png)")
+} else {
+  cat("The plot is disabled by default because it requires face images from [Labeled Faces in the Wild](http://vis-www.cs.umass.edu/lfw/). To recreate the plot, change the vignette script to point to the downloaded images.")
+}
 ```
 Note what the plot is showing. The positions of the faces in [Karpathy's embedding plots](http://cs.stanford.edu/people/karpathy/cnnembed/) are highly sensitive to the background and overall sense of each image, because Karpathy used embedding vectors produced by a general-purpose model. In the plot of the OpenFace vectors above, the positions are insensitive to the image backgrounds -- but pictures of the same individual are plotted close to each other, and close to similar-looking persons. 
 
@@ -544,27 +606,33 @@ combined <- rbind(polidata,
 combined$origin <- factor(combined$origin)
 combined$origin <- factor(combined$origin, 
                           levels = rev(levels(combined$origin)))
+datapath <- paste(vdatapath, "poliblog.Rda", sep="")
+save(combined, datapath)
 ```
 
 
-```{r drawtdm,echo=F,fig.height=4,fig.width=7,warning=FALSE,message=FALSE,error=FALSE}
-load(system.file("extdata", "poliblog.Rda", package="largeVis"))
-
-ggplot(combined, aes(x = x, 
-                     y = y, 
-                     color = blog)) +
-  geom_point(size = 0.2, 
-             alpha = 0.8) +
-  scale_color_manual(values = colors_divergent_discrete(6)(6)) +
-  facet_grid(origin ~ rating, 
-             scale = 'free') +
-  scale_x_continuous("", 
-                     breaks = NULL, 
-                     limits = c(-2.5, 2.5)) +
-  scale_y_continuous("", 
-                     breaks = NULL,
-                     limits = c(-2.5, 2.5)) +
-  ggtitle("5000 Political Blog Entries")
+```{r drawtdm,echo=F,fig.height=5.5,fig.width=7,warning=FALSE,message=FALSE,error=FALSE}
+datapath <- paste(vdatapath, "poliblog.Rda", sep="")
+if (file.exists(datapath)) {
+  load(datapath)
+  
+  ggplot(combined, aes(x = x, 
+                       y = y, 
+                       color = blog)) +
+    geom_point(size = 0.2, 
+               alpha = 0.8) +
+    scale_color_manual(values = colors_divergent_discrete(6)(6)) +
+    facet_grid(origin ~ rating, 
+               scale = 'free') +
+    scale_x_continuous("", 
+                       breaks = NULL, 
+                       limits = c(-2.5, 2.5)) +
+    scale_y_continuous("", 
+                       breaks = NULL,
+                       limits = c(-2.5, 2.5)) +
+    ggtitle(expression(atop("5000 Political Blog Entries", 
+                            italic("(K = 100, n_trees = 50, tree_threshold = 100, M = 10)"))))
+}
 ```
 
 This facilitates evaluation of the effectiveness of a topic model.  In the example above, `stm` is asked to create a 20-topic model that is aware that blogs marked "liberal" and blogs marked "conservative" may talk about the same topics in different ways.  As expected, the `largeVis` visualization of this model shows blog entries that group into 20 clusters, with "liberal" and "conservative" blogs each addressing, but placing different weights on, each of the 20 topics.
@@ -577,9 +645,9 @@ The following code illustrates how to import and visualize a graph using the You
 
 ```{r youtube,eval=F,echo=T}
 pathToGraphFile <- 
-  "/mnt/hfsshare/DATASETS/YouTubeCommunities/com-youtube.ungraph.txt"
+  "./YouTubeCommunities/com-youtube.ungraph.txt"
 pathToCommunities <- 
-  "/mnt/hfsshare/DATASETS/YouTubeCommunities/com-youtube.top5000.cmty.txt"
+  "./YouTubeCommunities/com-youtube.top5000.cmty.txt"
 
 youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
 youtube <- as.matrix(youtube)

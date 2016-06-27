@@ -1,75 +1,21 @@
-#include <RcppArmadillo.h>
 // [[Rcpp::plugins(openmp)]]
 // [[Rcpp::plugins(cpp11)]]
-#ifdef _OPENMP
-  #include <omp.h>
-#endif
-#include "progress.hpp"
-#include <math.h>
-#include <algorithm>
-#include <iterator>
-#include <queue>
-#include <vector>
-#include <set>
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::depends(RcppProgress)]]
+#include "largeVis.hpp"
+
 using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-
-struct heapObject {
-  double d;
-  int n;
-
-  heapObject(double d, int n) : d(d), n(n) {}
-
-  bool operator<(const struct heapObject& other) const {
-    return d < other.d;
-  }
-};
-
-typedef priority_queue<heapObject> maxHeap;
-typedef vector< imat::col_iterator > positionVector;
-typedef vector<int> neighborhood;
-
-// The Euclidean distance between two vectors
-
-double relDist(const arma::vec& i, const arma::vec& j) {
-  const int lim = i.n_elem;
-  double cnt = 0;
-  for (int idx = 0; idx < lim; idx++) cnt += ((i[idx] - j[idx]) * (i[idx] - j[idx]));
-  return cnt;
-}
-
-double dist(const arma::vec& i, const arma::vec& j) {
-  return sqrt(relDist(i,j));
-}
-
-// Stolen directly from Erik B's annoylib.h
-double cosDist(const arma::vec& i, const arma::vec& j) {
-  int lim = i.n_elem;
-  double pp = 0, qq = 0, pq = 0;
-  for (int z = 0; z < lim; z++) {
-    pp += (i[z]) * (i[z]);
-    qq += (j[z]) * (j[z]);
-    pq += (i[z]) * (j[z]);
-  }
-  double ppqq = pp * qq;
-  if (ppqq > 0) return 2.0 - 2.0 * pq / sqrt(ppqq);
-  else return 2.0; // cos is 0
-}
-
-double sparseDist(const sp_mat& i, const sp_mat& j) {
-  return as_scalar(sqrt(sum(square(i - j))));
-}
-
-double sparseCosDist(const sp_mat& i, const sp_mat& j) {
-  return 1 - (as_scalar((dot(i,j)) / as_scalar(norm(i,2) * norm(j,2))));
-}
-
-double sparseRelDist(const sp_mat& i, const sp_mat& j) {
-  return as_scalar(sum(square(i - j)));
-}
-
+/*
+ * The recursive function for the annoy neighbor search
+ * algorithm. Partitions space by a random hyperplane,
+ * and calls itself recursively (twice) on each side.
+ *
+ * If called with fewer nodes than the threshold,
+ *
+ */
 void searchTree(const int& threshold,
                 const arma::ivec& indices,
                 const arma::mat& data,
@@ -85,32 +31,32 @@ void searchTree(const int& threshold,
     neighborhood tmpStorage = neighborhood();
     ivec::iterator newEnd = neighbors.end();
 #ifdef _OPENMP
-  #pragma omp critical
+#pragma omp critical
 #endif
-{
-  for (ivec::iterator it = neighbors.begin();
-       it != newEnd;
-       it++) {
-    tmpStorage.clear();
-    tmpStorage.swap(*heap[*it]);
-    heap[*it] -> reserve(tmpStorage.size() + I);
-    ivec::iterator newIt = neighbors.begin();
-    vector<int>::iterator oldIt = tmpStorage.begin();
-    vector<int>::iterator oldEnd = tmpStorage.end();
-    int last;
-    int best = -1;
-    while (oldIt != oldEnd || newIt != newEnd) {
-      if (oldIt == oldEnd) best = *newIt++;
-      else if (newIt == newEnd) best = *oldIt++;
-      else best = (*newIt < *oldIt) ? *newIt++ : *oldIt++;
-      if (best == last || best == *it) continue;
-      heap[*it] -> push_back(best);
-      last = best;
+    {
+      for (ivec::iterator it = neighbors.begin();
+           it != newEnd;
+           it++) {
+        tmpStorage.clear();
+        tmpStorage.swap(*heap[*it]);
+        heap[*it] -> reserve(tmpStorage.size() + I);
+        ivec::iterator newIt = neighbors.begin();
+        vector<int>::iterator oldIt = tmpStorage.begin();
+        vector<int>::iterator oldEnd = tmpStorage.end();
+        int last;
+        int best = -1;
+        while (oldIt != oldEnd || newIt != newEnd) {
+          if (oldIt == oldEnd) best = *newIt++;
+          else if (newIt == newEnd) best = *oldIt++;
+          else best = (*newIt < *oldIt) ? *newIt++ : *oldIt++;
+          if (best == last || best == *it) continue;
+          heap[*it] -> push_back(best);
+          last = best;
+        }
+      }
     }
-  }
-}
-progress.increment(I);
-return;
+    progress.increment(I);
+    return;
   }
   vec direction = vec(indices.size());
   {
@@ -183,7 +129,7 @@ arma::imat searchTrees(const int& threshold,
     }
     const ivec indices = regspace<ivec>(0, N - 1);
 #ifdef _OPENMP
-  #pragma omp parallel for shared(treeNeighborhoods)
+#pragma omp parallel for shared(treeNeighborhoods)
 #endif
     for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
       searchTree(threshold,
@@ -198,7 +144,7 @@ arma::imat searchTrees(const int& threshold,
     // Reduce size from threshold * n_trees to top K, and sort
     maxHeap thisHeap = maxHeap();
 #ifdef _OPENMP
-  #pragma omp parallel for shared(treeHolder, treeNeighborhoods) private(thisHeap)
+#pragma omp parallel for shared(treeHolder, treeNeighborhoods) private(thisHeap)
 #endif
     for (int i = 0; i < N; i++) if (p.increment()) {
       const vec x_i = data.col(i);
@@ -224,7 +170,7 @@ arma::imat searchTrees(const int& threshold,
     // sorting in-place.
     knns = imat(K,N);
 #ifdef _OPENMP
-  #pragma omp parallel for
+#pragma omp parallel for
 #endif
     for (int i = 0; i < N; i++) if (p.increment()) {
       set<int>::iterator sortIterator = treeHolder[i] -> begin();
@@ -246,7 +192,7 @@ arma::imat searchTrees(const int& threshold,
     maxHeap thisHeap = maxHeap();
     set<int> sorter = set<int>();
 #ifdef _OPENMP
-  #pragma omp parallel for shared(old_knns, knns) private(thisHeap, sorter)
+#pragma omp parallel for shared(old_knns, knns) private(thisHeap, sorter)
 #endif
     for (int i = 0; i < N; i++) if (p.increment()) {
       double d;
@@ -316,6 +262,7 @@ arma::imat searchTrees(const int& threshold,
   return knns;
 };
 
+// Sparse version
 void searchTree(const int& threshold,
                 const arma::vec& indices,
                 const sp_mat& data,
@@ -328,24 +275,24 @@ void searchTree(const int& threshold,
   if (I < 2) stop("Tree split failure.");
   if (I == 2) {
 #ifdef _OPENMP
-  #pragma omp critical
+#pragma omp critical
 #endif
-{
-  heap[indices[0]] -> push_back(indices[1]);
-  heap[indices[1]] -> push_back(indices[0]);
-}
-    return;
+    {
+      heap[indices[0]] -> push_back(indices[1]);
+      heap[indices[1]] -> push_back(indices[0]);
+    }
+        return;
   }
   if (I < threshold || iterations == 0) {
 #ifdef _OPENMP
-  #pragma omp critical
+#pragma omp critical
 #endif
-{
-  for (int i = 0; i < I; i++) {
-    heap[indices[i]] -> reserve(I - 1);
-    for (int j = 0; j < I; j++) if (i != j) heap[indices[i]] -> push_back(indices[j]);
-  }
-}
+    {
+      for (int i = 0; i < I; i++) {
+        heap[indices[i]] -> reserve(I - 1);
+        for (int j = 0; j < I; j++) if (i != j) heap[indices[i]] -> push_back(indices[j]);
+      }
+    }
     progress.increment(I);
     return;
   }
@@ -415,7 +362,7 @@ arma::mat searchTreesSparse(const int& threshold,
   { // Artificial scope to destroy indices
     vec indices = regspace<vec>(0, N - 1);
 #ifdef _OPENMP
-  #pragma omp parallel for shared(indices,treeNeighborhoods)
+#pragma omp parallel for shared(indices,treeNeighborhoods)
 #endif
     for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
       searchTree(threshold,
@@ -428,17 +375,17 @@ arma::mat searchTreesSparse(const int& threshold,
 
       if (t > 0 && ! p.check_abort())
 #ifdef _OPENMP
-  #pragma omp critical
+#pragma omp critical
 #endif
-{
-  for (int i = 0; i < N; i++) {
-    vector<int>* neighbors = treeNeighborhoods[i];
-    sort(neighbors -> begin(), neighbors -> end());
-    vector<int>::iterator theEnd = unique(neighbors -> begin(), neighbors -> end());
-    neighbors -> erase(theEnd, neighbors -> end());
-    if (neighbors -> size() < 3) stop("Tree failure.");
-  }
-}
+      {
+        for (int i = 0; i < N; i++) {
+          vector<int>* neighbors = treeNeighborhoods[i];
+          sort(neighbors -> begin(), neighbors -> end());
+          vector<int>::iterator theEnd = unique(neighbors -> begin(), neighbors -> end());
+          neighbors -> erase(theEnd, neighbors -> end());
+          if (neighbors -> size() < 3) stop("Tree failure.");
+        }
+      }
     }
   }
 
@@ -450,7 +397,7 @@ arma::mat searchTreesSparse(const int& threshold,
   mat knns = mat(threshold,N);
   knns.fill(-1);
 #ifdef _OPENMP
-  #pragma omp parallel for shared(knns)
+#pragma omp parallel for shared(knns)
 #endif
   for (int i = 0; i < N; i++) if (p.increment()){
     const SpSubview<double> x_i = data.col(i);
@@ -476,7 +423,7 @@ arma::mat searchTreesSparse(const int& threshold,
     knns = mat(K,N);
     knns.fill(-1);
 #ifdef _OPENMP
-  #pragma omp parallel for shared(knns, treeNeighborhoods)
+#pragma omp parallel for shared(knns, treeNeighborhoods)
 #endif
     for (int i = 0; i < N; i++) if (p.increment()) {
       double d;
@@ -505,9 +452,9 @@ arma::mat searchTreesSparse(const int& threshold,
           if (k == i) continue;
           // Check if this is a neighbor we've already seen.  O(log k)
           pair<vector<int>::iterator,
-                    vector<int>::iterator > firstlast = equal_range(pastVisitors.begin(),
-                                                                              pastVisitors.end(),
-                                                                              k);
+               vector<int>::iterator > firstlast = equal_range(pastVisitors.begin(),
+                                                               pastVisitors.end(),
+                                                               k);
           if (*(firstlast.first) == k) continue; // Found
 
           if (firstlast.second == pastVisitors.end()) pastVisitors.push_back(k);
@@ -568,76 +515,6 @@ arma::mat searchTreesTSparse(const int& threshold,
 }
 
 
-/*
- * Fast calculation of pairwise distances with the result stored in a pre-allocated vector.
- */
-// [[Rcpp::export]]
-arma::vec fastDistance(const NumericVector is,
-                       const NumericVector js,
-                       const arma::mat& data,
-                       const std::string& distMethod,
-                       bool verbose) {
-
-  Progress p(is.size(), verbose);
-  vec xs = vec(is.size());
-  double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j);
-  if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = dist;
-  else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = cosDist;
-#ifdef _OPENMP
-  #pragma omp parallel for shared (xs)
-#endif
-  for (int i=0; i < is.length(); i++) if (p.increment()) xs[i] =
-    distanceFunction(data.col(is[i]), data.col(js[i]));
-  return xs;
-};
-
-arma::vec fastSparseDistance(const arma::vec& is,
-                             const arma::vec& js,
-                             const sp_mat& data,
-                             const std::string& distMethod,
-                             bool verbose) {
-
-  Progress p(is.size(), verbose);
-  vec xs = vec(is.size());
-  double (*distanceFunction)(
-      const sp_mat& x_i,
-      const sp_mat& x_j);
-  if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = sparseDist;
-  else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = sparseCosDist;
-#ifdef _OPENMP
-  #pragma omp parallel for shared (xs)
-#endif
-  for (int i=0; i < is.size(); i++) if (p.increment()) xs[i] =
-    distanceFunction(data.col(is[i]), data.col(js[i]));
-  return xs;
-};
-
-// [[Rcpp::export]]
-arma::vec fastCDistance(const arma::vec& is,
-                        const arma::vec& js,
-                        const arma::uvec& i_locations,
-                        const arma::uvec& p_locations,
-                        const arma::vec& x,
-                        const std::string& distMethod,
-                        bool verbose) {
-  const int N = p_locations.size() - 1;
-  const sp_mat data = sp_mat(i_locations, p_locations, x, N, N);
-  return fastSparseDistance(is,js,data,distMethod,verbose);
-}
-
-// [[Rcpp::export]]
-arma::vec fastSDistance(const arma::vec& is,
-                        const arma::vec& js,
-                        const arma::uvec& i_locations,
-                        const arma::uvec& j_locations,
-                        const arma::vec& x,
-                        const std::string& distMethod,
-                        bool verbose) {
-  const umat locations = join_cols(i_locations, j_locations);
-  const sp_mat data = sp_mat(locations, x);
-  return fastSparseDistance(is,js,data,distMethod,verbose);
-}
-
 // Take four vectors (i indices, j indices, edge distances, and sigmas), and calculate
 // p(j|i) and then w_{ij}.
 // [[Rcpp::export]]
@@ -656,14 +533,14 @@ arma::sp_mat distMatrixTowij(
   for (int idx=0; idx < N; idx++) rowSums[idx] = 0;
   // Compute pji, accumulate rowSums at the same time
 #ifdef _OPENMP
-  #pragma omp parallel for shared(pjis, rowSums)
+#pragma omp parallel for shared(pjis, rowSums)
 #endif
   for (int e=0; e < pjis.size(); e++) if (p.increment()){
     const int i = is[e];
     const double pji = exp(- pow(xs[e], 2)) / sigmas[i];
     pjis[e] = pji;
 #ifdef _OPENMP
-  #pragma omp atomic
+#pragma omp atomic
 #endif
     rowSums[i] += pji;
   }
@@ -675,7 +552,7 @@ arma::sp_mat distMatrixTowij(
   vec values = vec(pjis.size());
   umat locations = umat(2, pjis.size());
 #ifdef _OPENMP
-  #pragma omp parallel for shared(locations, values)
+#pragma omp parallel for shared(locations, values)
 #endif
   for (int e = 0; e < pjis.size(); e++) if (p.increment()) {
     int newi = is[e], newj = js[e];
@@ -707,45 +584,15 @@ double sigFunc(const double& sigma,
   return pow(perplexity - p2, 2);
 };
 
-
-
 /*
- * Some helper functions useful in debugging.
+ * The stochastic gradient descent function.
  */
-void checkVector(const arma::vec& x,
-                 const std::string& label) {
-  if (x.has_nan() || x.has_inf())
-    Rcout << "\n Failure at " << label;
-};
-
-double objective(const arma::mat& inputs, double gamma, double alpha) {
-  double objective = log(1 / (1 + (alpha * dist(inputs.col(0), inputs.col(1)))));
-  for (int i = 2; i < 7; i++)
-    objective += gamma * log(1 - (1 / (1 + alpha * dist(inputs.col(0), inputs.col(i)))));
-  return objective;
-}
-
-void checkGrad(const arma::vec& x,
-               const arma::vec& y,
-               const arma::vec& grad,
-               bool together,
-               const std::string& label) {
-  double oldDist = dist(x,y);
-  double newDist = dist(x + grad, y - grad);
-  if (together && newDist > oldDist) Rcout << "\nGrad " << label << " yi " << x << " other " << y << " grad " << grad << " moved further apart.";
-  else if (! together && newDist < oldDist) Rcout << "\nGrad " << label << " yi " << x << " other " << y << " grad " << grad << "moved closer together.";
-};
-
-/*
- * The stochastic gradient descent function. Asynchronicity is enabled by openmp.
- */
-
 // [[Rcpp::export]]
 arma::mat sgd(arma::mat coords,
               arma::ivec& is, // vary randomly
               const IntegerVector js, // ordered
               const IntegerVector ps, // N+1 length vector of indices to start of each row j in vector is
-              const NumericVector ws, // w{ij}
+              const arma::vec ws, // w{ij}
               const double gamma,
               const double rho,
               const double minRho,
@@ -758,156 +605,77 @@ arma::mat sgd(arma::mat coords,
   Progress progress(nBatches, verbose);
 
   const int D = coords.n_rows;
+  if (D > 10) stop("Low dimensional space cannot have more than 10 dimensions.");
   const int N = ps.size() - 1;
-  const int E = ws.length();
-  // Calculate negative sample weights, d_{i}^0.75.
-  // Stored as a vector of cumulative sums, normalized, so it can
-  // be readily searched using binary searches.
-  vec negativeSampleWeights = pow(diff(ps), 0.75);
-  const double scale = sum(negativeSampleWeights);
-  negativeSampleWeights = negativeSampleWeights / scale;
-  negativeSampleWeights = cumsum(negativeSampleWeights);
+  const int E = ws.size();
+  double *coordsPtr = coords.memptr();
 
-  // positive edges for sampling
-  vec positiveEdgeWeights;
-  if (! useWeights) {
-    const double posScale = sum(ws);
-    positiveEdgeWeights = vec(E);
-    positiveEdgeWeights[0] = ws[0] / posScale;
-    for (int idx = 1; idx < E; idx++)
-      positiveEdgeWeights[idx] = positiveEdgeWeights[idx - 1] + (ws[idx] / posScale);
-  }
+  double* negProb = new double[N];
+  int* negAlias = new int[N];
+  makeAliasTable(N, pow(diff(ps), 0.75), negProb, negAlias);
+  double* posProb = new double[E];
+  int* posAlias = new int[E];
+  if (! useWeights) makeAliasTable(E, ws, posProb, posAlias);
+  else for (int i = 0; i < E; i++) posAlias[i] = 1;
 
   const int posSampleLength = ((nBatches > 1000000) ? 1000000 : (int) nBatches);
-  vec positiveSamples = randu<vec>(posSampleLength);
+  mat positiveSamples = randu<mat>(2, posSampleLength);
+  double *posRandomPtr = positiveSamples.memptr();
 
-  // Cache some variables
-  vec::iterator posEnd = positiveEdgeWeights.end();
-  vec::iterator posBegin = positiveEdgeWeights.begin();
-  vec::iterator negBegin = negativeSampleWeights.begin();
-  vec::iterator negEnd = negativeSampleWeights.end();
-  ivec::iterator searchBegin = is.begin();
-  // Iterate through the edges in the positiveEdges vector
 #ifdef _OPENMP
-  #pragma omp parallel for shared(coords, positiveSamples) schedule(static)
+#pragma omp parallel for schedule(static) shared (coords, positiveSamples)
 #endif
   for (long eIdx=0; eIdx < nBatches; eIdx++) if (progress.increment()) {
-    const double posTarget = *(positiveSamples.begin() + (eIdx % posSampleLength));
-    int k;
-    int e_ij;
-    if (useWeights) {
-      e_ij = posTarget * (E - 1);
-    } else {
-      e_ij = distance(posBegin, upper_bound(posBegin,
-                                            posEnd,
-                                            posTarget));
-    }
+
+    const int e_ij = searchAliasTable(E, posRandomPtr,
+                                      posProb, posAlias,
+                                      eIdx % posSampleLength);
+
     const int i = is[e_ij];
     const int j = js[e_ij];
-    // Learning rate
-    const double localRho = rho - ((rho - minRho) * eIdx / nBatches);
 
-    vec y_i = coords.unsafe_col(i);
-    vec y_j = coords.unsafe_col(j);
+    // mix weight into learning rate
+    const double localRho =  ((useWeights) ? ws[e_ij] : 1.0) * (rho - ((rho - minRho) * eIdx / nBatches));
 
-    // wij
-    const double w = (useWeights) ? ws[e_ij] : 1;
-    // Calculate the positive gradient, applying the chain rule
-    const double dist_ij = dist(y_i, y_j);
+    double *y_i = coordsPtr + (i * D);
+    double *y_j = coordsPtr + (j * D);
 
-    double p_ij;
-    if (alpha == 0)   p_ij =   1 / (1 +      exp(dist_ij));
-    else              p_ij =   1 / (1 + (alpha * dist_ij));
+    double firstholder[10];
+    double secondholder[10];
 
-    const vec d_j = (y_i - y_j) * -2 * dist_ij *
-            ((alpha == 0) ? exp(dist_ij) / pow(1 + exp(dist_ij), 2) :
-                            alpha        / pow(1 +    (dist_ij * alpha), 2)) /
-            (sqrt(dist_ij) * p_ij);
+    positiveGradient(y_i, y_j, firstholder, alpha, D);
 
-    //double o = log(p_ij); // The objective function, which we don't need to calculate
-    // The gradient for j is the negative of the gradient for i, before counting negative
-    // samples.
-    // alternative: d_i - 2 * alpha * (y_i - y_j) / (alpha * sum(square(y_i - y_j)))
-    vec d_i = d_j;
+    for (int d = 0; d < D; d++) y_j[d] -= firstholder[d] * localRho;
 
-    /*
-     * The negative search needs M nodes that don't have edges with i,
-     * and the search is weighted unless useWeights == true.
-     *
-     * Generate M random numbers from a uniform [0,1) distribution,
-     * and sort them. Each draw, find the matching position in the
-     * negative weights vector by binary search, and keep the position
-     * of the iterator for the next draw. To determine if the draw has
-     * an edge with i, take advantage of the compressed-sparse column
-     * format of the input, using a binary search of the i's vector
-     * between indices given by ps[i] and ps[i + 1].
-     *
-     */
-    vec samples = vec(M);
-    vec::iterator targetIt = samples.begin();
-    vec::iterator endIt = samples.end();
+    mat negSamples = mat(2, M * 2);
+    double *samplesPtr = negSamples.memptr();
     int sampleIdx = 0;
-    ivec::iterator searchBegini = searchBegin + ps[i];
-    ivec::iterator searchEndi = searchBegin + ps[i + 1];
+    ivec searchRange = is.subvec(ps[i], ps[i + 1] - 1);
+    ivec::iterator searchBegin = searchRange.begin();
+    ivec::iterator searchEnd = searchRange.end();
     int m = 0;
-    vec::iterator negativeIterator;
+    int k;
     while (m < M) {
-      if (sampleIdx % M == 0) {
-        samples.randu();
-        std::sort(targetIt, endIt);
-        negativeIterator = negBegin;
-      }
-      // binary search implementing weighted sampling
-      const double target = targetIt[sampleIdx++ % M];
-      int k;
-      if (useWeights) k = target * (N - 1);
-      else {
-        negativeIterator = upper_bound(negativeIterator,
-                                            negEnd,
-                                            target);
-        k = negativeIterator - negBegin;
-     }
+      if (sampleIdx % (M * 2) == 0) negSamples.randu();
+      k = searchAliasTable(N, samplesPtr, negProb, negAlias, sampleIdx++ % (M * 2));
       // Check that the draw isn't one of i's edges
       if (k == i ||
           k == j ||
-          binary_search( searchBegini,
-                         searchEndi,
+          binary_search( searchBegin,
+                         searchEnd,
                          k)) continue;
-      vec y_k = coords.unsafe_col(k);
 
-      const double dist_ik = dist(y_i, y_k);
-      /*
-       * Make sure the drawn vertex isn't in a position identical to i,
-       * which would cause the gradients to be ill-defined. Also, ignore
-       * negative examples that are beyond a distance threshold. Increment
-       * the distance threshold every M samples to avoid an infinite loop.
-       */
-      if (dist_ik == 0 ||
-          dist_ik > (14 * (1 + (int) (sampleIdx / M)))) continue;
+      double *y_k = coordsPtr + (k * D);
 
-      double p_ik;
-      if (alpha == 0) p_ik  =  1 - (1 / (1 +      exp(dist_ik)));
-      else            p_ik  =  1 - (1 / (1 + (alpha * dist_ik)));
+      if (negativeGradient(y_i, y_k, secondholder, alpha, gamma, D)) continue;
 
-      const vec grad = gamma *
-                (y_i - y_k) *
-                ((alpha == 0) ? 2 * dist_ik * exp(dist_ik) / pow(1 +      exp(dist_ik),2) :
-                                2 * dist_ik * alpha        / pow(1 + (alpha * dist_ik),2)) /
-                (sqrt(dist_ik) * p_ik);
-      // alternative:  d_k = 2 * alpha * (y_i - y_k) / (square(1 + (alpha * sum(square(y_i - y_k)))) * (1 - (1 / (alpha * sum(square(y_i - y_k))))))
-
-      d_i += grad;
-      y_k -= grad * localRho * w;
+      for (int d = 0; d < D; d++) firstholder[d] += secondholder[d];
+      for (int d = 0; d < D; d++) y_k[d] -= secondholder[d] * localRho;
 
       m++;
+      if (sampleIdx > M * 10) stop("Bad sampleidx");
     }
-  /*
-   * For whatever reason, setting the coordinates point-by-point is faster than
-   * using the underlying library to set the whole column at once.
-   *
-   */
-    y_j -= d_j * w * localRho;
-    y_i += d_i * w * localRho;
+    for (int d = 0; d < D; d++) y_i[d] += firstholder[d] * localRho;
 
     if (eIdx > 0 &&
         eIdx % posSampleLength == 0) positiveSamples.randu();

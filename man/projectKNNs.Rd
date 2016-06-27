@@ -23,9 +23,10 @@ weights into account when calculating gradient.  See also the Details section.}
 
 \item{gamma}{The strength of the force pushing non-neighbor nodes apart.}
 
-\item{alpha}{Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  If \code{alpha} is 0, the alternative distance
-function \eqn{1 / 1 + exp(||y_i - y_j||^2)} is used instead.  These functions relate the distance between points in the low-dimensional projection to the likelihood
-that they two points are nearest neighbors.}
+\item{alpha}{Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  The function relates the distance
+between points in the low-dimensional projection to the likelihood that the two points are nearest neighbors. Increasing \eqn{\alpha} tends
+to push nodes and their neighbors closer together; decreasing \eqn{\alpha} produces a broader distribution. Setting \eqn{\alpha} to zero
+enables the alternative distance function. \eqn{\alpha} below zero is meaningless.}
 
 \item{rho}{Initial learning rate.}
 
@@ -50,14 +51,11 @@ The objective function is: \deqn{ O = \sum_{(i,j)\in E} w_{ij} (\log f(||p(e_{ij
 where \eqn{f()} is a probabilistic function relating the distance between two points in the low-dimensional projection space,
 and the probability that they are nearest neighbors.
 
-There are two available probabilistic functions, \eqn{1 / (1 + \alpha \dot ||x||^2)} and \eqn{1 / (1 + \exp(||x||^2))}.
-The second function, which the paper authors recommend against, is used if parameter \code{alpha} is set to 0.
+The default probabilistic function is \eqn{1 / (1 + \alpha \dot ||x||^2)}. If \eqn{\alpha} is set to zero,
+an alternative probabilistic function, \eqn{1 / (1 + \exp(x^2))} will be used instead.
 
 The \code{weight_pos_samples} parameter controls how to handle edge-weights.  The paper authors recommend using a weighted
 sampling approach to select edges, and treating edge-weight as binary in calculating the objective. This is the default.
-
-However, the algorithm for drawing weighted samples runs in \eqn{O(n \log n)}. The alternative approach, which runs in
-\eqn{O(n)}, is to draw unweighted samples and include \eqn{w_{ij}} in the objective function.
 
 Note that the input matrix should be symmetric.  If any columns in the matrix are empty, the function will fail.
 }

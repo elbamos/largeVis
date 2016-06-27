@@ -1,11 +1,13 @@
 ### largeVis 0.1.6
 
+* Revisions for CRAN release
 * Neighbor search:
   + Dense search is much, much faster and more efficient
   + Tree search for cosine distances uses normalized vectors
 * projectKNNs 
-  + faster because of more efficient scanning for negative samples
-  + Skips negative samples with already-large distances
+  + Replaced binary search ( O(n log n) ) with the alias algorithm for weighted sampling ( O(1) )
+  + Clips gradients, causes alpha == 0 to work properly now
+  + Corrected and added tests for gradients
 * Vignettes:
   + Reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
   + Benchmarks now a separate vignette, more detailed
@@ -20,21 +22,23 @@
   + Ported Karpathy's function for non-overlapping embeddings (experimental)
   + Removed transparency parameter
   + Added ggManifoldMap function for adding a manifold map to a ggplot2 plot
+* sgd
+  + 10x + faster for small datasets, and now (properly) scales by O(n) to larger data
 * vis
   + Whether to return neighbors and sigmas now adjustable parameters, for memory reasons
   + Runs gc() periodically
 * Dependencies & Build
   + Many misc changes to simplify dependencies for CRAN
   + Re-added ARMA_64BIT_WORD; otherwise, could exceed the limitation on size of an arma sparse matrix with moderately sized datasets (~ 1 M rows, K = 100)
-  + Consolidated C++ code into a single file to reduce library size
   + Now depends on R >= 3.0.2, so RcppProgress and RcppArmadillo could be moved from the Depends section of the DESCRIPTION file
+  + Will now compile on systems that lack OpenMP (e.g., OS X systems with old versions of xcode). 
 * Correctness and Testing
   + Tested against the paper authors' wiki-doc and wiki-word datasets
   + Tested with up to 2.5mm rows. 
   + Tests are separated by subject
   + Additional, more extensive tests with greater code coverage
-* OpenMP
-  + Will now compile on systems that lack OpenMP (e.g., OS X systems with old versions of xcode). 
+  + Added C++ unit tests
+  + Added travis testing against OSX
 
 ### largeVis 0.1.5
 
