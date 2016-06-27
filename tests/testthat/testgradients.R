@@ -50,9 +50,9 @@ test_that("Negative Gradient f = 2", {
   f <- 2
   for (i in 1:ntests) {
     alpha <- runif(1, 1e-5, 10)
-    g <- runif(1, -10, 10)
-    x_i <- rnorm(2) * 10
-    y_i <- rnorm(2) * 10
+    g <- runif(1, 1, 10)
+    x_i <- rnorm(2) * 100
+    y_i <- rnorm(2) * 100
     suppressWarnings(grads <- grad(x_i, y_i, gfunc = negGrad, f , alpha = alpha, g = g))
     cgrads <- testNegativeGradient(x_i, y_i, alpha, g, f)
     expect_equal(grads[1], cgrads[1], info = paste("f=", f, "a=", alpha))
