@@ -25,7 +25,11 @@ Suggests: testthat,
     RColorBrewer,
     dplyr,
     magrittr,
-    jpeg
+    jpeg,
+    darch,
+    lda,
+    LDAvis, 
+    Rtsne 
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes
