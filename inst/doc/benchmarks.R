@@ -39,74 +39,39 @@ theme_set(
     title = element_text(size = rel(0.9))
   ) 
 )
-rebuild <- FALSE
-if (!exists("buildManifolds")) buildManifolds <- rebuild
-
-## ----performance,echo=F,eval=F-------------------------------------------
-#  benchmark1 <- readr::read_csv("../inst/results.csv", col_names = FALSE)
-#  benchmark3$machine <- 1
-#  benchmark2 <- readr::read_csv("../inst/nelsonresults.csv", col_names = FALSE)
-#  benchmark2$machine <- 2
-#  
-#  benchmark <- rbind(benchmark1, benchmark2, benchmark3) %>%
-#    set_colnames(c("time",
-#      "precision",
-#      "n_trees",
-#      "max_iters",
-#      "threshold",
-#      "method",
-#      "tree_type",
-#      "search_type",
-#      "eps",
-#      "machine")
-#      ) %>%
-#    select(-tree_type, -search_type, - eps) %>%
-#    mutate(method = ifelse(grepl("largeVis", method), "largeVis", method),
-#           series = ifelse(grepl("largeVis", method),
-#                           paste(method, max_iters, "iter."),
-#                           method),
-#           series = factor(series),
-#           method = factor(method)) %>%
-#    group_by(machine) %>%
-#    mutate(time = (1 / (time / 1e6)) / 60,
-#           nn = threshold * n_trees)
 
 ## ----plotpeformance,echo=F,fig.align='center',warning=FALSE,message=FALSE----
 load(system.file("extdata", "benchmark.Rda", package = "largeVis"))
 benchmark %>% 
-  dplyr::filter(machine == 2) %>%
-  mutate(facet = precision / 100, 
-         facet = ifelse(facet < 0.9, '', 'Closeup'), 
+  filter(machine != 'Large Server',
+         machine == 'Workstation' | K == 50) %>%
+  mutate(facet = precision, 
+         facet = ifelse(facet < 0.95, '', 'Closeup'), 
          facet = factor(facet)) %>%
   ggplot(aes( y = time, 
-              x = (precision / 100), 
+              x = precision, 
               group = series, 
               fill = series, 
               shape = series)) +
   geom_point(size = 1.5, alpha = 0.7, color = "grey80") + 
- # geom_line(size = 0.5) + 
-  # geom_text(size = 3, 
-  #           nudge_x = 10) +
-  scale_y_log10(name = "Speed, log (nodes / seconds)", limits = c(1e3,1e6)) + 
+  scale_y_log10(name = "Speed, log (nodes / seconds)") + 
   scale_x_continuous("Precision", 
-               # limits = c(0,1), 
                 breaks = c(0, 0.2, 0.4, 0.6, 0.8, 0.925, 0.95, 0.975, 1.0)) +
-  facet_grid(. ~ facet, scales = "free_x") +
+  facet_grid(K + machine ~ facet, scales = "free") +
   scale_fill_manual(name = "Method & n. iter.", 
-                     values = colors_divergent_discrete(nlevels(benchmark$series))(nlevels(benchmark$series))) +
+    values = colors_divergent_discrete(nlevels(benchmark$series))(nlevels(benchmark$series))) +
   scale_shape_manual(name = "Method & n. iter.", 
                      values = c(21, 21, 21, 21, 23)) +
  # guides(color = guide_legend(nrow=3)) +
   ggtitle(expression(
     atop("Precision-Performance tradeoff, RcppAnnoy and largeVis",
-         atop(italic("(100-NN precision, n = 10000; Upper Right is Better)"))
+         atop(italic("(n = 10000; Upper Right is Better)"))
          )
     ))
 
 ## ----constn,echo=F,warning=F---------------------------------------------
 bench <- benchmark %>%
-  filter(machine == 1, 
-         method == 'largeVis') %>%
+  filter(method == 'largeVis', machine == 'Large Server') %>%
   mutate(nn = threshold * n_trees) %>% 
   group_by(max_iters, nn)  %>% 
   filter(n() > 2) %>% 
@@ -114,7 +79,7 @@ bench <- benchmark %>%
 bench$facet <- factor(ifelse(bench$n_trees >= 4, "", "n. trees < 10"))
 bench %>%
   ggplot(aes(y = time, 
-           x = precision / 100, 
+           x = precision, 
            fill = series, 
            group = series,
            color = factor(n_trees))) + 
@@ -123,7 +88,7 @@ bench %>%
   scale_color_grey("n. trees", start = 0.8, end = 0 ) +
 #  guides(color = FALSE) +
  # scale_shape(name = "Iterations", solid = FALSE) +
- # facet_grid(. ~ facet) +
+  facet_grid(machine ~ .) +
   scale_y_log10(name = "Speed, log (nodes / second)", limits = c(1e2,1e5)) + 
   scale_x_continuous("Precision", 
                 breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +  
@@ -133,24 +98,24 @@ bench %>%
 
 ## ----tree_threshold,echo=F-----------------------------------------------
 bench <- benchmark %>%
-  filter(method == 'largeVis', 
-         machine == 2) %>%
+  filter(method == 'largeVis',
+         machine != 'Large Server') %>%
   mutate(label = ifelse(threshold == 128, "128", "Other"), 
          label = factor(label), 
-         facet = precision / 100, 
+         facet = precision, 
          facet = ifelse(facet < 0.85, '', 'Closeup'))
 bench$facet <- factor(bench$facet)
 bench %>% 
   arrange(nn) %>%
   mutate(max_iters = factor(max_iters)) %>%
   ggplot(aes(y = time, 
-             x = precision / 100, 
+             x = precision , 
              color = max_iters, 
              group = max_iters)) + 
 #  geom_path(size = 0.5, alpha =0.8, arrow = arrow(length = unit(0.05, "inches"))) +
   geom_point(size = 1, alpha = 0.8, shape = 16) +
-  facet_grid(. ~ facet, scales = 'free_x') +
-  scale_y_log10(name = "Speed, log (nodes / second)", limits = c(1e3,1e6)) + 
+  facet_grid(K + machine ~ facet, scales = 'free') +
+  scale_y_log10(name = "Speed, log (nodes / second)") + 
   scale_x_continuous("Precision", 
                 breaks = c(0, 0.2, 0.4, 0.6, 0.8, 0.9, 0.92, 0.94, 0.96, 0.98, 1.0)) +
  # scale_shape_discrete(name = "", solid = FALSE) + 
@@ -158,5 +123,5 @@ bench %>%
    scale_color_manual("n. iter", values = colors_discrete(4)) +    
   ggtitle(expression(
     atop("Precision-Performance tradeoff, effect of increasing tth vs. max_iters",
-         atop(italic("(100-NN precision, n = 10000; Upper Right is Better)")))))
+         atop(italic("(n = 10000; Upper Right is Better)")))))
 

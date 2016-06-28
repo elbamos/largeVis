@@ -7,20 +7,115 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
 
 #### Project Status & Caveats
 
--   Support for sparse matrices!
--   Now tested with (dense) matrices &gt; 2.5 Million rows, and sparse matrices with &gt; 10,000 features.
--   Performance is good. Memory efficiency is still an issue, but can be improved further by using utility functions to perform the algorithm in stages. (Explained in the vignette.)
--   Not yet fully tested:
-    -   The alternative distance function (*α* = 0).
--   I am attempting to replicate the paper's results with larger datasets. This takes time because my hardware is not as powerful as the authors'. If you have any to volunteer, please contact me!
+-   Tested with (dense) matrices &gt; 2.5 Million rows, and sparse matrices with &gt; 10,000 features.
+-   Performance and memory efficiency are good.
+-   The alternative distance function (*α* = 0) tends to be numerically unstable and should be avoided.
+-   I have been able to replicate, in the sense of producing characteristically similar visualizations, the results in the original paper.
 
 #### To-do's Before Submission to CRAN
 
--   Demonstrate correctness by visualizing the wiki-doc and wiki-term datasets used in the paper. **wikiwords done, pending wikidoc**
--   Compile more-complete benchmarks from a server. **Done, deciding how to visualize.**
+-   Demonstrate correctness by visualizing the wiki-doc and wiki-term datasets used in the paper. **DONE**
+-   Compile more-complete benchmarks from a server. **DONE**
+-   Switch to data generated on AWS instance
 -   Confirm that the map visualization function works with color images. **DONE**
--   Give Erik B. a few days to comment on the performance.
--   Reduce submission size
+-   Give Erik B. a few days to comment on the performance. **DONE**
+-   Reduce submission size **DONE**
+
+Examples
+--------
+
+### MNIST
+
+![](README_files/figure-markdown_github/drawmnist-1.png)
+
+### 20 Newsgroups
+
+![](README_files/figure-markdown_github/draw20ng-1.png)
+
+### Wikipedia Terms and Documents
+
+![](README_files/figure-markdown_github/drawwikiwords-1.png)
+
+![](README_files/figure-markdown_github/drawwikidocs-1.png)
+
+### Openface
+
+![](README_files/figure-markdown_github/plotFaceVectors-1.png)
+
+![](README_files/figure-markdown_github/faceImages-1.png)
+
+A high resolution version is available [here](./faceshighres.png)
+
+### Visualizing tf-idf and Topic Matrices
+
+![](README_files/figure-markdown_github/drawtdm-1.png)
+
+Benchmarks
+----------
+
+Overview
+--------
+
+Besides manifold visualization, `largeVis` also includes an extremely efficient approximate nearest-neighbor search that runs in *O*(*n*) time.
+
+This vignette includes benchmarks and recommendations for adjusting hyperparameters in the neighbor search for best results.
+
+Hyperparameters
+---------------
+
+The `randomProjectionTreeSearch` function has three hyperparameters that trade-off accuracy and efficiency in the neighbor search:
+
+1.  `n_trees` - In the first phase of the function, the number of random projection trees to create.
+2.  `tree_threshold` - The maximum number of any nodes on a random projection tree leaf. If, after branching, the number of nodes in a branch exceeds this threshold, the branch will be divided again.
+3.  `max_iters` - The number of iterations for the neighborhood-exploration phase of the algorithm.
+
+Data Collection & Methodology
+-----------------------------
+
+The data in the benchmarks below was obtained by running the `benchmark.R` script, which is installed along with the package, on two machines.
+
+The aim was to replicate as much as possible the methodology used by Erik Bernhardsson's [ANN Benchmark](https://github.com/erikbern/ann-benchmarks) github. However, `ANN Benchmark` is designed for libraries that are designed to build a neighbor index and then rapidly process queries against the index. The measure used by `ANN Benchmark` is therefore queries-per-second. By contract, `largeVis` is concerned with getting neighbors for all of the nodes in a finite dataset as quickly as possible.
+
+Times shown for `RcppAnnoy` include the time to build a searchable index and query neighbors for all rows in the dataset.
+
+The data used is the 1-million vector, 128-feature [SIFT Dataset](http://corpus-texmex.irisa.fr/), which is the test data used by `ANN Benchmark`.
+
+Benchmarks were run on several machines. First, benchmarks were run on a workstation and a server with *K* = 100. Benchmarks were then run on an AWS c4.2xlarge instance with *K* = 100 and *K* = 50, to replicate as closely as possible the conditions of `ANN Benchmark`.
+
+Results that appear to have used virtual memory, in that the completion time was radically discontinuous with other results from the same machine, were discarded.
+
+I welcome submissions of output from the script from other hardware.
+
+Comparison With Annoy
+---------------------
+
+The following chart illustrates performance versus the `Annoy` library, as implemented through the `RcppAnnoy` R package.
+
+To facilitate comparison with the ANN Benchmark charts, the Y-axis shows the number of vectors processed per second.
+
+<img src="README_files/figure-markdown_github/plotpeformance-1.png" style="display: block; margin: auto;" />
+
+Approximate Equivalence of Number of Trees and Tree Threshold
+-------------------------------------------------------------
+
+There is an approximate trade-off in memory use between the tree threshold and number of trees. Peak memory consumption during the tree search phase = N \* n\_trees \* threshold.
+
+The trade-off is not precise because the tree split phase will return fewer nodes per tree than the threshold. On average, it should return about 3/4 of the threshold.
+
+On the following chart, points that share the same values of n\_trees \* threshold, referred to as `tth`, (and number of neighborhood exploration iterations), are shown as the same series.
+
+![](README_files/figure-markdown_github/constn-1.png)
+
+Results that hold nn constant while varying the number of trees and threshold tend to cluster together, however increasing the number of trees (while holding tth constant) tends to improve accuracy and decrease speed. The degree of dispersion increases when a neighborhood exploration iteration is added.
+
+On the charts below, n\_trees \* threshold is referred to as `tth`.
+
+Effect of Increasing `tth` vs. `max_iters`
+------------------------------------------
+
+![](README_files/figure-markdown_github/tree_threshold-1.png)
+
+A single iteration clearly has substantial impact on accuracy. The marginal benefit of additional iterations declines, but adding a second iteration is a more efficient way to improve accuracy than increasing tth. This is consistent with the recommendation of the paper authors.
 
 Vignette
 --------
@@ -65,17 +160,6 @@ If the numerical range covered by the data is large, this can cause errors in or
 
 If there are duplicates in the input data, while the implementation tries to filter duplicates, it is likely to lead to problems. If the number of duplicates is large, this can cause the random projection tree search to fail. If the number is small, the algorithm may identify a sufficient number of neighbors, but an error may then occur during `buildEdgeMatrix`, or stochastic gradient descent.
 
-Examples
---------
-
-![](README_files/figure-markdown_github/drawmnist-1.png)
-
-![](README_files/figure-markdown_github/draw20ng-1.png)
-
-![](README_files/figure-markdown_github/drawwikiwords-1.png)
-
-![](README_files/figure-markdown_github/drawwikidocs-1.png)
-
 Overview of Functions and Hyperparameters
 -----------------------------------------
 
@@ -115,11 +199,7 @@ The following chart illustrates the effect of the `M` and `K` parameters, using 
 
 The `manifoldMap` function is useful when the examples being clustered are themselves images. Given a coordinate matrix (as generated by `projectKNNs` or `vis`) and an `array` of `N` images, the function samples `n` images and plots them at the coordinates given in the matrix.
 
-The function can plot both color and greyscale images.
-
-#### Example with MNIST Letters
-
-5000 images sampled from the MNIST dataset, plotted at positions generated by `vis`:
+The following code will generate the visualization shown in the examples:
 
 ``` r
 dim(trainData) <- c(60000, 28, 28)
@@ -133,32 +213,10 @@ manifoldMap(mnistCoords[,1:2],
     ylab = "")
 ```
 
-<img src="README_files/figure-markdown_github/drawmanifoldmap-1.png" style="display: block; margin: auto;" />
-
-#### Example with Faces
-
-The following examples visualize facial-recognition embedding vectors from the [Labelled Faces in the Wild](http://vis-www.cs.umass.edu/lfw/) dataset. The embedding vectors were graciously provided by [Brandon Amos](https://bamos.github.io/) of the [OpenFace](https://cmusatyalab.github.io/openface/) project. Similar vectors may be generated for images using the OpenFace `batch-represent` command.
-
-OpenFace embedding vectors encode an image in such a way that the embeddings for multiple images of the same person should be similar. This is illustrated on the first plot below, which highlights the locations of the embedding vectors for images of 10 selected individuals.
-
-![](README_files/figure-markdown_github/plotFaceVectors-1.png)
-
-The function of `manifoldMap` is illustrated in the following plot, which places 500 images from the dataset at the locations given by the `largeVis` map.
-
-![](README_files/figure-markdown_github/faceImages-1.png)
-
-A high resolution version is available [here](vignettes/faceshighres.png) Note what the plot is showing. The positions of the faces in [Karpathy's embedding plots](http://cs.stanford.edu/people/karpathy/cnnembed/) are highly sensitive to the background and overall sense of each image, because Karpathy used embedding vectors produced by a general-purpose model. In the plot of the OpenFace vectors above, the positions are insensitive to the image backgrounds -- but pictures of the same individual are plotted close to each other, and close to similar-looking persons.
-
 Support for Sparse Matrices
 ---------------------------
 
-`largeVis` supports sparse matrices. Besides facilitating very large datasets, this makes it practicable to visualize term-document-matrices.
-
-For example, the following plot visualizes a corpus of 5000 political blog entries, as included with the `stm` package. The first row visualizes the blog entries as tf-idf weighted term vectors; the second, as topic vectors.
-
-![](README_files/figure-markdown_github/drawtdm-1.png)
-
-This facilitates evaluation of the effectiveness of a topic model. In the example above, `stm` is asked to create a 20-topic model that is aware that blogs marked "liberal" and blogs marked "conservative" may talk about the same topics in different ways. As expected, the `largeVis` visualization of this model shows blog entries that group into 20 clusters, with "liberal" and "conservative" blogs each addressing, but placing different weights on, each of the 20 topics.
+`largeVis` supports sparse matrices. Besides facilitating very large datasets, this makes it practicable to visualize term-document-matrices directly, and compare the result with the result of visualizing topic vectors.
 
 Visualizing Graphs
 ------------------
@@ -213,9 +271,9 @@ ggplot(youTube_coordinates, aes( x = x,
 Distance Methods
 ----------------
 
-The original `LargeVis` paper used Euclidean distances exclusively. The `largeVis` package offers a choice among Euclidean and Cosine distance measures.
+The original `LargeVis` paper used Euclidean distances exclusively. The `largeVis` package offers a choice between Euclidean and Cosine distance measures.
 
-The implementation is not optimized for cosine distances. Using cosine distances will definitely be slower than using Euclidean distances. This is because the random projection tree algorithm for cosine distances requires that the input vectors in the data matrix be normalised.
+The implementation is not optimized for cosine distances.
 
 Memory Consumption
 ------------------
@@ -252,73 +310,5 @@ Memory requirements during the neighbor search may be managed by reducing `n_tre
 
 References
 ----------
-
-Benchmarks
-----------
-
-Overview
---------
-
-Besides manifold visualization, `largeVis` also includes an extremely efficient approximate nearest-neighbor search that runs in *O*(*n*) time.
-
-This vignette includes benchmarks and recommendations for adjusting hyperparameters in the neighbor search for best results.
-
-Hyperparameters
----------------
-
-The `randomProjectionTreeSearch` function has three hyperparameters that trade-off accuracy and efficiency in the neighbor search:
-
-1.  `n_trees` - In the first phase of the function, the number of random projection trees to create.
-2.  `tree_threshold` - The maximum number of any nodes on a random projection tree leaf. If, after branching, the number of nodes in a branch exceeds this threshold, the branch will be divided again.
-3.  `max_iters` - The number of iterations for the neighborhood-exploration phase of the algorithm.
-
-Data Collection & Methodology
------------------------------
-
-The data in the benchmarks below was obtained by running the `benchmark.R` script, which is installed along with the package, on two machines.
-
-The aim was to replicate as much as possible the methodology used by Erik Bernhardsson's [ANN Benchmark](https://github.com/erikbern/ann-benchmarks) github. However, `ANN Benchmark` is designed for libraries that are designed to build a neighbor index and then rapidly process queries against the index. The measure used by `ANN Benchmark` is therefore queries-per-second. By contract, `largeVis` is concerned with getting neighbors for all of the nodes in a finite dataset as quickly as possible.
-
-Times shown for `RcppAnnoy` include the time to build a searchable index and query neighbors for all rows in the dataset.
-
-The data used is the 1-million vector, 128-feature [SIFT Dataset](http://corpus-texmex.irisa.fr/), which is the test data used by `ANN Benchmark`.
-
-Results that appear to have used virtual memory, in that the completion time was radically discontinuous with other results from the same machine, were discarded.
-
-I welcome submissions of output from the script from other hardware.
-
-Comparison With Annoy
----------------------
-
-The following chart illustrates performance versus the `Annoy` library, as implemented through the `RcppAnnoy` R package.
-
-To facilitate comparison with the ANN Benchmark charts, the Y-axis shows log(1/*t*), where *t* is the execution time relative to the time on the same machine to find neighbors for 10,000 rows using 10 trees.
-
-<img src="README_files/figure-markdown_github/plotpeformance-1.png" style="display: block; margin: auto;" />
-
-Approximate Equivalence of Number of Trees and Tree Threshold
--------------------------------------------------------------
-
-There is an approximate trade-off in memory use between the tree threshold and number of trees. Peak memory consumption during the tree search phase = N \* n\_trees \* threshold.
-
-The trade-off is not precise because the tree split phase will return fewer nodes per tree than the threshold. On average, it should return about 3/4 of the threshold.
-
-On the following chart, points that share the same values of n\_trees \* threshold, referred to as `tth`, (and number of neighborhood exploration iterations), are shown as the same series.
-
-![](README_files/figure-markdown_github/constn-1.png)
-
-Results that hold nn constant while varying the number of trees and threshold tend to cluster together, however increasing the number of trees (while holding tth constant) tends to improve accuracy and decrease speed. The degree of dispersion increases when a neighborhood exploration iteration is added.
-
-On the charts below, n\_trees \* threshold is referred to as `tth`.
-
-Effect of Increasing `tth` vs. `max_iters`
-------------------------------------------
-
-![](README_files/figure-markdown_github/tree_threshold-1.png)
-
-A single iteration clearly has substantial impact on accuracy. The marginal benefit of additional iterations declines, but adding a second iteration is a more efficient way to improve accuracy than increasing tth. This is consistent with the recommendation of the paper authors.
-
-References
-==========
 
 Tang, Jian, Jingzhou Liu, Ming Zhang, and Qiaozhu Mei. 2016. “Visualizing Large-Scale and High-Dimensional Data.” In *Proceedings of the 25th International Conference on World Wide Web*, 287–97. International World Wide Web Conferences Steering Committee.
