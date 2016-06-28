@@ -230,11 +230,56 @@ if (file.exists(datapath)) {
     guides(color = FALSE) +
     scale_x_continuous("", limits = c(-25, 25), breaks = NULL) + 
     scale_y_continuous("", limits = c(-25, 25), breaks = NULL) +
-    ggtitle(expression(atop("Wiki Word Vectors", atop(paste(sep = " ", "K = 100,", gamma, 
-                             "= 7, M = 5,", alpha, "= 1, n_trees = 50,",
-                             "max_iters = 1, threshold = 100")))))
+    ggtitle(expression(atop("Wiki Word Vectors", atop(paste(sep = " ", 
+         "n = 836755,", "K = 100,", gamma, "= 7,", " M = 5, ", alpha, "= 1,", " n_trees = 50,",
+         "max_iters = 1,", " threshold = 100")))))
 } else {
   cat("Examples that would require large datasets or extended processing time are disabled by default.  See the source code to activate. In addition, the wiki-words dataset must be obtained directly from the paper authors.")
+} 
+```
+
+```{r wikidocs,eval=F,echo=F,results='asis'}
+datapath <- paste(vdatapath, "wikidocs.Rda", sep = "")
+if (rebuild) {
+  # The data file must be obtained directly from the paper authors
+  wikidocs <- readr::read_delim("./Wiki_embedding/doc_vec",delim= " ", 
+                                 col_names = FALSE, 
+                                 skip = 1)
+  wikidocs <- t(as.matrix(wikidocs[, 2:101]))
+  set.seed(1974)
+  initcoords <- matrix(rnorm(ncol(wikidocs) * 2), nrow = 2)
+  wikiVis <- vis(wikidocs, 
+                 coords = initcoords, 
+                 K = 100, 
+                 tree_threshold = 100, 
+                 n_trees = 50)
+  wikidocs <- readr::read_delim("./Wiki_embedding/doc_vec",
+                                 delim= " ", col_names = FALSE, skip = 1)
+  wikidocs <- wikidocs[,1]
+  wikilabels <- readr::read_delim("./Wiki_embedding/wiki_doc_label.txt", 
+                                  col_names = FALSE, delim = "\t")
+  docs <- data.frame(t(wikiVis$coords))
+  docs$label <- factor(wikilabels$X2[wikidocs$X1 + 1])
+
+  colnames(docs) <- c('doc', 'label', 'x', 'y')
+  save(docs, file = datapath)
+}
+```
+```{r drawwikidocs,echo=F,eval=T,warning=F,message=F,results='asis'}
+datapath <- paste(vdatapath, "wikidocs.Rda", sep = "")
+if (file.exists(datapath)) {
+  load(datapath) 
+  ggplot(docs, aes(x = x, y = y, color = as.numeric(label))) + 
+    geom_point(size = 0.001, alpha = 0.5) +
+    scale_color_gradientn(colors = colors_divergent_discrete(11)(11)) +
+    guides(color = FALSE) +
+    scale_x_continuous("", limits = c(-50, 50), breaks = NULL) + 
+    scale_y_continuous("", limits = c(-50, 50), breaks = NULL) +
+    ggtitle(expression(atop("Wiki Doc Vectors", atop(paste(sep = " ", 
+         "n = 2837431,", "K = 100,", gamma, "= 7,", " M = 5, ", alpha, "= 1,", " n_trees = 50,",
+         "max_iters = 1,", " threshold = 100")))))
+} else {
+  cat("Examples that would require large datasets or extended processing time are disabled by default.  See the source code to activate. In addition, the wiki-docs dataset must be obtained directly from the paper authors.")
 } 
 ```
 
@@ -416,7 +461,7 @@ manifoldMap(mnistCoords[,1:2],
 ```
 ```{r drawmanifoldmap,echo=F,results='asis',fig.width=8,fig.height=8,message=F,warning=F,fig.align='center'}
 if (file.exists("data/train.RData") && exists("mnistCoords")) {
-  load("data/train.RData")
+  
   par(mai=c(0.25, 0.25, 0.25, 0.25))
   if (exists("trainData")) {
     dim(trainData) <- c(60000, 28, 28)

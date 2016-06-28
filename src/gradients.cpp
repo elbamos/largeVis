@@ -26,7 +26,7 @@ bool negativeGradient(double* i,
   const double grad = gamma * 2 * ((alpha == 0) ?
            1 / (1 + exp(dist_ik * dist_ik)) :
            alpha / (adk * (adk + 1)));
-  multModify(holder, D, (grad > gamma) ? gamma : grad);
+  multModify(holder, D, (grad > 1) ? 1 : grad);
   return false;
 };
 

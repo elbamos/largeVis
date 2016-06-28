@@ -74,6 +74,8 @@ Examples
 
 ![](README_files/figure-markdown_github/drawwikiwords-1.png)
 
+![](README_files/figure-markdown_github/drawwikidocs-1.png)
+
 Overview of Functions and Hyperparameters
 -----------------------------------------
 

@@ -82,7 +82,7 @@ test_that("Negative Gradient E f = 2", {
   set.seed(1972)
   f <- 2
   for (i in 1:ntests)  {
-    g <- runif(1, -10, 10)
+    g <- runif(1, 1, 10)
     x_i <- rnorm(2) * 5
     y_i <- rnorm(2) * 5
     suppressWarnings(grads <- grad(x_i, y_i, gfunc = negGradE, f, g = g))
