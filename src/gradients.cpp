@@ -23,7 +23,7 @@ bool negativeGradient(double* i,
   const double adk = alpha * dist_ik * dist_ik;
   if (dist_ik == 0) return true; // If the two points are in the same place, skip
   // df/dd has a dist_ij factor in the numerator that cancels with dd/dx
-  const double grad = gamma * 2 * ((alpha == 0) ?
+  const double grad = gamma * ((alpha == 0) ?
            1 / (1 + exp(dist_ik * dist_ik)) :
            alpha / (adk * (adk + 1)));
   multModify(holder, D, (grad > 1) ? 1 : grad);
@@ -37,9 +37,9 @@ void positiveGradient(double* i, double* j,
   double dist_ij = sqrt(distAndVector(i, j, holder, D));
   const double powdist = dist_ij * dist_ij;
   // df/dd has a dist_ij factor in the numerator that cancels with dd/dx
-  const double grad = (-2) * ((alpha == 0) ?
-                                ((dist_ij > 7) ? 1 : (exp(powdist) / (exp(powdist) + 1))) :
-                                alpha / (1 + alpha * powdist));
+  const double grad = ((alpha == 0) ?
+                                ((dist_ij > 7) ? -1 : -(exp(powdist) / (exp(powdist) + 1))) :
+                                -alpha / (1 + alpha * powdist));
   multModify(holder, D, grad);
 };
 

@@ -25,7 +25,7 @@ void positiveTrigGradient(double* i, double* j,
                           const double alpha, const double f,
                           const int D) {
   const double dist_ij = sqrt(distAndVector(j, i, holder, D));
-  const double grad = (-2) * ((alpha == 0) ?
+  const double grad = (-1) * ((alpha == 0) ?
                                 exp(dist_ij * dist_ij) * dist_ij / (exp(dist_ij * dist_ij) + 1) :
                                 alpha * dist_ij / ((alpha * dist_ij * dist_ij) + 1));
   const double angle = atan2(holder[1],  holder[0]);
@@ -40,12 +40,11 @@ bool negativeTrigGradient(double* i,
                           const int D) {
   const double dist_ik = sqrt(distAndVector(k, i, holder, D));
   if (dist_ik == 0) return true; // If the two points are in the same place, skip
-  double grad = gamma * 2 * ((alpha == 0) ?
+  double grad = gamma * ((alpha == 0) ?
                                      dist_ik / (exp(dist_ik * dist_ik) + 1) :
                                      1 / ( alpha * dist_ik * dist_ik * dist_ik + dist_ik));
   const double angle = atan2(holder[1], holder[0]);
   if (grad > 1) grad = 1;
-  if (grad < -1) grad = -1;
   holder[1] = - sin(angle) * grad;
   holder[0] = - cos(angle) * grad;
   return false;

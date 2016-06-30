@@ -57,12 +57,12 @@ test_that("largeVis works when alpha == 0", {
   dupes <- which(duplicated(dat))
   dat <- dat[-dupes, ]
   dat <- t(dat)
-  visObject <- vis(dat,
+  expect_warning(visObject <- vis(dat,
                    max_iter = 20,
                    sgd_batches = 10000,
                    K = 10,
                    alpha = 0,
-                   verbose = FALSE)
+                   verbose = FALSE))
   expect_false(any(is.na(visObject$coords)))
   expect_false(any(is.nan(visObject$coords)))
   expect_false(any(is.infinite(visObject$coords)))

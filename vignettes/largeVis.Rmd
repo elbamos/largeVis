@@ -273,7 +273,7 @@ manifoldMap(mnistCoords[,1:2],
 
 ## Visualizing Graphs
 
-The `largeVis` visualization algorithm can be used to visualize ordinary graphs.  The included `wiki` dataset is an example.
+The `largeVis` visualization algorithm can be used to visualize undirected weighted or unweighted acyclic graphs.  The included `wiki` dataset is an example.
 
 The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). The data and visualization are not included here for size reasons.
 
