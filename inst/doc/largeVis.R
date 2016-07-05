@@ -39,132 +39,117 @@ theme_set(
   ) 
 )
 rebuild <- FALSE
-if (! exists("vdatapath")) vdatapath <- "../../largeVisData/vignettedata/"
 
 require(largeVis,quietly = TRUE)
 
+## ----buildhyperparameters,echo=F,eval=rebuild----------------------------
+#  data(wiki)
+#  
+#  inputs <- data.frame(
+#    g = rep(c(.5,1,7,14), 5),
+#    a = rep(c(0,.1,1,5,10), each = 4)
+#  )
+#  set.seed(1974)
+#  initialcoords <- matrix(rnorm(ncol(wiki) * 2), nrow = 2)
+#  
+#  agcoords <- do.call(rbind,
+#                      lapply(1:nrow(inputs),
+#                             FUN = function(x) {
+#    a <- inputs[x, 'a']
+#    g <- inputs[x, 'g']
+#    newcoords <- initialcoords
+#    localcoords <- projectKNNs(wiki,
+#                               alpha =  a,
+#                               gamma = g,
+#                               verbose = FALSE,
+#                               coords = newcoords)
+#    localcoords <- data.frame(scale(t(localcoords)))
+#    colnames(localcoords) <- c("x", "y")
+#    localcoords$a <- a
+#    localcoords$g <- g
+#    localcoords$activity <- log(Matrix::colSums(wiki))
+#    localcoords
+#  }))
+
 ## ----drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis'----
-datapath <- paste(vdatapath, "agcoords.Rda", sep = "")
-if (rebuild) {
-  data(wiki)
+load(system.file("extdata/agcoords.Rda", package = "largeVis"))
+ggplot(agcoords,
+       aes(x = x, 
+           y = y, 
+           color = activity)) +
+  geom_point(alpha = 0.2, 
+             size = 0.05) +
+  facet_grid(a ~ g,
+             labeller = label_bquote(alpha == .(a), 
+                                     gamma == .(g)),
+             scales = 'free') +
+  scale_x_continuous(breaks = NULL, 
+                     name = "") +
+  scale_y_continuous(breaks = NULL, 
+                     name = "") +
+  scale_color_gradientn(colors = colors_continuous(10), 
+                        guide=FALSE) +
+  ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  ")))
 
-  inputs <- data.frame(
-    g = rep(c(.5,1,7,14), 4),
-    a = rep(c(.1,1,5,10), each = 4)
-  )
-  set.seed(1974)
-  initialcoords <- matrix(rnorm(ncol(wiki) * 2), nrow = 2)
-  
-  agcoords <- do.call(rbind, 
-                      lapply(1:nrow(inputs), 
-                             FUN = function(x) {
-    a <- inputs[x, 'a']
-    g <- inputs[x, 'g']
-    newcoords <- initialcoords
-    localcoords <- projectKNNs(wiki, 
-                               alpha =  a, 
-                               gamma = g,
-                               verbose = FALSE, 
-                               coords = newcoords)
-    localcoords <- data.frame(scale(t(localcoords)))
-    colnames(localcoords) <- c("x", "y")
-    localcoords$a <- a
-    localcoords$g <- g
-    localcoords$activity <- log(Matrix::colSums(wiki))
-    localcoords  
-  }))
-  save(agcoords, file = datapath)
-} 
-if (file.exists(datapath)) {
-  load(datapath)
+## ----iris_mkhyperparams,echo=F,eval=rebuild------------------------------
+#  data(iris)
+#  Ks <- c(5, 10,20,30)
+#  Ms <- c(5, 10, 20)
+#  dat <- iris[,1:4]
+#  dupes <- duplicated(dat)
+#  dat <- dat[-dupes,]
+#  labels <- iris$Species[-dupes]
+#  dat <- as.matrix(dat)
+#  dat <- t(dat)
+#  
+#  set.seed(1974)
+#  coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
+#  neighbors <- randomProjectionTreeSearch(dat,
+#                                        K = max(Ks),
+#                                        verbose = FALSE)
+#  
+#  iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
+#    neighborIndices <- neighborsToVectors(neighbors[1:K,])
+#    distances <- largeVis::distance(x = dat,
+#                                    neighborIndices$i,
+#                                    neighborIndices$j,
+#                                    verbose = FALSE)
+#    wij <- buildEdgeMatrix(i = neighborIndices$i,
+#                         j = neighborIndices$j,
+#                         d = distances, verbose = FALSE)
+#    do.call(rbind, lapply(Ms, FUN = function(M) {
+#      coords <- projectKNNs(wij = wij$wij, M = M,
+#                            coords = coordsinput,
+#                            verbose = FALSE)
+#      coords <- scale(t(coords))
+#      coords <- data.frame(coords)
+#      colnames(coords) <- c("x", "y")
+#      coords$K <- K
+#      coords$M <- M
+#      coords$Species <- as.integer(labels)
+#      coords
+#    }))
+#  }))
+#  iriscoords$Species <- factor(iriscoords$Species)
+#  levels(iriscoords$Species) <- levels(iris$Species)
 
-  ggplot(agcoords,
-         aes(x = x, 
-             y = y, 
-             color = activity)) +
-    geom_point(alpha = 0.2, 
-               size = 0.05) +
-    facet_grid(a ~ g,
-               labeller = label_bquote(alpha == .(a), 
-                                       gamma == .(g)),
-               scales = 'free') +
-    scale_x_continuous(breaks = NULL, 
-                       name = "") +
-    scale_y_continuous(breaks = NULL, 
-                       name = "") +
-    scale_color_gradientn(colors = colors_continuous(10), 
-                          guide=FALSE) +
-    ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  ")))
-} else {
-    cat("Examples that would require large datasets or extended processing time are disabled by default.  See the source code to activate. In addition, the wiki-words dataset must be obtained directly from the paper authors.")
-}
+## ----drawiris,echo=F,fig.width=4,fig.height=4.5,fig.align='center',results='asis'----
+load(system.file("extdata/iriscoords.Rda", package = "largeVis"))
 
-## ----iris_mkhyperparams,echo=F,fig.width=4,fig.height=4.5,fig.align='center',results='asis'----
-datapath <- paste(vdatapath, "iriscoords.Rda", sep = "")
-
-if (rebuild) {
-  data(iris)
-  Ks <- c(5, 10,20,30)
-  Ms <- c(5, 10, 20)
-  dat <- iris[,1:4]
-  dupes <- duplicated(dat)
-  dat <- dat[-dupes,]
-  labels <- iris$Species[-dupes]
-  dat <- as.matrix(dat)
-  dat <- t(dat)
-  
-  set.seed(1974)
-  coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
-  neighbors <- randomProjectionTreeSearch(dat, 
-                                        K = max(Ks), 
-                                        verbose = FALSE)
-  
-  iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
-    neighborIndices <- neighborsToVectors(neighbors[1:K,])
-    distances <- largeVis::distance(x = dat, 
-                                    neighborIndices$i, 
-                                    neighborIndices$j,
-                                    verbose = FALSE)
-    wij <- buildEdgeMatrix(i = neighborIndices$i, 
-                         j = neighborIndices$j, 
-                         d = distances, verbose = FALSE)
-    do.call(rbind, lapply(Ms, FUN = function(M) {
-      coords <- projectKNNs(wij = wij$wij, M = M, 
-                            coords = coordsinput, 
-                            verbose = FALSE)
-      coords <- scale(t(coords))
-      coords <- data.frame(coords)
-      colnames(coords) <- c("x", "y")
-      coords$K <- K
-      coords$M <- M
-      coords$Species <- as.integer(labels)
-      coords
-    }))
-  }))
-  iriscoords$Species <- factor(iriscoords$Species)
-  levels(iriscoords$Species) <- levels(iris$Species)
-  save(iriscoords, file = datapath)
-} 
-if (file.exists(datapath)) {
-  load(datapath)
-
-  ggplot(iriscoords,
-         aes(x = x,
-             y = y,
-             color = Species)) +
-           geom_point(size = 0.5) +
-    scale_x_continuous("", 
-                       breaks = NULL) +
-    scale_y_continuous("", 
-                       breaks = NULL) +
-    facet_grid(K ~ M, 
-               scales = 'free', 
-               labeller = label_bquote(K == .(K), M == .(M))) +
-    scale_color_manual(values = colors_discrete(3)) +
-    ggtitle("Effect of M and K on Iris Dataset")
-} else {
-    cat("Examples that would require large datasets or extended processing time are disabled by default.  See the source code to activate. In addition, the wiki-words dataset must be obtained directly from the paper authors.")
-}
+ggplot(iriscoords,
+       aes(x = x,
+           y = y,
+           color = Species)) +
+         geom_point(size = 0.5) +
+  scale_x_continuous("", 
+                     breaks = NULL) +
+  scale_y_continuous("", 
+                     breaks = NULL) +
+  facet_grid(K ~ M, 
+             scales = 'free', 
+             labeller = label_bquote(K == .(K), M == .(M))) +
+  scale_color_manual(values = colors_discrete(3)) +
+  ggtitle("Effect of M and K on Iris Dataset")
 
 ## ----echomanifold,echo=T,eval=F------------------------------------------
 #  dim(trainData) <- c(60000, 28, 28)

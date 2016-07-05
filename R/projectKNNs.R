@@ -78,13 +78,14 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   #################################################
   if (verbose) cat("Estimating embeddings.\n")
   coords <- sgd(coords,
-              is = is,
-              js = js,
+              targets_i = is,
+              sources_j = js,
               ps = wij@p,
-              ws = wij@x,
-              gamma = gamma, rho = rho, minRho = min_rho,
-              useWeights = ! weight_pos_samples, nBatches = sgd_batches,
-              M = M, alpha = alpha, verbose = verbose)
+              weights = wij@x, useWeights = ! weight_pos_samples,
+              alpha = alpha, gamma = gamma, M = M,
+              rho = rho, minRho = min_rho,
+              nBatches = sgd_batches,
+              verbose = verbose)
 
   return(coords)
 }

@@ -158,7 +158,7 @@ If there are NA's, Infs, or NULLs in the input, `randomProjectionTreeSearch` wil
 
 If the numerical range covered by the data is large, this can cause errors in or before the `buildEdgeMatrix` function. This is because the algorithm requires calculating $\\exp(||\\vec{x\_i}, \\vec{x\_j}||^2)$ in the high-dimensional space, which will overflow if the distance between any nearest neighbors exceeds about 26.
 
-If there are duplicates in the input data, while the implementation tries to filter duplicates, it is likely to lead to problems. If the number of duplicates is large, this can cause the random projection tree search to fail. If the number is small, the algorithm may identify a sufficient number of neighbors, but an error may then occur during `buildEdgeMatrix`, or stochastic gradient descent.
+Duplicates in the input data are likely to cause issues. If the number of duplicates is large, this can cause the random projection tree search to fail. If the number is small, the algorithm may identify a sufficient number of neighbors, but an error may then occur during `buildEdgeMatrix`, or stochastic gradient descent.
 
 Overview of Functions and Hyperparameters
 -----------------------------------------
@@ -193,7 +193,7 @@ The `vis` function combines `randomProjectionTreeSearch` and `projectKNNs`, alon
 
 The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset. Each row re-uses the same set of identified `K` neighbors, and initial coordinates.
 
-<img src="README_files/figure-markdown_github/iris_mkhyperparams-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-markdown_github/drawiris-1.png" style="display: block; margin: auto;" />
 
 ### `manifoldMap`
 

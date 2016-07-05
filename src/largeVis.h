@@ -16,35 +16,58 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-struct heapObject {
-  /*
-   * Unite node index and distance in a single object, facilitates
-   * creation of the max heap
-   */
+/*
+ * Neighbor search
+ */
+struct HeapObject {
   double d;
   int n;
-  heapObject(double d, int n) : d(d), n(n) {}
-  bool operator<(const struct heapObject& other) const {
+  HeapObject(double d, int n) : d(d), n(n) {}
+  bool operator<(const struct HeapObject& other) const {
     return d < other.d;
   }
 };
-typedef priority_queue<heapObject> maxHeap;
-typedef vector< imat::col_iterator > positionVector;
-typedef vector<int> neighborhood;
-
+typedef priority_queue<HeapObject> MaxHeap;
+typedef vector< imat::col_iterator > PositionVector;
+typedef vector<int> Neighborhood;
+Neighborhood** createNeighborhood(int N);
+void copyHeapToMatrix(set<int>* tree,
+                      const int K,
+                      const int i,
+                      arma::imat& knns);
+void addDistance(const arma::vec& x_i,
+                 const arma::mat& data,
+                 const int j,
+                 MaxHeap& heap,
+                 const int K,
+                 double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j));
+void heapToSet(MaxHeap& heap, set<int>* set);
+arma::imat annoy(const int n_trees,
+                 const int threshold,
+                 const arma::mat& data,
+                 const int max_recursion_degree,
+                 const int N,
+                 const int K,
+                 double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j),
+                 Progress& p);
+void addNeighbors(const arma::ivec& indices,
+                  Neighborhood* heap[],
+                  const int I);
 /*
  * Distance Functions
  */
-double relDist(const arma::vec& i, const arma::vec& j);
-double sparseDist(const sp_mat& i, const sp_mat& j);
 double dist(const arma::vec& i, const arma::vec& j);
+double relDist(const arma::vec& i, const arma::vec& j);
+double cosDist(const arma::vec& i, const arma::vec& j);
+double sparseDist(const sp_mat& i, const sp_mat& j);
+double sparseRelDist(const sp_mat& i, const sp_mat& j);
+double sparseCosDist(const sp_mat& i, const sp_mat& j);
+
 double distAndVector(double *x_i,
                      double *x_j,
                      double *output,
                      const int& d);
-double cosDist(const arma::vec& i, const arma::vec& j);
-double sparseCosDist(const sp_mat& i, const sp_mat& j);
-double sparseRelDist(const sp_mat& i, const sp_mat& j);
+
 // Exported distance functions for high dimensional space
 arma::vec fastDistance(const NumericVector is,
                        const NumericVector js,
@@ -75,11 +98,10 @@ arma::vec fastSDistance(const arma::vec& is,
  * Functions related to the alias algorithm
  */
 void makeAliasTable(int n, arma::vec weights, double *probs, int *alias);
-int searchAliasTable(const int& n,
-                     double *random,
+int searchAliasTable(double *random,
                      double *probs,
                      int *alias,
-                     const int& sample_n);
+                     const int& N);
 
 /*
  * Gradient Functions

@@ -31,11 +31,11 @@ void makeAliasTable(int n, arma::vec weights, double *probs, int *alias) {
   }
   if (! small.empty()) stop("Numeric instability in alias table.");
 };
-int searchAliasTable(const int& n,
-                     double *random,
-                     double *probs,
-                     int *alias,
-                     const int& sample_n) {
-  int candidate = random[sample_n * 2] * (n - 1);
-  return (random[(sample_n * 2) + 1] >= probs[candidate]) ? alias[candidate] : candidate;
+int searchAliasTable(double *random, // Two random numbers
+                     double *probs, // Probs table for alias
+                     int *alias, // Alias table
+                     const int& N // Total number of entries in alias table
+                       ) {
+  int candidate = random[0] * (N - 1);
+  return (random[1] >= probs[candidate]) ? alias[candidate] : candidate;
 };
