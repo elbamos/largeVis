@@ -27,7 +27,7 @@ void positiveTrigGradient(double* i, double* j,
   const double dist_ij = sqrt(distAndVector(j, i, holder, D));
   const double grad = (-1) * ((alpha == 0) ?
                                 exp(dist_ij * dist_ij) * dist_ij / (exp(dist_ij * dist_ij) + 1) :
-                                alpha * dist_ij / ((alpha * dist_ij * dist_ij) + 1));
+                                2 * alpha * dist_ij / ((alpha * dist_ij * dist_ij) + 1));
   const double angle = atan2(holder[1],  holder[0]);
   holder[1] = - sin(angle) * grad;
   holder[0] = - cos(angle) * grad;
@@ -79,7 +79,8 @@ context("Gradients") {
     double f = 2;
     double gamma = 7;
     int D = 2;
-    negativeGradient(rand.memptr(), rand.memptr() + D, holder, alpha, gamma, D);
+    negativeGradient(rand.memptr(), rand.memptr() + D, holder, 
+                     alpha, gamma, gamma / 4, D);
     negativeTrigGradient(rand.memptr(), rand.memptr() + D, holder2, alpha, gamma, f, D);
     checkMatch(holder, holder2, rand.memptr(), rand.memptr() + D);
     for (int d = 0; d < D; d++) expect_true(pow(holder[d] - holder2[d], 2) < 1e-4);
@@ -105,7 +106,8 @@ context("Gradients") {
     double f = 2;
     double gamma = 7;
     int D = 2;
-    negativeGradient(rand.memptr(), rand.memptr() + D, holder, alpha, gamma, D);
+    negativeGradient(rand.memptr(), rand.memptr() + D, holder, 
+                     alpha, gamma, gamma / 4, D);
     negativeTrigGradient(rand.memptr(), rand.memptr() + D, holder2, alpha, gamma, f, D);
     checkMatch(holder, holder2, rand.memptr(), rand.memptr() + D);
     for (int d = 0; d < D; d++) expect_true(pow(holder[d] - holder2[d], 2) < 1e-3);

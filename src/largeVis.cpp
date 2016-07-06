@@ -45,6 +45,8 @@ arma::mat sgd(arma::mat coords,
   const int posSampleLength = ((nBatches > 1000000) ? 1000000 : (int) nBatches);
   mat positiveSamples = randu<mat>(2, posSampleLength);
   double *posRandomPtr = positiveSamples.memptr();
+  
+  const double cap = gamma / 4;
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) shared (coords, positiveSamples)
@@ -95,7 +97,8 @@ arma::mat sgd(arma::mat coords,
 
       double *y_k = coordsPtr + (k * D);
 
-      if (negativeGradient(y_i, y_k, secondholder, alpha, gamma, D)) continue;
+      if (negativeGradient(y_i, y_k, secondholder, 
+                           alpha, gamma, cap, D)) continue;
 
       for (int d = 0; d < D; d++) firstholder[d] += secondholder[d];
       for (int d = 0; d < D; d++) y_k[d] -= secondholder[d] * localRho;

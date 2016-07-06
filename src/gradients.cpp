@@ -14,6 +14,7 @@ bool negativeGradient(double* i,
                       double* holder,
                       const double alpha,
                       const double gamma,
+                      const double cap,
                       const int D) {
   const double dist_squared = distAndVector(i, k, holder, D);
   if (dist_squared == 0) return true; // If the two points are in the same place, skip
@@ -21,7 +22,12 @@ bool negativeGradient(double* i,
   const double grad = gamma * ((alpha == 0) ?
            ((dist_squared > gamma * gamma) ? 0 : 1 / (1 + exp(dist_squared))) :
            alpha / (adk * (adk + 1)));
-  multModify(holder, D, (grad > gamma / 4) ? gamma / 4 : grad);
+  //multModify(holder, D, (grad > gamma / 4) ? gamma / 4 : grad);
+  multModify(holder, D, grad);
+  for (int d = 0; d != D; d++) {
+    if (holder[d] > cap) holder[d] = cap;
+    if (holder[d] < - cap) holder[d] = - cap;
+  }
   return false;
 };
 
@@ -31,8 +37,8 @@ void positiveGradient(double* i, double* j,
                       const int D) {
   const double dist_squared = distAndVector(i, j, holder, D);
   const double grad = (alpha == 0) ?
-                                ((dist_squared > 4) ? -1 : -(exp(dist_squared) / (exp(dist_squared) + 1))) :
-                                -alpha / (1 + alpha * dist_squared);
+        ((dist_squared > 4) ? -1 : -(exp(dist_squared) / (exp(dist_squared) + 1))) :
+        -2 * alpha / (1 + alpha * dist_squared);
   multModify(holder, D, grad);
 };
 
@@ -50,6 +56,6 @@ arma::vec testNegativeGradient(arma::vec i, arma::vec j,
   double a = alpha[0];
   double g = gamma[0];
   vec holder = vec(i.size());
-  negativeGradient(i.memptr(), j.memptr(), holder.memptr(), a, g, i.size());
+  negativeGradient(i.memptr(), j.memptr(), holder.memptr(), a, g, i.size(), g / 4);
   return holder;
 };

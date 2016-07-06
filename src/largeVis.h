@@ -117,7 +117,7 @@ void positiveGradient(double* i, double* j,
 bool negativeGradient(double* i,
                       double* k,
                       double* holder,
-                      const double alpha, const double gamma,
+                      const double alpha, const double gamma, const double cap,
                       const int D);
 arma::vec testNegativeGradient(arma::vec i, arma::vec j,
                                NumericVector alpha, NumericVector gamma, NumericVector f);

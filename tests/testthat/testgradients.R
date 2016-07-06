@@ -30,6 +30,7 @@ grad <- function(x, y, gfunc, f, ...) {
 ntests <- 2
 
 test_that("Positive Gradient f = 2", {
+  skip("Skipping gradient tests.")
   set.seed(1972)
   for (i in 1:ntests) {
     f <- 2
@@ -47,6 +48,7 @@ test_that("Positive Gradient f = 2", {
 
 test_that("Negative Gradient f = 2", {
   set.seed(1972)
+  skip("Skipping gradient tests.")
   f <- 2
   for (i in 1:ntests) {
     alpha <- runif(1, 1e-5, 10)
