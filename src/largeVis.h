@@ -63,11 +63,6 @@ double sparseDist(const sp_mat& i, const sp_mat& j);
 double sparseRelDist(const sp_mat& i, const sp_mat& j);
 double sparseCosDist(const sp_mat& i, const sp_mat& j);
 
-double distAndVector(double *x_i,
-                     double *x_j,
-                     double *output,
-                     const int& d);
-
 // Exported distance functions for high dimensional space
 arma::vec fastDistance(const NumericVector is,
                        const NumericVector js,
@@ -97,28 +92,100 @@ arma::vec fastSDistance(const arma::vec& is,
 /*
  * Functions related to the alias algorithm
  */
-void makeAliasTable(int n, arma::vec weights, double *probs, int *alias);
-int searchAliasTable(double *random,
-                     double *probs,
-                     int *alias,
-                     const int& N);
+
+class AliasTable {
+private:
+  double* probs;
+  int* aliases; 
+  int N;
+  
+public:
+  AliasTable(const int n, 
+             const arma::vec& weights);
+  AliasTable(const int n);
+  int search(double *random);
+};
 
 /*
- * Gradient Functions
- *
- *  *Gradient -- should be the correct analytical gradients
- *  test*Gradient -- exports results of positive and negativeGradient to R for comparison with
- *                    autodifferentiation
+ * Gradients
  */
-void positiveGradient(double* i, double* j,
-                      double* holder,
-                      const double alpha,
-                      const int D);
-bool negativeGradient(double* i,
-                      double* k,
-                      double* holder,
-                      const double alpha, const double gamma, const double cap,
-                      const int D);
+class Gradient {
+protected:
+  double gamma;
+  int D;
+  Gradient(const double g, 
+           const int d);
+  virtual void _positiveGradient(const double dist_squared, 
+                                double* holder) const = 0;
+  virtual bool _negativeGradient(const double dist_squared, 
+                                double* holder) const = 0;
+public:
+  virtual void positiveGradient(const double* i, 
+                                const double* j, 
+                                double* holder) const;
+  virtual bool negativeGradient(const double* i, 
+                                const double* k,
+                                double* holder) const;
+  inline double distAndVector(const double *x_i,
+                       const double *x_j,
+                       double *output) const;
+};
+class LookupGradient: public Gradient {
+private:
+  double Lookup(const double dist_squared, double* table) const;
+protected:
+  double bound;
+  double alpha;
+  int steps;
+  double boundsteps;
+  double* negativeLookup;
+  virtual void _positiveGradient(const double dist_squared, 
+                                 double* holder) const;
+  virtual bool _negativeGradient(const double dist_squared, 
+                                 double* holder) const;
+public:
+  LookupGradient(double alpha, 
+                 double gamma, 
+                 int d,
+                 double bound, 
+                 int steps);
+};
+class AlphaGradient: public Gradient {
+  double alphagamma;
+  double alpha;
+public:
+  AlphaGradient(const double a, 
+                const double g,
+                const int d);
+protected:
+  double cap;
+  virtual void _positiveGradient(const double dist_squared, 
+                        double* holder) const;
+  virtual bool _negativeGradient(const double dist_squared, 
+                        double* holder) const;
+};
+class AlphaOneGradient: public AlphaGradient {
+public:
+  AlphaOneGradient(const double g,
+                   const int d);
+protected:
+  virtual void _positiveGradient(const double dist_squared, 
+                                 double* holder) const;
+  virtual bool _negativeGradient(const double dist_squared, 
+                                 double* holder) const;
+};
+class ExpGradient: public Gradient {
+public:
+  double gammagamma;
+  ExpGradient(const double g, 
+              const int d);
+protected:
+  virtual void _positiveGradient(const double dist_squared, 
+                        double* holder) const;
+  virtual bool _negativeGradient(const double dist_squared, 
+                        double* holder) const;
+};
+
 arma::vec testNegativeGradient(arma::vec i, arma::vec j,
                                NumericVector alpha, NumericVector gamma, NumericVector f);
 arma::vec testPositiveGradient(arma::vec i, arma::vec j,

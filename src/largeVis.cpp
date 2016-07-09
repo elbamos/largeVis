@@ -34,29 +34,33 @@ arma::mat sgd(arma::mat coords,
   const int E = weights.size();
   double *coordsPtr = coords.memptr();
 
-  double* negProb = new double[N];
-  int* negAlias = new int[N];
-  makeAliasTable(N, pow(diff(ps), 0.75), negProb, negAlias);
-  double* posProb = new double[E];
-  int* posAlias = new int[E];
-  if (! useWeights) makeAliasTable(E, weights, posProb, posAlias);
-  else for (int i = 0; i < E; i++) posAlias[i] = 1;
+  AliasTable* negAlias = new AliasTable(N, pow(diff(ps), 0.75));
+  AliasTable* posAlias = (useWeights) ? new AliasTable(E) : new AliasTable(E, weights);
 
   const int posSampleLength = ((nBatches > 1000000) ? 1000000 : (int) nBatches);
   mat positiveSamples = randu<mat>(2, posSampleLength);
   double *posRandomPtr = positiveSamples.memptr();
   
-  const double cap = gamma / 4;
-
+  Gradient* grad;
+  if (alpha == 0) grad = new ExpGradient(gamma, D);
+  else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
+  else grad = new AlphaGradient(alpha, gamma, D);
+  // else grad = new LookupGradient(alpha,
+  //                                gamma,
+  //                                D,
+  //                                gamma * gamma, //bound
+  //                                1000); // steps
+    double firstholder[10];
+    double secondholder[10];
+    
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) shared (coords, positiveSamples)
+#pragma omp parallel for schedule(static) \
+    shared (coords, positiveSamples, posAlias, negAlias) \
+      threadprivate(firstholder, secondholder)
 #endif
   for (long eIdx=0; eIdx < nBatches; eIdx++) if (progress.increment()) {
 
-    const int e_ij = searchAliasTable(posRandomPtr + ((eIdx % posSampleLength) * 2),
-                                      posProb,
-                                      posAlias,
-                                      E);
+    const int e_ij = posAlias -> search(posRandomPtr + ((eIdx % posSampleLength) * 2));
 
     const int i = targets_i[e_ij];
     const int j = sources_j[e_ij];
@@ -67,10 +71,7 @@ arma::mat sgd(arma::mat coords,
     double *y_i = coordsPtr + (i * D);
     double *y_j = coordsPtr + (j * D);
 
-    double firstholder[10];
-    double secondholder[10];
-
-    positiveGradient(y_i, y_j, firstholder, alpha, D);
+    grad -> positiveGradient(y_i, y_j, firstholder);
 
     for (int d = 0; d < D; d++) y_j[d] -= firstholder[d] * localRho;
 
@@ -84,10 +85,7 @@ arma::mat sgd(arma::mat coords,
     int k;
     while (m < M) {
       if (sampleIdx % (M * 2) == 0) negSamples.randu();
-      k = searchAliasTable(samplesPtr + (sampleIdx++ % (M * 2) * 2),
-                           negProb,
-                           negAlias,
-                           N);
+      k = negAlias -> search(samplesPtr + (sampleIdx++ % (M * 2) * 2)); 
       // Check that the draw isn't one of i's edges
       if (k == i ||
           k == j ||
@@ -97,8 +95,7 @@ arma::mat sgd(arma::mat coords,
 
       double *y_k = coordsPtr + (k * D);
 
-      if (negativeGradient(y_i, y_k, secondholder, 
-                           alpha, gamma, cap, D)) continue;
+      if (grad -> negativeGradient(y_i, y_k, secondholder)) continue;
 
       for (int d = 0; d < D; d++) firstholder[d] += secondholder[d];
       for (int d = 0; d < D; d++) y_k[d] -= secondholder[d] * localRho;

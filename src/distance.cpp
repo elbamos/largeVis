@@ -15,21 +15,6 @@ double dist(const arma::vec& i, const arma::vec& j) {
   return sqrt(relDist(i,j));
 }
 
-// Copies the vector sums into a vector while it computes distance^2 -
-// useful in calculating the gradients during SGD
-double distAndVector(double *x_i,
-                     double *x_j,
-                     double *output,
-                     const int& D) {
-  double cnt = 0;
-  for (int d = 0; d < D; d++) {
-    double t = x_i[d] - x_j[d];
-    output[d] = t;
-    cnt += t * t;
-  }
-  return cnt;
-}
-
 // Vanilla cosine distance calculation
 double cosDist(const arma::vec& i, const arma::vec& j) {
   int D = i.n_elem;
