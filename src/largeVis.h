@@ -112,9 +112,11 @@ public:
 class Gradient {
 protected:
   double gamma;
+  double cap;
   int D;
   Gradient(const double g, 
            const int d);
+  inline void multModify(double *col, int D, double adj) const;
   virtual void _positiveGradient(const double dist_squared, 
                                 double* holder) const = 0;
   virtual bool _negativeGradient(const double dist_squared, 
@@ -158,7 +160,6 @@ public:
                 const double g,
                 const int d);
 protected:
-  double cap;
   virtual void _positiveGradient(const double dist_squared, 
                         double* holder) const;
   virtual bool _negativeGradient(const double dist_squared, 

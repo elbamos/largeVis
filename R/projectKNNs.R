@@ -62,7 +62,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                         verbose = TRUE) {
 
   if (alpha < 0) stop("alpha < 0 is meaningless")
-  if (alpha == 0) warning ("alpha == 0 may lead to numeric instability")
   N <-  (length(wij@p) - 1)
   js <- rep(0:(N - 1), diff(wij@p))
   if (any(is.na(js))) stop("NAs in the index vector.")

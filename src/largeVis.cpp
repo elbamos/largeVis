@@ -45,13 +45,8 @@ arma::mat sgd(arma::mat coords,
   if (alpha == 0) grad = new ExpGradient(gamma, D);
   else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
   else grad = new AlphaGradient(alpha, gamma, D);
-  // else grad = new LookupGradient(alpha,
-  //                                gamma,
-  //                                D,
-  //                                gamma * gamma, //bound
-  //                                1000); // steps
-    double firstholder[10];
-    double secondholder[10];
+  double firstholder[10];
+  double secondholder[10];
     
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) \
