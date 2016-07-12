@@ -102,35 +102,6 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// testPositiveGradient
-arma::vec testPositiveGradient(arma::vec i, arma::vec j, NumericVector alpha, NumericVector f);
-RcppExport SEXP largeVis_testPositiveGradient(SEXP iSEXP, SEXP jSEXP, SEXP alphaSEXP, SEXP fSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< arma::vec >::type i(iSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type j(jSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type f(fSEXP);
-    __result = Rcpp::wrap(testPositiveGradient(i, j, alpha, f));
-    return __result;
-END_RCPP
-}
-// testNegativeGradient
-arma::vec testNegativeGradient(arma::vec i, arma::vec j, NumericVector alpha, NumericVector gamma, NumericVector f);
-RcppExport SEXP largeVis_testNegativeGradient(SEXP iSEXP, SEXP jSEXP, SEXP alphaSEXP, SEXP gammaSEXP, SEXP fSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< arma::vec >::type i(iSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type j(jSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type f(fSEXP);
-    __result = Rcpp::wrap(testNegativeGradient(i, j, alpha, gamma, f));
-    return __result;
-END_RCPP
-}
 // sgd
 arma::mat sgd(arma::mat coords, arma::ivec& targets_i, const IntegerVector sources_j, const IntegerVector ps, const arma::vec weights, const double gamma, const double rho, const double minRho, const bool useWeights, const long nBatches, const int M, const double alpha, bool verbose);
 RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP targets_iSEXP, SEXP sources_jSEXP, SEXP psSEXP, SEXP weightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP minRhoSEXP, SEXP useWeightsSEXP, SEXP nBatchesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP verboseSEXP) {

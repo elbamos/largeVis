@@ -6,27 +6,24 @@ output:
   rmarkdown::html_vignette:
     fig_caption: yes
 bibliography: TangLZM16.bib
-vignette: >
-  %\VignetteIndexEntry{largeVis}   
-  %\VignetteEngine{knitr::rmarkdown}   
+vignette: |
+  %\VignetteIndexEntry{largeVis}    
+  %\VignetteEngine{knitr::rmarkdown}    
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setupvignette,eval=T,echo=F,warning=F,error=F,message=F}
-# Note to reader:  Please don't steal the semi-distinctive visual style I spent several minutes creating for myself.
 require(ggplot2, 
         quietly = TRUE)
 require(RColorBrewer, 
         quietly = TRUE)
 require(wesanderson, 
         quietly = TRUE)
-library(jpeg,
-        quietly = TRUE)
 knitr::opts_chunk$set(collapse = TRUE, 
-                      comment = "#>")
-colors_discrete <- function(x) rep(wes_palette("Darjeeling", 
-                                               n = min(x, 5)), 
-                                   2)[1:x]
+                      comment = "#>",
+                      cache=FALSE)
+colors_discrete <- function(x) 
+  rep(wes_palette("Darjeeling", n = min(x, 5)), 2)[1:x]
 colors_divergent_discrete <- function(x) 
   grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
 colors_continuous <-  function(x) wes_palette(name = "Zissou",
@@ -52,7 +49,7 @@ theme_set(
     title = element_text(size = rel(0.9))
   ) 
 )
-rebuild <- FALSE
+rebuild <- TRUE
 
 require(largeVis,quietly = TRUE)
 ```
@@ -115,7 +112,6 @@ The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperpara
 
 ```{r buildhyperparameters,echo=F,eval=rebuild}
 data(wiki)
-
 inputs <- data.frame(
   g = rep(c(.5,1,7,14), 5),
   a = rep(c(0,.1,1,5,10), each = 4)
@@ -138,12 +134,14 @@ agcoords <- do.call(rbind,
   colnames(localcoords) <- c("x", "y")
   localcoords$a <- a
   localcoords$g <- g
+  localcoords$rebuild <- 'no'
   localcoords$activity <- log(Matrix::colSums(wiki))
   localcoords  
 }))
 ```
-```{r drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis'}
-load(system.file("extdata/agcoords.Rda", package = "largeVis"))
+
+```{r drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis',cache=FALSE}
+if (!exists("agcoords")) load(system.file("extdata/agcoords.Rda", package = "largeVis"))
 ggplot(agcoords,
        aes(x = x, 
            y = y, 
@@ -173,7 +171,7 @@ The `vis` function combines `randomProjectionTreeSearch` and `projectKNNs`, alon
 
 The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset. Each row re-uses the same set of identified `K` neighbors, and initial coordinates. 
 
-```{r iris_mkhyperparams,echo=F,eval=rebuild}
+```{r iris_mkhyperparams,echo=F,eval=rebuild,cache=FALSE}
 data(iris)
 Ks <- c(5, 10,20,30)
 Ms <- c(5, 10, 20)
@@ -208,6 +206,7 @@ iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
     colnames(coords) <- c("x", "y")
     coords$K <- K
     coords$M <- M
+    coords$rebuild <- 'no'
     coords$Species <- as.integer(labels)
     coords
   }))
@@ -216,7 +215,7 @@ iriscoords$Species <- factor(iriscoords$Species)
 levels(iriscoords$Species) <- levels(iris$Species)
 ```
 ```{r drawiris,echo=F,fig.width=4,fig.height=4.5,fig.align='center',results='asis'}
-load(system.file("extdata/iriscoords.Rda", package = "largeVis"))
+if (!exists("iriscoords")) load(system.file("extdata/iriscoords.Rda", package = "largeVis"))
 
 ggplot(iriscoords,
        aes(x = x,

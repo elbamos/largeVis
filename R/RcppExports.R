@@ -25,14 +25,6 @@ sigFunc <- function(sigma, x_i, perplexity) {
     .Call('largeVis_sigFunc', PACKAGE = 'largeVis', sigma, x_i, perplexity)
 }
 
-testPositiveGradient <- function(i, j, alpha, f) {
-    .Call('largeVis_testPositiveGradient', PACKAGE = 'largeVis', i, j, alpha, f)
-}
-
-testNegativeGradient <- function(i, j, alpha, gamma, f) {
-    .Call('largeVis_testNegativeGradient', PACKAGE = 'largeVis', i, j, alpha, gamma, f)
-}
-
 sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, useWeights, nBatches, M, alpha, verbose) {
     .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, useWeights, nBatches, M, alpha, verbose)
 }

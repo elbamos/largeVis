@@ -1,18 +1,15 @@
 ## ----setupvignette,eval=T,echo=F,warning=F,error=F,message=F-------------
-# Note to reader:  Please don't steal the semi-distinctive visual style I spent several minutes creating for myself.
 require(ggplot2, 
         quietly = TRUE)
 require(RColorBrewer, 
         quietly = TRUE)
 require(wesanderson, 
         quietly = TRUE)
-library(jpeg,
-        quietly = TRUE)
 knitr::opts_chunk$set(collapse = TRUE, 
-                      comment = "#>")
-colors_discrete <- function(x) rep(wes_palette("Darjeeling", 
-                                               n = min(x, 5)), 
-                                   2)[1:x]
+                      comment = "#>",
+                      cache=FALSE)
+colors_discrete <- function(x) 
+  rep(wes_palette("Darjeeling", n = min(x, 5)), 2)[1:x]
 colors_divergent_discrete <- function(x) 
   grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
 colors_continuous <-  function(x) wes_palette(name = "Zissou",
@@ -38,41 +35,41 @@ theme_set(
     title = element_text(size = rel(0.9))
   ) 
 )
-rebuild <- FALSE
+rebuild <- TRUE
 
 require(largeVis,quietly = TRUE)
 
 ## ----buildhyperparameters,echo=F,eval=rebuild----------------------------
-#  data(wiki)
-#  
-#  inputs <- data.frame(
-#    g = rep(c(.5,1,7,14), 5),
-#    a = rep(c(0,.1,1,5,10), each = 4)
-#  )
-#  set.seed(1974)
-#  initialcoords <- matrix(rnorm(ncol(wiki) * 2), nrow = 2)
-#  
-#  agcoords <- do.call(rbind,
-#                      lapply(1:nrow(inputs),
-#                             FUN = function(x) {
-#    a <- inputs[x, 'a']
-#    g <- inputs[x, 'g']
-#    newcoords <- initialcoords
-#    localcoords <- projectKNNs(wiki,
-#                               alpha =  a,
-#                               gamma = g,
-#                               verbose = FALSE,
-#                               coords = newcoords)
-#    localcoords <- data.frame(scale(t(localcoords)))
-#    colnames(localcoords) <- c("x", "y")
-#    localcoords$a <- a
-#    localcoords$g <- g
-#    localcoords$activity <- log(Matrix::colSums(wiki))
-#    localcoords
-#  }))
+data(wiki)
+inputs <- data.frame(
+  g = rep(c(.5,1,7,14), 5),
+  a = rep(c(0,.1,1,5,10), each = 4)
+)
+set.seed(1974)
+initialcoords <- matrix(rnorm(ncol(wiki) * 2), nrow = 2)
 
-## ----drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis'----
-load(system.file("extdata/agcoords.Rda", package = "largeVis"))
+agcoords <- do.call(rbind, 
+                    lapply(1:nrow(inputs), 
+                           FUN = function(x) {
+  a <- inputs[x, 'a']
+  g <- inputs[x, 'g']
+  newcoords <- initialcoords
+  localcoords <- projectKNNs(wiki, 
+                             alpha =  a, 
+                             gamma = g,
+                             verbose = FALSE, 
+                             coords = newcoords)
+  localcoords <- data.frame(scale(t(localcoords)))
+  colnames(localcoords) <- c("x", "y")
+  localcoords$a <- a
+  localcoords$g <- g
+  localcoords$rebuild <- 'no'
+  localcoords$activity <- log(Matrix::colSums(wiki))
+  localcoords  
+}))
+
+## ----drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis',cache=FALSE----
+if (!exists("agcoords")) load(system.file("extdata/agcoords.Rda", package = "largeVis"))
 ggplot(agcoords,
        aes(x = x, 
            y = y, 
@@ -91,50 +88,51 @@ ggplot(agcoords,
                         guide=FALSE) +
   ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  ")))
 
-## ----iris_mkhyperparams,echo=F,eval=rebuild------------------------------
-#  data(iris)
-#  Ks <- c(5, 10,20,30)
-#  Ms <- c(5, 10, 20)
-#  dat <- iris[,1:4]
-#  dupes <- duplicated(dat)
-#  dat <- dat[-dupes,]
-#  labels <- iris$Species[-dupes]
-#  dat <- as.matrix(dat)
-#  dat <- t(dat)
-#  
-#  set.seed(1974)
-#  coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
-#  neighbors <- randomProjectionTreeSearch(dat,
-#                                        K = max(Ks),
-#                                        verbose = FALSE)
-#  
-#  iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
-#    neighborIndices <- neighborsToVectors(neighbors[1:K,])
-#    distances <- largeVis::distance(x = dat,
-#                                    neighborIndices$i,
-#                                    neighborIndices$j,
-#                                    verbose = FALSE)
-#    wij <- buildEdgeMatrix(i = neighborIndices$i,
-#                         j = neighborIndices$j,
-#                         d = distances, verbose = FALSE)
-#    do.call(rbind, lapply(Ms, FUN = function(M) {
-#      coords <- projectKNNs(wij = wij$wij, M = M,
-#                            coords = coordsinput,
-#                            verbose = FALSE)
-#      coords <- scale(t(coords))
-#      coords <- data.frame(coords)
-#      colnames(coords) <- c("x", "y")
-#      coords$K <- K
-#      coords$M <- M
-#      coords$Species <- as.integer(labels)
-#      coords
-#    }))
-#  }))
-#  iriscoords$Species <- factor(iriscoords$Species)
-#  levels(iriscoords$Species) <- levels(iris$Species)
+## ----iris_mkhyperparams,echo=F,eval=rebuild,cache=FALSE------------------
+data(iris)
+Ks <- c(5, 10,20,30)
+Ms <- c(5, 10, 20)
+dat <- iris[,1:4]
+dupes <- duplicated(dat)
+dat <- dat[-dupes,]
+labels <- iris$Species[-dupes]
+dat <- as.matrix(dat)
+dat <- t(dat)
+
+set.seed(1974)
+coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
+neighbors <- randomProjectionTreeSearch(dat, 
+                                      K = max(Ks), 
+                                      verbose = FALSE)
+
+iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
+  neighborIndices <- neighborsToVectors(neighbors[1:K,])
+  distances <- largeVis::distance(x = dat, 
+                                  neighborIndices$i, 
+                                  neighborIndices$j,
+                                  verbose = FALSE)
+  wij <- buildEdgeMatrix(i = neighborIndices$i, 
+                       j = neighborIndices$j, 
+                       d = distances, verbose = FALSE)
+  do.call(rbind, lapply(Ms, FUN = function(M) {
+    coords <- projectKNNs(wij = wij$wij, M = M, 
+                          coords = coordsinput, 
+                          verbose = FALSE)
+    coords <- scale(t(coords))
+    coords <- data.frame(coords)
+    colnames(coords) <- c("x", "y")
+    coords$K <- K
+    coords$M <- M
+    coords$rebuild <- 'no'
+    coords$Species <- as.integer(labels)
+    coords
+  }))
+}))
+iriscoords$Species <- factor(iriscoords$Species)
+levels(iriscoords$Species) <- levels(iris$Species)
 
 ## ----drawiris,echo=F,fig.width=4,fig.height=4.5,fig.align='center',results='asis'----
-load(system.file("extdata/iriscoords.Rda", package = "largeVis"))
+if (!exists("iriscoords")) load(system.file("extdata/iriscoords.Rda", package = "largeVis"))
 
 ggplot(iriscoords,
        aes(x = x,

@@ -116,11 +116,17 @@ protected:
   int D;
   Gradient(const double g, 
            const int d);
-  inline void multModify(double *col, int D, double adj) const;
   virtual void _positiveGradient(const double dist_squared, 
                                 double* holder) const = 0;
   virtual bool _negativeGradient(const double dist_squared, 
                                 double* holder) const = 0;
+  inline double max(double val) const;
+  inline double min(double val) const;
+  inline double clamp(double val) const;
+  inline double distAndVector(const double *x_i,
+                              const double *x_j,
+                              double *output) const;
+  inline void multModify(double *col, int D, double adj) const;
 public:
   virtual void positiveGradient(const double* i, 
                                 const double* j, 
@@ -128,33 +134,32 @@ public:
   virtual bool negativeGradient(const double* i, 
                                 const double* k,
                                 double* holder) const;
-  inline double distAndVector(const double *x_i,
-                       const double *x_j,
-                       double *output) const;
 };
-class LookupGradient: public Gradient {
-private:
-  double Lookup(const double dist_squared, double* table) const;
-protected:
-  double bound;
-  double alpha;
-  int steps;
-  double boundsteps;
-  double* negativeLookup;
-  virtual void _positiveGradient(const double dist_squared, 
-                                 double* holder) const;
-  virtual bool _negativeGradient(const double dist_squared, 
-                                 double* holder) const;
-public:
-  LookupGradient(double alpha, 
-                 double gamma, 
-                 int d,
-                 double bound, 
-                 int steps);
-};
+// class LookupGradient: public Gradient {
+// private:
+//   double Lookup(const double dist_squared, double* table) const;
+// protected:
+//   double bound;
+//   double alpha;
+//   double twoalpha;
+//   int steps;
+//   double boundsteps;
+//   double* negativeLookup;
+//   virtual void _positiveGradient(const double dist_squared, 
+//                                  double* holder) const;
+//   virtual bool _negativeGradient(const double dist_squared, 
+//                                  double* holder) const;
+// public:
+//   LookupGradient(double alpha, 
+//                  double gamma, 
+//                  int d,
+//                  double bound, 
+//                  int steps);
+// };
 class AlphaGradient: public Gradient {
   double alphagamma;
   double alpha;
+  double twoalpha;
 public:
   AlphaGradient(const double a, 
                 const double g,
@@ -187,10 +192,10 @@ protected:
                         double* holder) const;
 };
 
-arma::vec testNegativeGradient(arma::vec i, arma::vec j,
-                               NumericVector alpha, NumericVector gamma, NumericVector f);
-arma::vec testPositiveGradient(arma::vec i, arma::vec j,
-                               NumericVector alpha, NumericVector f);
+// arma::vec testNegativeGradient(arma::vec i, arma::vec j,
+//                                NumericVector alpha, NumericVector gamma, NumericVector f);
+// arma::vec testPositiveGradient(arma::vec i, arma::vec j,
+//                                NumericVector alpha, NumericVector f);
 
 /*
  * The SGD loop
