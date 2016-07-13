@@ -52,3 +52,10 @@
 ^f.*\.Rda$
 ^vignettes/.*\.Rda$
 ^vignettes/.*\.Rda$
+^Examples/.Rmd
+^Examples/.html
+^faceshighres.png$
+^poliblog/.Rda
+^log4j/.spark/.log
+^mnist$
+^derby/.log

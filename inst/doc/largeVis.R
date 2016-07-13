@@ -42,8 +42,8 @@ require(largeVis,quietly = TRUE)
 ## ----buildhyperparameters,echo=F,eval=rebuild----------------------------
 data(wiki)
 inputs <- data.frame(
-  g = rep(c(.5,1,7,14), 5),
-  a = rep(c(0,.1,1,5,10), each = 4)
+  g = rep(c(1,7,14), 4),
+  a = rep(c(0,.1,1,10), each = 3)
 )
 set.seed(1974)
 initialcoords <- matrix(rnorm(ncol(wiki) * 2), nrow = 2)
