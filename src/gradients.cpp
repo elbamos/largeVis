@@ -1,7 +1,7 @@
 // [[Rcpp::plugins(openmp)]]
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::depends(RcppProgress)]]   
+// [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
 
 /*
@@ -13,11 +13,11 @@
 // #include <x86intrin.h>
 // double clamp ( double val, double minval, double maxval ){
 //   __builtin_ia32_storesd( &val, __builtin_ia32_minsd( __builtin_ia32_maxsd(__builtin_ia32_loadupd(&val),
-//                                                                            __builtin_ia32_loadupd(&minval)), 
+//                                                                            __builtin_ia32_loadupd(&minval)),
 //                                                                            __builtin_ia32_loadupd(&maxval)));
 //   return val;
 // }
-// #else 
+// #else
 // inline double max(double val, double maxval) {
 //   return (val > maxval) ? maxval : val;
 // }
@@ -27,30 +27,29 @@
 // double clamp(double val, double cap) {
 //   return min(max(val, -cap), cap);
 // }
-// #endif 
+// #endif
 
 
 
 
 // Parent class
-Gradient::Gradient(const double g, 
+Gradient::Gradient(const double g,
                    const int d) {
   gamma = g;
   D = d;
   cap = 5;
 }
-void Gradient::positiveGradient(const double* i, 
-                                const double* j, 
-                                double* holder) const { 
+void Gradient::positiveGradient(const double* i,
+                                const double* j,
+                                double* holder) const {
   const double dist_squared = distAndVector(i, j, holder);
   _positiveGradient(dist_squared, holder);
 }
-bool Gradient::negativeGradient(const double* i, 
+void Gradient::negativeGradient(const double* i,
                                 const double* k,
                                 double* holder) const {
   const double dist_squared = distAndVector(i, k, holder);
-  bool val = _negativeGradient(dist_squared, holder);
-  return val;
+  _negativeGradient(dist_squared, holder);
 }
 // Copies the vector sums into a vector while it computes distance^2 -
 // useful in calculating the gradients during SGD
@@ -65,22 +64,23 @@ inline double Gradient::distAndVector(const double *x_i,
   }
   return cnt;
 }
-
-inline double Gradient::max(double val) const {
-  return (val > cap) ? cap : val;
-}
-inline double Gradient::min(double val) const {
-  return (val <  -cap) ? -cap : val;
-}
+//
+// inline double Gradient::max(double val) const {
+//   return (val > cap) ? cap : val;
+// }
+// inline double Gradient::min(double val) const {
+//   return (val <  -cap) ? -cap : val;
+// }
 
 inline double Gradient::clamp(double val) const {
-  return min(max(val));
+  return fmin(fmax(val, -cap), cap);
+  // if (val > cap) return cap;
   // else if (val < - cap) return -cap;
   // else return val;
 }
 
 inline void Gradient::multModify(double *col, int D, double adj) const {
-  for (int i = 0; i != D; i++) col[i] = clamp(col[i] * adj); 
+  for (int i = 0; i != D; i++) col[i] = clamp(col[i] * adj);
   // for (int i = 0; i !=D; i++) {
   //   if (col[i] > cap) col[i] = cap;
   //   else if (col[i] < -cap) col[i] = -cap;
@@ -90,45 +90,41 @@ inline void Gradient::multModify(double *col, int D, double adj) const {
 /*
  * Generalized gradient with an alpha parameter
  */
-AlphaGradient::AlphaGradient(const double a, 
-                             const double g, 
+AlphaGradient::AlphaGradient(const double a,
+                             const double g,
                              const int d) : Gradient(g, d) {
   alpha = a;
   alphagamma = a * g * 2;
   twoalpha = alpha * -2;
 }
-void AlphaGradient::_positiveGradient(const double dist_squared, 
+void AlphaGradient::_positiveGradient(const double dist_squared,
                                       double* holder) const {
   const double grad = twoalpha / (1 + alpha * dist_squared);
   multModify(holder, D, grad);
 }
-bool AlphaGradient::_negativeGradient(const double dist_squared, 
+void AlphaGradient::_negativeGradient(const double dist_squared,
                                       double* holder) const {
-  if (dist_squared == 0) return true; // If the two points are in the same place, skip
   const double adk = alpha * dist_squared;
   double grad = alphagamma / (dist_squared * (adk + 1));
   multModify(holder, D, grad);
-  return false;
 }
 
 /*
  * Optimized gradient for alpha == 1
  */
-AlphaOneGradient::AlphaOneGradient(const double g, 
+AlphaOneGradient::AlphaOneGradient(const double g,
                                    const int d) : AlphaGradient(1, g, d) {
   this -> gamma = 2 * g;
 }
-void AlphaOneGradient::_positiveGradient(const double dist_squared,  
+void AlphaOneGradient::_positiveGradient(const double dist_squared,
                                          double* holder) const {
   const double grad = - 2 / (1 + dist_squared);
   multModify(holder, D, grad);
 }
-bool AlphaOneGradient::_negativeGradient(const double dist_squared, 
+void AlphaOneGradient::_negativeGradient(const double dist_squared,
                                          double* holder) const {
-  if (dist_squared == 0) return true; // If the two points are in the same place, skip
-  double grad = gamma / (1 + dist_squared) / (0.1 + dist_squared); 
+  double grad = gamma / (1 + dist_squared) / (0.1 + dist_squared);
   multModify(holder, D, grad);
-  return false;
 }
 
 /*
@@ -138,21 +134,20 @@ bool AlphaOneGradient::_negativeGradient(const double dist_squared,
 ExpGradient::ExpGradient(const double g,
                          const int d) : Gradient(g, d) {
   gammagamma = g * g;
+  cap = gamma;
 }
-void ExpGradient::_positiveGradient(const double dist_squared, 
+void ExpGradient::_positiveGradient(const double dist_squared,
                                    double* holder) const {
   const double expsq = exp(dist_squared);
-  const double grad = (dist_squared > 4) ? -1 : 
+  const double grad = (dist_squared > 4) ? -1 :
                                            -(expsq / (expsq + 1));
   multModify(holder, D, grad);
 }
-bool ExpGradient::_negativeGradient(const double dist_squared, 
+void ExpGradient::_negativeGradient(const double dist_squared,
                                    double* holder) const {
-  if (dist_squared == 0) return true; 
-  const double grad = (dist_squared > gammagamma) ? 0 : 
+  const double grad = (dist_squared > gammagamma) ? 0 :
                                                     gamma / (1 + exp(dist_squared));
   multModify(holder, D, grad);
-  return false;
 }
 
 // // [[Rcpp::export]]
@@ -189,10 +184,10 @@ bool ExpGradient::_negativeGradient(const double dist_squared,
 // /*
 //  * Class for a gradient found using a pre-calculated lookup table
 //  */
-// LookupGradient::LookupGradient(double alpha, 
-//                                double gamma, 
+// LookupGradient::LookupGradient(double alpha,
+//                                double gamma,
 //                                int d,
-//                                double bound, 
+//                                double bound,
 //                                int steps) : Gradient(gamma, d) {
 //   this -> alpha = alpha;
 //   twoalpha = alpha * -2;
@@ -209,27 +204,27 @@ bool ExpGradient::_negativeGradient(const double dist_squared,
 //   }
 //   negativeLookup[0] = negativeLookup[1];
 // }
-// 
+//
 // inline int fastround(double r) {
 //   return r + 0.5;
 // }
-// 
-// double LookupGradient::Lookup(const double dist_squared, 
+//
+// double LookupGradient::Lookup(const double dist_squared,
 //                               double* table) const {
 //   return (dist_squared > bound) ? table[steps - 1] :
 //   table[fastround(dist_squared * boundsteps)];
 // }
-// 
-// void LookupGradient::_positiveGradient(const double dist_squared, 
+//
+// void LookupGradient::_positiveGradient(const double dist_squared,
 //                                        double* holder) const {
 //   const double grad = twoalpha / (1 + alpha * dist_squared);
 //   multModify(holder, D, grad);
 // }
-// bool LookupGradient::_negativeGradient(const double dist_squared, 
+// bool LookupGradient::_negativeGradient(const double dist_squared,
 //                                        double* holder) const {
 //   if (dist_squared == 0) return true;
 //   double grad = Lookup(dist_squared, negativeLookup);
 //   multModify(holder, D, grad);
 //   return false;
 // }
-// 
+//

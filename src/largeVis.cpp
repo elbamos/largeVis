@@ -40,26 +40,22 @@ arma::mat sgd(arma::mat coords,
   const int posSampleLength = ((nBatches > 1000000) ? 1000000 : (int) nBatches);
   mat positiveSamples = randu<mat>(2, posSampleLength);
   double *posRandomPtr = positiveSamples.memptr();
-  
+
   Gradient* grad;
   if (alpha == 0) grad = new ExpGradient(gamma, D);
   else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
   else grad = new AlphaGradient(alpha, gamma, D);
-  double firstholder[10];
-  double secondholder[10];
-    
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) \
-    shared (coords, positiveSamples, posAlias, negAlias) \
-      threadprivate(firstholder, secondholder)
+    shared (coords, positiveSamples, posAlias, negAlias)
 #endif
   for (long eIdx=0; eIdx < nBatches; eIdx++) if (progress.increment()) {
-
     const int e_ij = posAlias -> search(posRandomPtr + ((eIdx % posSampleLength) * 2));
-
     const int i = targets_i[e_ij];
     const int j = sources_j[e_ij];
-
+    double firstholder[10];
+    double secondholder[10];
     // mix weight into learning rate
     const double localRho =  ((useWeights) ? weights[e_ij] : 1.0) * (rho - ((rho - minRho) * eIdx / nBatches));
 
@@ -80,7 +76,7 @@ arma::mat sgd(arma::mat coords,
     int k;
     while (m < M) {
       if (sampleIdx % (M * 2) == 0) negSamples.randu();
-      k = negAlias -> search(samplesPtr + (sampleIdx++ % (M * 2) * 2)); 
+      k = negAlias -> search(samplesPtr + (sampleIdx++ % (M * 2) * 2));
       // Check that the draw isn't one of i's edges
       if (k == i ||
           k == j ||
@@ -90,7 +86,7 @@ arma::mat sgd(arma::mat coords,
 
       double *y_k = coordsPtr + (k * D);
 
-      if (grad -> negativeGradient(y_i, y_k, secondholder)) continue;
+      grad -> negativeGradient(y_i, y_k, secondholder);
 
       for (int d = 0; d < D; d++) firstholder[d] += secondholder[d];
       for (int d = 0; d < D; d++) y_k[d] -= secondholder[d] * localRho;
