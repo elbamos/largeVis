@@ -1,11 +1,12 @@
 ---
 title: "ANN Benchmarks"
 author: "Amos Elberg"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{ANN Benchmarks}
-  %\VignetteEngine{knitr::rmarkdown}
+date: '`r Sys.Date()`'
+output:
+  rmarkdown::html_vignette: default
+vignette: |
+  %\VignetteIndexEntry{ANN Benchmarks} 
+  %\VignetteEngine{knitr::rmarkdown} 
   %\VignetteEncoding{UTF-8}
 ---
 

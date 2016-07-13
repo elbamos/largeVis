@@ -41,6 +41,8 @@ randomProjectionTreeSearch.matrix <- function(x,
                                        verbose= TRUE) {
   if (verbose) cat("Searching for neighbors.\n")
 
+  if (distance_method == "Cosine") x <- x / rowSums(x)
+  
   knns <- searchTrees(threshold = tree_threshold,
                       n_trees = n_trees,
                       K = K,
