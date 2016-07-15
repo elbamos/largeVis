@@ -7,19 +7,10 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
 
 #### Project Status & Caveats
 
+-   In final testing before submission to CRAN.
 -   Tested with (dense) matrices &gt; 2.5 Million rows, and sparse matrices with &gt; 10,000 features.
 -   Performance and memory efficiency are good.
--   The alternative distance function (*α* = 0) tends to be numerically unstable and should be avoided.
 -   I have been able to replicate, in the sense of producing characteristically similar visualizations, the results in the original paper.
-
-#### To-do's Before Submission to CRAN
-
--   Demonstrate correctness by visualizing the wiki-doc and wiki-term datasets used in the paper. **DONE**
--   Compile more-complete benchmarks from a server. **DONE**
--   Switch to data generated on AWS instance
--   Confirm that the map visualization function works with color images. **DONE**
--   Give Erik B. a few days to comment on the performance. **DONE**
--   Reduce submission size **DONE**
 
 Examples
 --------
@@ -27,6 +18,8 @@ Examples
 ### MNIST
 
 ![](README_files/figure-markdown_github/drawmnist-1.png)
+
+<img src="README_files/figure-markdown_github/mnistmanifold-1.png" style="display: block; margin: auto;" />
 
 ### Wikipedia Terms and Documents
 

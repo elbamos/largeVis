@@ -15,9 +15,6 @@
 #' The default probabilistic function is \eqn{1 / (1 + \alpha \dot ||x||^2)}. If \eqn{\alpha} is set to zero,
 #' an alternative probabilistic function, \eqn{1 / (1 + \exp(x^2))} will be used instead.
 #'
-#' The \code{weight_pos_samples} parameter controls how to handle edge-weights.  The paper authors recommend using a weighted
-#' sampling approach to select edges, and treating edge-weight as binary in calculating the objective. This is the default.
-#'
 #' Note that the input matrix should be symmetric.  If any columns in the matrix are empty, the function will fail.
 #'
 #' @param wij A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.
@@ -30,8 +27,6 @@
 #' between points in the low-dimensional projection to the likelihood that the two points are nearest neighbors. Increasing \eqn{\alpha} tends
 #' to push nodes and their neighbors closer together; decreasing \eqn{\alpha} produces a broader distribution. Setting \eqn{\alpha} to zero
 #' enables the alternative distance function. \eqn{\alpha} below zero is meaningless.
-#' @param weight_pos_samples Whether to sample positive edges according to their edge weights (the default) or take the
-#' weights into account when calculating gradient.  See also the Details section.
 #' @param rho Initial learning rate.
 #' @param min_rho Final learning rate.
 #' @param coords An initialized coordinate matrix.
@@ -53,7 +48,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                         dim = 2, # dimension of the projection space
                         sgd_batches = (length(wij@p) - 1) * 20000,
                         M = 5,
-                        weight_pos_samples = TRUE,
                         gamma = 7,
                         alpha = 1,
                         rho = 1,
@@ -80,7 +74,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
               targets_i = is,
               sources_j = js,
               ps = wij@p,
-              weights = wij@x, useWeights = ! weight_pos_samples,
+              weights = wij@x,
               alpha = alpha, gamma = gamma, M = M,
               rho = rho, minRho = min_rho,
               nBatches = sgd_batches,

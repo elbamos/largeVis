@@ -64,27 +64,13 @@ inline double Gradient::distAndVector(const double *x_i,
   }
   return cnt;
 }
-//
-// inline double Gradient::max(double val) const {
-//   return (val > cap) ? cap : val;
-// }
-// inline double Gradient::min(double val) const {
-//   return (val <  -cap) ? -cap : val;
-// }
 
 inline double Gradient::clamp(double val) const {
   return fmin(fmax(val, -cap), cap);
-  // if (val > cap) return cap;
-  // else if (val < - cap) return -cap;
-  // else return val;
 }
 
 inline void Gradient::multModify(double *col, int D, double adj) const {
   for (int i = 0; i != D; i++) col[i] = clamp(col[i] * adj);
-  // for (int i = 0; i !=D; i++) {
-  //   if (col[i] > cap) col[i] = cap;
-  //   else if (col[i] < -cap) col[i] = -cap;
-  // }
 }
 
 /*
@@ -149,37 +135,6 @@ void ExpGradient::_negativeGradient(const double dist_squared,
                                                     gamma / (1 + exp(dist_squared));
   multModify(holder, D, grad);
 }
-
-// // [[Rcpp::export]]
-// arma::vec testPositiveGradient(arma::vec i, arma::vec j,
-//                                NumericVector alpha, NumericVector f) {
-//   double a = alpha[0];
-//   vec holder = vec(i.size());
-//   Gradient* grad;
-//   if (a == 0) grad = new ExpGradient(1, i.size());
-//   else grad = new LookupGradient(a,
-//                             1,
-//                             i.size(),
-//                             7, //bound
-//                             1000);
-//   grad -> positiveGradient(i.memptr(), j.memptr(), holder.memptr());
-//   return holder;
-// };
-// // [[Rcpp::export]]
-// arma::vec testNegativeGradient(arma::vec i, arma::vec j,
-//                                NumericVector alpha, NumericVector gamma, NumericVector f) {
-//   double a = alpha[0];
-//   double g = gamma[0];
-//   vec holder = vec(i.size());
-//   Gradient* grad;
-//   if (a == 0) grad = new ExpGradient(g, i.size());
-//   else grad = new LookupGradient(a,
-//                                  g,
-//                                  i.size(),
-//                                  49, //bound
-//                                  1000);  grad -> negativeGradient(i.memptr(), j.memptr(), holder.memptr());
-//   return holder;
-// };
 
 // /*
 //  * Class for a gradient found using a pre-calculated lookup table

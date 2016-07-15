@@ -62,7 +62,7 @@ manifoldMap <- function(x,
   selections <- sample(N, n, replace = F)
   lowerscale <- min(images)
   upperscale <- max(images)
-  graphics::plot(x[selections, ], pch = NA, type = 'n', ...)
+  graphics::plot(x * 1.1, pch = NA, type = 'n', ...)
 
   for (i in selections) {
     if (D == 2) {

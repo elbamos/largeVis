@@ -68,7 +68,7 @@ if (rebuild) {
                      tree_threshold = 784, 
                      n_trees = 50, 
                      max_iter = 1, 
-                     verbose=FALSE)
+                     verbose=TRUE)
   mnistCoords <- mnistVis$coords
   mnistCoords <- t(mnistCoords)
   mnistCoords <- data.frame(mnistCoords)
@@ -84,34 +84,35 @@ if (file.exists(paste(vdatapath, "mnistcoords.Rda", sep = ""))) {
   
   ggplot(mnistCoords, aes(x = x, y = y, color = labels)) +
     geom_point(size = 0.1, alpha = 0.3) +
-    scale_x_continuous(name = "", limits = c(-47, 40), breaks = NULL) +
-    scale_y_continuous(name = "", limits = c(-40, 40), breaks = NULL) +
+    scale_x_continuous(name = "", limits = c(-45, 45), breaks = NULL) +
+    scale_y_continuous(name = "", limits = c(-45, 60), breaks = NULL) +
     scale_color_manual(values = colors_divergent_discrete(10)(10)) +
     guides(colour = guide_legend(override.aes = list(size=5))) +
     ggtitle(expression(
       atop("MNIST",
-           italic("(n = 70000, K = 100, n_trees = 50, threshold = 700)")
+           italic("(n = 70000, K = 150, n_trees = 50, threshold = 784)")
            )
       ))
 } 
 ```
 
 ```{r mnistmanifold,echo=F,results='asis',fig.width=8,fig.height=8,message=F,warning=F,fig.align='center'}
-if (file.exists("../largeVisData/mnist/train.RData") && exists("mnistCoords")) {
-  
-  par(mai=c(0.25, 0.25, 0.25, 0.25))
-  if (exists("trainData")) {
-    dim(trainData) <- c(60000, 28, 28)
-    trainData <- aperm(trainData, perm = c(1,3,2), resize = FALSE)
-    set.seed(1974)
-    manifoldMap(mnistCoords[,1:2],
-        n = 5000,
-        scale = 0.1,
-        images = trainData,
-        xlab = "", 
-        ylab = "")
-  }
+if (!exists("mnistData")) {
+  load("./data/train.RData")
+  load("./data/test.RData")
+  mnistData <- rbind(trainData,testData)
 }
+  
+par(mai=c(0.25, 0.25, 0.25, 0.25))
+dim(mnistData) <- c(70000, 28, 28)
+mnistData <- aperm(mnistData, perm = c(1,3,2), resize = FALSE)
+set.seed(1974)
+manifoldMap(mnistCoords[,1:2],
+    n = 5000,
+    scale = 0.1,
+    images = mnistData,
+    xlab = "", 
+    ylab = "")
 ```
 
 ### Wikipedia Terms and Documents
@@ -136,7 +137,7 @@ if (rebuild) {
   wikilabels <- readr::read_delim("./Wiki_embedding/wiki_word_label.txt", 
                                   col_names = FALSE, delim = "\t")
   words <- data.frame(word = wikiwords, 
-                      labelrow = match(wikiwords, wikilabels$X1))
+                      labelrow = match(wikiwords$X1, wikilabels$X1))
   words$label <- wikilabels$X2[words$labelrow]
   words <- cbind(words, 
                  data.frame(t(wikiVis$coords)))
@@ -153,8 +154,8 @@ if (file.exists(datapath)) {
     geom_point(size = 0.001, alpha = 0.5) +
     scale_color_gradientn(colors = colors_divergent_discrete(11)(11)) +
     guides(color = FALSE) +
-    scale_x_continuous("", limits = c(-25, 25), breaks = NULL) + 
-    scale_y_continuous("", limits = c(-25, 25), breaks = NULL) +
+    scale_x_continuous("", limits = c(-30, 30), breaks = NULL) + 
+    scale_y_continuous("", limits = c(-30, 30), breaks = NULL) +
     ggtitle(expression(atop("Wiki Word Vectors", atop(paste(sep = " ", 
          "n = 836755,", "K = 100,", gamma, "= 7,", " M = 5, ", alpha, "= 1,", " n_trees = 50,",
          "max_iters = 1,", " threshold = 100")))))
@@ -184,7 +185,7 @@ if (rebuild) {
   docs <- data.frame(t(wikiVis$coords))
   docs$label <- factor(wikilabels$X2[wikidocs$X1 + 1])
 
-  colnames(docs) <- c('doc', 'label', 'x', 'y')
+  colnames(docs) <- c("x", "y", "label")
   save(docs, file = datapath)
 }
 ```
@@ -196,8 +197,8 @@ if (file.exists(datapath)) {
     geom_point(size = 0.001, alpha = 0.5) +
     scale_color_gradientn(colors = colors_divergent_discrete(11)(11)) +
     guides(color = FALSE) +
-    scale_x_continuous("", limits = c(-55, 50), breaks = NULL) + 
-    scale_y_continuous("", limits = c(-50, 50), breaks = NULL) +
+    scale_x_continuous("", limits = c(-60, 60), breaks = NULL) + 
+    scale_y_continuous("", limits = c(-60, 60), breaks = NULL) +
     ggtitle(expression(atop("Wiki Doc Vectors", atop(paste(sep = " ", 
          "n = 2837431,", "K = 100,", gamma, "= 7,", " M = 5, ", alpha, "= 1,", " n_trees = 50,",
          "max_iters = 1,", " threshold = 100")))))

@@ -9,8 +9,10 @@
 * projectKNNs 
   + Should be 10x faster for small datasets
   + Replaced binary search ( O(n log n) ) with the alias algorithm for weighted sampling ( O(1) )
-  + Clips gradients, causes alpha == 0 to work properly now
-  + Halving gradients, since they're being applied to both vertices at once
+  + Clips gradients.  Alpha == 0 to work properly now
+  + Uses gradient clipping strategy from authors' reference implementation. 
+  + Optimized implementation for alpha == 1
+  + Removed option for mixing weights into loss function - doesn't make sense if gradients are being clipped. 
 * Vignettes:
   + Reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
   + Benchmarks now a separate vignette, more detailed
@@ -39,8 +41,6 @@
 * Correctness and Testing
   + Tests are separated by subject
   + Additional, more extensive tests with greater code coverage
-  + Gradients now being tested
-  + Added C++ unit tests
   + Added travis testing against OSX
 
 ### largeVis 0.1.5

@@ -20,7 +20,6 @@ arma::mat sgd(arma::mat coords,
               const double gamma,
               const double rho,
               const double minRho,
-              const bool useWeights,
               const long nBatches,
               const int M,
               const double alpha,
@@ -35,7 +34,7 @@ arma::mat sgd(arma::mat coords,
   double *coordsPtr = coords.memptr();
 
   AliasTable* negAlias = new AliasTable(N, pow(diff(ps), 0.75));
-  AliasTable* posAlias = (useWeights) ? new AliasTable(E) : new AliasTable(E, weights);
+  AliasTable* posAlias = new AliasTable(E, weights);
 
   const int posSampleLength = ((nBatches > 1000000) ? 1000000 : (int) nBatches);
   mat positiveSamples = randu<mat>(2, posSampleLength);
@@ -57,7 +56,7 @@ arma::mat sgd(arma::mat coords,
     double firstholder[10];
     double secondholder[10];
     // mix weight into learning rate
-    const double localRho =  ((useWeights) ? weights[e_ij] : 1.0) * (rho - ((rho - minRho) * eIdx / nBatches));
+    const double localRho = rho - ((rho - minRho) * eIdx / nBatches);
 
     double *y_i = coordsPtr + (i * D);
     double *y_j = coordsPtr + (j * D);

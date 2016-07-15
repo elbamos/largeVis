@@ -49,7 +49,7 @@ theme_set(
     title = element_text(size = rel(0.9))
   ) 
 )
-rebuild <- TRUE
+rebuild <- FALSE
 
 require(largeVis,quietly = TRUE)
 ```
