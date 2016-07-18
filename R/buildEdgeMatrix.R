@@ -156,8 +156,8 @@ i2p <- function(is) {
 }
 
 #' @export
-WIJ <- function(i, j, D, perplexity) {
-  wij <- referenceWij(i,j,D,perplexity)
+WIJ <- function(i, j, d, perplexity) {
+  wij <- referenceWij(i,j,d^2,perplexity)
   print("back")
   return(wij)
 }

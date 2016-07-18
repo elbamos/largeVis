@@ -62,24 +62,25 @@ arma::sp_mat distMatrixTowij( const NumericVector sources,
 };
 
 
-// [[Rcpp::export]]
-double sigFunc(const double& twosigmasquared,
-               const NumericVector& x_i,
-               const double& perplexity) {
-  const NumericVector xs = exp(- x_i / twosigmasquared);
-  const double sum_weight = sum(xs);
-  double H = sum(x_i * xs) / twosigmasquared;
-  H = (H / sum_weight) + log(sum_weight);
-  return pow(perplexity - H, 2);
-};
-// double sigFunc(const double& sigma,
+
+// double sigFunc(const double& twosigmasquared,
 //                const NumericVector& x_i,
 //                const double& perplexity) {
-//   const NumericVector xs = exp(- x_i * x_i / sigma);
-//   const NumericVector softxs = xs / sum(xs);
-//   const double p2 = - sum(log(softxs) / log(2)) / xs.length();
-//   return pow(perplexity - p2, 2);
+//   const NumericVector xs = exp(- x_i * x_i / twosigmasquared);
+//   const double sum_weight = sum(xs);
+//   double H = sum(x_i * x_i * xs) / twosigmasquared;
+//   H = (H / sum_weight) + log(sum_weight);
+//   return pow(perplexity - H, 2);
 // };
+// [[Rcpp::export]]
+double sigFunc(const double& sigma,
+               const NumericVector& x_i,
+               const double& perplexity) {
+  const NumericVector xs = exp(- x_i * x_i / sigma);
+  const NumericVector softxs = xs / sum(xs);
+  const double p2 = - sum(xs * log(softxs) / log(2));
+  return pow(perplexity - p2, 2);
+};
 
 
 

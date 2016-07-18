@@ -122,7 +122,6 @@ vis <- function(x,
                  neighbor_indices$j,
                  distance_method,
                  verbose)[, 1]
-  if (distance_method == "Euclidean") xs <- xs^2
 
   if (verbose) cat("\n")
 
