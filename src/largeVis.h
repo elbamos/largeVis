@@ -103,7 +103,8 @@ public:
   AliasTable(const int n,
              const arma::vec& weights);
   AliasTable(const int n);
-  int search(double *random);
+  int search(double *random) const;
+  int search(double random, double random2) const;
 };
 
 /*
@@ -120,7 +121,7 @@ protected:
                                 double* holder) const = 0;
   virtual void _negativeGradient(const double dist_squared,
                                 double* holder) const = 0;
-  inline void multModify(double *col, int D, double adj) const;
+  inline void multModify(double *col, double adj) const;
   // inline double max(double val) const;
   // inline double min(double val) const;
   inline double clamp(double val) const;

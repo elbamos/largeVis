@@ -4,22 +4,17 @@
 \alias{projectKNNs}
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
-projectKNNs(wij, dim = 2, sgd_batches = (length(wij@p) - 1) * 20000,
-  M = 5, weight_pos_samples = TRUE, gamma = 7, alpha = 1, rho = 1,
-  coords = NULL, min_rho = 0, verbose = TRUE)
+projectKNNs(wij, dim = 2, sgd_batches = NULL, M = 5, gamma = 7,
+  alpha = 1, rho = 1, coords = NULL, min_rho = 0, verbose = TRUE)
 }
 \arguments{
 \item{wij}{A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.}
 
 \item{dim}{The number of dimensions for the projection space.}
 
-\item{sgd_batches}{The number of edges to process during SGD; defaults to 20000 * the number of rows in x, as recommended
-by the paper authors.}
+\item{sgd_batches}{The number of edges to process during SGD.}
 
 \item{M}{The number of negative edges to sample for each positive edge.}
-
-\item{weight_pos_samples}{Whether to sample positive edges according to their edge weights (the default) or take the
-weights into account when calculating gradient.  See also the Details section.}
 
 \item{gamma}{The strength of the force pushing non-neighbor nodes apart.}
 
@@ -53,9 +48,6 @@ and the probability that they are nearest neighbors.
 
 The default probabilistic function is \eqn{1 / (1 + \alpha \dot ||x||^2)}. If \eqn{\alpha} is set to zero,
 an alternative probabilistic function, \eqn{1 / (1 + \exp(x^2))} will be used instead.
-
-The \code{weight_pos_samples} parameter controls how to handle edge-weights.  The paper authors recommend using a weighted
-sampling approach to select edges, and treating edge-weight as binary in calculating the objective. This is the default.
 
 Note that the input matrix should be symmetric.  If any columns in the matrix are empty, the function will fail.
 }

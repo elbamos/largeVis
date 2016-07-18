@@ -69,7 +69,7 @@ inline double Gradient::clamp(double val) const {
   return fmin(fmax(val, -cap), cap);
 }
 
-inline void Gradient::multModify(double *col, int D, double adj) const {
+inline void Gradient::multModify(double *col, double adj) const {
   for (int i = 0; i != D; i++) col[i] = clamp(col[i] * adj);
 }
 
@@ -86,13 +86,13 @@ AlphaGradient::AlphaGradient(const double a,
 void AlphaGradient::_positiveGradient(const double dist_squared,
                                       double* holder) const {
   const double grad = twoalpha / (1 + alpha * dist_squared);
-  multModify(holder, D, grad);
+  multModify(holder, grad);
 }
 void AlphaGradient::_negativeGradient(const double dist_squared,
                                       double* holder) const {
   const double adk = alpha * dist_squared;
   double grad = alphagamma / (dist_squared * (adk + 1));
-  multModify(holder, D, grad);
+  multModify(holder, grad);
 }
 
 /*
@@ -105,12 +105,12 @@ AlphaOneGradient::AlphaOneGradient(const double g,
 void AlphaOneGradient::_positiveGradient(const double dist_squared,
                                          double* holder) const {
   const double grad = - 2 / (1 + dist_squared);
-  multModify(holder, D, grad);
+  multModify(holder, grad);
 }
 void AlphaOneGradient::_negativeGradient(const double dist_squared,
                                          double* holder) const {
   double grad = gamma / (1 + dist_squared) / (0.1 + dist_squared);
-  multModify(holder, D, grad);
+  multModify(holder, grad);
 }
 
 /*
@@ -127,13 +127,13 @@ void ExpGradient::_positiveGradient(const double dist_squared,
   const double expsq = exp(dist_squared);
   const double grad = (dist_squared > 4) ? -1 :
                                            -(expsq / (expsq + 1));
-  multModify(holder, D, grad);
+  multModify(holder, grad);
 }
 void ExpGradient::_negativeGradient(const double dist_squared,
                                    double* holder) const {
   const double grad = (dist_squared > gammagamma) ? 0 :
                                                     gamma / (1 + exp(dist_squared));
-  multModify(holder, D, grad);
+  multModify(holder, grad);
 }
 
 // /*

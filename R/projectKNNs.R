@@ -19,8 +19,7 @@
 #'
 #' @param wij A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.
 #' @param dim The number of dimensions for the projection space.
-#' @param sgd_batches The number of edges to process during SGD; defaults to 20000 * the number of rows in x, as recommended
-#' by the paper authors.
+#' @param sgd_batches The number of edges to process during SGD.
 #' @param M The number of negative edges to sample for each positive edge.
 #' @param gamma The strength of the force pushing non-neighbor nodes apart.
 #' @param alpha Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  The function relates the distance
@@ -46,7 +45,7 @@
 
 projectKNNs <- function(wij, # symmetric sparse matrix
                         dim = 2, # dimension of the projection space
-                        sgd_batches = (length(wij@p) - 1) * 20000,
+                        sgd_batches = NULL,
                         M = 5,
                         gamma = 7,
                         alpha = 1,
@@ -64,21 +63,32 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   ##############################################
   # Initialize coordinate matrix
   ##############################################
-  if (is.null(coords)) coords <- matrix(rnorm(N * dim), nrow = dim)
+  if (is.null(coords)) #coords <- matrix(rnorm(N * dim), nrow = dim)
+                        coords <- matrix((runif(N * dim) - 0.5) / dim * 0.0001, nrow = dim)
+  if (is.null(sgd_batches)) {
+    if (N < 10000) {
+      sgd_batches <- 20000 * length(wij@x)
+    } else if (N < 1000000) {
+      sgd_batches <- (N - 10000) * 9000 / (1000000 - 10000) + 1000
+      sgd_batches <- sgd_batches * 1000000
+    } else {
+      sgd_batches <- 10000 * N
+    }
+  }
 
   #################################################
   # SGD
   #################################################
   if (verbose) cat("Estimating embeddings.\n")
   coords <- sgd(coords,
-              targets_i = is,
-              sources_j = js,
-              ps = wij@p,
-              weights = wij@x,
-              alpha = alpha, gamma = gamma, M = M,
-              rho = rho, minRho = min_rho,
-              nBatches = sgd_batches,
-              verbose = verbose)
+                targets_i = is,
+                sources_j = js,
+                ps = wij@p,
+                weights = wij@x,
+                alpha = alpha, gamma = gamma, M = M,
+                rho = rho, minRho = min_rho,
+                nBatches = sgd_batches,
+                verbose = verbose)
 
   return(coords)
 }

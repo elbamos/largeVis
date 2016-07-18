@@ -20,7 +20,6 @@
 #' @param perplexity See paper
 #' @param sgd_batches See \code{\link{projectKNNs}}.
 #' @param M See \code{\link{projectKNNs}}.
-#' @param weight_pos_samples See \code{\link{projectKNNs}}.
 #' @param alpha See \code{\link{projectKNNs}}.
 #' @param gamma See \code{\link{projectKNNs}}.
 #' @param rho See \code{\link{projectKNNs}}.
@@ -79,9 +78,8 @@ vis <- function(x,
 
                      perplexity = 50,
 
-                     sgd_batches = ncol(x) * 20000,
+                     sgd_batches = NULL,
                      M = 5,
-                     weight_pos_samples = TRUE,
                      alpha = 1,
                      gamma = 7,
                      rho = 1,
@@ -124,6 +122,7 @@ vis <- function(x,
                  neighbor_indices$j,
                  distance_method,
                  verbose)[, 1]
+  if (distance_method == "Euclidean") xs <- xs^2
 
   if (verbose) cat("\n")
 
@@ -143,12 +142,17 @@ vis <- function(x,
   # Get w_{ij}
   #######################################################
 
-  sigwij <- buildEdgeMatrix(i = neighbor_indices$i,
-                         j = neighbor_indices$j,
-                         d = xs,
-                         perplexity = perplexity,
-                         verbose = verbose)
+  # sigwij <- buildEdgeMatrix(i = neighbor_indices$i,
+  #                        j = neighbor_indices$j,
+  #                        d = xs,
+  #                        perplexity = perplexity,
+  #                        verbose = verbose)
 
+  wij <- referenceWij(i = neighbor_indices$i,
+                        j = neighbor_indices$j,
+                        d = xs,
+                        perplexity = perplexity)
+  sigwij <- list(wij = wij, sigmas = rep(0, ncol(x)))
   rm(neighbor_indices, xs)
   if (! save_sigmas) sigwij$sigmas <- NULL
   gc()
@@ -159,7 +163,6 @@ vis <- function(x,
                         dim = dim,
                         sgd_batches = sgd_batches,
                         M = M,
-                        weight_pos_samples = weight_pos_samples,
                         gamma = gamma,
                         verbose = verbose,
                         alpha = alpha,

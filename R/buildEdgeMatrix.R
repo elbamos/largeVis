@@ -154,3 +154,10 @@ i2p <- function(is) {
   ps[length(ps) + 1] <- length(is)
   return(ps)
 }
+
+#' @export
+WIJ <- function(i, j, D, perplexity) {
+  wij <- referenceWij(i,j,D,perplexity)
+  print("back")
+  return(wij)
+}

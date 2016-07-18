@@ -49,7 +49,7 @@ theme_set(
     title = element_text(size = rel(0.9))
   ) 
 )
-rebuild <- FALSE
+rebuild <- TRUE
 
 require(largeVis,quietly = TRUE)
 ```
@@ -78,7 +78,10 @@ The `largeVis` package offers four functions for visualizing high-dimensional da
 3.  `vis`, which implements the entire `LargeVis` algorithm.
 4.  `manifoldMap` (and companon `ggManifoldMap`), which produce a plot for visualizing embeddings of images. 
 
-See the [original paper](https://arxiv.org/abs/1602.00370) for a detailed description of the algorithm. 
+See the [original paper](https://arxiv.org/abs/1602. ggplot(mnistCoords, aes(x = x, y = y, color = labels)) +
+    geom_point(size = 0.1, alpha = 0.3) +
+    scale_x_continuous(name = "", limits = c(-45, 45), breaks = NULL) +
+    scale_y_continuous(name = "", limits = c(-45, 60), breaks = NULL)00370) for a detailed description of the algorithm. 
 
 ## Data Preparation
 
@@ -113,8 +116,8 @@ The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperpara
 ```{r buildhyperparameters,echo=F,eval=rebuild}
 data(wiki)
 inputs <- data.frame(
-  g = rep(c(1,7,14), 4),
-  a = rep(c(0,.1,1,10), each = 3)
+  g = rep(7, 3) ,# rep(c(.5,1,7,14), 5),
+  a = c(0,1, 5) #rep(c(0,.1,1,5,10), each = 4)
 )
 set.seed(1974)
 initialcoords <- matrix(rnorm(ncol(wiki) * 2), nrow = 2)
@@ -129,7 +132,8 @@ agcoords <- do.call(rbind,
                              alpha =  a, 
                              gamma = g,
                              verbose = FALSE, 
-                             coords = newcoords)
+                             coords = newcoords, 
+                             sgd_batches = 2000000)
   localcoords <- data.frame(scale(t(localcoords)))
   colnames(localcoords) <- c("x", "y")
   localcoords$a <- a
@@ -200,7 +204,8 @@ iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
   do.call(rbind, lapply(Ms, FUN = function(M) {
     coords <- projectKNNs(wij = wij$wij, M = M, 
                           coords = coordsinput, 
-                          verbose = FALSE)
+                          verbose = FALSE, 
+                             sgd_batches = 2000000)
     coords <- scale(t(coords))
     coords <- data.frame(coords)
     colnames(coords) <- c("x", "y")

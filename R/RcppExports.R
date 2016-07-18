@@ -21,12 +21,20 @@ distMatrixTowij <- function(sources, targets, weights, sigmas, N, verbose) {
     .Call('largeVis_distMatrixTowij', PACKAGE = 'largeVis', sources, targets, weights, sigmas, N, verbose)
 }
 
-sigFunc <- function(sigma, x_i, perplexity) {
-    .Call('largeVis_sigFunc', PACKAGE = 'largeVis', sigma, x_i, perplexity)
+sigFunc <- function(twosigmasquared, x_i, perplexity) {
+    .Call('largeVis_sigFunc', PACKAGE = 'largeVis', twosigmasquared, x_i, perplexity)
 }
 
-sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, useWeights, nBatches, M, alpha, verbose) {
-    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, useWeights, nBatches, M, alpha, verbose)
+referenceWij <- function(i, j, d, perplexity) {
+    .Call('largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, perplexity)
+}
+
+sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, nBatches, M, alpha, verbose) {
+    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, nBatches, M, alpha, verbose)
+}
+
+referenceSgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, nBatches, M, alpha, verbose) {
+    .Call('largeVis_referenceSgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, nBatches, M, alpha, verbose)
 }
 
 searchTreesCSparse <- function(threshold, n_trees, K, max_recursion_degree, maxIter, i, p, x, distMethod, verbose) {

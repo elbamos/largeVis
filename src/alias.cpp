@@ -4,7 +4,7 @@
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
 
-AliasTable::AliasTable(const int n, 
+AliasTable::AliasTable(const int n,
                        const arma::vec& weights) {
   N = n;
   probs = new double[n];
@@ -58,9 +58,12 @@ AliasTable::AliasTable(const int n) {
   if (! small.empty()) stop("Numeric instability in alias table.");
 };
 
-int AliasTable::search(double *random) {
-  int candidate = random[0] * (N - 1);
-  return (random[1] >= probs[candidate]) ? aliases[candidate] : candidate;
+int AliasTable::search(double *random) const {
+  return search(random[0], random[1]);
 };
 
+int AliasTable::search(double random, double random2) const {
+  int candidate = random * (N - 1);
+  return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
+};
 
