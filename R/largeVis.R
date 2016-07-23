@@ -25,7 +25,6 @@
 #' @param rho See \code{\link{projectKNNs}}.
 #' @param min_rho \code{\link{projectKNNs}}.
 #' @param save_neighbors Whether to include in the output the adjacency matrix of nearest neighbors.
-#' @param save_sigmas Whether to include in the output the esimates values of sigma.
 #' @param coords A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.
 #' @param verbose Verbosity
 #' @param ... See paper
@@ -37,7 +36,6 @@
 #'    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
 #'    \item{'call'}{The call.}
 #'    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
-#'    \item{'sigmas'}{A [N] vector of the values of sigma estimated for each vertex. Primarily useful for debugging
 #'    purposes and therefore not returned by default.}
 #'  }
 #'
@@ -108,57 +106,25 @@ vis <- function(x,
   # Clean knns
   #############################################
   if (verbose[1]) cat("Calculating edge weights...")
-  neighbor_indices <- neighborsToVectors(knns)
+  edges <- buildEdgeMatrix(data = x,
+  												 neighbors = knns,
+  												 distance_method = distance_method,
+  												 verbose = verbose)
   if (! save_neighbors) rm(knns)
   gc()
-
-  #######################################################
-  # Calculate edge weights for candidate neighbors
-  #######################################################
-  if (verbose) cat("Calculating neighbor distances.\n")
-
-  xs <- distance(x = x,
-                 neighbor_indices$i,
-                 neighbor_indices$j,
-                 distance_method,
-                 verbose)[, 1]
-
-  if (verbose) cat("\n")
-
-  if ( (any(is.na(xs)) +
-        any(is.infinite(xs)) +
-        any(is.nan(xs)) +
-        any(xs == 0)) > 0)
-  stop("An error leaked into the distance calculation - check for duplicates")
-  if (any(xs > 27)) { # nocov start
-    warning(paste(
-    "The Distances between some neighbors are large enough to cause the calculation of p_{j|i} to overflow.",
-    "Scaling the distance vector."))
-    xs <- scale(xs, center = FALSE)
+  if (any(edges@x > 27)) { # nocov start
+  	warning(paste(
+  		"The Distances between some neighbors are large enough to cause the calculation of p_{j|i} to overflow.",
+  		"Scaling the distance vector."))
+  	edges@x <- scale(edges@x, center = FALSE)
   } # nocov end
+  wij <- buildWijMatrix(edges, perplexity)
+  rm(edges)
 
-  #######################################################
-  # Get w_{ij}
-  #######################################################
-
-  # sigwij <- buildEdgeMatrix(i = neighbor_indices$i,
-  #                        j = neighbor_indices$j,
-  #                        d = xs,
-  #                        perplexity = perplexity,
-  #                        verbose = verbose)
-
-  wij <- referenceWij(i = neighbor_indices$i,
-                        j = neighbor_indices$j,
-                        d = xs,
-                        perplexity = perplexity)
-  sigwij <- list(wij = wij, sigmas = rep(0, ncol(x)))
-  rm(neighbor_indices, xs)
-  if (! save_sigmas) sigwij$sigmas <- NULL
-  gc()
   #######################################################
   # Estimate embeddings
   #######################################################
-  coords <- projectKNNs(wij = sigwij$wij,
+  coords <- projectKNNs(wij = wij,
                         dim = dim,
                         sgd_batches = sgd_batches,
                         M = M,
@@ -176,7 +142,7 @@ vis <- function(x,
 
   returnvalue <- list(
     knns = t(knns),
-    wij = sigwij$wij,
+    wij = wij,
     call = sys.call(),
     coords = coords
   )
@@ -184,10 +150,6 @@ vis <- function(x,
   if (save_neighbors) {
     knns[knns == -1] <- NA
     returnvalue$knns <- t(knns)
-  }
-  if (save_sigmas) {
-    sigmas <- sqrt(sigwij$sigmas / 2)
-    returnvalue$sigmas <- sigmas
   }
 
   class(returnvalue) <- "largeVis"

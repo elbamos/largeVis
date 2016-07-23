@@ -84,6 +84,13 @@ arma::mat searchTreesSparse(const int& threshold,
   Neighborhood** treeNeighborhoods = createNeighborhood(N);
 
   { // Artificial scope to destroy indices
+  	sp_mat dataMat;
+  	if (distMethod.compare(std::string("Cosine")) == 0) {
+  		dataMat = sp_mat(data);
+  		for (int d = 0; d < dataMat.n_cols; d++) dataMat.col(d) /= norm(dataMat.col(d));
+  	} else {
+  		dataMat = data;
+  	}
     ivec indices = regspace<ivec>(0, N - 1);
 #ifdef _OPENMP
 #pragma omp parallel for shared(indices,treeNeighborhoods)
@@ -91,7 +98,7 @@ arma::mat searchTreesSparse(const int& threshold,
     for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
       searchTree(threshold,
                  indices,
-                 data,
+                 dataMat,
                  treeNeighborhoods,
                  max_recursion_degree, // maximum permitted level of recursion
                  p

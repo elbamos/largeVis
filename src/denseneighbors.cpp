@@ -222,14 +222,20 @@ arma::imat searchTrees(const int& threshold,
 
   Progress p((N * n_trees) + (2 * N) + (N * maxIter), verbose);
 
-  imat knns = annoy(n_trees,
+  imat knns;
+  {
+  	mat dataMat;
+  	if (distMethod.compare(std::string("Cosine")) == 0) dataMat = normalise(data);
+  	else dataMat = data;
+  	knns = annoy(n_trees,
                     threshold,
-                    data,
+                    dataMat,
                     max_recursion_degree,
                     N,
                     K,
                     distanceFunction,
                     p);
+  }
 
   if (p.check_abort()) return imat(0);
   imat old_knns  = imat(K,N);
@@ -243,8 +249,6 @@ arma::imat searchTrees(const int& threshold,
 #pragma omp parallel for shared(old_knns, knns) private(thisHeap, sorter)
 #endif
     for (int i = 0; i < N; i++) if (p.increment()) {
-      double d;
-
       const vec x_i = data.col(i);
 
       PositionVector positions = PositionVector(), ends = PositionVector();

@@ -48,7 +48,7 @@ theme_set(
   ) 
 )
 rebuild <- FALSE
-if (! exists("vdatapath")) vdatapath <- "../largeVisData/vignettedata/"
+vdatapath <- "./vignettedata/"
 
 require(largeVis,quietly = TRUE)
 ```
@@ -58,9 +58,9 @@ require(largeVis,quietly = TRUE)
 ```{r drawmnist,echo=F,warning=F,results='asis'}
 if (rebuild) {
   require(darch, quietly = TRUE)
-  darch::provideMNIST(download=T)
-  load("data/train.RData")
-  load("data/test.Rdata")
+  darch::provideMNIST(download=T, folder = "./mnist/")
+  load("mnist/train.RData")
+  load("mnist/test.RData")
   mnistData <- rbind(trainData,testData)
   set.seed(1974)
   mnistVis <- vis(t(mnistData) - 0.5, 
@@ -94,12 +94,14 @@ if (file.exists(paste(vdatapath, "mnistcoords.Rda", sep = ""))) {
            )
       ))
 } 
+
+
 ```
 
-```{r mnistmanifold,echo=F,results='asis',fig.width=8,fig.height=8,message=F,warning=F,fig.align='center'}
+```{r mnistmanifold,echo=F,eval=F,results='asis',fig.width=8,fig.height=8,message=F,warning=F,fig.align='center'}
 if (!exists("mnistData")) {
-  load("./data/train.RData")
-  load("./data/test.RData")
+  load("./mnist/train.RData")
+  load("./mnist/test.RData")
   mnistData <- rbind(trainData,testData)
 }
   
@@ -146,7 +148,7 @@ if (rebuild) {
 }
 ```
 
-```{r drawwikiwords,echo=F,eval=T,warning=F,message=F,results='asis'}
+```{r drawwikiwords,echo=F,eval=F,warning=F,message=F,results='asis'}
 datapath <- paste(vdatapath, "wikiwords.Rda", sep = "")
 if (file.exists(datapath)) {
   load(datapath) 
@@ -189,7 +191,7 @@ if (rebuild) {
   save(docs, file = datapath)
 }
 ```
-```{r drawwikidocs,echo=F,eval=T,warning=F,message=F,results='asis'}
+```{r drawwikidocs,echo=F,eval=F,warning=F,message=F,results='asis'}
 datapath <- paste(vdatapath, "wikidocs.Rda", sep = "")
 if (file.exists(datapath)) {
   load(datapath) 
@@ -219,14 +221,14 @@ if (rebuild) {
   theta <- t(theta[! dd, ])
   set.seed(1974)
   initialcoords <- matrix(rnorm(ncol(theta) * 2), nrow = 2)
-  visObj <- vis(t(theta), 
+  visObj <- vis(theta, 
                 K = 50, 
                 n_trees = 40, 
                 tree_threshold = 50, 
                 max_iter = 1, 
                 coords = initialcoords)
   library(Rtsne)
-  tsneCoords <- data.frame(scale(Rtsne(theta, pca = FALSE)$Y))
+  tsneCoords <- data.frame(scale(Rtsne(t(theta), pca = FALSE)$Y))
   tsneCoords$model <- 'tsne'
   ngcoords <- data.frame(scale(t(visObj$coords)))
   ngcoords$model <- 'largeVis'
@@ -272,8 +274,6 @@ data("facevectors")
 
 faceembeddings <- t(as.matrix(facevectors[,-c(1:2)]))
 faceVis <- vis(faceembeddings, K = 50, 
-               max_iter = 1, 
-               n_trees = 100, 
                distance_method = 'Cosine')
 
 faceCoords <- data.frame(t(faceVis$coords))

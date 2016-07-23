@@ -52,29 +52,6 @@ test_that("largeVis works when alpha == 0", {
   expect_false(any(is.infinite(visObject$coords)))
 })
 
-test_that("sigmas are well behaved", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-
-  neighbors <- randomProjectionTreeSearch(dat, verbose = FALSE)
-  neighborIndices <- neighborsToVectors(neighbors)
-  distances <- distance(x = dat,
-                        i = neighborIndices$i,
-                        j = neighborIndices$j, verbose = FALSE)
-  wij <- buildEdgeMatrix(i = neighborIndices$i,
-                         j = neighborIndices$j,
-                         d = distances, verbose = FALSE)
-  expect_false(any(is.infinite(wij$sigmas)))
-  expect_false(any(is.nan(wij$sigmas)))
-  expect_false(any(is.na(wij$sigmas)))
-  expect_lt(max(wij$sigmas), 10)
-})
-
 test_that("largeVis works with cosine", {
   set.seed(1974)
   data(iris)

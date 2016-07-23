@@ -73,35 +73,6 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// distMatrixTowij
-arma::sp_mat distMatrixTowij(const NumericVector sources, const NumericVector targets, const NumericVector weights, const NumericVector sigmas, const int N, bool verbose);
-RcppExport SEXP largeVis_distMatrixTowij(SEXP sourcesSEXP, SEXP targetsSEXP, SEXP weightsSEXP, SEXP sigmasSEXP, SEXP NSEXP, SEXP verboseSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const NumericVector >::type sources(sourcesSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type targets(targetsSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type weights(weightsSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type sigmas(sigmasSEXP);
-    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(distMatrixTowij(sources, targets, weights, sigmas, N, verbose));
-    return __result;
-END_RCPP
-}
-// sigFunc
-double sigFunc(const double& twosigmasquared, const NumericVector& x_i, const double& perplexity);
-RcppExport SEXP largeVis_sigFunc(SEXP twosigmasquaredSEXP, SEXP x_iSEXP, SEXP perplexitySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const double& >::type twosigmasquared(twosigmasquaredSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type x_i(x_iSEXP);
-    Rcpp::traits::input_parameter< const double& >::type perplexity(perplexitySEXP);
-    __result = Rcpp::wrap(sigFunc(twosigmasquared, x_i, perplexity));
-    return __result;
-END_RCPP
-}
 // referenceWij
 arma::sp_mat referenceWij(const arma::ivec& i, const arma::ivec& j, arma::vec& d, double perplexity);
 RcppExport SEXP largeVis_referenceWij(SEXP iSEXP, SEXP jSEXP, SEXP dSEXP, SEXP perplexitySEXP) {

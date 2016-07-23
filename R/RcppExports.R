@@ -17,14 +17,6 @@ fastSDistance <- function(is, js, i_locations, j_locations, x, distMethod, verbo
     .Call('largeVis_fastSDistance', PACKAGE = 'largeVis', is, js, i_locations, j_locations, x, distMethod, verbose)
 }
 
-distMatrixTowij <- function(sources, targets, weights, sigmas, N, verbose) {
-    .Call('largeVis_distMatrixTowij', PACKAGE = 'largeVis', sources, targets, weights, sigmas, N, verbose)
-}
-
-sigFunc <- function(twosigmasquared, x_i, perplexity) {
-    .Call('largeVis_sigFunc', PACKAGE = 'largeVis', twosigmasquared, x_i, perplexity)
-}
-
 referenceWij <- function(i, j, d, perplexity) {
     .Call('largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, perplexity)
 }
