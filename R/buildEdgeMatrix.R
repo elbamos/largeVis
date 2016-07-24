@@ -12,7 +12,7 @@
 buildEdgeMatrix <- function(data,
                             neighbors,
                             distance_method = "Euclidean",
-                            verbose) {
+                            verbose = TRUE) {
 	indices <- neighborsToVectors(neighbors)
 	distances <- distance(indices$i, indices$j, x = data, distance_method, verbose)
 	mat <- Matrix::sparseMatrix(
@@ -37,13 +37,13 @@ buildWijMatrix <- function(x,
 #' @export
 #' @rdname buildWijMatrix
 buildWijMatrix.TsparseMatrix <- function(x,
-																	 perplexity) {
+																	 perplexity = 50) {
 	wij <- referenceWij(x@j, x@i, x@x^2, perplexity)
 	return(wij)
 }
 #' @export
 #' @rdname buildWijMatrix
-buildWijMatrix.CsparseMatrix <- function(x, perplexity) {
+buildWijMatrix.CsparseMatrix <- function(x, perplexity = 50) {
 	is <- rep(0:(ncol(x) - 1), diff(x@p))
   wij <- referenceWij(is, x@i, x@x^2,perplexity)
   return(wij)

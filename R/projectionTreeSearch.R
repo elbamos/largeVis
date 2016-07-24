@@ -20,10 +20,10 @@
 #' @return A [K, N] matrix of the approximate K nearest neighbors for each vertex.
 #' @export
 randomProjectionTreeSearch <- function(x,
-                                       K = 5,
-                                       n_trees = 2,
+                                       K = 150,
+                                       n_trees = 50,
                                        tree_threshold =  max(10, nrow(x)),
-                                       max_iter = 2,
+                                       max_iter = 1,
                                        max_depth = 32,
                                        distance_method = "Euclidean",
                                        verbose= TRUE)
@@ -32,8 +32,8 @@ randomProjectionTreeSearch <- function(x,
 #' @export
 #' @rdname randomProjectionTreeSearch
 randomProjectionTreeSearch.matrix <- function(x,
-                                       K = 5,
-                                       n_trees = 2,
+                                       K = 150,
+                                       n_trees = 50,
                                        tree_threshold =  max(10, nrow(x)),
                                        max_iter = 1,
                                        max_depth = 32,
@@ -67,10 +67,10 @@ randomProjectionTreeSearch.matrix <- function(x,
 #' @export
 #' @rdname randomProjectionTreeSearch
 randomProjectionTreeSearch.CsparseMatrix <- function(x,
-                                              K = 5,
-                                              n_trees = 2,
+                                              K = 150,
+                                              n_trees = 50,
                                               tree_threshold =  max(10, nrow(x)),
-                                              max_iter = 2,
+                                              max_iter = 1,
                                               max_depth = 32,
                                               distance_method = "Euclidean",
                                               verbose= TRUE) {
@@ -101,11 +101,11 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
 #' @export
 #' @rdname randomProjectionTreeSearch
 randomProjectionTreeSearch.TsparseMatrix <- function(x,
-                                                     K = 5,
-                                                     n_trees = 2,
+                                                     K = 150,
+                                                     n_trees = 50,
                                                      tree_threshold =
                                                        max(10, nrow(x)),
-                                                     max_iter = 2,
+                                                     max_iter = 1,
                                                      max_depth = 32,
                                                      distance_method =
                                                        "Euclidean",
