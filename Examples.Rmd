@@ -131,7 +131,7 @@ if (rebuild) {
   wikiVis <- vis(wikiwords, 
                  coords = initcoords, 
                  K = 100, 
-                 tree_threshold = 100, 
+                 tree_threshold = 200, 
                  n_trees = 50)
   wikiwords <- readr::read_delim("./Wiki_embedding/word_vec",
                                  delim= " ", col_names = FALSE, skip = 1)
@@ -139,7 +139,7 @@ if (rebuild) {
   wikilabels <- readr::read_delim("./Wiki_embedding/wiki_word_label.txt", 
                                   col_names = FALSE, delim = "\t")
   words <- data.frame(word = wikiwords, 
-                      labelrow = match(wikiwords$X1, wikilabels$X1))
+                      labelrow = match(wikiwords, wikilabels$X1))
   words$label <- wikilabels$X2[words$labelrow]
   words <- cbind(words, 
                  data.frame(t(wikiVis$coords)))
@@ -171,10 +171,10 @@ if (rebuild) {
   wikidocs <- readr::read_delim("./Wiki_embedding/doc_vec",delim= " ", 
                                  col_names = FALSE, 
                                  skip = 1)
-  wikidocs <- t(as.matrix(wikidocs[, 2:101]))
+  docdata <- t(as.matrix(wikidocs[, 2:101]))
   set.seed(1974)
-  initcoords <- matrix(rnorm(ncol(wikidocs) * 2), nrow = 2)
-  wikiVis <- vis(wikidocs, 
+  initcoords <- matrix(rnorm(ncol(docdata) * 2), nrow = 2)
+  wikiVis <- vis(docdata, 
                  coords = initcoords, 
                  K = 100, 
                  tree_threshold = 100, 
@@ -378,10 +378,6 @@ set.seed(1974)
 inputcoords <- matrix(rnorm(10000), nrow = 2)
 policoords <- vis(poli, 
                   K = 100, 
-                  n_trees = 50, 
-                  tree_threshold = 100, 
-                  max_iter = 1,
-                  M = 10,
                   distance_method = 'Cosine',
                   coords = inputcoords,
                   verbose = FALSE)
@@ -397,10 +393,6 @@ set.seed(1974)
 inputcoords <- matrix(rnorm(10000), nrow = 2)
 stmVis <- vis(stmvectors, 
                   K = 100, 
-                  n_trees = 50, 
-                  tree_threshold = 100, 
-                  max_iter = 1,
-                  M = 10,
                   distance_method = 'Cosine',
                   coords = inputcoords)
 

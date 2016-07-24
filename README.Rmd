@@ -23,6 +23,10 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 * Performance and memory efficiency are good. 
 * I have been able to replicate, in the sense of producing characteristically similar visualizations, the results in the original paper. 
 
+### Notes
+* In some configurations on Linux, the final visualizations tend to be "fuzzy." Please contact me if you experience this, I'd like to try to pin-down the source.
+* On Mac OS X, the Apple compiler does not support OpenMP.  To compmile `largeVis` with openmp support, use `homebrew` to install `llvm` version 3.8 or greater, then link it to `/usr/local` with `brew link --force llvm`. This may cause issues if you use the Apple compiler for other development, however in that case you should know your configuration well enough to resolve the issue.
+
 ## Examples
 ```{r echo=F}
 vdatapath <- "../largeVisData/vignettedata/"

@@ -93,18 +93,18 @@ arma::vec fastSDistance(const arma::vec& is,
  * Functions related to the alias algorithm
  */
 
+template <class T>
 class AliasTable {
 private:
   double* probs;
-  int* aliases;
-  int N;
+  T* aliases;
+  T N;
 
 public:
-  AliasTable(const int n,
-             const arma::vec& weights);
-  AliasTable(const int n);
-  int search(double *random) const;
-  int search(double random, double random2) const;
+  AliasTable(const T n,
+             const NumericVector& weights);
+  T search(double *random) const;
+  T search(double random, double random2) const;
 };
 
 /*

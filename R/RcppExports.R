@@ -25,10 +25,6 @@ sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, n
     .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, nBatches, M, alpha, verbose)
 }
 
-referenceSgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, nBatches, M, alpha, verbose) {
-    .Call('largeVis_referenceSgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, minRho, nBatches, M, alpha, verbose)
-}
-
 searchTreesCSparse <- function(threshold, n_trees, K, max_recursion_degree, maxIter, i, p, x, distMethod, verbose) {
     .Call('largeVis_searchTreesCSparse', PACKAGE = 'largeVis', threshold, n_trees, K, max_recursion_degree, maxIter, i, p, x, distMethod, verbose)
 }

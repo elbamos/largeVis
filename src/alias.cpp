@@ -4,22 +4,23 @@
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
 
-AliasTable::AliasTable(const int n,
-                       const arma::vec& weights) {
+template <class T>
+AliasTable<T>::AliasTable(const T n,
+                       		const NumericVector& weights) {
   N = n;
   probs = new double[n];
-  aliases = new int[n];
-  const double sm = accu(weights);
-  for (int i = 0; i < n; i++) probs[i] = weights[i] * n / sm;
-  queue<int> small = queue<int>();
-  queue<int> large = queue<int>();
-  for (int i = 0; i < n; i++) ((probs[i] < 1) ?
+  aliases = new T[n];
+  const double sm = sum(weights); //accu(weights);
+  for (T i = 0; i < n; i++) probs[i] = weights[i] * n / sm;
+  queue<T> small = queue<T>();
+  queue<T> large = queue<T>();
+  for (T i = 0; i < n; i++) ((probs[i] < 1) ?
                                  small :
                                  large).push(i);
   while (! large.empty() & ! small.empty()) {
-    int big = large.front();
+    T big = large.front();
     large.pop();
-    int little = small.front();
+    T little = small.front();
     small.pop();
     aliases[little] = big;
     ((probs[big] + probs[little] - 1 < 1) ? small : large).push(big);
@@ -31,39 +32,14 @@ AliasTable::AliasTable(const int n,
   if (! small.empty()) stop("Numeric instability in alias table.");
 };
 
-AliasTable::AliasTable(const int n) {
-  vec weights = vec(n, fill::ones);
-  N = n;
-  probs = new double[n];
-  aliases = new int[n];
-  const double sm = accu(weights);
-  for (int i = 0; i < n; i++) probs[i] = weights[i] * n / sm;
-  queue<int> small = queue<int>();
-  queue<int> large = queue<int>();
-  for (int i = 0; i < n; i++) ((probs[i] < 1) ?
-                                 small :
-                                 large).push(i);
-  while (! large.empty() & ! small.empty()) {
-    int big = large.front();
-    large.pop();
-    int little = small.front();
-    small.pop();
-    aliases[little] = big;
-    ((probs[big] + probs[little] - 1 < 1) ? small : large).push(big);
-  }
-  while (! large.empty()) {
-    probs[large.front()] = 1;
-    large.pop();
-  }
-  if (! small.empty()) stop("Numeric instability in alias table.");
-};
-
-int AliasTable::search(double *random) const {
+template <class T>
+T AliasTable<T>::search(double *random) const {
   return search(random[0], random[1]);
 };
 
-int AliasTable::search(double random, double random2) const {
-  int candidate = random * (N - 1);
+template <class T>
+T AliasTable<T>::search(double random, double random2) const {
+  T candidate = random * (N - 1);
   return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
 };
 
