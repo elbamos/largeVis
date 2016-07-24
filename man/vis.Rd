@@ -48,23 +48,9 @@ the first pass through the neighborhood exploration phases will involve up to \e
 
 \item{save_neighbors}{Whether to include in the output the adjacency matrix of nearest neighbors.}
 
-\item{save_sigmas}{Whether to include in the output the esimates values of sigma.}
-
 \item{verbose}{Verbosity}
 
 \item{...}{See paper}
-}
-\value{
-A `largeVis` object with the following slots:
- \describe{
-   \item{'knns'}{An [N,K] 0-indexed integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
-   If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
-   \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
-   \item{'call'}{The call.}
-   \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
-   \item{'sigmas'}{A [N] vector of the values of sigma estimated for each vertex. Primarily useful for debugging
-   purposes and therefore not returned by default.}
- }
 }
 \description{
 Implements the \code{vis}

@@ -2,48 +2,24 @@
 % Please edit documentation in R/buildEdgeMatrix.R
 \name{buildEdgeMatrix}
 \alias{buildEdgeMatrix}
-\alias{buildEdgeMatrix.CsparseMatrix}
-\alias{buildEdgeMatrix.TsparseMatrix}
-\alias{buildEdgeMatrix.default}
-\title{Build an edge-weight matrix for the LargeVis algorithm.}
+\title{Build an nearest-neighbor graph weighted by distance.}
 \usage{
-buildEdgeMatrix(x, i, j, p, d, perplexity, verbose)
-
-\method{buildEdgeMatrix}{default}(x = NULL, i, j, p = NULL, d,
-  perplexity = 50, verbose = TRUE)
-
-\method{buildEdgeMatrix}{CsparseMatrix}(x, i = NULL, j = NULL, p = NULL,
-  d = NULL, perplexity = 50, verbose = TRUE)
-
-\method{buildEdgeMatrix}{TsparseMatrix}(x, i = NULL, j = NULL, p = NULL,
-  d = NULL, perplexity = 50, verbose = TRUE)
+buildEdgeMatrix(data, neighbors, distance_method = "Euclidean",
+  verbose = TRUE)
 }
 \arguments{
-\item{x}{A sparseMatrix, either a \code{\link[Matrix]{CsparseMatrix-class}} or \code{\link[Matrix]{TsparseMatrix-class}}}
+\item{data}{A matrix with a number of columns equal to the number of columns in `x`}
 
-\item{i}{Indices of one node of the nearest-neighbor graph.}
-
-\item{j}{Indices of the other node.}
-
-\item{p}{Integer vector of pointers to the initial index of elements of each column. See \code{\link[Matrix]{CsparseMatrix-class}}.}
-
-\item{d}{The distances between the nodes identified in parameters \code{i} and \code{j}.}
-
-\item{perplexity}{See the paper for discussion.}
+\item{distance_method}{One of "Euclidean" or "Cosine"}
 
 \item{verbose}{Verbosity}
+
+\item{x}{An edge matrix, 0-indexed, where each vertex is a column}
 }
 \value{
-A list containing: \describe{
-\item{"sigmas"}{A vector of \eqn{2 \dot \sigma^2} calculated for each node.}
-\item{"wij"}{A symmetric, sparse matrix of the weights for each edge between nearest neighbors.}
-}
+A `sparseMatrix`
 }
 \description{
-Build an edge-weight matrix for the LargeVis algorithm.
-}
-\details{
-Implements the portion of the LargeVis algorithm that converts distances between nearest neighbors to an
-edge-weight graph.
+Build an nearest-neighbor graph weighted by distance.
 }
 

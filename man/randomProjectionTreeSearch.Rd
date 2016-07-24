@@ -7,20 +7,20 @@
 \alias{randomProjectionTreeSearch.matrix}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
-randomProjectionTreeSearch(x, K = 5, n_trees = 2, tree_threshold = max(10,
-  nrow(x)), max_iter = 2, max_depth = 32, distance_method = "Euclidean",
-  verbose = TRUE)
-
-\method{randomProjectionTreeSearch}{matrix}(x, K = 5, n_trees = 2,
+randomProjectionTreeSearch(x, K = 150, n_trees = 50,
   tree_threshold = max(10, nrow(x)), max_iter = 1, max_depth = 32,
   distance_method = "Euclidean", verbose = TRUE)
 
-\method{randomProjectionTreeSearch}{CsparseMatrix}(x, K = 5, n_trees = 2,
-  tree_threshold = max(10, nrow(x)), max_iter = 2, max_depth = 32,
+\method{randomProjectionTreeSearch}{matrix}(x, K = 150, n_trees = 50,
+  tree_threshold = max(10, nrow(x)), max_iter = 1, max_depth = 32,
   distance_method = "Euclidean", verbose = TRUE)
 
-\method{randomProjectionTreeSearch}{TsparseMatrix}(x, K = 5, n_trees = 2,
-  tree_threshold = max(10, nrow(x)), max_iter = 2, max_depth = 32,
+\method{randomProjectionTreeSearch}{CsparseMatrix}(x, K = 150, n_trees = 50,
+  tree_threshold = max(10, nrow(x)), max_iter = 1, max_depth = 32,
+  distance_method = "Euclidean", verbose = TRUE)
+
+\method{randomProjectionTreeSearch}{TsparseMatrix}(x, K = 150, n_trees = 50,
+  tree_threshold = max(10, nrow(x)), max_iter = 1, max_depth = 32,
   distance_method = "Euclidean", verbose = TRUE)
 }
 \arguments{
