@@ -12,6 +12,10 @@
 #include <queue>
 #include <vector>
 #include <set>
+#define _GSLRANDOM
+#ifdef _GSLRANDOM
+#include <gsl/gsl_rng.h>
+#endif
 using namespace Rcpp;
 using namespace std;
 using namespace arma;
@@ -95,7 +99,7 @@ arma::vec fastSDistance(const arma::vec& is,
 template <class T>
 class AliasTable {
 private:
-  double* probs;
+  long double* probs;
   T* aliases;
   T N;
 
@@ -103,8 +107,10 @@ public:
   AliasTable(const T n,
              const NumericVector& weights) {
   	N = n;
-  	probs = new double[n];
+  	// norm_probs = new double[n];
+  	probs = new long double[n];
   	aliases = new T[n];
+  	
   	const double sm = sum(weights); //accu(weights);
   	for (T i = 0; i < n; i++) probs[i] = weights[i] * n / sm;
   	queue<T> small = queue<T>();
@@ -117,24 +123,51 @@ public:
   		large.pop();
   		T little = small.front();
   		small.pop();
+  		// probs[little] = norm_probs[little];
   		aliases[little] = big;
-  		((probs[big] + probs[little] - 1 < 1) ? small : large).push(big);
+  		probs[big] = probs[big] + probs[little] - 1;
+  		(probs[big] < 1 ? small : large).push(big);
+  		// norm_probs[big] = norm_probs[big] + norm_probs[little] - 1;
+  		// ((norm_probs[big] < 1) ? small : large).push(big);
   	}
   	while (! large.empty()) {
   		probs[large.front()] = 1;
   		large.pop();
   	}
-  	if (! small.empty()) stop("Numeric instability in alias table.");
+  	while (! small.empty()) {
+  	  warning("Numeric instability in alias table.");
+  	  probs[small.front()] = 1;
+  	  small.pop();
+  	}
   };
 
   T search(double *random) const {
-  	return search(random[0], random[1]);
+    return search(random[0], random[1]);
   };
-
+  
   T search(double random, double random2) const {
-  	T candidate = random * (N - 1);
-  	return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
+    T candidate = random * N;
+    return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
   };
+  
+#ifdef _GSLRANDOM
+  const gsl_rng_type *gsl_T = NULL;
+  gsl_rng *gsl_r = NULL;
+  
+  void initRandom() {
+    initRandom(314159265);
+  }
+  void initRandom(long seed) {
+    gsl_T = gsl_rng_rand48;
+    gsl_r = gsl_rng_alloc(gsl_T);
+    gsl_rng_set(gsl_r, seed);
+  }
+  T sample() const {
+    return search(gsl_rng_uniform(gsl_r), gsl_rng_uniform(gsl_r));
+  }
+#endif
+  
+
 };
 
 /*
