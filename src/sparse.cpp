@@ -12,13 +12,12 @@ void searchTree(const int& threshold,
                 const arma::ivec& indices,
                 const sp_mat& data,
                 Neighborhood* heap[],
-                                  const int& iterations,
-                                  Progress& progress) {
+                Progress& progress) {
   const int I = indices.size();
   // const int D = data.n_rows;
   if (progress.check_abort()) return;
   if (I < 2) stop("Tree split failure.");
-  if (I <= threshold || iterations == 0) {
+  if (I <= threshold) {
     addNeighbors(indices, heap, I);
     progress.increment(I);
     return;
@@ -54,11 +53,11 @@ void searchTree(const int& threshold,
   const uvec left = find(direction > middle);
   const uvec right = find(direction <= middle);
   if (left.size() >= 2 && right.size() >= 2) {
-    searchTree(threshold, indices(left), data, heap, iterations - 1, progress);
-    searchTree(threshold, indices(right), data, heap, iterations - 1, progress);
+    searchTree(threshold, indices(left), data, heap, progress);
+    searchTree(threshold, indices(right), data, heap, progress);
   } else {
-    searchTree(threshold, indices.subvec(0, indices.size() / 2), data, heap, iterations - 1, progress);
-    searchTree(threshold, indices.subvec(indices.size() / 2, indices.size() - 1), data, heap, iterations - 1, progress);
+    searchTree(threshold, indices.subvec(0, indices.size() / 2), data, heap, progress);
+    searchTree(threshold, indices.subvec(indices.size() / 2, indices.size() - 1), data, heap, progress);
   }
 };
 
@@ -66,7 +65,6 @@ void searchTree(const int& threshold,
 arma::mat searchTreesSparse(const int& threshold,
                             const int& n_trees,
                             const int& K,
-                            const int& max_recursion_degree,
                             const int& maxIter,
                             const sp_mat& data,
                             const std::string& distMethod,
@@ -100,7 +98,6 @@ arma::mat searchTreesSparse(const int& threshold,
                  indices,
                  dataMat,
                  treeNeighborhoods,
-                 max_recursion_degree, // maximum permitted level of recursion
                  p
       );
 
@@ -218,7 +215,6 @@ arma::mat searchTreesSparse(const int& threshold,
 arma::mat searchTreesCSparse(const int& threshold,
                              const int& n_trees,
                              const int& K,
-                             const int& max_recursion_degree,
                              const int& maxIter,
                              const arma::uvec& i,
                              const arma::uvec& p,
@@ -227,14 +223,13 @@ arma::mat searchTreesCSparse(const int& threshold,
                              bool verbose) {
   const int N = p.size() -1;
   const sp_mat data = sp_mat(i,p,x,N,N);
-  return searchTreesSparse(threshold,n_trees,K,max_recursion_degree,maxIter,data,distMethod,verbose);
+  return searchTreesSparse(threshold,n_trees,K,maxIter,data,distMethod,verbose);
 }
 
 // [[Rcpp::export]]
 arma::mat searchTreesTSparse(const int& threshold,
                              const int& n_trees,
                              const int& K,
-                             const int& max_recursion_degree,
                              const int& maxIter,
                              const arma::uvec& i,
                              const arma::uvec& j,
@@ -243,5 +238,5 @@ arma::mat searchTreesTSparse(const int& threshold,
                              bool verbose) {
   const umat locations = join_cols(i,j);
   const sp_mat data = sp_mat(locations,x);
-  return searchTreesSparse(threshold,n_trees,K,max_recursion_degree,maxIter,data,distMethod,verbose);
+  return searchTreesSparse(threshold,n_trees,K,maxIter,data,distMethod,verbose);
 }

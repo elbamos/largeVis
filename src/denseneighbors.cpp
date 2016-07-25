@@ -84,13 +84,12 @@ void searchTree(const int& threshold,
                 const arma::ivec& indices,
                 const arma::mat& data,
                 Neighborhood* heap[],
-                                  const int& iterations,
-                                  Progress& progress) {
+                Progress& progress) {
   const int I = indices.size();
   // const int D = data.n_rows;
   if (progress.check_abort()) return;
   if (I < 2) stop("Tree split failure.");
-  if (I <= threshold || iterations == 0) {
+  if (I <= threshold) {
     addNeighbors(indices, heap, I);
     progress.increment(I);
     return;
@@ -101,11 +100,11 @@ void searchTree(const int& threshold,
   const uvec right = find(direction <= middle);
 
   if (left.size() >= 2 && right.size() >= 2) {
-    searchTree(threshold, indices(left), data, heap, iterations - 1, progress);
-    searchTree(threshold, indices(right), data, heap, iterations - 1, progress);
+    searchTree(threshold, indices(left), data, heap, progress);
+    searchTree(threshold, indices(right), data, heap, progress);
   } else { // Handles the rare case where the split fails because of equidistant points
-    searchTree(threshold, indices.subvec(0, indices.size() / 2), data, heap, iterations - 1, progress);
-    searchTree(threshold, indices.subvec(indices.size() / 2, indices.size() - 1), data, heap, iterations - 1, progress);
+    searchTree(threshold, indices.subvec(0, indices.size() / 2), data, heap, progress);
+    searchTree(threshold, indices.subvec(indices.size() / 2, indices.size() - 1), data, heap, progress);
   }
 };
 
@@ -153,7 +152,6 @@ void heapToSet(MaxHeap& heap, set<int>* set) {
 arma::imat annoy(const int n_trees,
                  const int threshold,
                  const arma::mat& data,
-                 const int max_recursion_degree,
                  const int N,
                  const int K,
                  double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j),
@@ -170,7 +168,6 @@ arma::imat annoy(const int n_trees,
                indices,
                data,
                treeNeighborhoods,
-               max_recursion_degree, // maximum permitted level of recursion
                p
     );
   if (p.check_abort()) return imat(K, N);
@@ -207,7 +204,6 @@ arma::imat annoy(const int n_trees,
 arma::imat searchTrees(const int& threshold,
                        const int& n_trees,
                        const int& K,
-                       const int& max_recursion_degree,
                        const int& maxIter,
                        const arma::mat& data,
                        const std::string& distMethod,
@@ -230,7 +226,6 @@ arma::imat searchTrees(const int& threshold,
   	knns = annoy(n_trees,
                     threshold,
                     dataMat,
-                    max_recursion_degree,
                     N,
                     K,
                     distanceFunction,

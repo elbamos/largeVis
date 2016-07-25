@@ -82,8 +82,8 @@ test_that("Can determine sparse iris neighbors accurately", {
   neighbors <- randomProjectionTreeSearch(mat,
                                           K = M,
                                           n_trees = 10,
-                                          tree_threshold = 20,
                                           max_iter = 2,
+                                          tree_threshold = 20,
                                           verbose = FALSE)
   scores <- lapply(1:nrow(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
   score <- sum(as.numeric(scores))

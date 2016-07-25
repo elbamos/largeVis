@@ -69,7 +69,7 @@ inline double Gradient::clamp(double val) const {
   return fmin(fmax(val, -cap), cap);
 }
 
-inline void Gradient::multModify(double *col, double adj) const {
+inline void Gradient::multModify(double *col, const double adj) const {
   for (int i = 0; i != D; i++) col[i] = clamp(col[i] * adj);
 }
 
@@ -91,7 +91,7 @@ void AlphaGradient::_positiveGradient(const double dist_squared,
 void AlphaGradient::_negativeGradient(const double dist_squared,
                                       double* holder) const {
   const double adk = alpha * dist_squared;
-  double grad = alphagamma / (dist_squared * (adk + 1));
+  const double grad = alphagamma / (dist_squared * (adk + 1));
   multModify(holder, grad);
 }
 
@@ -100,7 +100,6 @@ void AlphaGradient::_negativeGradient(const double dist_squared,
  */
 AlphaOneGradient::AlphaOneGradient(const double g,
                                    const int d) : AlphaGradient(1, g, d) {
-  this -> gamma = 2 * g;
 }
 void AlphaOneGradient::_positiveGradient(const double dist_squared,
                                          double* holder) const {
@@ -109,7 +108,7 @@ void AlphaOneGradient::_positiveGradient(const double dist_squared,
 }
 void AlphaOneGradient::_negativeGradient(const double dist_squared,
                                          double* holder) const {
-  double grad = gamma / (1 + dist_squared) / (0.1 + dist_squared);
+  const double grad = alphagamma / (1 + dist_squared) / (0.1 + dist_squared);
   multModify(holder, grad);
 }
 
@@ -135,51 +134,3 @@ void ExpGradient::_negativeGradient(const double dist_squared,
                                                     gamma / (1 + exp(dist_squared));
   multModify(holder, grad);
 }
-
-// /*
-//  * Class for a gradient found using a pre-calculated lookup table
-//  */
-// LookupGradient::LookupGradient(double alpha,
-//                                double gamma,
-//                                int d,
-//                                double bound,
-//                                int steps) : Gradient(gamma, d) {
-//   this -> alpha = alpha;
-//   twoalpha = alpha * -2;
-//   this -> bound = bound;
-//   this -> steps = steps;
-//   this -> boundsteps = (steps - 1) / bound;
-//   negativeLookup = new double[steps];
-//   double step = bound / steps;
-//   double distsquared = 0;
-//   for (int i = 1; i != steps; i++) {
-//     distsquared +=step;
-//     const double adk = alpha * distsquared;
-//     negativeLookup[i] = 2 * alpha * gamma / (distsquared * (adk + 1));
-//   }
-//   negativeLookup[0] = negativeLookup[1];
-// }
-//
-// inline int fastround(double r) {
-//   return r + 0.5;
-// }
-//
-// double LookupGradient::Lookup(const double dist_squared,
-//                               double* table) const {
-//   return (dist_squared > bound) ? table[steps - 1] :
-//   table[fastround(dist_squared * boundsteps)];
-// }
-//
-// void LookupGradient::_positiveGradient(const double dist_squared,
-//                                        double* holder) const {
-//   const double grad = twoalpha / (1 + alpha * dist_squared);
-//   multModify(holder, D, grad);
-// }
-// bool LookupGradient::_negativeGradient(const double dist_squared,
-//                                        double* holder) const {
-//   if (dist_squared == 0) return true;
-//   double grad = Lookup(dist_squared, negativeLookup);
-//   multModify(holder, D, grad);
-//   return false;
-// }
-//

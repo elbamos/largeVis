@@ -45,7 +45,6 @@ void heapToSet(MaxHeap& heap, set<int>* set);
 arma::imat annoy(const int n_trees,
                  const int threshold,
                  const arma::mat& data,
-                 const int max_recursion_degree,
                  const int N,
                  const int K,
                  double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j),
@@ -152,12 +151,10 @@ protected:
                                 double* holder) const = 0;
   virtual void _negativeGradient(const double dist_squared,
                                 double* holder) const = 0;
-  inline void multModify(double *col, double adj) const;
-  // inline double max(double val) const;
-  // inline double min(double val) const;
+  inline void multModify(double *col, const double adj) const;
   inline double clamp(double val) const;
 
-  public:
+public:
   virtual void positiveGradient(const double* i,
                                 const double* j,
                                 double* holder) const;
@@ -168,28 +165,8 @@ protected:
                        const double *x_j,
                        double *output) const;
 };
-// class LookupGradient: public Gradient {
-// private:
-//   double Lookup(const double dist_squared, double* table) const;
-// protected:
-//   double bound;
-//   double alpha;
-//   int steps;
-//   double boundsteps;
-//   double* negativeLookup;
-//   virtual void _positiveGradient(const double dist_squared,
-//                                  double* holder) const;
-//   virtual bool _negativeGradient(const double dist_squared,
-//                                  double* holder) const;
-// public:
-//   LookupGradient(double alpha,
-//                  double gamma,
-//                  int d,
-//                  double bound,
-//                  int steps);
-// };
+
 class AlphaGradient: public Gradient {
-  double alphagamma;
   double alpha;
   double twoalpha;
 public:
@@ -197,7 +174,7 @@ public:
                 const double g,
                 const int d);
 protected:
-  double cap;
+  double alphagamma;
   virtual void _positiveGradient(const double dist_squared,
                         double* holder) const;
   virtual void _negativeGradient(const double dist_squared,
@@ -214,6 +191,7 @@ protected:
   virtual void _negativeGradient(const double dist_squared,
                                  double* holder) const;
 };
+
 class ExpGradient: public Gradient {
 public:
   double gammagamma;
