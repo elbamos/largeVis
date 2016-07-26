@@ -5,10 +5,10 @@
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
 vis(x, dim = 2, K = 40, n_trees = 50, tree_threshold = max(10, ncol(x)),
-  max_iter = 1, max_depth = 32, distance_method = "Euclidean",
-  perplexity = 50, sgd_batches = NULL, M = 5, alpha = 1, gamma = 7,
-  rho = 1, min_rho = 0, coords = NULL, save_neighbors = TRUE,
-  save_sigmas = FALSE, verbose = TRUE, ...)
+  max_iter = 1, distance_method = "Euclidean", perplexity = 50,
+  sgd_batches = NULL, M = 5, alpha = 1, gamma = 7, rho = 1,
+  coords = NULL, save_neighbors = TRUE, save_sigmas = FALSE,
+  verbose = TRUE, ...)
 }
 \arguments{
 \item{x}{A matrix, where the features are rows and the examples are columns.}
@@ -26,8 +26,6 @@ the first pass through the neighborhood exploration phases will involve up to \e
 
 \item{max_iter}{See \code{\link{randomProjectionTreeSearch}}.}
 
-\item{max_depth}{See \code{\link{randomProjectionTreeSearch}}}
-
 \item{distance_method}{One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.}
 
 \item{perplexity}{See paper}
@@ -41,8 +39,6 @@ the first pass through the neighborhood exploration phases will involve up to \e
 \item{gamma}{See \code{\link{projectKNNs}}.}
 
 \item{rho}{See \code{\link{projectKNNs}}.}
-
-\item{min_rho}{\code{\link{projectKNNs}}.}
 
 \item{coords}{A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.}
 
@@ -66,7 +62,7 @@ data(iris)
 dat <- as.matrix(iris[,1:4])
 dat <- scale(dat)
 dupes = which(duplicated(dat))
-dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
+dat <- dat[-dupes,] # duplicates can cause the algorithm to fail
 dat <- t(dat)
 visObject <- vis(dat, max_iter = 20, sgd_batches = 800000,
                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)

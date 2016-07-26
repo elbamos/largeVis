@@ -5,7 +5,7 @@
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
 projectKNNs(wij, dim = 2, sgd_batches = NULL, M = 5, gamma = 7,
-  alpha = 1, rho = 1, coords = NULL, min_rho = 0, verbose = TRUE)
+  alpha = 1, rho = 1, coords = NULL, verbose = TRUE)
 }
 \arguments{
 \item{wij}{A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.}
@@ -26,8 +26,6 @@ enables the alternative distance function. \eqn{\alpha} below zero is meaningles
 \item{rho}{Initial learning rate.}
 
 \item{coords}{An initialized coordinate matrix.}
-
-\item{min_rho}{Final learning rate.}
 
 \item{verbose}{Verbosity}
 }

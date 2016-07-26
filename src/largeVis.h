@@ -110,7 +110,7 @@ public:
   	// norm_probs = new double[n];
   	probs = new long double[n];
   	aliases = new T[n];
-  	
+
   	const double sm = sum(weights); //accu(weights);
   	for (T i = 0; i < n; i++) probs[i] = weights[i] * n / sm;
   	queue<T> small = queue<T>();
@@ -144,16 +144,16 @@ public:
   T search(double *random) const {
     return search(random[0], random[1]);
   };
-  
+
   T search(double random, double random2) const {
     T candidate = random * N;
     return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
   };
-  
+
 #ifdef _GSLRANDOM
   const gsl_rng_type *gsl_T = NULL;
   gsl_rng *gsl_r = NULL;
-  
+
   void initRandom() {
     initRandom(314159265);
   }
@@ -166,7 +166,7 @@ public:
     return search(gsl_rng_uniform(gsl_r), gsl_rng_uniform(gsl_r));
   }
 #endif
-  
+
 
 };
 
@@ -252,7 +252,6 @@ arma::mat sgd(arma::mat coords,
               const arma::vec ws,
               const double gamma,
               const double rho,
-              const double minRho,
               const bool useWeights,
               const long nBatches,
               const int M,

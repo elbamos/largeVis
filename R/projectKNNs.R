@@ -27,7 +27,6 @@
 #' to push nodes and their neighbors closer together; decreasing \eqn{\alpha} produces a broader distribution. Setting \eqn{\alpha} to zero
 #' enables the alternative distance function. \eqn{\alpha} below zero is meaningless.
 #' @param rho Initial learning rate.
-#' @param min_rho Final learning rate.
 #' @param coords An initialized coordinate matrix.
 #' @param verbose Verbosity
 #'
@@ -51,7 +50,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                         alpha = 1,
                         rho = 1,
                         coords = NULL,
-                        min_rho = 0,
                         verbose = TRUE) {
 
   if (alpha < 0) stop("alpha < 0 is meaningless")
@@ -86,7 +84,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 ps = wij@p,
                 weights = wij@x,
                 alpha = alpha, gamma = gamma, M = M,
-                rho = rho, minRho = min_rho,
+                rho = rho,
                 nBatches = sgd_batches,
                 verbose = verbose)
 

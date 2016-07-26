@@ -22,7 +22,6 @@
 #' @param alpha See \code{\link{projectKNNs}}.
 #' @param gamma See \code{\link{projectKNNs}}.
 #' @param rho See \code{\link{projectKNNs}}.
-#' @param min_rho \code{\link{projectKNNs}}.
 #' @param save_neighbors Whether to include in the output the adjacency matrix of nearest neighbors.
 #' @param coords A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.
 #' @param verbose Verbosity
@@ -35,7 +34,6 @@
 #'    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
 #'    \item{'call'}{The call.}
 #'    \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
-#'    purposes and therefore not returned by default.}
 #'  }
 #'
 #' @export
@@ -47,7 +45,7 @@
 #' dat <- as.matrix(iris[,1:4])
 #' dat <- scale(dat)
 #' dupes = which(duplicated(dat))
-#' dat <- dat[-dupes,] # duplicated data potentially can cause the algorithm to fail
+#' dat <- dat[-dupes,] # duplicates can cause the algorithm to fail
 #' dat <- t(dat)
 #' visObject <- vis(dat, max_iter = 20, sgd_batches = 800000,
 #'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
@@ -79,7 +77,6 @@ vis <- function(x,
                      alpha = 1,
                      gamma = 7,
                      rho = 1,
-                     min_rho = 0,
 
                      coords = NULL,
 
