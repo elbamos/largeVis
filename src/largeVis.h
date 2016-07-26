@@ -104,41 +104,41 @@ private:
   T N;
 
 public:
-  AliasTable(const T n,
-             const NumericVector& weights) {
-  	N = n;
+  AliasTable(const NumericVector& weights) {
+  	N = weights.length();
   	// norm_probs = new double[n];
-  	probs = new long double[n];
-  	aliases = new T[n];
+  	probs = new long double[N];
+  	aliases = new T[N];
 
-  	const double sm = sum(weights); //accu(weights);
-  	for (T i = 0; i < n; i++) probs[i] = weights[i] * n / sm;
+  	const long double sm = sum(weights); 
+  	for (T i = 0; i < N; i++) probs[i] = weights[i] * N / sm;
   	queue<T> small = queue<T>();
   	queue<T> large = queue<T>();
-  	for (T i = 0; i < n; i++) ((probs[i] < 1) ?
+  	for (T i = 0; i < N; i++) ((probs[i] < 1) ?
                                 small :
                                 large).push(i);
   	while (! large.empty() & ! small.empty()) {
   		T big = large.front();
-  		large.pop();
+  	  large.pop();
   		T little = small.front();
   		small.pop();
-  		// probs[little] = norm_probs[little];
   		aliases[little] = big;
   		probs[big] = probs[big] + probs[little] - 1;
   		(probs[big] < 1 ? small : large).push(big);
-  		// norm_probs[big] = norm_probs[big] + norm_probs[little] - 1;
-  		// ((norm_probs[big] < 1) ? small : large).push(big);
   	}
+  	long double accu = 0;
   	while (! large.empty()) {
+  	  accu += 1 - large.front();
   		probs[large.front()] = 1;
   		large.pop();
   	}
   	while (! small.empty()) {
-  	  warning("Numeric instability in alias table.");
+  	  accu += 1 - small.front();
   	  probs[small.front()] = 1;
   	  small.pop();
   	}
+  	if (accu > 1e-5) warning("Numerical instability in alias table " + to_string(accu));
+  	
   };
 
   T search(double *random) const {

@@ -75,7 +75,7 @@ The `largeVis` package offers four functions for visualizing high-dimensional da
 
 1.  `randomProjectionTreeSearch`, a method for finding approximate nearest neighbors.
 2.  `projectKNNs`, which takes as input a weighted nearest-neighbor graph and estimates a projection into a low-dimensional space.
-3.  `vis`, which implements the entire `LargeVis` algorithm.
+3.  `largeVis`, which implements the entire `LargeVis` algorithm.
 4.  `manifoldMap` (and companon `ggManifoldMap`), which produce a plot for visualizing embeddings of images. 
 
 In addition, the functions `buildEdgeMatrix` and `buildWijMatrix,` respectively, convert an adjacency matrix into a weighted graph, and re-weight the graph to match a probability distributions.

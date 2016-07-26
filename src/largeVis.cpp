@@ -15,8 +15,6 @@ protected:
   AliasTable<long>* posAlias;
   Gradient* grad;
   int D;
-  long long E;
-  int N;
   int M;
 
   double rho;
@@ -42,10 +40,8 @@ public:
                  const NumericVector& weights) {
     ps = newps;
     NumericVector pdiffs = pow(diff(newps), 0.75);
-    N = newps.size() - 1;
-    E = weights.size();
-    negAlias = new AliasTable<int>(N, pdiffs);
-    posAlias = new AliasTable<long>(E, weights);
+    negAlias = new AliasTable<int>(pdiffs);
+    posAlias = new AliasTable<long>(weights);
     negAlias -> initRandom();
     posAlias -> initRandom();
   }
@@ -61,19 +57,18 @@ public:
   }
 
   void batch(int batchSize) {
-    long e_ij;
-    int i, j, k, d, m, shortcircuit, pstart, pstop;
+    long long e_ij;
+    int i, j, k, d, m, shortcircuit, pstart, pstop, example = 0;
     double firstholder[10], secondholder[10];
-    double * y_i, * y_j, * y_k;
-    long long * searchBegin;
-    long long * searchEnd;
+    double * y_i, * y_j;
+    long long * searchBegin, * searchEnd;
 
     double localRho = rho;
 #ifdef _OPENMP
 #pragma omp atomic
 #endif
     rho -= (rhoIncrement * batchSize);
-    int example = 0;
+
     while (example++ != batchSize && localRho > 0) {
       e_ij = posAlias -> sample();
       j = targetPointer[e_ij];
@@ -81,14 +76,12 @@ public:
 
       y_i = coordsPtr + (i * D);
       y_j = coordsPtr + (j * D);
-
       grad -> positiveGradient(y_i, y_j, firstholder);
-
       for (d = 0; d != D; d++) y_j[d] -= firstholder[d] * localRho;
 
       searchBegin = targetPointer + ps[i];
       searchEnd = targetPointer + ps[i + 1];
-      shortcircuit = 0;
+      shortcircuit = 0; m = 0;
 
       while (m != M && shortcircuit != 10) {
         k = negAlias -> sample();
@@ -100,12 +93,11 @@ public:
                            searchEnd,
                            k)) continue;
 
-        y_k = coordsPtr + (k * D);
-
-        grad -> negativeGradient(y_i, y_k, secondholder);
+        y_j = coordsPtr + (k * D);
+        grad -> negativeGradient(y_i, y_j, secondholder);
 
         for (d = 0; d != D; d++) firstholder[d] += secondholder[d];
-        for (d = 0; d != D; d++) y_k[d] -= secondholder[d] * localRho;
+        for (d = 0; d != D; d++) y_j[d] -= secondholder[d] * localRho;
 
         m++;
       }
@@ -141,7 +133,7 @@ arma::mat sgd(arma::mat coords,
   else if (alpha == 1) v -> setGradient(new AlphaOneGradient(gamma, D), M, rho, nBatches);
   else v -> setGradient(new AlphaGradient(alpha, gamma, D), M, rho, nBatches);
 
-  const int batchSize = 10000;
+  const int batchSize = 16384;
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)

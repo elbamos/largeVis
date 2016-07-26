@@ -1,22 +1,15 @@
 #' Apply the LargeVis algorithm for visualizing large high-dimensional datasets.
 #'
-#' Implements the \code{vis}
-#'
-#' Note that this implementation expects the data to be free of \code{NaN}'s, \code{NA}'s, \code{Inf}'s, and duplicate rows.
-#' If any of these assumptions are violated, the algorithm will fail. It is also usually a good idea to scale the input data
-#' to have unit norm and mean 0. If there are large values in the input matrix, some computations may oveflow.
-#'
 #' @param x A matrix, where the features are rows and the examples are columns.
 #' @param dim The number of dimensions in the output
 #' @param K The number of nearest-neighbors to use in computing the kNN graph
 #' @param n_trees See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 #' used in the examples in the original paper.
 #' @param tree_threshold See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
-#' in the input set, which is the setting used in the examples in the original paper.  Note the time and memory requirements:
-#' the first pass through the neighborhood exploration phases will involve up to \eqn{N * nTrees * threshold} comparisons.
+#' in the input set.  
 #' @param max_iter See \code{\link{randomProjectionTreeSearch}}.
 #' @param distance_method One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.
-#' @param perplexity See paper
+#' @param perplexity See \code{\link{buildWijMatrix}}.
 #' @param sgd_batches See \code{\link{projectKNNs}}.
 #' @param M See \code{\link{projectKNNs}}.
 #' @param alpha See \code{\link{projectKNNs}}.
@@ -25,7 +18,7 @@
 #' @param save_neighbors Whether to include in the output the adjacency matrix of nearest neighbors.
 #' @param coords A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.
 #' @param verbose Verbosity
-#' @param ... See paper
+#' @param ...
 #'
 #' @return A `largeVis` object with the following slots:
 #'  \describe{
@@ -61,7 +54,7 @@
 #'              K = 50, alpha = 2, max.iter = 4)
 #' }
 #'
-vis <- function(x,
+largeVis <- function(x,
                      dim = 2,
                      K = 40,
 
@@ -127,7 +120,6 @@ vis <- function(x,
                         alpha = alpha,
                         coords = coords,
                         rho = rho,
-                        min_rho = min_rho,
                         ...)
 
   #######################################################
