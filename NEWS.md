@@ -9,20 +9,19 @@
 * projectKNNs 
   + Should be 10x faster for small datasets
   + Replaced binary search ( O(n log n) ) with the alias algorithm for weighted sampling ( O(1) )
-  + Clips gradients.  Alpha == 0 to work properly now
-  + Uses gradient clipping strategy from authors' reference implementation. 
+  + Clips and smooths gradients, per discussion with paper authors
   + Optimized implementation for alpha == 1
   + Removed option for mixing weights into loss function - doesn't make sense if gradients are being clipped. 
+  + Fixed OpenMP-related bug which caused visualizations to be "fuzzy" if threads were scheduled in an
+    unexpected order. 
 * Vignettes:
   + Reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
   + Benchmarks now a separate vignette, more detailed
   + Examples removed from vignettes and moved to readme
   + Added examples of manifold map with color faces using OpenFace vectors
-* Sigmas
-  + Fixed longstanding bug
-  + Changed optimization method; pre-scan
-  + Sigma estimation could, in some cases involving very large datasets, become unstable and settle into 
-  an edge of the interval. This should be resolved.  
+* Sigms, P_ij matrix, w_ij matrix
+  + Replaced C++ code entirely with new code based on reference implementation 
+  + Refactored R code into `buildEdgeMatrix()` and `buildWijMatrix()`, which are simpler. 
 * Visualization
   + Color manifold maps work
   + Ported Karpathy's function for non-overlapping embeddings (experimental)

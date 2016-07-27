@@ -49,7 +49,7 @@ theme_set(
     title = element_text(size = rel(0.9))
   ) 
 )
-rebuild <- FALSE
+rebuild <- TRUE
 
 require(largeVis,quietly = TRUE)
 ```
@@ -71,14 +71,13 @@ For a detailed description of the algorithm, please see the original paper, @tan
 
 ## Package Overview
 
-The `largeVis` package offers four functions for visualizing high-dimensional datasets and finding approximate nearest neighbors (along with some helper functions):
+The `largeVis` package offers five functions for visualizing high-dimensional datasets and finding approximate nearest neighbors (along with some helper functions):
 
 1.  `randomProjectionTreeSearch`, a method for finding approximate nearest neighbors.
 2.  `projectKNNs`, which takes as input a weighted nearest-neighbor graph and estimates a projection into a low-dimensional space.
 3.  `largeVis`, which implements the entire `LargeVis` algorithm.
 4.  `manifoldMap` (and companon `ggManifoldMap`), which produce a plot for visualizing embeddings of images. 
-
-In addition, the functions `buildEdgeMatrix` and `buildWijMatrix,` respectively, convert an adjacency matrix into a weighted graph, and re-weight the graph to match a probability distributions.
+5. `buildWijMatrix` takes a sparse matrix of the distances between nearest neighbors, and returns one with the edges properly weighted for use in `projectKNNs`.
 
 See the [original paper](https://arxiv.org/abs/1602.00370) for a detailed description of the algorithm. 
 
@@ -112,36 +111,38 @@ The `LargeVis` algorithm, explained in detail in @tang2016visualizing, estimates
 
 The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperparameters:
 
-```{r buildhyperparameters,echo=F,eval=rebuild}
-data(wiki)
-inputs <- data.frame(
-  g = rep(c(.5,1,7,14), 5),
-  a = rep(c(0,.1,1,5,10), each = 4)
-)
-wij <- buildWijMatrix(wiki)
-set.seed(1974) 
-initialcoords <- matrix(rnorm(ncol(wij) * 2), nrow = 2)
-
-agcoords <- do.call(rbind, 
-                    lapply(1:nrow(inputs), 
-                           FUN = function(x) {
-  a <- inputs[x, 'a']
-  g <- inputs[x, 'g']
-  newcoords <- initialcoords
-  projectKNNs(wij, alpha = a, 
-               gamma = g,
-               verbose = FALSE, 
-               coords = newcoords) %>% 
-    t() %>%
-    scale() %>%
-    data.frame() %>%
-    set_colnames(c("x", "y")) %>%
-    mutate(a = a, g = g, degree = colSums(wiki))
-}))
+```{r reload,eval=!rebuild}
+load("vignettedata/vignettedata.Rda")
 ```
-
 ```{r drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis',cache=FALSE}
-if (!exists("agcoords")) load(system.file("extdata/agcoords.Rda", package = "largeVis"))
+if (! exists("agcoords")) {
+  data(wiki)
+  inputs <- data.frame(
+    g = rep(c(.5,1,7,14), 5),
+    a = rep(c(0,.1,1,5,10), each = 4)
+  )
+  wij <- buildWijMatrix(wiki)
+  set.seed(1974) 
+  initialcoords <- matrix(rnorm(ncol(wij) * 2), nrow = 2)
+  
+  agcoords <- do.call(rbind, 
+                      lapply(1:nrow(inputs), 
+                             FUN = function(x) {
+    a <- inputs[x, 'a']
+    g <- inputs[x, 'g']
+    newcoords <- initialcoords
+    projectKNNs(wij, alpha = a, 
+                 gamma = g,
+                 verbose = FALSE, 
+                 coords = newcoords) %>% 
+      t() %>%
+      scale() %>%
+      data.frame() %>%
+      set_colnames(c("x", "y")) %>%
+      mutate(a = a, g = g, degree = colSums(wiki))
+  }))
+}
+
 ggplot(agcoords,
        aes(x = x, 
            y = y, 
@@ -171,46 +172,45 @@ The `vis` function combines `randomProjectionTreeSearch` and `projectKNNs`, alon
 
 The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset. Each row re-uses the same set of identified `K` neighbors, and initial coordinates. 
 
-```{r iris_mkhyperparams,echo=F,eval=rebuild,cache=FALSE}
-data(iris)
-Ks <- c(5, 10,20,30)
-Ms <- c(5, 10, 20)
-dat <- iris[,1:4]
-dupes <- duplicated(dat)
-dat <- dat[-dupes,]
-labels <- iris$Species[-dupes]
-dat <- as.matrix(dat)
-dat <- t(dat)
-
-set.seed(1974)
-coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
-
-iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
-  neighbors <- randomProjectionTreeSearch(dat, 
-                                      K = K, 
-                                      verbose = FALSE)
-  edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE)
-  wij <- buildWijMatrix(edges)
-  do.call(rbind, lapply(Ms, FUN = function(M) {
-    coords <- projectKNNs(wij = wij, M = M, 
-                          coords = coordsinput, 
-                          verbose = TRUE, 
-                          sgd_batches = 2000000)
-    coords <- scale(t(coords))
-    coords <- data.frame(coords)
-    colnames(coords) <- c("x", "y")
-    coords$K <- K
-    coords$M <- M
-    coords$rebuild <- 'no'
-    coords$Species <- as.integer(labels)
-    coords
-  }))
-}))
-iriscoords$Species <- factor(iriscoords$Species)
-levels(iriscoords$Species) <- levels(iris$Species)
-```
 ```{r drawiris,echo=F,fig.width=4,fig.height=4.5,fig.align='center',results='asis'}
-if (!exists("iriscoords")) load(system.file("extdata/iriscoords.Rda", package = "largeVis"))
+if (!exists("iriscoords")) {
+  data(iris)
+  Ks <- c(5, 10,20,30)
+  Ms <- c(5, 10, 20)
+  dat <- iris[,1:4]
+  dupes <- duplicated(dat)
+  dat <- dat[-dupes,]
+  labels <- iris$Species[-dupes]
+  dat <- as.matrix(dat)
+  dat <- t(dat)
+  
+  set.seed(1974)
+  coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
+  
+  iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
+    neighbors <- randomProjectionTreeSearch(dat, 
+                                        K = K, 
+                                        verbose = FALSE)
+    edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE)
+    wij <- buildWijMatrix(edges)
+    do.call(rbind, lapply(Ms, FUN = function(M) {
+      coords <- projectKNNs(wij = wij, M = M, 
+                            coords = coordsinput, 
+                            verbose = TRUE, 
+                            sgd_batches = 2000000)
+      coords <- scale(t(coords))
+      coords <- data.frame(coords)
+      colnames(coords) <- c("x", "y")
+      coords$K <- K
+      coords$M <- M
+      coords$rebuild <- 'no'
+      coords$Species <- as.integer(labels)
+      coords
+    }))
+  }))
+  iriscoords$Species <- factor(iriscoords$Species)
+  levels(iriscoords$Species) <- levels(iris$Species)
+}
 
 ggplot(iriscoords,
        aes(x = x,
@@ -257,11 +257,6 @@ The `largeVis` visualization algorithm can be used to visualize undirected weigh
 The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). The data and visualization are not included here for size reasons.
 
 ```{r youtube,eval=F,echo=T}
-pathToGraphFile <- 
-  "./YouTubeCommunities/com-youtube.ungraph.txt"
-pathToCommunities <- 
-  "./YouTubeCommunities/com-youtube.top5000.cmty.txt"
-
 youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
 youtube <- as.matrix(youtube)
 youtube <- Matrix::sparseMatrix(i = youtube[, 1],
@@ -276,6 +271,7 @@ community_assignments <- rep(0,
                              nrow(youtube))
 for (i in 1:length(communities)) community_assignments[communities[[i]]] <- i
 
+wij <- buildWijMatrix(youtube)
 youTube_coordinates <- projectKNNs(youtube)
 youTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
 colnames(youTube_coordinates) <- c("x", "y")
@@ -327,3 +323,7 @@ Note that `gc()` is being called explicitly. The reason is that R will not colle
 Memory requirements during the neighbor search may be managed by reducing `n_trees` and increasing the `tree_threshold`. The decrease in precision is marginal, and may be compensated-for by increasing `max_iters`.  See the benchmarks vignette for further detail.
 
 ## References
+
+```{r save,eval=rebuild}
+save(agcoords, iriscoords, file = "vignettedata/vignettedata.Rda")
+```

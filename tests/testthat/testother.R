@@ -107,3 +107,37 @@ test_that("largeVis continues to work as it scales up", {
     expect_false(any(is.infinite(coords)))
   }
 })
+
+context ("optics")
+test_that("matches reference", {
+  set.seed(1974)
+  data(iris)
+  dat <- as.matrix(iris[, 1:4])
+  dat <- scale(dat)
+  dupes <- which(duplicated(dat))
+  dat <- dat[-dupes, ]
+  dat <- t(dat)
+  neighbors <- randomProjectionTreeSearch(dat, K = 20, tree_threshold = 100)
+  goodClusters <- dbscan::optics(t(dat), 0.4, minPts = 10)
+  clusters <- optics(dat, neighbors, 0.4, 10)
+  expect_equivalent(goodClusters$order, clusters$order)
+  expect_equivalent(goodClusters$reachdist, clusters$reachdist)
+  expect_equivalent(goodClusters$coredist, clusters$coredist)
+})
+
+context ("dbscan")
+test_that("dbscan doesn't crash", {
+  set.seed(1974)
+  data(iris)
+  dat <- as.matrix(iris[, 1:4])
+  dat <- scale(dat)
+  dupes <- which(duplicated(dat))
+  dat <- dat[-dupes, ]
+  dat <- t(dat)
+  
+  neighbors <- randomProjectionTreeSearch(dat, K = 20, verbose = FALSE);
+  clusters <- dbscan(neighbors, dat, eps = 0.4, minPts = 5)
+  expect_lt(sum(clusters == -1), 149)
+  expect_gt(length(table(clusters)[table(clusters) > 1]), 2)
+  print(table(clusters))
+})

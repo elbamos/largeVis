@@ -24,8 +24,14 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 * I have been able to replicate, in the sense of producing characteristically similar visualizations, the results in the original paper. 
 
 ### Notes
-* In some configurations on Linux, the final visualizations tend to be "fuzzy." Please contact me if you experience this, I'd like to try to pin-down the source.
-* On Mac OS X, the Apple compiler does not support OpenMP.  To compmile `largeVis` with openmp support, use `homebrew` to install `llvm` version 3.8 or greater, then link it to `/usr/local` with `brew link --force llvm`. This may cause issues if you use the Apple compiler for other development, however in that case you should know your configuration well enough to resolve the issue.
+* On Mac OS X, the Apple compiler does not support OpenMP.  Compiling `largeVis` with OpenMP support requires some fiddling.  Here are some instructions that may work for you:
+    - Use `homebrew` to install `llvm` version 3.8 or greater.
+    - Link it to `/usr/local` with `brew link --force llvm`. 
+    - Add the following line to `~.R/Makevars`:
+    ```
+    SHLIB_OPENMP_CFLAGS = -fopenmp
+    ```
+    - Compile `largeVis` from the command line (not from RStudio or the R GUI). This is necessary because El Capitan and later exclude `/usr/local/` from the `PATH`. 
 
 ## Examples
 ```{r echo=F}

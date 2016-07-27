@@ -6,6 +6,34 @@
 
 using namespace Rcpp;
 
+// dbscan
+arma::ivec dbscan(arma::imat neighbors, arma::mat& data, double eps, int minPts);
+RcppExport SEXP largeVis_dbscan(SEXP neighborsSEXP, SEXP dataSEXP, SEXP epsSEXP, SEXP minPtsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::imat >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
+    __result = Rcpp::wrap(dbscan(neighbors, data, eps, minPts));
+    return __result;
+END_RCPP
+}
+// optics_int
+List optics_int(arma::mat& data, arma::imat& neighbors, double eps, int minPts);
+RcppExport SEXP largeVis_optics_int(SEXP dataSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< arma::imat& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
+    __result = Rcpp::wrap(optics_int(data, neighbors, eps, minPts));
+    return __result;
+END_RCPP
+}
 // searchTrees
 arma::imat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::mat& data, const std::string& distMethod, bool verbose);
 RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
