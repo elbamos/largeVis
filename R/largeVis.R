@@ -92,7 +92,7 @@ largeVis <- function(x,
   #############################################
   # Clean knns
   #############################################
-  if (verbose[1]) cat("Calculating edge weights...")
+  if (verbose[1]) cat("Calculating edge weights...\n")
   edges <- buildEdgeMatrix(data = x,
   												 neighbors = knns,
   												 distance_method = distance_method,

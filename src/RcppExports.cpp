@@ -6,31 +6,91 @@
 
 using namespace Rcpp;
 
-// dbscan_int
-IntegerVector dbscan_int(const arma::mat& data, arma::imat& neighbors, double eps, int minPts);
-RcppExport SEXP largeVis_dbscan_int(SEXP dataSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP) {
+// dbscan_e
+IntegerVector dbscan_e(arma::sp_mat& edges, double eps, int minPts, bool verbose);
+RcppExport SEXP largeVis_dbscan_e(SEXP edgesSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< arma::imat& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< arma::sp_mat& >::type edges(edgesSEXP);
     Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
     Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
-    __result = Rcpp::wrap(dbscan_int(data, neighbors, eps, minPts));
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(dbscan_e(edges, eps, minPts, verbose));
     return __result;
 END_RCPP
 }
-// optics_int
-List optics_int(const arma::mat& data, arma::imat& neighbors, double eps, int minPts);
-RcppExport SEXP largeVis_optics_int(SEXP dataSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP) {
+// dbscan_ed
+IntegerVector dbscan_ed(arma::sp_mat& edges, arma::mat& data, double eps, int minPts, bool verbose);
+RcppExport SEXP largeVis_dbscan_ed(SEXP edgesSEXP, SEXP dataSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< arma::imat& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
     Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
-    __result = Rcpp::wrap(optics_int(data, neighbors, eps, minPts));
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(dbscan_ed(edges, data, eps, minPts, verbose));
+    return __result;
+END_RCPP
+}
+// dbscan_nd
+IntegerVector dbscan_nd(arma::imat& neighbors, arma::mat& data, double eps, int minPts, bool verbose);
+RcppExport SEXP largeVis_dbscan_nd(SEXP neighborsSEXP, SEXP dataSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::imat& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(dbscan_nd(neighbors, data, eps, minPts, verbose));
+    return __result;
+END_RCPP
+}
+// optics_e
+List optics_e(arma::sp_mat& edges, double eps, int minPts, bool verbose);
+RcppExport SEXP largeVis_optics_e(SEXP edgesSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(optics_e(edges, eps, minPts, verbose));
+    return __result;
+END_RCPP
+}
+// optics_ed
+List optics_ed(arma::sp_mat& edges, arma::mat& data, double eps, int minPts, bool verbose);
+RcppExport SEXP largeVis_optics_ed(SEXP edgesSEXP, SEXP dataSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(optics_ed(edges, data, eps, minPts, verbose));
+    return __result;
+END_RCPP
+}
+// optics_nd
+List optics_nd(arma::imat& neighbors, arma::mat& data, double eps, int minPts, bool verbose);
+RcppExport SEXP largeVis_optics_nd(SEXP neighborsSEXP, SEXP dataSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::imat& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(optics_nd(neighbors, data, eps, minPts, verbose));
     return __result;
 END_RCPP
 }

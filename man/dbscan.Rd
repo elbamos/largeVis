@@ -4,21 +4,36 @@
 \alias{dbscan}
 \title{dbscan}
 \usage{
-dbscan(data, neighbors, eps, minPts = nrow(data) + 1)
+dbscan(data = NULL, neighbors = NULL, edges = NULL, eps,
+  minPts = nrow(data) + 1, verbose = TRUE)
 }
 \arguments{
 \item{data}{Input data, where examples are columns.}
 
 \item{neighbors}{An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}}
 
-\item{eps}{See \code{\link[dbscan]{optics}}.}
+\item{edges}{A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}.}
 
-\item{minPts}{}
+\item{eps}{See \code{\link[dbscan]{dbscan}}.}
+
+\item{minPts}{Minimum size of a cluster.}
 }
 \value{
 An \code{\link[dbscan]{dbscan_fast}} object.
 }
 \description{
 An implementation of the dbscan algorithm.
+}
+\details{
+This is a preliminary implementation of the OPTICS algorithm that attempts
+to leverage the \code{largeVis} nearest-neighbor search. 
+
+One of \code{neighbors} or \code{edges} must be specified. If \code{edges} is missing,
+\code{data} must also be given. If \code{data} is given along with either \code{edges}
+or \code{neighbors}, the algorithm will attempt a more thorough search.
+}
+\note{
+Support for dbscan and optics are preliminary, and not fully tested for
+correctness.
 }
 

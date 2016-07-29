@@ -12,8 +12,7 @@
   + Clips and smooths gradients, per discussion with paper authors
   + Optimized implementation for alpha == 1
   + Removed option for mixing weights into loss function - doesn't make sense if gradients are being clipped. 
-  + Fixed OpenMP-related bug which caused visualizations to be "fuzzy" if threads were scheduled in an
-    unexpected order. 
+  + Fixed OpenMP-related bug which caused visualizations to be "fuzzy"
 * Vignettes:
   + Reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
   + Benchmarks now a separate vignette, more detailed
@@ -41,6 +40,8 @@
   + Tests are separated by subject
   + Additional, more extensive tests with greater code coverage
   + Added travis testing against OSX
+* Clustering
+  + Very preliminary support for dbscan and optics added
 
 ### largeVis 0.1.5
 

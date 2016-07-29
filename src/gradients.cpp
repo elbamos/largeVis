@@ -34,9 +34,9 @@
 
 // Parent class
 Gradient::Gradient(const double g,
-                   const int d) {
-  gamma = g;
-  D = d;
+                   const int d) :
+  gamma{g},
+  D{d} {
   cap = 5;
 }
 void Gradient::positiveGradient(const double* i,
@@ -78,10 +78,10 @@ inline void Gradient::multModify(double *col, const double adj) const {
  */
 AlphaGradient::AlphaGradient(const double a,
                              const double g,
-                             const int d) : Gradient(g, d) {
-  alpha = a;
-  alphagamma = a * g * 2;
-  twoalpha = alpha * -2;
+                             const int d) : Gradient(g, d),
+                             alpha{a}, 
+                             alphagamma{a * g * 2},
+                             twoalpha{alpha * -2} {
 }
 void AlphaGradient::_positiveGradient(const double dist_squared,
                                       double* holder) const {
@@ -117,8 +117,8 @@ void AlphaOneGradient::_negativeGradient(const double dist_squared,
  */
 
 ExpGradient::ExpGradient(const double g,
-                         const int d) : Gradient(g, d) {
-  gammagamma = g * g;
+                         const int d) : Gradient(g, d),
+                         gammagamma{g * g} {
   cap = gamma;
 }
 void ExpGradient::_positiveGradient(const double dist_squared,

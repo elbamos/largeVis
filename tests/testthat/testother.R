@@ -13,49 +13,35 @@ test_that("wij handles small K", {
   expect_silent(wij <- buildWijMatrix(edges))
 })
 
+context("vis")
+set.seed(1974)
+data(iris)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
 
 test_that("largeVis works", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-
-  visObject <- largeVis(dat, max_iter = 20, n_trees = 100, tree_threshold = 50, sgd_batches = 1000,
-                   K = 20,  gamma = 0.5, verbose = FALSE)
+  visObject <- largeVis(dat, max_iter = 20, n_trees = 100, 
+                        tree_threshold = 50, sgd_batches = 1000,
+                        K = 20,  gamma = 0.5, verbose = FALSE)
   expect_false(any(is.na(visObject$coords)))
   expect_false(any(is.nan(visObject$coords)))
   expect_false(any(is.infinite(visObject$coords)))
 })
 
-context("vis")
-
 test_that("largeVis does not NaN on iris", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-
-  visObject <- largeVis(dat, max_iter = 20, coords = matrix(rnorm(ncol(dat) * 2), nrow = 2),
-                   K = 20,  gamma = 0.5, verbose = FALSE, sgd_batches = 20000 * 150)
+  visObject <- largeVis(dat, max_iter = 20, 
+                        coords = matrix(rnorm(ncol(dat) * 2), nrow = 2),
+                   K = 20,  gamma = 0.5, verbose = FALSE, 
+                   sgd_batches = 20000 * 150)
   expect_false(any(is.na(visObject$coords)))
   expect_false(any(is.nan(visObject$coords)))
   expect_false(any(is.infinite(visObject$coords)))
 })
 
 test_that("largeVis works when alpha == 0", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
   visObject <- largeVis(dat,
                    max_iter = 20,
                    sgd_batches = 10000,
@@ -68,14 +54,6 @@ test_that("largeVis works when alpha == 0", {
 })
 
 test_that("largeVis works with cosine", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-
   visObject <- largeVis(dat, max_iter = 20,
                    sgd_batches = 1000,
                    K = 10, verbose = FALSE,
@@ -86,14 +64,6 @@ test_that("largeVis works with cosine", {
 })
 
 test_that("largeVis continues to work as it scales up", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-
   visObject <- largeVis(dat, max_iter = 20, sgd_batches = 1000,
                    K = 10,  gamma = 0.5, verbose = FALSE)
   expect_false(any(is.na(visObject$coords)))
@@ -106,64 +76,4 @@ test_that("largeVis continues to work as it scales up", {
     expect_false(any(is.nan(coords)))
     expect_false(any(is.infinite(coords)))
   }
-})
-
-context ("optics")
-test_that("optics clusters", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-  neighbors <- randomProjectionTreeSearch(dat, K = 20, tree_threshold = 100)
-  goodClusters <- dbscan::optics(t(dat), 0.4, minPts = 10)
-  clusters <- optics(dat, neighbors, 0.4, 10)
-  expect_lt(sum(goodClusters$order != clusters$order), 15)
-})
-
-test_that("optics reachdist", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-  neighbors <- randomProjectionTreeSearch(dat, K = 20, tree_threshold = 100)
-  goodClusters <- dbscan::optics(t(dat), 0.4, minPts = 10)
-  clusters <- optics(dat, neighbors, 0.4, 10)
-  expect_lt(sum((goodClusters$reachdist - clusters$reachdist)^2), 1)
-})
-
-test_that("optics coredist", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-  neighbors <- randomProjectionTreeSearch(dat, K = 20, tree_threshold = 100)
-  goodClusters <- dbscan::optics(t(dat), 0.4, minPts = 10)
-  clusters <- optics(dat, neighbors, 0.4, 10)
-  expect_lt(sum((goodClusters$coredist - clusters$coredist)^2), 1)
-})
-
-context ("dbscan")
-test_that("dbscan matches reference", {
-  set.seed(1974)
-  data(iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-  
-  neighbors <- randomProjectionTreeSearch(dat, K = 20, tree_threshold = 100)
-  goodClusters <- dbscan::dbscan(t(dat), 0.4, minPts = 10, 
-                                 borderPoints = FALSE)
-  clusters <- dbscan(dat, neighbors, 0.4, 10)
-  expect_lt(sum(goodClusters$order != clusters$order), 15)
 })

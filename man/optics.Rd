@@ -4,12 +4,15 @@
 \alias{optics}
 \title{OPTICS}
 \usage{
-optics(data, neighbors, eps, minPts = nrow(data) + 1, eps_cl, xi)
+optics(data = NULL, neighbors = NULL, edges = NULL, eps,
+  minPts = nrow(data) + 1, eps_cl, xi, verbose = TRUE)
 }
 \arguments{
 \item{data}{Input data, where examples are columns.}
 
 \item{neighbors}{An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}}
+
+\item{edges}{A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}.}
 
 \item{eps}{See \code{\link[dbscan]{optics}}.}
 
@@ -24,5 +27,17 @@ An \code{\link[dbscan]{optics}} object.
 }
 \description{
 An implementation of the OPTICS algorithm.
+}
+\details{
+This is a preliminary implementation of the OPTICS algorithm that attempts
+to leverage the \code{largeVis} nearest-neighbor search. 
+
+One of \code{neighbors} or \code{edges} must be specified. If \code{edges} is missing,
+\code{data} must also be given. If \code{data} is given along with either \code{edges}
+or \code{neighbors}, the algorithm will attempt a more thorough search.
+}
+\note{
+Support for dbscan and optics are preliminary, and not fully tested for
+correctness.
 }
 

@@ -24,7 +24,8 @@ Suggests: testthat,
     wesanderson,
     RColorBrewer,
     dplyr,
-    magrittr
+    magrittr,
+    dbscan
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes

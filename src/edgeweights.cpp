@@ -59,14 +59,14 @@ public:
     }
   }
 
-  ReferenceEdges(double perplexity) {
-    edge_from = std::vector<long>();
-    edge_to = std::vector<long>();
-    edge_weight = std::vector<double>();
-    this -> perplexity = perplexity;
-    head = std::vector<long>();
-    next = std::vector<long>();
-    reverse = std::vector<long>();
+  ReferenceEdges(double perplexity) :
+    perplexity{perplexity}, 
+    edge_from(std::vector<long>()),
+    edge_to(std::vector<long>()),
+    edge_weight(std::vector<double>()),
+    head(std::vector<long>()),
+    next(std::vector<long>()),
+    reverse(std::vector<long>()) {
   }
 
   void build(const arma::ivec& from,
