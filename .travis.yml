@@ -45,14 +45,14 @@ addons:
       - gfortran-4.9
       - libgsl-dev
 
-before_install: |
+before_install: 
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update     ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gsl; fi
-  mkdir ~/.R
-  cat <<EOF > ~/.R/Makevars
-  CXX1X=g++-4.9
-  FC=gfortran-4.9
-  CXX1XSTD=-std=c++11
+  - | mkdir ~/.R
+      cat <<EOF > ~/.R/Makevars
+      CXX1X=g++-4.9
+      FC=gfortran-4.9
+      CXX1XSTD=-std=c++11
 
 
 after_success:
