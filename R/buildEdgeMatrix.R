@@ -30,7 +30,12 @@ buildEdgeMatrix <- function(data,
 #' @param x A sparse matrix
 #' @param perplexity Given perplexity.
 #'
-#' @return A sparse matrix
+#' @return A \code{list} with the following components: \describe{
+#'    \item{'dist'}{An [N,K] matrix of the distances to the nearest neighbors.}
+#'    \item{'id'}{An [N,K] matrix of the node indexes of the neartest neighbors.  Note that this matrix is 1-indexed,
+#'    unlike most other matrices in this package.}
+#'    \item{'k'}{The number of nearest neighbors.}
+#'  }
 #' @export
 buildWijMatrix <- function(x,
 										       perplexity) UseMethod("buildWijMatrix")

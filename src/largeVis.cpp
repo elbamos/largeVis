@@ -14,27 +14,36 @@ protected:
   AliasTable<int>* negAlias;
   AliasTable<long>* posAlias;
   Gradient* grad;
-  int D;
-  int M;
+
+  const int D;
+  const int M;
+  const int M2;
 
   double rho;
   double rhoIncrement;
+  long long n_samples;
 
-  long long * targetPointer;
-  long long * sourcePointer;
-  double * coordsPtr;
+  long long * const targetPointer;
+  long long * const sourcePointer;
+  double * const coordsPtr;
   IntegerVector ps;
 
 public:
-  Visualizer(long long * newSourcePtr,
-             long long * newTargetPointer,
-             int newD,
-             double * newCoordPtr) {
-    targetPointer = newTargetPointer;
-    D = newD;
-    coordsPtr = newCoordPtr;
-    sourcePointer = newSourcePtr;
-  }
+  Visualizer(long long * sourcePtr,
+             long long * targetPtr,
+             int D,
+             double * coordPtr,
+             int M,
+             double rho,
+             long long n_samples) : targetPointer{targetPtr},
+                                  D{D},
+                                  coordsPtr{coordPtr},
+                                  sourcePointer{sourcePtr},
+                                  M{M},
+                                  rho{rho},
+                                  n_samples{n_samples},
+                                  M2(M * 2),
+                                  rhoIncrement(rho / n_samples) { }
 
   void initAlias(IntegerVector& newps,
                  const NumericVector& weights) {
@@ -46,35 +55,27 @@ public:
     posAlias -> initRandom();
   }
 
-  void setGradient(Gradient * newGrad,
-                   int newM,
-                   double newRho,
-                   long batches) {
+  void setGradient(Gradient * newGrad) {
     grad = newGrad;
-    M = newM;
-    rho = newRho;
-    rhoIncrement = newRho / batches;
   }
 
-  void batch(int batchSize) {
+  void batch(long long startSampleIdx, int batchSize) {
     long long e_ij;
     int i, j, k, d, m, shortcircuit, pstart, pstop, example = 0;
     double firstholder[10], secondholder[10];
     double * y_i, * y_j;
     long long * searchBegin, * searchEnd;
 
-    double localRho = rho;
-#ifdef _OPENMP
-#pragma omp atomic
-#endif
-    rho -= (rhoIncrement * batchSize);
 
+    double localRho = rho;
     while (example++ != batchSize && localRho > 0) {
+      // * (1 - (startSampleIdx / n_samples));
       e_ij = posAlias -> sample();
       j = targetPointer[e_ij];
       i = sourcePointer[e_ij];
 
       y_i = coordsPtr + (i * D);
+
       y_j = coordsPtr + (j * D);
       grad -> positiveGradient(y_i, y_j, firstholder);
       for (d = 0; d != D; d++) y_j[d] -= firstholder[d] * localRho;
@@ -83,7 +84,7 @@ public:
       searchEnd = targetPointer + ps[i + 1];
       shortcircuit = 0; m = 0;
 
-      while (m != M && shortcircuit != 10) {
+      while (m != M && shortcircuit != M2) {
         k = negAlias -> sample();
         shortcircuit++;
         // Check that the draw isn't one of i's edges
@@ -92,18 +93,19 @@ public:
             binary_search( searchBegin,
                            searchEnd,
                            k)) continue;
+        m++;
 
         y_j = coordsPtr + (k * D);
         grad -> negativeGradient(y_i, y_j, secondholder);
 
-        for (d = 0; d != D; d++) firstholder[d] += secondholder[d];
-        for (d = 0; d != D; d++) y_j[d] -= secondholder[d] * localRho;
 
-        m++;
+        for (d = 0; d != D; d++) y_j[d] -= secondholder[d] * localRho;
+        for (d = 0; d != D; d++) firstholder[d] += secondholder[d];
       }
       for (d = 0; d != D; d++) y_i[d] += firstholder[d] * localRho;
       localRho -= rhoIncrement;
     }
+    rho -= (rhoIncrement * batchSize);
   }
 };
 
@@ -115,32 +117,40 @@ arma::mat sgd(arma::mat coords,
               NumericVector& weights, // w{ij}
               const double gamma,
               const double rho,
-              const long nBatches,
+              const long long n_samples,
               const int M,
               const double alpha,
               const bool verbose) {
 
-  Progress progress(nBatches, verbose);
+  Progress progress(n_samples, verbose);
   int D = coords.n_rows;
   if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
   Visualizer* v = new Visualizer(sources_j.memptr(),
                                  targets_i.memptr(),
                                  coords.n_rows,
-                                 coords.memptr());
+                                 coords.memptr(),
+                                 M,
+                                 rho,
+                                 n_samples);
   v -> initAlias(ps, weights);
 
-  if (alpha == 0) v -> setGradient(new ExpGradient(gamma, D), M, rho, nBatches);
-  else if (alpha == 1) v -> setGradient(new AlphaOneGradient(gamma, D), M, rho, nBatches);
-  else v -> setGradient(new AlphaGradient(alpha, gamma, D), M, rho, nBatches);
+  if (alpha == 0) v -> setGradient(new ExpGradient(gamma, D));
+  else if (alpha == 1) v -> setGradient(new AlphaOneGradient(gamma, D));
+  else v -> setGradient(new AlphaGradient(alpha, gamma, D));
 
-  const int batchSize = 16384;
+  const int batchSize = 8192;
+  const long long barrier = (n_samples * .9 < n_samples - coords.n_cols) ? n_samples * .9 : n_samples - coords.n_cols;
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-  for (long eIdx = 0; eIdx < nBatches; eIdx += batchSize) if (progress.increment(batchSize)) {
-    v -> batch(batchSize);
+  for (long long eIdx = 0; eIdx < barrier; eIdx += batchSize) if (progress.increment(batchSize)) {
+    v -> batch(eIdx, batchSize);
   }
+#ifdef _OPENMP
+#pragma omp barrier
+#endif
+  for (long long eIdx = barrier; eIdx < n_samples; eIdx += batchSize) v -> batch(eIdx, batchSize);
   return coords;
 };
 

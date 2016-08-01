@@ -4,7 +4,7 @@
 \alias{ggManifoldMap}
 \title{Visualize an embedding by ggplotting with images}
 \usage{
-ggManifoldMap(ggObject = NULL, x, n = nrow(x), images, scale = 1, ...)
+ggManifoldMap(ggObject = NULL, x, n = nrow(x), images, scale = 1)
 }
 \arguments{
 \item{ggObject}{a \code{\link[ggplot2]{ggplot}} object.  If not provided, a new \code{ggplot}
@@ -17,8 +17,6 @@ object with \code{\link[ggplot2]{geom_blank}} will be created.}
 \item{images}{The images. A 3-D or 4-D array.}
 
 \item{scale}{Proportion to scale the images to.}
-
-\item{...}{Addiitional parameters passed to \code{plot}.}
 }
 \value{
 A \code{ggplot} object.

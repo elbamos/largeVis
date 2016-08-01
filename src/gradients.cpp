@@ -33,12 +33,6 @@
 
 
 // Parent class
-Gradient::Gradient(const double g,
-                   const int d) :
-  gamma{g},
-  D{d} {
-  cap = 5;
-}
 void Gradient::positiveGradient(const double* i,
                                 const double* j,
                                 double* holder) const {
@@ -76,18 +70,13 @@ inline void Gradient::multModify(double *col, const double adj) const {
 /*
  * Generalized gradient with an alpha parameter
  */
-AlphaGradient::AlphaGradient(const double a,
-                             const double g,
-                             const int d) : Gradient(g, d),
-                             alpha{a}, 
-                             alphagamma{a * g * 2},
-                             twoalpha{alpha * -2} {
-}
+
 void AlphaGradient::_positiveGradient(const double dist_squared,
                                       double* holder) const {
   const double grad = twoalpha / (1 + alpha * dist_squared);
   multModify(holder, grad);
 }
+
 void AlphaGradient::_negativeGradient(const double dist_squared,
                                       double* holder) const {
   const double adk = alpha * dist_squared;
@@ -101,11 +90,13 @@ void AlphaGradient::_negativeGradient(const double dist_squared,
 AlphaOneGradient::AlphaOneGradient(const double g,
                                    const int d) : AlphaGradient(1, g, d) {
 }
+
 void AlphaOneGradient::_positiveGradient(const double dist_squared,
                                          double* holder) const {
   const double grad = - 2 / (1 + dist_squared);
   multModify(holder, grad);
 }
+
 void AlphaOneGradient::_negativeGradient(const double dist_squared,
                                          double* holder) const {
   const double grad = alphagamma / (1 + dist_squared) / (0.1 + dist_squared);
@@ -116,13 +107,9 @@ void AlphaOneGradient::_negativeGradient(const double dist_squared,
  * Alternative probabilistic function (sigmoid)
  */
 
-ExpGradient::ExpGradient(const double g,
-                         const int d) : Gradient(g, d),
-                         gammagamma{g * g} {
-  cap = gamma;
-}
+
 void ExpGradient::_positiveGradient(const double dist_squared,
-                                   double* holder) const {
+                                    double* holder) const {
   const double expsq = exp(dist_squared);
   const double grad = (dist_squared > 4) ? -1 :
                                            -(expsq / (expsq + 1));

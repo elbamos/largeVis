@@ -18,7 +18,12 @@ buildWijMatrix(x, perplexity)
 \item{perplexity}{Given perplexity.}
 }
 \value{
-A sparse matrix
+A \code{list} with the following components: \describe{
+   \item{'dist'}{An [N,K] matrix of the distances to the nearest neighbors.}
+   \item{'id'}{An [N,K] matrix of the node indexes of the neartest neighbors.  Note that this matrix is 1-indexed,
+   unlike most other matrices in this package.}
+   \item{'k'}{The number of nearest neighbors.}
+ }
 }
 \description{
 Rescale the weights in an edge matrix to match a given perplexity.

@@ -5,7 +5,7 @@
 \title{dbscan}
 \usage{
 dbscan(data = NULL, neighbors = NULL, edges = NULL, eps,
-  minPts = nrow(data) + 1, verbose = TRUE)
+  minPts = nrow(data) + 1, partition = !missing(edges), verbose = TRUE)
 }
 \arguments{
 \item{data}{Input data, where examples are columns.}
@@ -26,7 +26,7 @@ An implementation of the dbscan algorithm.
 }
 \details{
 This is a preliminary implementation of the OPTICS algorithm that attempts
-to leverage the \code{largeVis} nearest-neighbor search. 
+to leverage the \code{largeVis} nearest-neighbor search.
 
 One of \code{neighbors} or \code{edges} must be specified. If \code{edges} is missing,
 \code{data} must also be given. If \code{data} is given along with either \code{edges}
@@ -35,5 +35,9 @@ or \code{neighbors}, the algorithm will attempt a more thorough search.
 \note{
 Support for dbscan and optics are preliminary, and not fully tested for
 correctness.
+
+This is not the original DBSCAN algorithm. In particular, the neighbor-search strategy in
+DBSCAN is not used, in favor of using a pre-calculated neighbor matrix produced incidentally by
+`largeVis`.
 }
 

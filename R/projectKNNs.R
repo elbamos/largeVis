@@ -85,7 +85,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 weights = wij@x,
                 alpha = alpha, gamma = gamma, M = M,
                 rho = rho,
-                nBatches = sgd_batches,
+                n_samples = sgd_batches,
                 verbose = verbose)
 
   return(coords)

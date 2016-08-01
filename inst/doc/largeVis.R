@@ -35,45 +35,46 @@ theme_set(
     title = element_text(size = rel(0.9))
   ) 
 )
-rebuild <- TRUE
+rebuild <- FALSE
 
 require(largeVis,quietly = TRUE)
 
-## ----buildhyperparameters,echo=F,eval=rebuild----------------------------
-data(wiki)
-inputs <- data.frame(
-  g = rep(c(1,7,14), 4),
-  a = rep(c(0,.1,1,10), each = 3)
-)
-set.seed(1974)
-initialcoords <- matrix(rnorm(ncol(wiki) * 2), nrow = 2)
-
-agcoords <- do.call(rbind, 
-                    lapply(1:nrow(inputs), 
-                           FUN = function(x) {
-  a <- inputs[x, 'a']
-  g <- inputs[x, 'g']
-  newcoords <- initialcoords
-  localcoords <- projectKNNs(wiki, 
-                             alpha =  a, 
-                             gamma = g,
-                             verbose = FALSE, 
-                             coords = newcoords)
-  localcoords <- data.frame(scale(t(localcoords)))
-  colnames(localcoords) <- c("x", "y")
-  localcoords$a <- a
-  localcoords$g <- g
-  localcoords$rebuild <- 'no'
-  localcoords$activity <- log(Matrix::colSums(wiki))
-  localcoords  
-}))
+## ----reload,eval=!rebuild------------------------------------------------
+load(system.file(package = "largeVis", "extdata/vignettedata.Rda"))
 
 ## ----drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis',cache=FALSE----
-if (!exists("agcoords")) load(system.file("extdata/agcoords.Rda", package = "largeVis"))
+if (! exists("agcoords")) {
+  data(wiki)
+  inputs <- data.frame(
+    g = rep(c(.5,1,7,14), 5),
+    a = rep(c(0,.1,1,5,10), each = 4)
+  )
+  wij <- buildWijMatrix(wiki)
+  set.seed(1974) 
+  initialcoords <- matrix(rnorm(ncol(wij) * 2), nrow = 2)
+  
+  agcoords <- do.call(rbind, 
+                      lapply(1:nrow(inputs), 
+                             FUN = function(x) {
+    a <- inputs[x, 'a']
+    g <- inputs[x, 'g']
+    newcoords <- initialcoords
+    projectKNNs(wij, alpha = a, 
+                 gamma = g,
+                 verbose = FALSE, 
+                 coords = newcoords) %>% 
+      t() %>%
+      scale() %>%
+      data.frame() %>%
+      set_colnames(c("x", "y")) %>%
+      mutate(a = a, g = g, degree = colSums(wiki))
+  }))
+}
+
 ggplot(agcoords,
        aes(x = x, 
            y = y, 
-           color = activity)) +
+           color = degree)) +
   geom_point(alpha = 0.2, 
              size = 0.05) +
   facet_grid(a ~ g,
@@ -88,51 +89,45 @@ ggplot(agcoords,
                         guide=FALSE) +
   ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  ")))
 
-## ----iris_mkhyperparams,echo=F,eval=rebuild,cache=FALSE------------------
-data(iris)
-Ks <- c(5, 10,20,30)
-Ms <- c(5, 10, 20)
-dat <- iris[,1:4]
-dupes <- duplicated(dat)
-dat <- dat[-dupes,]
-labels <- iris$Species[-dupes]
-dat <- as.matrix(dat)
-dat <- t(dat)
-
-set.seed(1974)
-coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
-neighbors <- randomProjectionTreeSearch(dat, 
-                                      K = max(Ks), 
-                                      verbose = FALSE)
-
-iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
-  neighborIndices <- neighborsToVectors(neighbors[1:K,])
-  distances <- largeVis::distance(x = dat, 
-                                  neighborIndices$i, 
-                                  neighborIndices$j,
-                                  verbose = FALSE)
-  wij <- buildEdgeMatrix(i = neighborIndices$i, 
-                       j = neighborIndices$j, 
-                       d = distances, verbose = FALSE)
-  do.call(rbind, lapply(Ms, FUN = function(M) {
-    coords <- projectKNNs(wij = wij$wij, M = M, 
-                          coords = coordsinput, 
-                          verbose = FALSE)
-    coords <- scale(t(coords))
-    coords <- data.frame(coords)
-    colnames(coords) <- c("x", "y")
-    coords$K <- K
-    coords$M <- M
-    coords$rebuild <- 'no'
-    coords$Species <- as.integer(labels)
-    coords
-  }))
-}))
-iriscoords$Species <- factor(iriscoords$Species)
-levels(iriscoords$Species) <- levels(iris$Species)
-
 ## ----drawiris,echo=F,fig.width=4,fig.height=4.5,fig.align='center',results='asis'----
-if (!exists("iriscoords")) load(system.file("extdata/iriscoords.Rda", package = "largeVis"))
+if (!exists("iriscoords")) {
+  data(iris)
+  Ks <- c(5, 10,20,30)
+  Ms <- c(5, 10, 20)
+  dat <- iris[,1:4]
+  dupes <- duplicated(dat)
+  dat <- dat[-dupes,]
+  labels <- iris$Species[-dupes]
+  dat <- as.matrix(dat)
+  dat <- t(dat)
+  
+  set.seed(1974)
+  coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
+  
+  iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
+    neighbors <- randomProjectionTreeSearch(dat, 
+                                        K = K, 
+                                        verbose = FALSE)
+    edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE)
+    wij <- buildWijMatrix(edges)
+    do.call(rbind, lapply(Ms, FUN = function(M) {
+      coords <- projectKNNs(wij = wij, M = M, 
+                            coords = coordsinput, 
+                            verbose = TRUE, 
+                            sgd_batches = 2000000)
+      coords <- scale(t(coords))
+      coords <- data.frame(coords)
+      colnames(coords) <- c("x", "y")
+      coords$K <- K
+      coords$M <- M
+      coords$rebuild <- 'no'
+      coords$Species <- as.integer(labels)
+      coords
+    }))
+  }))
+  iriscoords$Species <- factor(iriscoords$Species)
+  levels(iriscoords$Species) <- levels(iris$Species)
+}
 
 ggplot(iriscoords,
        aes(x = x,
@@ -161,11 +156,6 @@ ggplot(iriscoords,
 #      ylab = "")
 
 ## ----youtube,eval=F,echo=T-----------------------------------------------
-#  pathToGraphFile <-
-#    "./YouTubeCommunities/com-youtube.ungraph.txt"
-#  pathToCommunities <-
-#    "./YouTubeCommunities/com-youtube.top5000.cmty.txt"
-#  
 #  youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
 #  youtube <- as.matrix(youtube)
 #  youtube <- Matrix::sparseMatrix(i = youtube[, 1],
@@ -180,6 +170,7 @@ ggplot(iriscoords,
 #                               nrow(youtube))
 #  for (i in 1:length(communities)) community_assignments[communities[[i]]] <- i
 #  
+#  wij <- buildWijMatrix(youtube)
 #  youTube_coordinates <- projectKNNs(youtube)
 #  youTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
 #  colnames(youTube_coordinates) <- c("x", "y")
@@ -204,18 +195,14 @@ ggplot(iriscoords,
 
 ## ----lowmemexample,eval=F,echo=T-----------------------------------------
 #  neighbors <- randomProjectionTreeSearch(largeDataset)
-#  neighborIndices <- neighborsToVectors(neighbors)
+#  edges <- buildEdgeMatrix(data = largeDataset, neighbors = neighbors)
 #  rm(neighbors)
 #  gc()
-#  distances <- distance(x = largeDataset,
-#                        i = neighborIndices$i,
-#                        j =neighborIndices$j)
-#  rm(largeDataset)
+#  wij <- buildWijMaatrix(edges)
+#  rm(edges)
 #  gc()
-#  wij <- buildEdgeMatrix(i = neighborIndices$i,
-#                         j = neighborIndices$j,
-#                         d = distances)
-#  rm(distances, neighborIndices)
-#  gc()
-#  coords <- projectKNNs(wij$wij)
+#  coords <- projectKNNs(wij)
+
+## ----save,eval=rebuild---------------------------------------------------
+#  save(agcoords, iriscoords, file = "vignettedata/vignettedata.Rda")
 

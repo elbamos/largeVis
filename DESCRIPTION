@@ -15,7 +15,8 @@ Imports:
     parallel,
     Rcpp (>= 0.12.4),
     abind,
-    ggplot2 (>= 0.9.2.1)
+    ggplot2 (>= 0.9.2.1),
+    dbscan
 LinkingTo: Rcpp,RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.100.3.0),testthat(>= 1.0.2)
 Suggests: testthat,
     covr,
@@ -24,8 +25,7 @@ Suggests: testthat,
     wesanderson,
     RColorBrewer,
     dplyr,
-    magrittr,
-    dbscan
+    magrittr
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes

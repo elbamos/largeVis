@@ -12,10 +12,7 @@
 #include <queue>
 #include <vector>
 #include <set>
-#define _GSLRANDOM
-#ifdef _GSLRANDOM
 #include <gsl/gsl_rng.h>
-#endif
 using namespace Rcpp;
 using namespace std;
 using namespace arma;
@@ -104,13 +101,11 @@ private:
   T N;
 
 public:
-  AliasTable(const NumericVector& weights) {
-  	N = weights.length();
-  	// norm_probs = new double[n];
-  	probs = new long double[N];
-  	aliases = new T[N];
+  AliasTable(const NumericVector& weights) : N(weights.length()) {
+    aliases = new T[N];
+    probs = new long double[N];
 
-  	const long double sm = sum(weights); 
+  	const long double sm = sum(weights);
   	for (T i = 0; i < N; i++) probs[i] = weights[i] * N / sm;
   	queue<T> small = queue<T>();
   	queue<T> large = queue<T>();
@@ -138,7 +133,7 @@ public:
   	  small.pop();
   	}
   	if (accu > 1e-5) warning("Numerical instability in alias table " + to_string(accu));
-  	
+
   };
 
   T search(double *random) const {
@@ -150,7 +145,6 @@ public:
     return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
   };
 
-#ifdef _GSLRANDOM
   const gsl_rng_type *gsl_T = NULL;
   gsl_rng *gsl_r = NULL;
 
@@ -165,9 +159,6 @@ public:
   T sample() const {
     return search(gsl_rng_uniform(gsl_r), gsl_rng_uniform(gsl_r));
   }
-#endif
-
-
 };
 
 /*
@@ -175,11 +166,11 @@ public:
  */
 class Gradient {
 protected:
-  double gamma;
+  const double gamma;
   double cap;
-  int D;
+  const int D;
   Gradient(const double g,
-           const int d);
+           const int d) : gamma{g}, D{d}, cap(5) {};
   virtual void _positiveGradient(const double dist_squared,
                                 double* holder) const = 0;
   virtual void _negativeGradient(const double dist_squared,
@@ -200,18 +191,21 @@ public:
 };
 
 class AlphaGradient: public Gradient {
-  double alpha;
-  double twoalpha;
+  const double alpha;
+  const double twoalpha;
+protected:
+  const double alphagamma;
+  virtual void _positiveGradient(const double dist_squared,
+                                 double* holder) const;
+  virtual void _negativeGradient(const double dist_squared,
+                                 double* holder) const;
 public:
   AlphaGradient(const double a,
                 const double g,
-                const int d);
-protected:
-  double alphagamma;
-  virtual void _positiveGradient(const double dist_squared,
-                        double* holder) const;
-  virtual void _negativeGradient(const double dist_squared,
-                        double* holder) const;
+                const int d) : Gradient(g, d),
+                               alpha{a},
+                               alphagamma(alpha * gamma * 2),
+                               twoalpha(alpha * -2) { } ;
 };
 
 class AlphaOneGradient: public AlphaGradient {
@@ -227,34 +221,16 @@ protected:
 
 class ExpGradient: public Gradient {
 public:
-  double gammagamma;
+  const double gammagamma;
   ExpGradient(const double g,
-              const int d);
+                           const int d) : Gradient(g, d),
+                                          gammagamma(gamma * gamma) {
+    cap = gamma;
+  };
 protected:
   virtual void _positiveGradient(const double dist_squared,
                         double* holder) const;
   virtual void _negativeGradient(const double dist_squared,
                         double* holder) const;
 };
-
-arma::vec testNegativeGradient(arma::vec i, arma::vec j,
-                               NumericVector alpha, NumericVector gamma, NumericVector f);
-arma::vec testPositiveGradient(arma::vec i, arma::vec j,
-                               NumericVector alpha, NumericVector f);
-
-/*
- * The SGD loop
- */
-arma::mat sgd(arma::mat coords,
-              arma::ivec& is,
-              const IntegerVector js,
-              const IntegerVector ps,
-              const arma::vec ws,
-              const double gamma,
-              const double rho,
-              const bool useWeights,
-              const long nBatches,
-              const int M,
-              const double alpha,
-              bool verbose);
 #endif

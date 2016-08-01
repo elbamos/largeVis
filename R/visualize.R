@@ -94,7 +94,6 @@ manifoldMap <- function(x,
 #' @param n The number of images to sample.
 #' @param images The images. A 3-D or 4-D array.
 #' @param scale Proportion to scale the images to.
-#' @param ... Addiitional parameters passed to \code{plot}.
 #' @return A \code{ggplot} object.
 #'
 #' @details See \code{\link{manifoldMap}}.  Note that this function can be considerably slower to display than \code{manifoldMap}.
@@ -110,13 +109,11 @@ manifoldMap <- function(x,
 #' @importFrom ggplot2 annotation_raster
 #' @importFrom ggplot2 aes
 #' @export
-ggManifoldMap <- function(
-                          ggObject = NULL,
+ggManifoldMap <- function(ggObject = NULL,
                           x,
                           n = nrow(x),
                           images,
-                          scale = 1,
-                          ...) { #nocov start
+                          scale = 1) { #nocov start
   if (class(x) == "largeVis") x <- t(x$coords)
   if (ncol(x) != 2) stop("Can only visualize in 2-D.")
   N <- nrow(x)

@@ -1,7 +1,7 @@
 largeVis
 ================
 
-[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=0.1.6)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/0.1.6.svg)](https://codecov.io/gh/elbamos/largeVis/branch/0.1.6) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=0.1.6&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis?branch=0.1.6)
+[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=reference)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/reference.svg)](https://codecov.io/gh/elbamos/largeVis/branch/reference) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=reference&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis?branch=reference)
 
 This is an implementation of the `largeVis` algorithm described in (<https://arxiv.org/abs/1602.00370>). It also incorporates a very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`, and for visualizing a map of the manifold like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
 
@@ -11,6 +11,19 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
 -   Tested with (dense) matrices &gt; 2.5 Million rows, and sparse matrices with &gt; 10,000 features.
 -   Performance and memory efficiency are good.
 -   I have been able to replicate, in the sense of producing characteristically similar visualizations, the results in the original paper.
+
+### Notes
+
+-   On Mac OS X, the Apple compiler does not support OpenMP. Compiling `largeVis` with OpenMP support requires some fiddling. Here are some instructions that may work for you:
+    -   Use `homebrew` to install `llvm` version 3.8 or greater.
+    -   Link it to `/usr/local` with `brew link --force llvm`.
+    -   Add the following line to `~.R/Makevars`:
+
+            SHLIB_OPENMP_CFLAGS = -fopenmp
+
+    -   Add the following to `~/.Renviron`:
+
+            PATH=/usr/local/bin:${PATH}
 
 Examples
 --------
@@ -24,8 +37,6 @@ Examples
 ### Wikipedia Terms and Documents
 
 ![](README_files/figure-markdown_github/drawwikiwords-1.png)
-
-![](README_files/figure-markdown_github/drawwikidocs-1.png)
 
 ### 20 Newsgroups
 
@@ -133,12 +144,13 @@ For a detailed description of the algorithm, please see the original paper, Tang
 Package Overview
 ----------------
 
-The `largeVis` package offers four functions for visualizing high-dimensional datasets and finding approximate nearest neighbors (along with some helper functions):
+The `largeVis` package offers five functions for visualizing high-dimensional datasets and finding approximate nearest neighbors (along with some helper functions):
 
 1.  `randomProjectionTreeSearch`, a method for finding approximate nearest neighbors.
 2.  `projectKNNs`, which takes as input a weighted nearest-neighbor graph and estimates a projection into a low-dimensional space.
-3.  `vis`, which implements the entire `LargeVis` algorithm.
+3.  `largeVis`, which implements the entire `LargeVis` algorithm.
 4.  `manifoldMap` (and companon `ggManifoldMap`), which produce a plot for visualizing embeddings of images.
+5.  `buildWijMatrix` takes a sparse matrix of the distances between nearest neighbors, and returns one with the edges properly weighted for use in `projectKNNs`.
 
 See the [original paper](https://arxiv.org/abs/1602.00370) for a detailed description of the algorithm.
 
@@ -172,7 +184,11 @@ This function takes as its input a `Matrix::sparseMatrix`, of connections betwee
 
 The `LargeVis` algorithm, explained in detail in Tang et al. (2016), estimates the embedding by sampling from the identitied nearest-neighbor connections. For each edge, the algorithm also samples `M` non-nearest neighbor negative samples. `M`, along with *γ* and *α*, control the visualization. *α* controls the desired distance between nearest neighbors. *γ* controls the relative strength of the attractive force between nearest neighbors and repulsive force between non-neighbors.
 
-The following grid illustrates the effect of the *α* and *γ* hyperparameters, using the `wiki` dataset which is included with the package:
+The following grid illustrates the effect of the *α* and *γ* hyperparameters:
+
+``` r
+load(system.file(package = "largeVis", "extdata/vignettedata.Rda"))
+```
 
 <img src="README_files/figure-markdown_github/drawhyperparameters-1.png" style="display: block; margin: auto;" />
 
@@ -219,11 +235,6 @@ The `largeVis` visualization algorithm can be used to visualize undirected weigh
 The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). The data and visualization are not included here for size reasons.
 
 ``` r
-pathToGraphFile <- 
-  "./YouTubeCommunities/com-youtube.ungraph.txt"
-pathToCommunities <- 
-  "./YouTubeCommunities/com-youtube.top5000.cmty.txt"
-
 youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
 youtube <- as.matrix(youtube)
 youtube <- Matrix::sparseMatrix(i = youtube[, 1],
@@ -238,6 +249,7 @@ community_assignments <- rep(0,
                              nrow(youtube))
 for (i in 1:length(communities)) community_assignments[communities[[i]]] <- i
 
+wij <- buildWijMatrix(youtube)
 youTube_coordinates <- projectKNNs(youtube)
 youTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
 colnames(youTube_coordinates) <- c("x", "y")
@@ -273,35 +285,28 @@ Memory Consumption
 
 The algorithm is necessarily memory-intensive for large datasets.
 
-A simple way to reduce peak memory usage, is to turn-off the `save_neighbors` and `save_sigmas` parameters when running `vis`.
-
-If this is insufficient, the steps of the algorithm can be run separately with the `neighborsToVectors`, `distance`, and `buildEdgeMatrix` functions. In this case, the workflow is:
+A simple way to reduce peak memory usage, is to turn-off the `save_neighbors` parameter when running `vis`. If this is insufficient, the steps of the algorithm can be run separately with the `neighborsToVectors`, `distance`, and `buildEdgeMatrix` functions. In this case, the workflow is:
 
 ``` r
 neighbors <- randomProjectionTreeSearch(largeDataset)
-neighborIndices <- neighborsToVectors(neighbors)
+edges <- buildEdgeMatrix(data = largeDataset, neighbors = neighbors)
 rm(neighbors)
 gc()
-distances <- distance(x = largeDataset, 
-                      i = neighborIndices$i, 
-                      j =neighborIndices$j)
-rm(largeDataset)
+wij <- buildWijMaatrix(edges)
+rm(edges)
 gc()
-wij <- buildEdgeMatrix(i = neighborIndices$i, 
-                       j = neighborIndices$j, 
-                       d = distances)
-rm(distances, neighborIndices)
-gc()
-coords <- projectKNNs(wij$wij)
+coords <- projectKNNs(wij)
 ```
 
-Note that `gc()` is being called explicitly. The reason is that R will not garbage collect while executing the package's C++ functions, which can require substantial temporary RAM.
-
-In testing, this method reduced peak RAM requirements by more than 70%.
+Note that `gc()` is being called explicitly. The reason is that R will not collect garbage while executing the package's C++ functions, which can require substantial temporary RAM.
 
 Memory requirements during the neighbor search may be managed by reducing `n_trees` and increasing the `tree_threshold`. The decrease in precision is marginal, and may be compensated-for by increasing `max_iters`. See the benchmarks vignette for further detail.
 
 References
 ----------
+
+``` r
+save(agcoords, iriscoords, file = "vignettedata/vignettedata.Rda")
+```
 
 Tang, Jian, Jingzhou Liu, Ming Zhang, and Qiaozhu Mei. 2016. “Visualizing Large-Scale and High-Dimensional Data.” In *Proceedings of the 25th International Conference on World Wide Web*, 287–97. International World Wide Web Conferences Steering Committee.

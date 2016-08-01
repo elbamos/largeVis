@@ -25,6 +25,10 @@ optics_nd <- function(neighbors, data, eps, minPts, verbose) {
     .Call('largeVis_optics_nd', PACKAGE = 'largeVis', neighbors, data, eps, minPts, verbose)
 }
 
+silhouetteDbscan <- function(edges, sil) {
+    invisible(.Call('largeVis_silhouetteDbscan', PACKAGE = 'largeVis', edges, sil))
+}
+
 searchTrees <- function(threshold, n_trees, K, maxIter, data, distMethod, verbose) {
     .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, data, distMethod, verbose)
 }
@@ -45,8 +49,8 @@ referenceWij <- function(i, j, d, perplexity) {
     .Call('largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, perplexity)
 }
 
-sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, nBatches, M, alpha, verbose) {
-    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, nBatches, M, alpha, verbose)
+sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, verbose) {
+    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, verbose)
 }
 
 searchTreesCSparse <- function(threshold, n_trees, K, maxIter, i, p, x, distMethod, verbose) {

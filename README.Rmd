@@ -31,7 +31,10 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
     ```
     SHLIB_OPENMP_CFLAGS = -fopenmp
     ```
-    - Compile `largeVis` from the command line (not from RStudio or the R GUI). This is necessary because El Capitan and later exclude `/usr/local/` from the `PATH`. 
+    - Add the following to `~/.Renviron`:
+    ```
+    PATH=/usr/local/bin:${PATH}
+    ```
 
 ## Examples
 ```{r echo=F}
