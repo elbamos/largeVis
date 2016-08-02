@@ -27,7 +27,6 @@
 #' @return An \code{\link[dbscan]{optics}} object.
 #'
 #' @importFrom dbscan optics_cut opticsXi
-#' @export
 optics <- function(data = NULL,
                    neighbors = NULL,
                    edges = NULL,
@@ -85,8 +84,6 @@ optics <- function(data = NULL,
 #' `largeVis`.
 #'
 #' @return An \code{\link[dbscan]{dbscan_fast}} object.
-#'
-#' @export
 dbscan <- function(data = NULL,
                    neighbors = NULL,
                    edges = NULL,
@@ -158,7 +155,6 @@ edgeMatrixToKNNS <- function(edges) {
 #' @references Based on code in the \code{\link[dbscan]{dbscan}} package.
 #'
 #' @return A vector of LOF values for each data point.
-#' @export
 lof <- function(edges) {
   kNNlist <- edgeMatrixToKNNS(edges)
   N <- nrow(kNNlist$id)

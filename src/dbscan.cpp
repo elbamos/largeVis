@@ -48,12 +48,11 @@ typedef std::vector<iddist> NNlist;
 
 class Cluster {
 protected:
-  int D;
-  long long N;
-  int K;
-  double radius2;
-  int minPts;
-
+	const long long N;
+	int K;
+	const double radius2;
+	const int minPts;
+	int D;
   arma::mat* data = NULL;
   arma::imat* neighbors = NULL;
   arma::sp_mat* edges = NULL;
@@ -75,29 +74,27 @@ protected:
   Cluster(arma::imat& neighbors,
           double eps,
           int minPts,
-          bool verbose) :
-                        neighbors{&neighbors},
-                        minPts{minPts},
-                        radius2{eps * eps},
-                        N(neighbors.n_cols),
-                        K(neighbors.n_rows),
-                        hasEdges(false),
-                        hasData(false),
-                        progress(Progress(N, verbose)),
-                        visited(std::vector<bool>(N, false)) {}
+          bool verbose) : N(neighbors.n_cols),
+          								K(neighbors.n_rows),
+          								radius2{eps * eps},
+          								minPts{minPts},
+                          neighbors{&neighbors},
+                        	hasEdges(false),
+                        	hasData(false),
+                        	visited(std::vector<bool>(N, false)),
+                        	progress(Progress(N, verbose)) {}
 
   Cluster(arma::sp_mat& edges,
           double eps,
           int minPts,
-          bool verbose) :
-                          edges{&edges},
+          bool verbose) : N(edges.n_cols),
+          								radius2{eps * eps}, minPts{minPts},
+          								edges{&edges},
                           hasEdges(true),
                           hasData(false),
-                          minPts{minPts},
-                          radius2{eps * eps},
-                          N(edges.n_cols),
-                          progress(Progress(N, verbose)),
-                          visited(std::vector<bool>(N, false)) { }
+                          visited(std::vector<bool>(N, false)),
+                          progress(Progress(N, verbose))
+                          { }
 
   void frNNrecurse(double distStart,
                    const double * x_i,
@@ -140,7 +137,6 @@ protected:
       }
     }
   }
-
 
   NNlist fixedRadiusNearestNeighbors(long long id) const {
     NNheap found = NNheap();
@@ -244,8 +240,8 @@ public:
           double eps,
           int minPts,
           bool verbose) : Cluster(neighbors, eps, minPts, verbose),
-                          reachdist(std::vector<long double>(N, INFINITY)),
                           coredist(std::vector<long double>(N, INFINITY)),
+                          reachdist(std::vector<long double>(N, INFINITY)),
                           ds(std::vector<long double>()),
                           orderedPoints(std::vector<long long>()),
                           seeds(std::vector<long long>()) {
@@ -256,11 +252,11 @@ public:
           double eps,
           int minPts,
           bool verbose) : Cluster(edges, eps, minPts, verbose),
-          reachdist(std::vector<long double>(N, INFINITY)),
-          coredist(std::vector<long double>(N, INFINITY)),
-          ds(std::vector<long double>()),
-          orderedPoints(std::vector<long long>()),
-          seeds(std::vector<long long>()) {
+								          orderedPoints(std::vector<long long>()),
+								          seeds(std::vector<long long>()),
+								          ds(std::vector<long double>()),
+								          coredist(std::vector<long double>(N, INFINITY)),
+								          reachdist(std::vector<long double>(N, INFINITY)) {
     orderedPoints.reserve(N);
   }
 

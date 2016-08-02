@@ -11,21 +11,22 @@ using namespace arma;
 
 class Visualizer {
 protected:
-  AliasTable<int>* negAlias;
-  AliasTable<long>* posAlias;
-  Gradient* grad;
-
   const int D;
   const int M;
   const int M2;
 
-  double rho;
-  double rhoIncrement;
-  long long n_samples;
-
   long long * const targetPointer;
   long long * const sourcePointer;
   double * const coordsPtr;
+  const long long n_samples;
+
+  double rho;
+  double rhoIncrement;
+
+  AliasTable<int>* negAlias;
+  AliasTable<long>* posAlias;
+  Gradient* grad;
+
   IntegerVector ps;
 
 public:
@@ -35,15 +36,13 @@ public:
              double * coordPtr,
              int M,
              double rho,
-             long long n_samples) : targetPointer{targetPtr},
-                                  D{D},
-                                  coordsPtr{coordPtr},
-                                  sourcePointer{sourcePtr},
-                                  M{M},
-                                  rho{rho},
-                                  n_samples{n_samples},
-                                  M2(M * 2),
-                                  rhoIncrement(rho / n_samples) { }
+             long long n_samples) : D{D}, M{M}, M2(M * 2),
+                                    targetPointer{targetPtr},
+                                    sourcePointer{sourcePtr},
+                                    coordsPtr{coordPtr},
+                                    n_samples{n_samples},
+                                    rho{rho},
+                                    rhoIncrement(rho / n_samples) { }
 
   void initAlias(IntegerVector& newps,
                  const NumericVector& weights) {
@@ -61,7 +60,7 @@ public:
 
   void batch(long long startSampleIdx, int batchSize) {
     long long e_ij;
-    int i, j, k, d, m, shortcircuit, pstart, pstop, example = 0;
+    int i, j, k, d, m, shortcircuit, example = 0;
     double firstholder[10], secondholder[10];
     double * y_i, * y_j;
     long long * searchBegin, * searchEnd;

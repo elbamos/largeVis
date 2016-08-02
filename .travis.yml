@@ -44,8 +44,10 @@ addons:
       - g++-4.9
       - gfortran-4.9
       - libgsl-dev
+      - libgsl-bin
+      - gsl-bin
 
-before_install: 
+before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update     ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gsl; fi
   - | mkdir ~/.R

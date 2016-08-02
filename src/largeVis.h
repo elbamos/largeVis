@@ -133,7 +133,6 @@ public:
   	  small.pop();
   	}
   	if (accu > 1e-5) warning("Numerical instability in alias table " + to_string(accu));
-
   };
 
   T search(double *random) const {
@@ -170,7 +169,7 @@ protected:
   double cap;
   const int D;
   Gradient(const double g,
-           const int d) : gamma{g}, D{d}, cap(5) {};
+           const int d) : gamma{g}, cap(5), D{d} {};
   virtual void _positiveGradient(const double dist_squared,
                                 double* holder) const = 0;
   virtual void _negativeGradient(const double dist_squared,
@@ -204,8 +203,8 @@ public:
                 const double g,
                 const int d) : Gradient(g, d),
                                alpha{a},
-                               alphagamma(alpha * gamma * 2),
-                               twoalpha(alpha * -2) { } ;
+                               twoalpha(alpha * -2),
+                               alphagamma(alpha * gamma * 2) { } ;
 };
 
 class AlphaOneGradient: public AlphaGradient {
@@ -222,9 +221,8 @@ protected:
 class ExpGradient: public Gradient {
 public:
   const double gammagamma;
-  ExpGradient(const double g,
-                           const int d) : Gradient(g, d),
-                                          gammagamma(gamma * gamma) {
+  ExpGradient(const double g, const int d) : Gradient(g, d),
+                                          	 gammagamma(gamma * gamma) {
     cap = gamma;
   };
 protected:
