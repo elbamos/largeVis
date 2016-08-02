@@ -43,6 +43,8 @@ addons:
       - gcc-4.9
       - g++-4.9
       - gfortran-4.9
+      - gsl-bin
+      - libgsl-bin
       - libgsl-dev
 
 before_install: 
