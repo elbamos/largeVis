@@ -149,7 +149,7 @@ arma::mat sgd(arma::mat coords,
 #ifdef _OPENMP
 #pragma omp barrier
 #endif
-  for (long long eIdx = barrier; eIdx < n_samples; eIdx += batchSize) v -> batch(eIdx, batchSize);
+  for (long long eIdx = barrier; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) v -> batch(eIdx, batchSize);
   return coords;
 };
 
