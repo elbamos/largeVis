@@ -83,6 +83,8 @@ optics <- function(data = NULL,
 #' DBSCAN is not used, in favor of using a pre-calculated neighbor matrix produced incidentally by
 #' `largeVis`.
 #'
+#' @importFrom stats aggregate
+#'
 #' @return An \code{\link[dbscan]{dbscan_fast}} object.
 dbscan <- function(data = NULL,
                    neighbors = NULL,
