@@ -39,7 +39,7 @@
 #' coords <- scale(coords)
 #' plot(coords, xlim = c(-1.5,1.5), ylim = c(-1.5,1.5))
 #' }
-#' @importFrom stats rnorm
+#' @importFrom stats runif
 #'
 
 projectKNNs <- function(wij, # symmetric sparse matrix
