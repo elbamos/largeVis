@@ -33,7 +33,6 @@ r_github_packages:
 r_packages:
   - Rcpp
   - RcppArmadillo
-  - RcppGSL
   - devtools
 
 addons:
