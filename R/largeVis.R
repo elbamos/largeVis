@@ -40,7 +40,7 @@
 #' dupes = which(duplicated(dat))
 #' dat <- dat[-dupes,] # duplicates can cause the algorithm to fail
 #' dat <- t(dat)
-#' visObject <- vis(dat, max_iter = 20, sgd_batches = 800000,
+#' visObject <- largeVis(dat, max_iter = 20, sgd_batches = 800000,
 #'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
 #'\dontrun{
 #' # mnist
@@ -49,7 +49,7 @@
 #' dim(dat) <- c(42000, 28 * 28)
 #' dat <- (dat / 255) - 0.5
 #' dat <- t(dat)
-#' coords <- vis(dat, check=FALSE,
+#' coords <- largeVis(dat, check=FALSE,
 #'              n_tree = 50, tree_th = 200,
 #'              K = 50, alpha = 2, max.iter = 4)
 #' }
