@@ -33,6 +33,7 @@ r_github_packages:
 r_packages:
   - Rcpp
   - RcppArmadillo
+  - RcppGSL
   - devtools
 
 addons:
@@ -46,6 +47,9 @@ addons:
       - libgsl0-dev
       - libblas-dev
       - libopenblas-dev
+      - libblas-dev
+      - gsl-bin
+      - libgsl0ldbl
 
 before_install: |
   if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update     ; fi
