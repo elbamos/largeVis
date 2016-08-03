@@ -46,6 +46,8 @@ addons:
       - gsl-bin
       - libgsl-bin
       - libgsl-dev
+      - libgsl0-dev
+      - gsl
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update     ; fi
@@ -58,4 +60,4 @@ before_install:
 
 
 after_success:
-  - Rscript -e 'covr::codecov(branch="0.1.6")'
+  - Rscript -e 'covr::codecov(branch="reference")'
