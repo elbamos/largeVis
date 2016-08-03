@@ -46,7 +46,6 @@ addons:
       - gsl-bin
       - libgsl-bin
       - libgsl-dev
-      - libgsl0-dev
       - gsl
 
 before_install: |
