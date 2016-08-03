@@ -43,13 +43,8 @@ addons:
       - gcc-4.9
       - g++-4.9
       - gfortran-4.9
-      - libgsl0-dev
-      - libblas-dev
-      - libopenblas-dev
 
 before_install: |
-  if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update     ; fi
-  if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gsl; fi
   mkdir ~/.R
   cat <<EOF > ~/.R/Makevars
   CXX1X=g++-4.9

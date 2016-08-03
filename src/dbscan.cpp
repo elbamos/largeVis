@@ -240,11 +240,11 @@ public:
           double eps,
           int minPts,
           bool verbose) : Cluster(neighbors, eps, minPts, verbose),
-                          coredist(std::vector<long double>(N, INFINITY)),
-                          reachdist(std::vector<long double>(N, INFINITY)),
-                          ds(std::vector<long double>()),
-                          orderedPoints(std::vector<long long>()),
-                          seeds(std::vector<long long>()) {
+								          orderedPoints(std::vector<long long>()),
+								          seeds(std::vector<long long>()),
+          								ds(std::vector<long double>()),
+          								reachdist(std::vector<long double>(N, INFINITY)),
+								          coredist(std::vector<long double>(N, INFINITY)) {
     orderedPoints.reserve(N);
   }
 
@@ -255,8 +255,8 @@ public:
 								          orderedPoints(std::vector<long long>()),
 								          seeds(std::vector<long long>()),
 								          ds(std::vector<long double>()),
-								          coredist(std::vector<long double>(N, INFINITY)),
-								          reachdist(std::vector<long double>(N, INFINITY)) {
+								          reachdist(std::vector<long double>(N, INFINITY)),
+								          coredist(std::vector<long double>(N, INFINITY)) {
     orderedPoints.reserve(N);
   }
 

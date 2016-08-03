@@ -12,7 +12,7 @@
 #include <queue>
 #include <vector>
 #include <set>
-#include <gsl/gsl_rng.h>
+
 using namespace Rcpp;
 using namespace std;
 using namespace arma;
@@ -92,18 +92,19 @@ arma::vec fastSDistance(const arma::vec& is,
 /*
  * Functions related to the alias algorithm
  */
+typedef double realsies;
 
 template <class T>
 class AliasTable {
 private:
-  long double* probs;
+	realsies* probs;
   T* aliases;
   T N;
 
 public:
   AliasTable(const NumericVector& weights) : N(weights.length()) {
     aliases = new T[N];
-    probs = new long double[N];
+    probs = new realsies[N];
 
   	const long double sm = sum(weights);
   	for (T i = 0; i < N; i++) probs[i] = weights[i] * N / sm;
@@ -135,28 +136,43 @@ public:
   	if (accu > 1e-5) warning("Numerical instability in alias table " + to_string(accu));
   };
 
-  T search(double *random) const {
+  T search(realsies *random) const {
     return search(random[0], random[1]);
   };
 
-  T search(double random, double random2) const {
+  T search(realsies random, realsies random2) const {
     T candidate = random * N;
     return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
   };
 
-  const gsl_rng_type *gsl_T = NULL;
-  gsl_rng *gsl_r = NULL;
+  // const gsl_rng_type *gsl_T = NULL;
+  // gsl_rng *gsl_r = NULL;
+  //
+  // void initRandom() {
+  //   initRandom(314159265);
+  // }
+  // void initRandom(long seed) {
+  //   gsl_T = gsl_rng_rand48;
+  //   gsl_r = gsl_rng_alloc(gsl_T);
+  //   gsl_rng_set(gsl_r, seed);
+  // }
+  std::uniform_real_distribution<realsies> rnd;
+  std::mt19937_64 mt;
 
-  void initRandom() {
-    initRandom(314159265);
-  }
   void initRandom(long seed) {
-    gsl_T = gsl_rng_rand48;
-    gsl_r = gsl_rng_alloc(gsl_T);
-    gsl_rng_set(gsl_r, seed);
+  	mt = mt19937_64(seed);
+  	rnd = uniform_real_distribution<realsies>();
   }
-  T sample() const {
-    return search(gsl_rng_uniform(gsl_r), gsl_rng_uniform(gsl_r));
+  void initRandom() {
+  	std::random_device seed;
+  	initRandom(seed());
+  }
+
+  T sample() {
+  	realsies dub1 = rnd(mt);
+  	realsies dub2 = rnd(mt);
+  	return search(dub1, dub2);
+    // return search(gsl_rng_uniform(gsl_r), gsl_rng_uniform(gsl_r));
   }
 };
 
@@ -227,8 +243,8 @@ public:
   };
 protected:
   virtual void _positiveGradient(const double dist_squared,
-                        double* holder) const;
+                        				 double* holder) const;
   virtual void _negativeGradient(const double dist_squared,
-                        double* holder) const;
+                        				 double* holder) const;
 };
 #endif

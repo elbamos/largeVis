@@ -65,7 +65,6 @@ public:
     double * y_i, * y_j;
     long long * searchBegin, * searchEnd;
 
-
     double localRho = rho;
     while (example++ != batchSize && localRho > 0) {
       // * (1 - (startSampleIdx / n_samples));
