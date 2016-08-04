@@ -97,17 +97,27 @@ typedef double realsies;
 template <class T>
 class AliasTable {
 private:
-	T N;
-	realsies* probs;
-  T* aliases;
-
+	T N = 0;
+	realsies* probs = NULL;
+  T* aliases = NULL;
 
 public:
-  AliasTable(T N) : N{N},
-								  	probs(new realsies[N]),
-								    aliases(new T[N]) {
+	AliasTable() {}
+  AliasTable(T N) : N{N} {
+  	probs = new realsies[N];
+  	aliases = new T[N];
   }
+
 	void initialize(const NumericVector& weights) {
+		if (N == 0) {
+			N = weights.size();
+			probs = new realsies[N];
+			aliases = new T[N];
+		}
+		// AliasTable(const NumericVector& weights) :
+		// 	N(weights.size()),
+		// 	probs(new realsies[N]),
+		// 	aliases(new T[N]) {
   	const long double sm = sum(weights);
   	for (T i = 0; i < N; i++) probs[i] = weights[i] * N / sm;
   	queue<T> small = queue<T>();

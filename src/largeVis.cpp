@@ -31,7 +31,6 @@ protected:
 public:
   Visualizer(long long * sourcePtr,
              long long * targetPtr,
-             long E,
              int D,
              double * coordPtr,
              int M,
@@ -42,9 +41,7 @@ public:
                                     coordsPtr{coordPtr},
                                     n_samples{n_samples},
                                     rho{rho},
-                                    rhoIncrement(rho / n_samples),
-                                    negAlias(AliasTable<int>(E)),
-                                    posAlias(AliasTable<long>(E)) { }
+                                    rhoIncrement(rho / n_samples) { }
 
   void initAlias(IntegerVector& newps,
                  const NumericVector& weights) {
@@ -127,7 +124,6 @@ arma::mat sgd(arma::mat coords,
   if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
   Visualizer v(sources_j.memptr(),
                targets_i.memptr(),
-               targets_i.n_elem,
                coords.n_rows,
                coords.memptr(),
                M,

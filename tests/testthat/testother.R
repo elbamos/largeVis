@@ -23,18 +23,18 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 
 test_that("largeVis works", {
-  visObject <- largeVis(dat, max_iter = 20, n_trees = 100, 
+  visObject <- largeVis(dat, max_iter = 20, n_trees = 100,
                         tree_threshold = 50, sgd_batches = 1000,
-                        K = 20,  gamma = 0.5, verbose = FALSE)
+                        K = 20,  verbose = FALSE)
   expect_false(any(is.na(visObject$coords)))
   expect_false(any(is.nan(visObject$coords)))
   expect_false(any(is.infinite(visObject$coords)))
 })
 
 test_that("largeVis does not NaN on iris", {
-  visObject <- largeVis(dat, max_iter = 20, 
+  visObject <- largeVis(dat, max_iter = 20,
                         coords = matrix(rnorm(ncol(dat) * 2), nrow = 2),
-                   K = 20,  gamma = 0.5, verbose = FALSE, 
+                   K = 20,  verbose = FALSE,
                    sgd_batches = 20000 * 150)
   expect_false(any(is.na(visObject$coords)))
   expect_false(any(is.nan(visObject$coords)))
