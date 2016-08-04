@@ -4,7 +4,7 @@
 \alias{manifoldMap}
 \title{Visualize an embedding by plotting with images}
 \usage{
-manifoldMap(x, n, images, scale = 1, transparency = FALSE, ...)
+manifoldMap(x, n = nrow(x), images, scale = 1, ...)
 }
 \arguments{
 \item{x}{A \code{largeVis} object or [N,D] matrix of coordinates.}
@@ -14,8 +14,6 @@ manifoldMap(x, n, images, scale = 1, transparency = FALSE, ...)
 \item{images}{The images. A 3-D or 4-D array.}
 
 \item{scale}{Proportion to scale the images to.}
-
-\item{transparency}{Whether to add an alpha channel to greyscale images.}
 
 \item{...}{Addiitional parameters passed to \code{plot}.}
 }
@@ -47,5 +45,11 @@ manifoldMap(coords,
    scale = 0.07,
    mnistimages)
 }
+}
+\references{
+Andrej Karpapthy. \href{http://cs.stanford.edu/people/karpathy/cnnembed/}{t-SNE Visualization of CNN Codes.}
+}
+\seealso{
+\code{\link{ggManifoldMap}}
 }
 

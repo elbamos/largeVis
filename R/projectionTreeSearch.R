@@ -13,18 +13,16 @@
 #' @param tree_threshold The threshold for creating a new branch.  The paper authors suggest
 #' using a value equivalent to the number of features in the input set.
 #' @param max_iter Number of iterations in the neighborhood exploration phase.
-#' @param max_depth The maximum level of recursion.
 #' @param distance_method One of "Euclidean" or "Cosine."
 #' @param verbose Whether to print verbose logging using the \code{progress} package.
 #'
 #' @return A [K, N] matrix of the approximate K nearest neighbors for each vertex.
 #' @export
 randomProjectionTreeSearch <- function(x,
-                                       K = 5,
-                                       n_trees = 2,
+                                       K = 150,
+                                       n_trees = 50,
                                        tree_threshold =  max(10, nrow(x)),
-                                       max_iter = 2,
-                                       max_depth = 32,
+                                       max_iter = 1,
                                        distance_method = "Euclidean",
                                        verbose= TRUE)
   UseMethod("randomProjectionTreeSearch")
@@ -32,21 +30,22 @@ randomProjectionTreeSearch <- function(x,
 #' @export
 #' @rdname randomProjectionTreeSearch
 randomProjectionTreeSearch.matrix <- function(x,
-                                       K = 5,
-                                       n_trees = 2,
+                                       K = 150,
+                                       n_trees = 50,
                                        tree_threshold =  max(10, nrow(x)),
-                                       max_iter = 2,
-                                       max_depth = 32,
+                                       max_iter = 1,
                                        distance_method = "Euclidean",
                                        verbose= TRUE) {
-   if (verbose) cat("Searching for neighbors.\n")
+  if (verbose) cat("Searching for neighbors.\n")
+
+  if (distance_method == "Cosine") x <- x / rowSums(x)
 
   knns <- searchTrees(threshold = tree_threshold,
                       n_trees = n_trees,
-                      K = K, max_recursion_degree = max_depth,
+                      K = K,
                       maxIter = max_iter,
                       data = x,
-                      distance_method,
+                      distMethod = distance_method,
                       verbose = verbose)
 
   if (sum(colSums(knns != -1) == 0) > 0)
@@ -64,23 +63,22 @@ randomProjectionTreeSearch.matrix <- function(x,
 #' @export
 #' @rdname randomProjectionTreeSearch
 randomProjectionTreeSearch.CsparseMatrix <- function(x,
-                                              K = 5,
-                                              n_trees = 2,
+                                              K = 150,
+                                              n_trees = 50,
                                               tree_threshold =  max(10, nrow(x)),
-                                              max_iter = 2,
-                                              max_depth = 32,
+                                              max_iter = 1,
                                               distance_method = "Euclidean",
                                               verbose= TRUE) {
   if (verbose) cat("Searching for neighbors.\n")
 
   knns <- searchTreesCSparse(threshold = tree_threshold,
                       n_trees = n_trees,
-                      K = K, max_recursion_degree = max_depth,
+                      K = K,
                       maxIter = max_iter,
                       i = x@i,
                       p = x@p,
                       x = x@x,
-                      distance_method,
+                      distMethod = distance_method,
                       verbose = verbose)
 
   if (sum(colSums(knns != -1) == 0) > 0)
@@ -98,23 +96,24 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
 #' @export
 #' @rdname randomProjectionTreeSearch
 randomProjectionTreeSearch.TsparseMatrix <- function(x,
-                                                     K = 5,
-                                                     n_trees = 2,
-                                                     tree_threshold =  max(10, nrow(x)),
-                                                     max_iter = 2,
-                                                     max_depth = 32,
-                                                     distance_method = "Euclidean",
+                                                     K = 150,
+                                                     n_trees = 50,
+                                                     tree_threshold =
+                                                       max(10, nrow(x)),
+                                                     max_iter = 1,
+                                                     distance_method =
+                                                       "Euclidean",
                                                      verbose= TRUE) {
   if (verbose) cat("Searching for neighbors.\n")
 
   knns <- searchTreesTSparse(threshold = tree_threshold,
                              n_trees = n_trees,
-                             K = K, max_recursion_degree = max_depth,
+                             K = K,
                              maxIter = max_iter,
                              i = x@i,
                              j = x@j,
                              x = x@x,
-                             distance_method,
+                             distMethod = distance_method,
                              verbose = verbose)
 
   if (sum(colSums(knns != -1) == 0) > 0)

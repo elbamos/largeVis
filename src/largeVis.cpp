@@ -1,191 +1,153 @@
-#include <RcppArmadillo.h>
 // [[Rcpp::plugins(openmp)]]
-#include <omp.h>
-#include "progress.hpp"
-#include <math.h>
-#include <algorithm>
-#include <iterator>
-#include <queue>
-#include <vector>
-#include <set>
+// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::depends(RcppProgress)]]
+#include "largeVis.h"
+
 using namespace Rcpp;
 using namespace std;
+using namespace arma;
 
-// The Euclidean distance between two vectors
+class Visualizer {
+protected:
+  const int D;
+  const int M;
+  const int M2;
 
-inline double dist(arma::vec i, arma::vec j) {
-  return sum(square(i - j));
-}
+  long long * const targetPointer;
+  long long * const sourcePointer;
+  double * const coordsPtr;
+  const long long n_samples;
 
-/*
- * Some helper functions useful in debugging.
- */
-void checkVector(const arma::vec& x,
-                 const std::string& label) {
-  if (x.has_nan() || x.has_inf())
-    Rcout << "\n Failure at " << label;
+  double rho;
+  double rhoIncrement;
+
+  AliasTable<int> negAlias;
+  AliasTable<long> posAlias;
+  Gradient* grad;
+
+  IntegerVector ps;
+
+public:
+  Visualizer(long long * sourcePtr,
+             long long * targetPtr,
+             int D,
+             double * coordPtr,
+             int M,
+             double rho,
+             long long n_samples) : D{D}, M{M}, M2(M * 2),
+                                    targetPointer{targetPtr},
+                                    sourcePointer{sourcePtr},
+                                    coordsPtr{coordPtr},
+                                    n_samples{n_samples},
+                                    rho{rho},
+                                    rhoIncrement(rho / n_samples) { }
+
+  void initAlias(IntegerVector& newps,
+                 const NumericVector& weights) {
+    ps = newps;
+    NumericVector pdiffs = pow(diff(newps), 0.75);
+    negAlias.initialize(pdiffs);
+    posAlias.initialize(weights);
+    negAlias.initRandom();
+    posAlias.initRandom();
+  }
+
+  void setGradient(Gradient * newGrad) {
+    grad = newGrad;
+  }
+
+  void operator()(long long startSampleIdx, int batchSize) {
+    long long e_ij;
+    int i, j, k, d, m, shortcircuit, example = 0;
+    double firstholder[10], secondholder[10];
+    double * y_i, * y_j;
+    long long * searchBegin, * searchEnd;
+
+    double localRho = rho;
+    while (example++ != batchSize && localRho > 0) {
+      // * (1 - (startSampleIdx / n_samples));
+      e_ij = posAlias();
+      j = targetPointer[e_ij];
+      i = sourcePointer[e_ij];
+
+      y_i = coordsPtr + (i * D);
+
+      y_j = coordsPtr + (j * D);
+      grad -> positiveGradient(y_i, y_j, firstholder);
+      for (d = 0; d != D; d++) y_j[d] -= firstholder[d] * localRho;
+
+      searchBegin = targetPointer + ps[i];
+      searchEnd = targetPointer + ps[i + 1];
+      shortcircuit = 0; m = 0;
+
+      while (m != M && shortcircuit != M2) {
+        k = negAlias();
+        shortcircuit++;
+        // Check that the draw isn't one of i's edges
+        if (k == i ||
+            k == j ||
+            binary_search( searchBegin,
+                           searchEnd,
+                           k)) continue;
+        m++;
+
+        y_j = coordsPtr + (k * D);
+        grad -> negativeGradient(y_i, y_j, secondholder);
+
+
+        for (d = 0; d != D; d++) y_j[d] -= secondholder[d] * localRho;
+        for (d = 0; d != D; d++) firstholder[d] += secondholder[d];
+      }
+      for (d = 0; d != D; d++) y_i[d] += firstholder[d] * localRho;
+      localRho -= rhoIncrement;
+    }
+    rho -= (rhoIncrement * batchSize);
+  }
 };
-
-double objective(const arma::mat& inputs, double gamma, double alpha) {
-  double objective = log(1 / (1 + (alpha * dist(inputs.col(0), inputs.col(1)))));
-  for (int i = 2; i < 7; i++)
-    objective += gamma * log(1 - (1 / (1 + alpha * dist(inputs.col(0), inputs.col(i)))));
-  return objective;
-}
-
-void checkGrad(const arma::vec& x,
-               const arma::vec& y,
-               const arma::vec& grad,
-               bool together,
-               const string& label) {
-  double oldDist = dist(x,y);
-  double newDist = dist(x + grad, y - grad);
-  if (together && newDist > oldDist) Rcout << "\nGrad " << label << " yi " << x << " other " << y << " grad " << grad << " moved further apart.";
-  else if (! together && newDist < oldDist) Rcout << "\nGrad " << label << " yi " << x << " other " << y << " grad " << grad << "moved closer together.";
-};
-
-/*
- * The stochastic gradient descent function. Asynchronicity is enabled by openmp.
- */
 
 // [[Rcpp::export]]
 arma::mat sgd(arma::mat coords,
-              const arma::vec& is, // vary randomly
-              const NumericVector js, // ordered
-              const NumericVector ps, // N+1 length vector of indices to start of each row j in vector is
-              const NumericVector ws, // w{ij}
+              arma::ivec& targets_i, // vary randomly
+              arma::ivec& sources_j, // ordered
+              IntegerVector& ps, // N+1 length vector of indices to start of each row j in vector is
+              NumericVector& weights, // w{ij}
               const double gamma,
               const double rho,
-              const double minRho,
-              const bool useWeights,
-              const long nBatches,
+              const long long n_samples,
               const int M,
               const double alpha,
-              bool verbose) {
+              const bool verbose) {
 
-  Progress progress(nBatches, verbose);
+  Progress progress(n_samples, verbose);
+  int D = coords.n_rows;
+  if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
+  Visualizer v(sources_j.memptr(),
+               targets_i.memptr(),
+               coords.n_rows,
+               coords.memptr(),
+               M,
+               rho,
+               n_samples);
+  v.initAlias(ps, weights);
 
-  const int D = coords.n_rows;
-  const int N = ps.size() - 1;
-  const int E = ws.length();
-  // Calculate negative sample weights, d_{i}^0.75.
-  // Stored as a vector of cumulative sums, normalized, so it can
-  // be readily searched using binary searches.
-  arma::vec negativeSampleWeights = pow(diff(ps), 0.75);
-  const double scale = sum(negativeSampleWeights);
-  negativeSampleWeights = negativeSampleWeights / scale;
-  negativeSampleWeights = cumsum(negativeSampleWeights);
+  if (alpha == 0) v.setGradient(new ExpGradient(gamma, D));
+  else if (alpha == 1) v.setGradient(new AlphaOneGradient(gamma, D));
+  else v.setGradient(new AlphaGradient(alpha, gamma, D));
 
-  // positive edges for sampling
-  arma::vec positiveEdgeWeights;
-  if (! useWeights) {
-    const double posScale = sum(ws);
-    positiveEdgeWeights = arma::vec(E);
-    positiveEdgeWeights[0] = ws[0] / posScale;
-    for (int idx = 1; idx < E; idx++)
-      positiveEdgeWeights[idx] = positiveEdgeWeights[idx - 1] + (ws[idx] / posScale);
+  const int batchSize = 8192;
+  const long long barrier = (n_samples * .95 < n_samples - coords.n_cols) ? n_samples * .95 : n_samples - coords.n_cols;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+  for (long long eIdx = 0; eIdx < barrier; eIdx += batchSize) if (progress.increment(batchSize)) {
+    v(eIdx, batchSize);
   }
-
-  const int posSampleLength = ((nBatches > 1000000) ? 1000000 : (int) nBatches);
-  arma::vec positiveSamples = arma::randu<arma::vec>(posSampleLength);
-
-  // Iterate through the edges in the positiveEdges vector
-#pragma omp parallel for shared(coords, positiveSamples) schedule(static)
-  for (long eIdx=0; eIdx < nBatches; eIdx++) {
-    if (progress.increment()) {
-      const double posTarget = *(positiveSamples.begin() + (eIdx % posSampleLength));
-      int k;
-      int e_ij;
-      if (useWeights) {
-        e_ij = posTarget * (E - 1);
-      } else {
-        e_ij = std::distance(positiveEdgeWeights.begin(),
-                             std::upper_bound(positiveEdgeWeights.begin(),
-                                              positiveEdgeWeights.end(),
-                                              posTarget));
-      }
-      const int i = is[e_ij];
-      const int j = js[e_ij];
-
-      const double localRho = rho - ((rho - minRho) * eIdx / nBatches);
-
-      //if ((arma::randn<arma::vec>(1))[0] < 0) swap(i, j);
-
-      const arma::vec y_i = coords.col(i);
-      const arma::vec y_j = coords.col(j);
-
-      // wij
-      const double w = (useWeights) ? ws[e_ij] : 1;
-
-      const double dist_ij = dist(y_i, y_j);
-
-      const arma::vec d_dist_ij = (y_i - y_j) / sqrt(dist_ij);
-      double p_ij;
-      if (alpha == 0)   p_ij =   1 / (1 +      exp(dist_ij));
-      else              p_ij =   1 / (1 + (alpha * dist_ij));
-
-      arma::vec d_p_ij;
-      if (alpha == 0) d_p_ij =  d_dist_ij * -2 * dist_ij * exp(dist_ij) / pow(1 + exp(dist_ij), 2);
-      else            d_p_ij =  d_dist_ij * -2 * dist_ij * alpha        / pow(1 +    (dist_ij * alpha),2);
-
-      //double o = log(p_ij);
-      const arma::vec d_j = (1 / p_ij) * d_p_ij;
-      // alternative: d_i - 2 * alpha * (y_i - y_j) / (alpha * sum(square(y_i - y_j)))
-
-      arma::vec samples = arma::randu<arma::vec>(M * 2);
-      arma::vec::iterator targetIt = samples.begin();
-      int sampleIdx = 1;
-      // The indices of the nodes with edges to i
-      arma::vec searchVector = is.subvec(ps[i], ps[i + 1] - 1);
-      arma::vec d_i = d_j;
-      int m = 0;
-      while (m < M) {
-        if (sampleIdx % (M * 2) == 0) samples.randu();
-        // binary search implementing weighted sampling
-        const double target = targetIt[sampleIdx++ % (M * 2)];
-        int k;
-        if (useWeights) k = target * (N - 1);
-        else k = std::distance(negativeSampleWeights.begin(),
-                               std::upper_bound(negativeSampleWeights.begin(),
-                                                negativeSampleWeights.end(),
-                                                target)
-        );
-
-        if (k == i ||
-            k == j ||
-            sum(searchVector == k) > 0) continue;
-        const arma::vec y_k = coords.col(k);
-
-        const double dist_ik = dist(y_i, y_k);
-        if (dist_ik == 0) continue; // Duplicates
-
-        const arma::vec d_dist_ik = (y_i - y_k) / sqrt(dist_ik);
-
-        double p_ik;
-        if (alpha == 0) p_ik  =  1 - (1 / (1 +      exp(dist_ik)));
-        else            p_ik  =  1 - (1 / (1 + (alpha * dist_ik)));
-
-        arma::vec d_p_ik;
-        if (alpha == 0) d_p_ik =  d_dist_ik * 2 * dist_ik * exp(dist_ik) / pow(1 +      exp(dist_ik),2);
-        else            d_p_ik =  d_dist_ik * 2 * dist_ik * alpha        / pow(1 + (alpha * dist_ik),2);
-        //o += (gamma * log(p_ik));
-
-        const arma::vec d_k = (gamma / p_ik) * d_p_ik;
-        // alternative:  d_k = 2 * alpha * (y_i - y_k) / (square(1 + (alpha * sum(square(y_i - y_k)))) * (1 - (1 / (alpha * sum(square(y_i - y_k))))))
-
-        d_i += d_k;
-        for (int idx = 0; idx < D; idx++) coords(idx,k) -= d_k[idx] * localRho * w;
-
-        m++;
-      }
-
-      for (int idx = 0; idx < D; idx++) {
-        coords(idx,j) -=  d_j[idx] * w * localRho;
-        coords(idx,i) +=  d_i[idx] * w * localRho;
-      }
-
-      if (eIdx >0 && eIdx % posSampleLength == 0) positiveSamples.randu();
-    }
-  }
+#ifdef _OPENMP
+#pragma omp barrier
+#endif
+  for (long long eIdx = barrier; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) v(eIdx, batchSize);
   return coords;
 };
+
