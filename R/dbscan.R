@@ -71,7 +71,7 @@ optics <- function(data = NULL,
 #' @param minPts Minimum size of a cluster.'
 #' @param partition If \code{TRUE}, attempt to calculate an approximate silhouette so the object returned is also
 #' of class \code{\link[cluster]{partition.object}}, for compatibility with the \code{cluster} package.
-#' @param vebose Verbosity level.
+#' @param verbose Verbosity level.
 #'
 #' @details This is a preliminary implementation of the OPTICS algorithm that attempts
 #' to leverage the \code{largeVis} nearest-neighbor search.
