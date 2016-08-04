@@ -9,6 +9,7 @@
 #' @param minPts See \code{\link[dbscan]{optics}}.
 #' @param eps_cl See \code{\link[dbscan]{optics}}.
 #' @param xi See \code{\link[dbscan]{optics}}.
+#' @param verbose Vebosity level.
 #'
 #' @details This is a preliminary implementation of a variant of the OPTICS algorithm that attempts
 #' to leverage the \code{largeVis} nearest-neighbor search.
@@ -67,7 +68,10 @@ optics <- function(data = NULL,
 #' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}
 #' @param edges A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}.
 #' @param eps See \code{\link[dbscan]{dbscan}}.
-#' @param minPts Minimum size of a cluster.
+#' @param minPts Minimum size of a cluster.'
+#' @param partition If \code{TRUE}, attempt to calculate an approximate silhouette so the object returned is also
+#' of class \code{\link[cluster]{partition.object}}, for compatibility with the \code{cluster} package.
+#' @param vebose Verbosity level.
 #'
 #' @details This is a preliminary implementation of the OPTICS algorithm that attempts
 #' to leverage the \code{largeVis} nearest-neighbor search.
@@ -85,7 +89,7 @@ optics <- function(data = NULL,
 #'
 #' @importFrom stats aggregate
 #'
-#' @return An \code{\link[dbscan]{dbscan_fast}} object.
+#' @return An \code{\link[dbscan]{dbscan}} object.
 dbscan <- function(data = NULL,
                    neighbors = NULL,
                    edges = NULL,

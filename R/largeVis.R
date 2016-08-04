@@ -6,7 +6,7 @@
 #' @param n_trees See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 #' used in the examples in the original paper.
 #' @param tree_threshold See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
-#' in the input set.  
+#' in the input set.
 #' @param max_iter See \code{\link{randomProjectionTreeSearch}}.
 #' @param distance_method One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See \code{\link{buildWijMatrix}}.
@@ -18,7 +18,7 @@
 #' @param save_neighbors Whether to include in the output the adjacency matrix of nearest neighbors.
 #' @param coords A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.
 #' @param verbose Verbosity
-#' @param ...
+#' @param ... Additional arguments passed to \code{\link{projectKNNs}}.
 #'
 #' @return A `largeVis` object with the following slots:
 #'  \describe{
@@ -40,8 +40,7 @@
 #' dupes = which(duplicated(dat))
 #' dat <- dat[-dupes,] # duplicates can cause the algorithm to fail
 #' dat <- t(dat)
-#' visObject <- largeVis(dat, max_iter = 20, sgd_batches = 800000,
-#'                      K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
+#' visObject <- largeVis(dat, max_iter = 20, K = 10)
 #'\dontrun{
 #' # mnist
 #' load("./mnist.Rda")
@@ -49,9 +48,7 @@
 #' dim(dat) <- c(42000, 28 * 28)
 #' dat <- (dat / 255) - 0.5
 #' dat <- t(dat)
-#' coords <- largeVis(dat, check=FALSE,
-#'              n_tree = 50, tree_th = 200,
-#'              K = 50, alpha = 2, max.iter = 4)
+#' coords <- largeVis(dat, n_trees = 50, tree_th = 200, K = 50)
 #' }
 #'
 largeVis <- function(x,
@@ -74,7 +71,6 @@ largeVis <- function(x,
                      coords = NULL,
 
                      save_neighbors = TRUE,
-                     save_sigmas = FALSE,
 
                      verbose = TRUE,
                     ...) {
@@ -141,14 +137,3 @@ largeVis <- function(x,
   class(returnvalue) <- "largeVis"
   return(returnvalue)
 }
-
-##########################################
-# Some helper functions useful for debugging
-##########################################
-
-pji <- function(x_i, sigma)
-  exp(- (x_i ^ 2) / sigma) / sum(exp( - (x_i ^ 2) / sigma))
-perp <- function(x_i, sigma)
-  - sum(log2(pji(x_i, sigma))) / length(x_i)
-pdiff <- function(x_i, sigma, perplexity)
-  (perplexity - perp(x_i, sigma))^2

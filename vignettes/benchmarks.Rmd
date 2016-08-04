@@ -19,6 +19,7 @@ require(RColorBrewer,
 require(wesanderson, 
         quietly = TRUE)
 require(dplyr, quietly = TRUE)
+require(magrittr, quietly = TRUE)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>",
                       fig.width = 7, 

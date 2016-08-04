@@ -21,6 +21,8 @@ optics(data = NULL, neighbors = NULL, edges = NULL, eps,
 \item{eps_cl}{See \code{\link[dbscan]{optics}}.}
 
 \item{xi}{See \code{\link[dbscan]{optics}}.}
+
+\item{verbose}{Vebosity level.}
 }
 \value{
 An \code{\link[dbscan]{optics}} object.

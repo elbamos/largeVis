@@ -13,7 +13,6 @@
 #' @param tree_threshold The threshold for creating a new branch.  The paper authors suggest
 #' using a value equivalent to the number of features in the input set.
 #' @param max_iter Number of iterations in the neighborhood exploration phase.
-#' @param max_depth The maximum level of recursion.
 #' @param distance_method One of "Euclidean" or "Cosine."
 #' @param verbose Whether to print verbose logging using the \code{progress} package.
 #'
@@ -40,7 +39,7 @@ randomProjectionTreeSearch.matrix <- function(x,
   if (verbose) cat("Searching for neighbors.\n")
 
   if (distance_method == "Cosine") x <- x / rowSums(x)
-  
+
   knns <- searchTrees(threshold = tree_threshold,
                       n_trees = n_trees,
                       K = K,
@@ -74,7 +73,7 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
 
   knns <- searchTreesCSparse(threshold = tree_threshold,
                       n_trees = n_trees,
-                      K = K, 
+                      K = K,
                       maxIter = max_iter,
                       i = x@i,
                       p = x@p,
@@ -109,7 +108,7 @@ randomProjectionTreeSearch.TsparseMatrix <- function(x,
 
   knns <- searchTreesTSparse(threshold = tree_threshold,
                              n_trees = n_trees,
-                             K = K, 
+                             K = K,
                              maxIter = max_iter,
                              i = x@i,
                              j = x@j,

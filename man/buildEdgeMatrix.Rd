@@ -10,11 +10,11 @@ buildEdgeMatrix(data, neighbors, distance_method = "Euclidean",
 \arguments{
 \item{data}{A matrix with a number of columns equal to the number of columns in `x`}
 
+\item{neighbors}{An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}.}
+
 \item{distance_method}{One of "Euclidean" or "Cosine"}
 
 \item{verbose}{Verbosity}
-
-\item{x}{An edge matrix, 0-indexed, where each vertex is a column}
 }
 \value{
 A `sparseMatrix`

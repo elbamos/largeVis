@@ -6,7 +6,7 @@
 \alias{buildWijMatrix.TsparseMatrix}
 \title{buildWijMatrix}
 \usage{
-buildWijMatrix(x, perplexity)
+buildWijMatrix(x, perplexity = 50)
 
 \method{buildWijMatrix}{TsparseMatrix}(x, perplexity = 50)
 

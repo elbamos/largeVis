@@ -1,8 +1,8 @@
 
 #' Build an nearest-neighbor graph weighted by distance.
 #'
-#' @param x An edge matrix, 0-indexed, where each vertex is a column
 #' @param data A matrix with a number of columns equal to the number of columns in `x`
+#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}.
 #' @param distance_method One of "Euclidean" or "Cosine"
 #' @param verbose Verbosity
 #'
@@ -38,7 +38,7 @@ buildEdgeMatrix <- function(data,
 #'  }
 #' @export
 buildWijMatrix <- function(x,
-										       perplexity) UseMethod("buildWijMatrix")
+										       perplexity = 50) UseMethod("buildWijMatrix")
 #' @export
 #' @rdname buildWijMatrix
 buildWijMatrix.TsparseMatrix <- function(x,

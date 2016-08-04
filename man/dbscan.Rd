@@ -16,10 +16,15 @@ dbscan(data = NULL, neighbors = NULL, edges = NULL, eps,
 
 \item{eps}{See \code{\link[dbscan]{dbscan}}.}
 
-\item{minPts}{Minimum size of a cluster.}
+\item{minPts}{Minimum size of a cluster.'}
+
+\item{partition}{If \code{TRUE}, attempt to calculate an approximate silhouette so the object returned is also
+of class \code{\link[cluster]{partition.object}}, for compatibility with the \code{cluster} package.}
+
+\item{vebose}{Verbosity level.}
 }
 \value{
-An \code{\link[dbscan]{dbscan_fast}} object.
+An \code{\link[dbscan]{dbscan}} object.
 }
 \description{
 An implementation of the dbscan algorithm.

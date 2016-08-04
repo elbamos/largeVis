@@ -38,8 +38,6 @@ using a value equivalent to the number of features in the input set.}
 \item{distance_method}{One of "Euclidean" or "Cosine."}
 
 \item{verbose}{Whether to print verbose logging using the \code{progress} package.}
-
-\item{max_depth}{The maximum level of recursion.}
 }
 \value{
 A [K, N] matrix of the approximate K nearest neighbors for each vertex.

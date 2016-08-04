@@ -9,8 +9,7 @@
 largeVis(x, dim = 2, K = 40, n_trees = 50, tree_threshold = max(10,
   ncol(x)), max_iter = 1, distance_method = "Euclidean", perplexity = 50,
   sgd_batches = NULL, M = 5, alpha = 1, gamma = 7, rho = 1,
-  coords = NULL, save_neighbors = TRUE, save_sigmas = FALSE,
-  verbose = TRUE, ...)
+  coords = NULL, save_neighbors = TRUE, verbose = TRUE, ...)
 }
 \arguments{
 \item{x}{A matrix, where the features are rows and the examples are columns.}
@@ -47,7 +46,7 @@ in the input set.}
 
 \item{verbose}{Verbosity}
 
-\item{...}{}
+\item{...}{Additional arguments passed to \code{\link{projectKNNs}}.}
 }
 \value{
 A `largeVis` object with the following slots:
@@ -87,8 +86,7 @@ dat <- scale(dat)
 dupes = which(duplicated(dat))
 dat <- dat[-dupes,] # duplicates can cause the algorithm to fail
 dat <- t(dat)
-visObject <- vis(dat, max_iter = 20, sgd_batches = 800000,
-                     K = 10,  gamma = 2, rho = 1, M = 40, alpha = 20,verbose=FALSE)
+visObject <- largeVis(dat, max_iter = 20, K = 10)
 \dontrun{
 # mnist
 load("./mnist.Rda")
@@ -96,9 +94,7 @@ dat <- mnist$images
 dim(dat) <- c(42000, 28 * 28)
 dat <- (dat / 255) - 0.5
 dat <- t(dat)
-coords <- vis(dat, check=FALSE,
-             n_tree = 50, tree_th = 200,
-             K = 50, alpha = 2, max.iter = 4)
+coords <- largeVis(dat, n_trees = 50, tree_th = 200, K = 50)
 }
 
 }
