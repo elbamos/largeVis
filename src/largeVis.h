@@ -97,15 +97,17 @@ typedef double realsies;
 template <class T>
 class AliasTable {
 private:
+	T N;
 	realsies* probs;
   T* aliases;
-  T N;
+
 
 public:
-  AliasTable(const NumericVector& weights) : N(weights.length()) {
-    aliases = new T[N];
-    probs = new realsies[N];
-
+  AliasTable(T N) : N{N},
+								  	probs(new realsies[N]),
+								    aliases(new T[N]) {
+  }
+	void initialize(const NumericVector& weights) {
   	const long double sm = sum(weights);
   	for (T i = 0; i < N; i++) probs[i] = weights[i] * N / sm;
   	queue<T> small = queue<T>();
@@ -136,10 +138,6 @@ public:
   	if (accu > 1e-5) warning("Numerical instability in alias table " + to_string(accu));
   };
 
-  T search(realsies *random) const {
-    return search(random[0], random[1]);
-  };
-
   T search(realsies random, realsies random2) const {
     T candidate = random * N;
     return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
@@ -168,7 +166,7 @@ public:
   	initRandom(seed());
   }
 
-  T sample() {
+  T operator()() {
   	realsies dub1 = rnd(mt);
   	realsies dub2 = rnd(mt);
   	return search(dub1, dub2);

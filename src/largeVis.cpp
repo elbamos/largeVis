@@ -8,7 +8,6 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-
 class Visualizer {
 protected:
   const int D;
@@ -23,8 +22,8 @@ protected:
   double rho;
   double rhoIncrement;
 
-  AliasTable<int>* negAlias;
-  AliasTable<long>* posAlias;
+  AliasTable<int> negAlias;
+  AliasTable<long> posAlias;
   Gradient* grad;
 
   IntegerVector ps;
@@ -32,6 +31,7 @@ protected:
 public:
   Visualizer(long long * sourcePtr,
              long long * targetPtr,
+             long E,
              int D,
              double * coordPtr,
              int M,
@@ -42,23 +42,25 @@ public:
                                     coordsPtr{coordPtr},
                                     n_samples{n_samples},
                                     rho{rho},
-                                    rhoIncrement(rho / n_samples) { }
+                                    rhoIncrement(rho / n_samples),
+                                    negAlias(AliasTable<int>(E)),
+                                    posAlias(AliasTable<long>(E)) { }
 
   void initAlias(IntegerVector& newps,
                  const NumericVector& weights) {
     ps = newps;
     NumericVector pdiffs = pow(diff(newps), 0.75);
-    negAlias = new AliasTable<int>(pdiffs);
-    posAlias = new AliasTable<long>(weights);
-    negAlias -> initRandom();
-    posAlias -> initRandom();
+    negAlias.initialize(pdiffs);
+    posAlias.initialize(weights);
+    negAlias.initRandom();
+    posAlias.initRandom();
   }
 
   void setGradient(Gradient * newGrad) {
     grad = newGrad;
   }
 
-  void batch(long long startSampleIdx, int batchSize) {
+  void operator()(long long startSampleIdx, int batchSize) {
     long long e_ij;
     int i, j, k, d, m, shortcircuit, example = 0;
     double firstholder[10], secondholder[10];
@@ -68,7 +70,7 @@ public:
     double localRho = rho;
     while (example++ != batchSize && localRho > 0) {
       // * (1 - (startSampleIdx / n_samples));
-      e_ij = posAlias -> sample();
+      e_ij = posAlias();
       j = targetPointer[e_ij];
       i = sourcePointer[e_ij];
 
@@ -83,7 +85,7 @@ public:
       shortcircuit = 0; m = 0;
 
       while (m != M && shortcircuit != M2) {
-        k = negAlias -> sample();
+        k = negAlias();
         shortcircuit++;
         // Check that the draw isn't one of i's edges
         if (k == i ||
@@ -123,32 +125,33 @@ arma::mat sgd(arma::mat coords,
   Progress progress(n_samples, verbose);
   int D = coords.n_rows;
   if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
-  Visualizer* v = new Visualizer(sources_j.memptr(),
-                                 targets_i.memptr(),
-                                 coords.n_rows,
-                                 coords.memptr(),
-                                 M,
-                                 rho,
-                                 n_samples);
-  v -> initAlias(ps, weights);
+  Visualizer v(sources_j.memptr(),
+               targets_i.memptr(),
+               targets_i.n_elem,
+               coords.n_rows,
+               coords.memptr(),
+               M,
+               rho,
+               n_samples);
+  v.initAlias(ps, weights);
 
-  if (alpha == 0) v -> setGradient(new ExpGradient(gamma, D));
-  else if (alpha == 1) v -> setGradient(new AlphaOneGradient(gamma, D));
-  else v -> setGradient(new AlphaGradient(alpha, gamma, D));
+  if (alpha == 0) v.setGradient(new ExpGradient(gamma, D));
+  else if (alpha == 1) v.setGradient(new AlphaOneGradient(gamma, D));
+  else v.setGradient(new AlphaGradient(alpha, gamma, D));
 
   const int batchSize = 8192;
-  const long long barrier = (n_samples * .9 < n_samples - coords.n_cols) ? n_samples * .9 : n_samples - coords.n_cols;
+  const long long barrier = (n_samples * .95 < n_samples - coords.n_cols) ? n_samples * .95 : n_samples - coords.n_cols;
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
   for (long long eIdx = 0; eIdx < barrier; eIdx += batchSize) if (progress.increment(batchSize)) {
-    v -> batch(eIdx, batchSize);
+    v(eIdx, batchSize);
   }
 #ifdef _OPENMP
 #pragma omp barrier
 #endif
-  for (long long eIdx = barrier; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) v -> batch(eIdx, batchSize);
+  for (long long eIdx = barrier; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) v(eIdx, batchSize);
   return coords;
 };
 
