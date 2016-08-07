@@ -17,7 +17,6 @@ struct HeapObject {
 typedef priority_queue<HeapObject> MaxHeap;
 typedef vector< imat::col_iterator > PositionVector;
 typedef vector< vertexidxtype > Neighborhood;
-Neighborhood* createNeighborhood(vertexidxtype N);
 
 template<class M, class V>
 class DistanceAdder {
@@ -155,7 +154,10 @@ public:
 
 	void trees(const int n_trees, const int newThreshold) {
 		threshold = newThreshold;
-		treeNeighborhoods = createNeighborhood(N);
+		treeNeighborhoods = new Neighborhood[N];
+		for (vertexidxtype i = 0; i < N; i++) {
+			treeNeighborhoods[i].push_back(i);
+		}
 		const ivec indices = regspace<ivec>(0, data.n_cols - 1);
 #ifdef _OPENMP
 #pragma omp parallel for

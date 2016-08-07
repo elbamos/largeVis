@@ -53,4 +53,4 @@ before_install: |
 
 
 after_success:
-  - Rscript -e 'covr::codecov(branch="reference")'
+  - Rscript -e 'covr::codecov()'

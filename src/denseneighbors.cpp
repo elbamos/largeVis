@@ -8,14 +8,6 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-Neighborhood* createNeighborhood(vertexidxtype N) {
-  Neighborhood *treeNeighborhoods = new Neighborhood[N];
-  for (vertexidxtype i = 0; i < N; i++) {
-  	treeNeighborhoods[i].push_back(i);
-  }
-  return treeNeighborhoods;
-}
-
 class EuclideanAdder : public DistanceAdder<arma::mat, arma::vec> {
 protected:
 	virtual distancetype distanceFunction(const arma::vec& x_i, const arma::vec& x_j) {
