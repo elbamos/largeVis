@@ -5,7 +5,8 @@
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
 projectKNNs(wij, dim = 2, sgd_batches = NULL, M = 5, gamma = 7,
-  alpha = 1, rho = 1, coords = NULL, verbose = TRUE)
+  alpha = 1, rho = 1, coords = NULL, seed = NULL,
+  verbose = getOption("verbose", TRUE))
 }
 \arguments{
 \item{wij}{A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.}
@@ -26,6 +27,10 @@ enables the alternative distance function. \eqn{\alpha} below zero is meaningles
 \item{rho}{Initial learning rate.}
 
 \item{coords}{An initialized coordinate matrix.}
+
+\item{seed}{Random seed to be passed to the C++ functions; sampled from hardware entropy pool if \code{NULL} (the default).
+Note that if the seed is not \code{NULL} (the default), the maximum number of threads will be set to 1 in phases of the algorithm
+that would otherwise be non-deterministic.}
 
 \item{verbose}{Verbosity}
 }
@@ -48,6 +53,11 @@ The default probabilistic function is \eqn{1 / (1 + \alpha \dot ||x||^2)}. If \e
 an alternative probabilistic function, \eqn{1 / (1 + \exp(x^2))} will be used instead.
 
 Note that the input matrix should be symmetric.  If any columns in the matrix are empty, the function will fail.
+}
+\note{
+If specified, \code{seed} is passed to the C++ and used to initialize the random number generator. This will not, however, be
+sufficient to ensure reproducible results, because the initial coordinate matrix is generated using the \code{R} random number generator.
+To ensure reproducibility, call \code{\link[base]{set.seed}} before calling this function, or pass it a pre-allocated coordinate matrix.
 }
 \examples{
 \dontrun{

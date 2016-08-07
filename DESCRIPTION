@@ -18,7 +18,8 @@ Imports:
     ggplot2 (>= 0.9.2.1),
     dbscan
 LinkingTo: Rcpp,RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.100.3.0),testthat(>= 1.0.2)
-Suggests: testthat,
+Suggests:
+		testthat,
     covr,
     knitr,
     rmarkdown,

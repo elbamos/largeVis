@@ -10,13 +10,7 @@
 #' @param max_iter See \code{\link{randomProjectionTreeSearch}}.
 #' @param distance_method One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See \code{\link{buildWijMatrix}}.
-#' @param sgd_batches See \code{\link{projectKNNs}}.
-#' @param M See \code{\link{projectKNNs}}.
-#' @param alpha See \code{\link{projectKNNs}}.
-#' @param gamma See \code{\link{projectKNNs}}.
-#' @param rho See \code{\link{projectKNNs}}.
 #' @param save_neighbors Whether to include in the output the adjacency matrix of nearest neighbors.
-#' @param coords A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.
 #' @param verbose Verbosity
 #' @param ... Additional arguments passed to \code{\link{projectKNNs}}.
 #'
@@ -53,26 +47,18 @@
 #'
 largeVis <- function(x,
                      dim = 2,
-                     K = 40,
+                     K = 50,
 
                      n_trees = 50,
                      tree_threshold = max(10, ncol(x)),
                      max_iter = 1,
                      distance_method = "Euclidean",
 
-                     perplexity = 50,
-
-                     sgd_batches = NULL,
-                     M = 5,
-                     alpha = 1,
-                     gamma = 7,
-                     rho = 1,
-
-                     coords = NULL,
+                     perplexity = max(50, K / 3),
 
                      save_neighbors = TRUE,
 
-                     verbose = TRUE,
+                     verbose = getOption("verbose", TRUE),
                     ...) {
 
   #############################################
@@ -109,13 +95,7 @@ largeVis <- function(x,
   #######################################################
   coords <- projectKNNs(wij = wij,
                         dim = dim,
-                        sgd_batches = sgd_batches,
-                        M = M,
-                        gamma = gamma,
                         verbose = verbose,
-                        alpha = alpha,
-                        coords = coords,
-                        rho = rho,
                         ...)
 
   #######################################################

@@ -14,6 +14,8 @@
 #' using a value equivalent to the number of features in the input set.
 #' @param max_iter Number of iterations in the neighborhood exploration phase.
 #' @param distance_method One of "Euclidean" or "Cosine."
+#' @param seed Random seed passed to the C++ functions. If \code{seed} is not \code{NULL} (the default),
+#' the maximum number of threads will be set to 1 in phases that would be non-determinstic otherwise.
 #' @param verbose Whether to print verbose logging using the \code{progress} package.
 #'
 #' @return A [K, N] matrix of the approximate K nearest neighbors for each vertex.
@@ -24,7 +26,8 @@ randomProjectionTreeSearch <- function(x,
                                        tree_threshold =  max(10, nrow(x)),
                                        max_iter = 1,
                                        distance_method = "Euclidean",
-                                       verbose= TRUE)
+																			 seed = NULL,
+                                       verbose = getOption("verbose", TRUE))
   UseMethod("randomProjectionTreeSearch")
 
 #' @export
@@ -35,7 +38,8 @@ randomProjectionTreeSearch.matrix <- function(x,
                                        tree_threshold =  max(10, nrow(x)),
                                        max_iter = 1,
                                        distance_method = "Euclidean",
-                                       verbose= TRUE) {
+																			 seed = NULL,
+                                       verbose = getOption("verbose", TRUE)) {
   if (verbose) cat("Searching for neighbors.\n")
 
   if (distance_method == "Cosine") x <- x / rowSums(x)
@@ -46,6 +50,7 @@ randomProjectionTreeSearch.matrix <- function(x,
                       maxIter = max_iter,
                       data = x,
                       distMethod = distance_method,
+  										seed = seed,
                       verbose = verbose)
 
   if (sum(colSums(knns != -1) == 0) > 0)
@@ -68,7 +73,8 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
                                               tree_threshold =  max(10, nrow(x)),
                                               max_iter = 1,
                                               distance_method = "Euclidean",
-                                              verbose= TRUE) {
+																							seed = NULL,
+                                              verbose = getOption("verbose", TRUE)) {
   if (verbose) cat("Searching for neighbors.\n")
 
   knns <- searchTreesCSparse(threshold = tree_threshold,
@@ -79,6 +85,7 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
                       p = x@p,
                       x = x@x,
                       distMethod = distance_method,
+  										seed = seed,
                       verbose = verbose)
 
   if (sum(colSums(knns != -1) == 0) > 0)
@@ -103,7 +110,8 @@ randomProjectionTreeSearch.TsparseMatrix <- function(x,
                                                      max_iter = 1,
                                                      distance_method =
                                                        "Euclidean",
-                                                     verbose= TRUE) {
+																										 seed = NULL,
+                                                     verbose = getOption("verbose", TRUE)) {
   if (verbose) cat("Searching for neighbors.\n")
 
   knns <- searchTreesTSparse(threshold = tree_threshold,
@@ -114,6 +122,7 @@ randomProjectionTreeSearch.TsparseMatrix <- function(x,
                              j = x@j,
                              x = x@x,
                              distMethod = distance_method,
+  													 seed = seed,
                              verbose = verbose)
 
   if (sum(colSums(knns != -1) == 0) > 0)

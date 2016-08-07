@@ -35,7 +35,7 @@ optics <- function(data = NULL,
                    minPts = nrow(data) + 1,
                    eps_cl,
                    xi,
-                   verbose = TRUE) {
+                   verbose = getOption("verbose", TRUE)) {
   if (! is.null(edges) && is.null(data))
     ret <- optics_e(edges = edges,
                     eps = as.double(eps), minPts = as.integer(minPts),
@@ -96,7 +96,7 @@ dbscan <- function(data = NULL,
                    eps,
                    minPts = nrow(data) + 1,
                    partition = !missing(edges),
-                   verbose = TRUE) {
+                   verbose = getOption("verbose", TRUE)) {
 
   if (! is.null(edges) && is.null(data))
     ret <- dbscan_e(edges = edges,
@@ -150,8 +150,28 @@ edgeMatrixToKNNS <- function(edges) {
   list(dist = t(dist), id = t(id), k = k)
 }
 
+# The source code for function lof is based on code that bore this license:
+#######################################################################
+# dbscan - Density Based Clustering of Applications with Noise
+#          and Related Algorithms
+# Copyright (C) 2015 Michael Hahsler
 
-#' Local Outlier Factor Score
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+
+#' @title Local Outlier Factor Score
 #'
 #' @description Calculate the Local Outlier Factor (LOF) score for each data point given knowledge
 #' of k-Nearest Neighbors.
@@ -161,21 +181,26 @@ edgeMatrixToKNNS <- function(edges) {
 #' @references Based on code in the \code{\link[dbscan]{dbscan}} package.
 #'
 #' @return A vector of LOF values for each data point.
+#' @export
 lof <- function(edges) {
   kNNlist <- edgeMatrixToKNNS(edges)
   N <- nrow(kNNlist$id)
   K <- kNNlist$k
 
+  # lrd <- rep(0, N)
   lrd <- rep(0, N)
-  for(i in 1:N) {
-    input <- kNNlist$dist[c(i, kNNlist$id[i, ]) ,]
-    lrd[i] <- 1 / (sum(apply(input, MARGIN = 1, max)) / K)
-  }
+  # for(i in 1:N) {
+  #   input <- kNNlist$dist[c(i, kNNlist$id[i, ]) ,]
+  #   lrd[i] <- 1 / (sum(apply(input, MARGIN = 1, max)) / K)
+  # }
+  for(i in 1:N) lrd[i] <- 1/(sum(apply(
+  	cbind(kNNlist$dist[kNNlist$id[i,], K], kNNlist$dist[i,]),
+  	1, max)) / K)
 
-  lof <- rep(0, N)
-  for (i in 1:N) lof[i] <- sum(lrd[kNNlist$id[i,]])/K / lrd[i]
+  ret <- rep(0, N)
+  for (i in 1:N) ret[i] <- sum(lrd[kNNlist$id[i,]])/K / lrd[i]
 
-  lof[is.nan(lof)] <- NA
+  ret[is.nan(ret)] <- NA
 
-  lof
+  ret
 }

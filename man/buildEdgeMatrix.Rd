@@ -5,7 +5,7 @@
 \title{Build an nearest-neighbor graph weighted by distance.}
 \usage{
 buildEdgeMatrix(data, neighbors, distance_method = "Euclidean",
-  verbose = TRUE)
+  verbose = options("verbose"))
 }
 \arguments{
 \item{data}{A matrix with a number of columns equal to the number of columns in `x`}

@@ -1,3 +1,10 @@
+### largeVis 0.1.7
+*	Allow the seed to be set for projectKNNs and randomProjectionTreeSearch
+* Verbosity now defaults to the R system option
+* Refactored neighbor search, improves performance of sparse search and should more easily allow alternative distance functions.
+* Improved testing for cosine similarity
+* The neighbor matrix returned by randomProjectionTreeSearch is now sorted by distance
+
 ### largeVis 0.1.6
 
 * Revisions for CRAN release, including verifying correctness by reproducing paper examples, and timing tests/benchmarks
@@ -13,6 +20,7 @@
   + Optimized implementation for alpha == 1
   + Removed option for mixing weights into loss function - doesn't make sense if gradients are being clipped. 
   + Fixed OpenMP-related bug which caused visualizations to be "fuzzy"
+  + Switched to the STL random number generator, allowing the user to set a seed for reproducible results.
 * Vignettes:
   + Reuse initialization matrices and neighbors, to make it easier to see the effect of hyperparameters
   + Benchmarks now a separate vignette, more detailed
@@ -26,8 +34,10 @@
   + Ported Karpathy's function for non-overlapping embeddings (experimental)
   + Removed transparency parameter
   + Added ggManifoldMap function for adding a manifold map to a ggplot2 plot
-* vis
-  + Whether to return neighbors and sigmas now adjustable parameters, for memory reasons
+* largeVis
+	+ vis function renamed largeVis
+  + Whether to return neighbors now an adjustable parameter, for memory reasons
+  + No longer return sigmas under any circumstance
   + Runs gc() periodically
 * Data
   + Removed most data and extdata that had been included before; this is to reduce size for CRAN submission
@@ -41,7 +51,7 @@
   + Additional, more extensive tests with greater code coverage
   + Added travis testing against OSX
 * Clustering
-  + Very preliminary support for dbscan and optics added
+  + Very preliminary support for dbscan and optics added, however these functions have not been exported.
 
 ### largeVis 0.1.5
 

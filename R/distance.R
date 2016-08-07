@@ -25,7 +25,7 @@ distance.matrix <- function(x,
                      i,
                      j,
                      distance_method = "Euclidean",
-                     verbose = TRUE) {
+                     verbose = getOption("verbose", TRUE)) {
   return (fastDistance(i,
                        j,
                        x,
@@ -39,7 +39,7 @@ distance.CsparseMatrix <- function(x,
                                    i,
                                    j,
                                    distance_method = "Euclidean",
-                                   verbose = TRUE) {
+                                   verbose = getOption("verbose", TRUE)) {
   return(fastCDistance(i,
                        j,
                        x@i,
@@ -56,7 +56,7 @@ distance.TsparseMatrix <- function(
                                   i,
                                   j,
                                   distance_method="Euclidean",
-                                  verbose=TRUE) {
+                                  verbose = getOption("verbose", TRUE)) {
   return(fastSDistance(i,
                        j,
                        x@i,

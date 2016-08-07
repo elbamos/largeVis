@@ -16,52 +16,26 @@
 using namespace Rcpp;
 using namespace std;
 using namespace arma;
-
 /*
- * Neighbor search
+ * Global types
  */
-struct HeapObject {
-  double d;
-  int n;
-  HeapObject(double d, int n) : d(d), n(n) {}
-  bool operator<(const struct HeapObject& other) const {
-    return d < other.d;
-  }
-};
-typedef priority_queue<HeapObject> MaxHeap;
-typedef vector< imat::col_iterator > PositionVector;
-typedef vector<int> Neighborhood;
-Neighborhood** createNeighborhood(int N);
-void copyHeapToMatrix(set<int>* tree,
-                      const int K,
-                      const int i,
-                      arma::imat& knns);
-void addDistance(const arma::vec& x_i,
-                 const arma::mat& data,
-                 const int j,
-                 MaxHeap& heap,
-                 const int K,
-                 double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j));
-void heapToSet(MaxHeap& heap, set<int>* set);
-arma::imat annoy(const int n_trees,
-                 const int threshold,
-                 const arma::mat& data,
-                 const int N,
-                 const int K,
-                 double (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j),
-                 Progress& p);
-void addNeighbors(const arma::ivec& indices,
-                  Neighborhood* heap[],
-                  const int I);
+typedef double distancetype;
+typedef double coordinatetype;
+typedef long long vertexidxtype;
+typedef long long edgeidxtype;
+typedef long long iterationtype;
+typedef int dimidxtype;
+typedef int kidxtype;
+
 /*
  * Distance Functions
  */
-double dist(const arma::vec& i, const arma::vec& j);
-double relDist(const arma::vec& i, const arma::vec& j);
-double cosDist(const arma::vec& i, const arma::vec& j);
-double sparseDist(const sp_mat& i, const sp_mat& j);
-double sparseRelDist(const sp_mat& i, const sp_mat& j);
-double sparseCosDist(const sp_mat& i, const sp_mat& j);
+distancetype dist(const arma::vec& i, const arma::vec& j);
+distancetype relDist(const arma::vec& i, const arma::vec& j);
+distancetype cosDist(const arma::vec& i, const arma::vec& j);
+distancetype sparseDist(const sp_mat& i, const sp_mat& j);
+distancetype sparseRelDist(const sp_mat& i, const sp_mat& j);
+distancetype sparseCosDist(const sp_mat& i, const sp_mat& j);
 
 // Exported distance functions for high dimensional space
 arma::vec fastDistance(const NumericVector is,
@@ -92,32 +66,26 @@ arma::vec fastSDistance(const arma::vec& is,
 /*
  * Functions related to the alias algorithm
  */
-typedef double realsies;
 
 template <class T>
 class AliasTable {
 private:
 	T N = 0;
-	realsies* probs = NULL;
+	coordinatetype* probs = NULL;
   T* aliases = NULL;
+  std::uniform_real_distribution< coordinatetype > rnd = std::uniform_real_distribution< coordinatetype >();
+  std::mt19937_64 mt;
 
 public:
-	AliasTable() {}
-  AliasTable(T N) : N{N} {
-  	probs = new realsies[N];
-  	aliases = new T[N];
+  AliasTable() {
   }
 
 	void initialize(const NumericVector& weights) {
 		if (N == 0) {
 			N = weights.size();
-			probs = new realsies[N];
+			probs = new coordinatetype[N];
 			aliases = new T[N];
 		}
-		// AliasTable(const NumericVector& weights) :
-		// 	N(weights.size()),
-		// 	probs(new realsies[N]),
-		// 	aliases(new T[N]) {
   	const long double sm = sum(weights);
   	for (T i = 0; i < N; i++) probs[i] = weights[i] * N / sm;
   	queue<T> small = queue<T>();
@@ -148,39 +116,21 @@ public:
   	if (accu > 1e-5) warning("Numerical instability in alias table " + to_string(accu));
   };
 
-  T search(realsies random, realsies random2) const {
+  T search(coordinatetype random, coordinatetype random2) const {
     T candidate = random * N;
     return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
   };
 
-  // const gsl_rng_type *gsl_T = NULL;
-  // gsl_rng *gsl_r = NULL;
-  //
-  // void initRandom() {
-  //   initRandom(314159265);
-  // }
-  // void initRandom(long seed) {
-  //   gsl_T = gsl_rng_rand48;
-  //   gsl_r = gsl_rng_alloc(gsl_T);
-  //   gsl_rng_set(gsl_r, seed);
-  // }
-  std::uniform_real_distribution<realsies> rnd;
-  std::mt19937_64 mt;
-
-  void initRandom(long seed) {
+  long long initRandom(long long seed) {
   	mt = mt19937_64(seed);
-  	rnd = uniform_real_distribution<realsies>();
+  	return mt();
   }
   void initRandom() {
   	std::random_device seed;
   	initRandom(seed());
   }
-
   T operator()() {
-  	realsies dub1 = rnd(mt);
-  	realsies dub2 = rnd(mt);
-  	return search(dub1, dub2);
-    // return search(gsl_rng_uniform(gsl_r), gsl_rng_uniform(gsl_r));
+  	return search(rnd(mt), rnd(mt));
   }
 };
 
@@ -189,43 +139,43 @@ public:
  */
 class Gradient {
 protected:
-  const double gamma;
-  double cap;
-  const int D;
-  Gradient(const double g,
-           const int d) : gamma{g}, cap(5), D{d} {};
-  virtual void _positiveGradient(const double dist_squared,
-                                double* holder) const = 0;
-  virtual void _negativeGradient(const double dist_squared,
-                                double* holder) const = 0;
-  inline void multModify(double *col, const double adj) const;
-  inline double clamp(double val) const;
+  const distancetype gamma;
+  distancetype cap;
+  const dimidxtype D;
+  Gradient(const distancetype g,
+           const dimidxtype d) : gamma{g}, cap(5), D{d} {};
+  virtual void _positiveGradient(const distancetype dist_squared,
+                                coordinatetype* holder) const = 0;
+  virtual void _negativeGradient(const distancetype dist_squared,
+                                 coordinatetype* holder) const = 0;
+  inline void multModify(coordinatetype *col, coordinatetype adj) const;
+  inline coordinatetype clamp(coordinatetype val) const;
 
 public:
-  virtual void positiveGradient(const double* i,
-                                const double* j,
-                                double* holder) const;
-  virtual void negativeGradient(const double* i,
-                                const double* k,
-                                double* holder) const;
-  inline double distAndVector(const double *x_i,
-                       const double *x_j,
-                       double *output) const;
+  virtual void positiveGradient(const coordinatetype* i,
+                                const coordinatetype* j,
+                                coordinatetype* holder) const;
+  virtual void negativeGradient(const coordinatetype* i,
+                                const coordinatetype* k,
+                                coordinatetype* holder) const;
+  inline distancetype distAndVector(const coordinatetype *x_i,
+			                        const coordinatetype *x_j,
+			                        coordinatetype *output) const;
 };
 
 class AlphaGradient: public Gradient {
-  const double alpha;
-  const double twoalpha;
+  const coordinatetype alpha;
+  const coordinatetype twoalpha;
 protected:
-  const double alphagamma;
+  const coordinatetype alphagamma;
   virtual void _positiveGradient(const double dist_squared,
-                                 double* holder) const;
+                                 coordinatetype* holder) const;
   virtual void _negativeGradient(const double dist_squared,
-                                 double* holder) const;
+                                 coordinatetype* holder) const;
 public:
-  AlphaGradient(const double a,
-                const double g,
-                const int d) : Gradient(g, d),
+  AlphaGradient(const distancetype a,
+                const distancetype g,
+                const dimidxtype D) : Gradient(g, D),
                                alpha{a},
                                twoalpha(alpha * -2),
                                alphagamma(alpha * gamma * 2) { } ;
@@ -233,26 +183,26 @@ public:
 
 class AlphaOneGradient: public AlphaGradient {
 public:
-  AlphaOneGradient(const double g,
-                   const int d);
+  AlphaOneGradient(const distancetype g,
+                   const dimidxtype D);
 protected:
-  virtual void _positiveGradient(const double dist_squared,
-                                 double* holder) const;
-  virtual void _negativeGradient(const double dist_squared,
-                                 double* holder) const;
+  virtual void _positiveGradient(const distancetype dist_squared,
+                                 coordinatetype* holder) const;
+  virtual void _negativeGradient(const distancetype dist_squared,
+                                 coordinatetype* holder) const;
 };
 
 class ExpGradient: public Gradient {
 public:
-  const double gammagamma;
-  ExpGradient(const double g, const int d) : Gradient(g, d),
+  const coordinatetype gammagamma;
+  ExpGradient(const distancetype g, const dimidxtype d) : Gradient(g, d),
                                           	 gammagamma(gamma * gamma) {
     cap = gamma;
   };
 protected:
-  virtual void _positiveGradient(const double dist_squared,
-                        				 double* holder) const;
-  virtual void _negativeGradient(const double dist_squared,
-                        				 double* holder) const;
+  virtual void _positiveGradient(const distancetype dist_squared,
+                                 coordinatetype* holder) const;
+  virtual void _negativeGradient(const distancetype dist_squared,
+                                 coordinatetype* holder) const;
 };
 #endif
