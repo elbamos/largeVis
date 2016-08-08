@@ -70,9 +70,9 @@ arma::imat searchTreesSparse(const int& threshold,
                             bool verbose) {
 	const vertexidxtype N = data.n_cols;
 
-	DistanceAdder<arma::sp_mat, arma::sp_mat>* adder;
-	if (distMethod.compare(std::string("Cosine")) == 0) adder = new CosineSparseAdder(data, K);
-	else adder = new EuclideanSparseAdder(data, K);
+	std::shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >  adder;
+	if (distMethod.compare(std::string("Cosine")) == 0) adder = std::shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new CosineSparseAdder(data, K));
+	else adder = std::shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new EuclideanSparseAdder(data, K));
 
 	Progress p((N * n_trees) + (2 * N) + (N * maxIter), verbose);
 

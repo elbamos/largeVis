@@ -45,6 +45,7 @@ public:
 			}
 		}
 	}
+
   void similarityOne(vertexidxtype id) {
     double beta, lo_beta, hi_beta, sum_weight, H, tmp;
   	vertexidxtype p;

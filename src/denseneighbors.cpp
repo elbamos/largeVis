@@ -65,9 +65,9 @@ arma::imat searchTrees(const int& threshold,
                        Rcpp::Nullable< Rcpp::NumericVector> seed,
                        bool verbose) {
   const vertexidxtype N = data.n_cols;
-	DistanceAdder<arma::mat, arma::vec>* adder;
-	if (distMethod.compare(std::string("Cosine")) == 0) adder = new CosineAdder(data, K);
-	else adder = new EuclideanAdder(data, K);
+	std::shared_ptr< DistanceAdder<arma::mat, arma::vec> > adder;
+	if (distMethod.compare(std::string("Cosine")) == 0) adder = std::shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new CosineAdder(data, K));
+	else adder = std::shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new EuclideanAdder(data, K));
 
   Progress p((N * n_trees) + (2 * N) + (N * maxIter), verbose);
 

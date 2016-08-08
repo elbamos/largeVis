@@ -20,16 +20,13 @@ protected:
   const iterationtype n_samples;
 
   distancetype rho;
-  distancetype initialRho;
   distancetype rhoIncrement;
 
   AliasTable< vertexidxtype > negAlias;
   AliasTable< edgeidxtype > posAlias;
-  Gradient* grad;
+  std::unique_ptr< Gradient > grad;
 
   IntegerVector ps;
-
-  long actualIterationCount = 0;
 
 public:
   Visualizer(vertexidxtype * sourcePtr,
@@ -44,8 +41,8 @@ public:
                                     coordsPtr{coordPtr},
                                     n_samples{n_samples},
                                     rho{rho},
-                                    initialRho{rho},
-                                    rhoIncrement(rho / n_samples) { }
+                                    rhoIncrement((rho - 0.0001) / n_samples) { }
+
 	void initAlias(IntegerVector& newps,
                 const NumericVector& weights,
                 Rcpp::Nullable<Rcpp::NumericVector> seed) {
@@ -66,8 +63,10 @@ public:
 		}
 	}
 
-  void setGradient(Gradient * newGrad) {
-    grad = newGrad;
+  void setGradient(double alpha, double gamma, dimidxtype D) {
+  	if (alpha == 0) grad = std::unique_ptr< Gradient > (new ExpGradient(gamma, D));
+  	else if (alpha == 1) grad = std::unique_ptr< Gradient > (new AlphaOneGradient(gamma, D));
+  	else grad = std::unique_ptr< Gradient > (new AlphaGradient(alpha, gamma, D));
   }
 
   void operator()(iterationtype startSampleIdx, int batchSize) {
@@ -151,9 +150,7 @@ arma::mat sgd(arma::mat coords,
                (distancetype) rho,
                (iterationtype) n_samples);
   v.initAlias(ps, weights, seed);
-  if (alpha == 0) v.setGradient(new ExpGradient(gamma, D));
-  else if (alpha == 1) v.setGradient(new AlphaOneGradient(gamma, D));
-  else v.setGradient(new AlphaGradient(alpha, gamma, D));
+  v.setGradient(alpha, gamma, D);
   const int batchSize = 8192;
   const iterationtype barrier = (n_samples * .95 < n_samples - coords.n_cols) ? n_samples * .95 : n_samples - coords.n_cols;
 

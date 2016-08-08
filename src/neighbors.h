@@ -25,17 +25,14 @@ protected:
 	const kidxtype K;
 	virtual double distanceFunction(const V& x_i, const V& x_j) = 0;
 	DistanceAdder(const M& data,
-               const kidxtype K) :
-		data{data}, K{K} {}
+               const kidxtype K) : data{data}, K{K} {}
 public:
 	void add(MaxHeap& thisHeap,
           const V& x_i,
           const vertexidxtype j) {
 		const distancetype d = distanceFunction(x_i, data.col(j));
-	//	if (d != 0) {
-			thisHeap.emplace(d, j);
-			if (thisHeap.size() > K) thisHeap.pop();
-	//	}
+		thisHeap.emplace(d, j);
+		if (thisHeap.size() > K) thisHeap.pop();
 	}
 };
 
@@ -45,8 +42,8 @@ protected:
 	const M& data;
 	const vertexidxtype N;
 	Progress& p;
-	Neighborhood* treeNeighborhoods;
-	set< vertexidxtype >** treeHolder;
+	std::unique_ptr< Neighborhood[] > treeNeighborhoods;
+	std::unique_ptr< set< vertexidxtype >[] > treeHolder;
 	imat knns;
 
 	int threshold = 0;
@@ -116,11 +113,11 @@ protected:
 		return (long) (rnd(mt) * (i - 1));
 	}
 
-	inline void copyHeapToMatrix(set< vertexidxtype >* tree,
+	inline void copyHeapToMatrix(set< vertexidxtype >& tree,
                               const kidxtype K,
                               const vertexidxtype i) {
-		set< vertexidxtype >::iterator sortIterator = tree -> begin();
-		set< vertexidxtype >::iterator end = tree -> end();
+		set< vertexidxtype >::iterator sortIterator = tree.begin();
+		set< vertexidxtype >::iterator end = tree.end();
 		vertexidxtype j = 0;
 		while (sortIterator != end) knns(j++, i) = *sortIterator++;
 		if (j == 0) stop("Tree failure.");
@@ -128,9 +125,9 @@ protected:
 	}
 
 	inline void heapToSet(MaxHeap& thisHeap,
-                       set< vertexidxtype >* theSet) const {
+                       set< vertexidxtype >& theSet) const {
 		while (! thisHeap.empty()) {
-			theSet -> emplace(thisHeap.top().n);
+			theSet.emplace(thisHeap.top().n);
 			thisHeap.pop();
 		}
 	}
@@ -154,7 +151,7 @@ public:
 
 	void trees(const int n_trees, const int newThreshold) {
 		threshold = newThreshold;
-		treeNeighborhoods = new Neighborhood[N];
+		treeNeighborhoods = std::unique_ptr< Neighborhood[] >(new Neighborhood[N]);
 		for (vertexidxtype i = 0; i < N; i++) {
 			treeNeighborhoods[i].push_back(i);
 		}
@@ -168,8 +165,8 @@ public:
 	}
 
 	void reduce(const kidxtype K,
-             DistanceAdder<M, V>* adder) {
-		treeHolder = new set< vertexidxtype >*[N];
+             std::shared_ptr< DistanceAdder<M, V> >  adder) {
+		treeHolder = std::unique_ptr< set<vertexidxtype>[] >(new set< vertexidxtype >[N]);
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -182,10 +179,9 @@ public:
         j++)
 				adder -> add(thisHeap, x_i, *j);
 			treeNeighborhoods[i].clear();
-			treeHolder[i] = new set< vertexidxtype >();
+			treeHolder[i] = set< vertexidxtype >();
 			heapToSet(thisHeap, treeHolder[i]);
 		}
-		delete[] treeNeighborhoods;
 	}
 
 	void convertToMatrix(const kidxtype K) {
@@ -195,15 +191,14 @@ public:
 #endif
 		for (vertexidxtype i = 0; i < N; i++) if (p.increment()) {
 			copyHeapToMatrix(treeHolder[i], K, i);
-			delete treeHolder[i];
+			treeHolder[i].clear();
 		}
-		delete[] treeHolder;
 	}
 
 	/*
 	 * Re-sort by distance.
 	 */
-	arma::imat getMatrix(DistanceAdder<M, V>* adder) {
+	arma::imat getMatrix(std::shared_ptr< DistanceAdder<M,V> > adder) {
 	const kidxtype K = knns.n_rows;
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -227,7 +222,7 @@ public:
 	}
 
 	arma::imat exploreNeighborhood(const int maxIter,
-                                  DistanceAdder<M, V>* adder) {
+                                std::shared_ptr< DistanceAdder<M, V> > adder) {
 		const kidxtype K = knns.n_rows;
 		imat old_knns  = imat(K,N);
 		for (int T = 0; T < maxIter; T++) if (! p.check_abort()) {
@@ -249,8 +244,8 @@ public:
 				ends.push_back(old_knns.end_col(i));
 
 				for (imat::col_iterator it = old_knns.begin_col(i);
-         it != ends[0] && *it != -1;
-         it++) {
+		         it != ends[0] && *it != -1;
+		         it++) {
 					positions.push_back(old_knns.begin_col(*it));
 					ends.push_back(old_knns.end_col(*it));
 				}
@@ -287,7 +282,7 @@ public:
 				 */
 				if (T != maxIter - 1) {
 					sorter.clear();
-					heapToSet(thisHeap, &sorter);
+					heapToSet(thisHeap, sorter);
 
 					set< vertexidxtype >::iterator sortIterator = sorter.begin();
 					vertexidxtype j = 0;
