@@ -71,17 +71,15 @@ public:
   }
 
   void operator()(iterationtype startSampleIdx, int batchSize) {
- // 	Rcout << "\n" << startSampleIdx;
-    edgeidxtype e_ij;
+  	edgeidxtype e_ij;
+  	int m, shortcircuit, example = 0;
+  	vertexidxtype i, j, k;
   	dimidxtype d;
-    vertexidxtype i, j, k;
-    int m, shortcircuit, example = 0;
-    coordinatetype firstholder[10], secondholder[10];
-    coordinatetype * y_i, * y_j;
-    vertexidxtype * searchBegin, * searchEnd;
+  	vertexidxtype * searchBegin, * searchEnd;
+  	coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
 
     distancetype localRho = rho;
-    while (example++ != batchSize) {
+    while (example++ != batchSize && localRho > 0) {
       // * (1 - (startSampleIdx / n_samples));
       e_ij = posAlias();
       j = targetPointer[e_ij];
@@ -117,14 +115,15 @@ public:
       for (d = 0; d != D; d++) y_i[d] += firstholder[d] * localRho;
       localRho -= rhoIncrement;
     }
-#ifdef _OPENMP
-#pragma omp critical
-#endif
-		{
-	    actualIterationCount += batchSize;
-	    rho = initialRho * (1 - actualIterationCount / n_samples + 1.0);
-	    // rho -= (rhoIncrement * batchSize);
-		}
+    rho -= (rhoIncrement * batchSize);
+//#ifdef _OPENMP
+//#pragma omp critical
+//#endif/
+//		{/
+//	    actualIterationCount += batchSize;
+//	    rho = initialRho * (1 - actualIterationCount / n_samples + 1.0);
+	    // rho -= (rhoIncrement * batchSize);/
+//		}
   }
 };
 
