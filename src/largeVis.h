@@ -12,6 +12,7 @@
 #include <queue>
 #include <vector>
 #include <set>
+#include <memory>
 
 using namespace Rcpp;
 using namespace std;
