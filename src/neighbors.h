@@ -47,6 +47,7 @@ protected:
 	imat knns;
 
 	int threshold = 0;
+	int storedThreads = 0;
 
 	std::uniform_real_distribution<double> rnd;
 	std::mt19937_64 mt;
@@ -139,6 +140,7 @@ public:
 		long innerSeed;
 		if (seed.isNotNull()) {
 #ifdef _OPENMP
+			storedThreads = omp_get_max_threads();
 			omp_set_num_threads(1);
 #endif
 			innerSeed = NumericVector(seed)[0];
@@ -162,6 +164,9 @@ public:
 		for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
 			recurse(indices);
 		}
+#ifdef _OPENMP
+		if (storedThreads > 0) omp_set_num_threads(storedThreads);
+#endif
 	}
 
 	void reduce(const kidxtype K,

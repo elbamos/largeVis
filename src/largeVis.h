@@ -70,24 +70,23 @@ arma::vec fastSDistance(const arma::vec& is,
 template <class T>
 class AliasTable {
 private:
-	T N = 0;
-	coordinatetype* probs = NULL;
-  T* aliases = NULL;
+	std::unique_ptr< coordinatetype[] > probs;
+	std::unique_ptr< T[] > aliases;
   std::uniform_real_distribution< coordinatetype > rnd = std::uniform_real_distribution< coordinatetype >();
   std::mt19937_64 mt;
+  T N;
 
 public:
   AliasTable() {
   }
 
-	void initialize(const NumericVector& weights) {
-		if (N == 0) {
-			N = weights.size();
-			probs = new coordinatetype[N];
-			aliases = new T[N];
-		}
-  	const long double sm = sum(weights);
-  	for (T i = 0; i < N; i++) probs[i] = weights[i] * N / sm;
+	void initialize(const distancetype* weights, T N) {
+		this -> N = N;
+		probs = std::unique_ptr< coordinatetype[] >( new coordinatetype[N] );
+		aliases = std::unique_ptr< T[] >(new T[N]);
+		distancetype sm = 0;
+		for (T i = 0; i != N; i++) sm += weights[i];
+  	for (T i = 0; i != N; i++) probs[i] = weights[i] * N / sm;
   	queue<T> small = queue<T>();
   	queue<T> large = queue<T>();
   	for (T i = 0; i < N; i++) ((probs[i] < 1) ?
@@ -128,6 +127,9 @@ public:
   void initRandom() {
   	std::random_device seed;
   	initRandom(seed());
+  }
+  coordinatetype getRand() {
+  	return rnd(mt);
   }
   T operator()() {
   	return search(rnd(mt), rnd(mt));

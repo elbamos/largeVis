@@ -187,7 +187,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // sgd
-arma::mat sgd(arma::mat coords, arma::ivec& targets_i, arma::ivec& sources_j, IntegerVector& ps, NumericVector& weights, const double gamma, const double rho, const long long n_samples, const int M, const double alpha, const Rcpp::Nullable<Rcpp::NumericVector> seed, const bool verbose);
+arma::mat sgd(arma::mat coords, arma::ivec& targets_i, arma::ivec& sources_j, arma::ivec& ps, arma::vec& weights, const double gamma, const double rho, const long long n_samples, const int M, const double alpha, const Rcpp::Nullable<Rcpp::NumericVector> seed, const bool verbose);
 RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP targets_iSEXP, SEXP sources_jSEXP, SEXP psSEXP, SEXP weightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP n_samplesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP seedSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
@@ -195,8 +195,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< arma::ivec& >::type targets_i(targets_iSEXP);
     Rcpp::traits::input_parameter< arma::ivec& >::type sources_j(sources_jSEXP);
-    Rcpp::traits::input_parameter< IntegerVector& >::type ps(psSEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< arma::ivec& >::type ps(psSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type weights(weightsSEXP);
     Rcpp::traits::input_parameter< const double >::type gamma(gammaSEXP);
     Rcpp::traits::input_parameter< const double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< const long long >::type n_samples(n_samplesSEXP);
