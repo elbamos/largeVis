@@ -11,10 +11,10 @@
 ^wikiwWordVis\.Rda
 ^wij
 ^visscratc\.R
-^wikiwordcoords\.Rda
-^ng20wij\.Rda
-^time\.Rda
-^wordcoords\.Rda
+^wikiwordcoords\.Rda$
+^ng20wij\.Rda$
+^time\.Rda$
+^wordcoords\.Rda$
 ^vignettedata/$
 ^vignettedata/.$
 ^stm\.Rda
@@ -59,3 +59,9 @@
 ^log4j/.spark/.log
 ^mnist$
 ^derby/.log
+^Examples/.Rmd$
+^test/.R$
+^vignettedatamnistcoords/.Rda$
+^vignettedatangcoords/.Rda$
+^wordcoordsweightingbyp/.Rda$
+^words/.png$

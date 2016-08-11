@@ -62,7 +62,7 @@ public:
 			for (edgeidxtype e = newps[p];
         	 e != newps[p + 1];
         	 e++) {
-				negweights[targets[e]] += weights[e];
+				//negweights[targets[e]] += weights[e];
 				negweights[p] += weights[e];
 			}
 		}
