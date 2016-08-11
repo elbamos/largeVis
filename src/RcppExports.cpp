@@ -208,6 +208,18 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// testVisualize
+arma::fmat testVisualize(arma::sp_mat& edges, long long S);
+RcppExport SEXP largeVis_testVisualize(SEXP edgesSEXP, SEXP SSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< long long >::type S(SSEXP);
+    __result = Rcpp::wrap(testVisualize(edges, S));
+    return __result;
+END_RCPP
+}
 // searchTreesCSparse
 arma::imat searchTreesCSparse(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::uvec& i, const arma::uvec& p, const arma::vec& x, const std::string& distMethod, Rcpp::Nullable< Rcpp::NumericVector> seed, bool verbose);
 RcppExport SEXP largeVis_searchTreesCSparse(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP pSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP seedSEXP, SEXP verboseSEXP) {

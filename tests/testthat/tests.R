@@ -178,3 +178,19 @@ test_that("With a bigger dataset, increasing iters improves result", {
     oldscore <- score
   }
 })
+
+context("Edge Matrix")
+
+test_that("Edge Matrix doesn't crash", {
+	neighbors <- randomProjectionTreeSearch(dat,
+																						K = 20, verbose = FALSE)
+	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
+})
+
+
+test_that("New Vis", {
+	neighbors <- randomProjectionTreeSearch(dat,
+																					K = 20, verbose = FALSE)
+	edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE)
+	expect_silent(ret <- largeVis:::testVisualize(edges = edges, S = 100000))
+})

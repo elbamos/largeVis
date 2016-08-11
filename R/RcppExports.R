@@ -53,6 +53,10 @@ sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples
     .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, verbose)
 }
 
+testVisualize <- function(edges, S) {
+    .Call('largeVis_testVisualize', PACKAGE = 'largeVis', edges, S)
+}
+
 searchTreesCSparse <- function(threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, verbose) {
     .Call('largeVis_searchTreesCSparse', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, verbose)
 }
