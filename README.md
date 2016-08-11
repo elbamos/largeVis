@@ -1,7 +1,7 @@
 largeVis
 ================
 
-[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=0.1.6)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/0.1.6.svg)](https://codecov.io/gh/elbamos/largeVis/branch/0.1.6) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=0.1.6&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis?branch=0.1.6)
+[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=0.1.7)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/0.1.7.svg)](https://codecov.io/gh/elbamos/largeVis/branch/0.1.7) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=0.1.7&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis?branch=0.1.7)
 
 This is an implementation of the `largeVis` algorithm described in (<https://arxiv.org/abs/1602.00370>). It also incorporates a very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`, and for visualizing a map of the manifold like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
 

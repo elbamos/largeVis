@@ -1,13 +1,14 @@
 context("neighbors")
 
+data (iris)
+set.seed(1974)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+
 test_that("Trees does not error", {
-  data (iris)
-  set.seed(1974)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
   expect_silent(neighbors <- randomProjectionTreeSearch(dat,
                                                         K = 5,
                                                         n_trees = 10,
@@ -18,14 +19,6 @@ test_that("Trees does not error", {
 })
 
 test_that("Trees does not error if neighbors are explored once", {
-  data (iris)
-  set.seed(1974)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-
   expect_silent(neighbors <- randomProjectionTreeSearch(dat,
                                                         K = 5,
                                                         n_trees = 50,
@@ -36,14 +29,6 @@ test_that("Trees does not error if neighbors are explored once", {
 })
 
 test_that("Trees does not error if neighbors are explored more than once", {
-  data (iris)
-  set.seed(1974)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
-
   expect_silent(neighbors <- randomProjectionTreeSearch(dat,
                                                         K = 5,
                                                         n_trees = 50,
@@ -53,13 +38,6 @@ test_that("Trees does not error if neighbors are explored more than once", {
 })
 
 test_that("Can determine iris neighbors", {
-  data (iris)
-  set.seed(1974)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  dat <- t(dat)
   neighbors <- randomProjectionTreeSearch(dat,
                                           K = 5,
                                           n_trees = 20,
@@ -74,16 +52,9 @@ test_that("Can determine iris neighbors", {
 
 test_that("max threshold is sufficient to find all neighbors", {
   M <- 5
-  set.seed(1974)
-  data (iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  d_matrix <- as.matrix(dist(dat, method = "euclidean"))
+  d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
   bests <- apply(d_matrix, MARGIN=1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1,] - 1
-  dat <- t(dat)
 
   neighbors <- randomProjectionTreeSearch(dat,
                                           K = M,
@@ -98,16 +69,9 @@ test_that("max threshold is sufficient to find all neighbors", {
 
 test_that("exploring after max threshold does not reduce accuracy", {
   M <- 5
-  set.seed(1974)
-  data (iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  d_matrix <- as.matrix(dist(dat, method = "euclidean"))
+  d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
   bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1, ] - 1
-  dat <- t(dat)
 
   neighbors <- randomProjectionTreeSearch(dat,
                                           K = M,
@@ -131,141 +95,86 @@ test_that("exploring after max threshold does not reduce accuracy", {
   expect_gte(score, oldscore)
 })
 
-test_that("Can determine iris neighbors accurately", {
+test_that("Can determine iris neighbors accurately, Euclidean", {
   M <- 5
-  set.seed(1974)
-  data (iris)
-  dat <- as.matrix(iris[, 1:4])
-  dat <- scale(dat)
-  dupes <- which(duplicated(dat))
-  dat <- dat[-dupes, ]
-  d_matrix <- as.matrix(dist(dat, method = "euclidean"))
-  bests <- apply(d_matrix, MARGIN=1, FUN = function(x) order(x)[1:(M + 1)])
+  d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
+  bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1, ] - 1
-  dat <- t(dat)
 
   neighbors <- randomProjectionTreeSearch(dat,
                                           K = M,
-                                          n_trees = 10,
-                                          tree_threshold = 10,
-                                          max_iter = 10,
-                                          verbose = FALSE)
-  scores <- lapply(1:ncol(dat),
-                   FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
-  score <- sum(as.numeric(scores))
-  expect_gt(score, (ncol(dat) * M) - 15)
+                                          n_trees = 20,
+                                          tree_threshold = 30,
+                                          max_iter = 12,
+                                          verbose = FALSE,
+  																				seed = 1974)
+  expect_lte(sum(neighbors != bests, na.rm = TRUE), 5)
 })
 
-# test_that("Knows how to converge", {
-#   M <- 5
-#   set.seed(1974)
-#   RcppArmadillo::armadillo_set_seed(1974)
-#   data (iris)
-#   dat <- as.matrix(iris[, 1:4])
-#   dat <- scale(dat)
-#   dupes <- which(duplicated(dat))
-#   dat <- dat[-dupes, ]
-#   d_matrix = as.matrix(dist(dat, method = "euclidean"))
-#   bests <- apply(d_matrix, MARGIN=1, FUN = function(x) order(x)[1:(M + 1)])
-#   bests <- bests[-1,] - 1
-#   dat <- t(dat)
-#
-#   neighbors <- randomProjectionTreeSearch(dat,
-#                                           K = M,
-#                                           n_trees = 10,
-#                                           tree_threshold = 10,
-#                                           max_iter = 100000,
-#                                           verbose = FALSE)
-#   scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[,x] %in% bests[,x]))
-#   score <- sum(as.numeric(scores))
-#   expect_gt(score, (ncol(dat) * M) - 15)
-# })
-
-
+M <- 10
+data (quakes)
+dat <- as.matrix(quakes)
+quakes <- scale(dat)
+d_matrix = as.matrix(dist(quakes, method = "euclidean"))
 
 test_that("With a bigger dataset, increasing threshold improves result", {
-  M <- 10
-  data (quakes)
-  dat <- as.matrix(quakes)
-  dat <- scale(dat)
-  d_matrix = as.matrix(dist(dat, method = "euclidean"))
   bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1, ] - 1
-  dat <- t(dat)
 
-  oldscore <- 0
+  oldscore <- nrow(quakes) * M
 
-  for (t in c(10, 30, 60, 90)) {
+  for (t in c(10, 40, 80, 160)) {
     set.seed(1974)
-    neighbors <- randomProjectionTreeSearch(dat,
+    neighbors <- randomProjectionTreeSearch(t(quakes),
                                             K = M,
-                                            n_trees = 10,
+                                            n_trees = 20,
                                             tree_threshold = t,
                                             max_iter = 0,
-                                            verbose = FALSE)
-    scores <- lapply(1:ncol(dat),
-                     FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
-    score <- sum(as.numeric(scores)) / (M * ncol(dat))
-    expect_gte(score, oldscore * 0.99)  # Allow some gap here to account for randomness
-    if (score == 1) break;
+                                            verbose = FALSE,
+    																				seed = 1974)
+    score <- sum(neighbors != bests, na.rm = TRUE)
+    expect_lte(score, oldscore, label = t)
     oldscore <- score
   }
 })
 
 test_that("With a bigger dataset, increasing n_trees improves result", {
-  M <- 10
-  set.seed(1974)
-  data (quakes)
-  dat <- as.matrix(quakes)
-  dat <- scale(dat)
-  d_matrix = as.matrix(dist(dat, method = "euclidean"))
   bests <- apply(d_matrix, MARGIN=1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1,] - 1
-  dat <- t(dat)
 
-  oldscore <- 0
+  oldscore <- nrow(quakes) * M
 
-  for (t in c(10, 30, 60, 90)) {
-    neighbors <- randomProjectionTreeSearch(dat,
+  for (t in c(5, 20, 40, 90)) {
+    neighbors <- randomProjectionTreeSearch(t(quakes),
                                             K = M,
                                             n_trees = t,
                                             tree_threshold = 10,
                                             max_iter = 0,
-                                            verbose = FALSE)
-    scores <- lapply(1:ncol(dat),
-                     FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
-    score <- sum(as.numeric(scores)) / (M * ncol(dat))
-    expect_gte(score, oldscore * 0.99)
-    if (score == 1) break;
+                                            verbose = FALSE,
+    																				seed = 1974)
+    score <- sum(neighbors != bests, na.rm = TRUE)
+    expect_lte(score, oldscore, label = t)
     oldscore <- score
   }
 })
 
 test_that("With a bigger dataset, increasing iters improves result", {
   M <- 10
-  set.seed(1974)
-  data (quakes)
-  dat <- as.matrix(quakes)
-  dat <- scale(dat)
-  d_matrix = as.matrix(dist(dat, method = "euclidean"))
   bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[ - 1,] - 1
-  dat <- t(dat)
 
-  oldscore <- 0
+  oldscore <- nrow(quakes) * M
 
-  for (t in c(0, 1, 5, 10)) {
-    neighbors <- randomProjectionTreeSearch(dat,
+  for (t in c(0, 5, 20, 40)) {
+    neighbors <- randomProjectionTreeSearch(t(quakes),
                                             K = M,
-                                            n_trees = 10,
+                                            n_trees = 5,
                                             tree_threshold = 10,
                                             max_iter = t,
-                                            verbose = FALSE)
-    scores <- lapply(1:ncol(dat),
-                     FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
-    score <- sum(as.numeric(scores)) / (M * ncol(dat))
-    expect_gte(score, oldscore * 0.99)
-    if (score == 1) break;
+                                            verbose = FALSE,
+    																				seed = 1974)
+    score <- max(0, sum(neighbors != bests, na.rm = TRUE))
+    expect_lte(score, oldscore, label = t)
     oldscore <- score
   }
 })

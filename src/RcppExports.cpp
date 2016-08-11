@@ -106,8 +106,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // searchTrees
-arma::imat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::mat& data, const std::string& distMethod, bool verbose);
-RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
+arma::imat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::mat& data, const std::string& distMethod, Rcpp::Nullable< Rcpp::NumericVector> seed, bool verbose);
+RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP seedSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -117,8 +117,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type maxIter(maxIterSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::NumericVector> >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(searchTrees(threshold, n_trees, K, maxIter, data, distMethod, verbose));
+    __result = Rcpp::wrap(searchTrees(threshold, n_trees, K, maxIter, data, distMethod, seed, verbose));
     return __result;
 END_RCPP
 }
@@ -186,29 +187,30 @@ BEGIN_RCPP
 END_RCPP
 }
 // sgd
-arma::mat sgd(arma::mat coords, arma::ivec& targets_i, arma::ivec& sources_j, IntegerVector& ps, NumericVector& weights, const double gamma, const double rho, const long long n_samples, const int M, const double alpha, const bool verbose);
-RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP targets_iSEXP, SEXP sources_jSEXP, SEXP psSEXP, SEXP weightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP n_samplesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP verboseSEXP) {
+arma::mat sgd(arma::mat coords, arma::ivec& targets_i, arma::ivec& sources_j, arma::ivec& ps, arma::vec& weights, const double gamma, const double rho, const long long n_samples, const int M, const double alpha, const Rcpp::Nullable<Rcpp::NumericVector> seed, const bool verbose);
+RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP targets_iSEXP, SEXP sources_jSEXP, SEXP psSEXP, SEXP weightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP n_samplesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP seedSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< arma::mat >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< arma::ivec& >::type targets_i(targets_iSEXP);
     Rcpp::traits::input_parameter< arma::ivec& >::type sources_j(sources_jSEXP);
-    Rcpp::traits::input_parameter< IntegerVector& >::type ps(psSEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< arma::ivec& >::type ps(psSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type weights(weightsSEXP);
     Rcpp::traits::input_parameter< const double >::type gamma(gammaSEXP);
     Rcpp::traits::input_parameter< const double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< const long long >::type n_samples(n_samplesSEXP);
     Rcpp::traits::input_parameter< const int >::type M(MSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericVector> >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(sgd(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, verbose));
+    __result = Rcpp::wrap(sgd(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, verbose));
     return __result;
 END_RCPP
 }
 // searchTreesCSparse
-arma::mat searchTreesCSparse(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::uvec& i, const arma::uvec& p, const arma::vec& x, const std::string& distMethod, bool verbose);
-RcppExport SEXP largeVis_searchTreesCSparse(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP pSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
+arma::imat searchTreesCSparse(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::uvec& i, const arma::uvec& p, const arma::vec& x, const std::string& distMethod, Rcpp::Nullable< Rcpp::NumericVector> seed, bool verbose);
+RcppExport SEXP largeVis_searchTreesCSparse(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP pSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP seedSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -220,14 +222,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::uvec& >::type p(pSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::NumericVector> >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(searchTreesCSparse(threshold, n_trees, K, maxIter, i, p, x, distMethod, verbose));
+    __result = Rcpp::wrap(searchTreesCSparse(threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, verbose));
     return __result;
 END_RCPP
 }
 // searchTreesTSparse
-arma::mat searchTreesTSparse(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::uvec& i, const arma::uvec& j, const arma::vec& x, const std::string& distMethod, bool verbose);
-RcppExport SEXP largeVis_searchTreesTSparse(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP jSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
+arma::imat searchTreesTSparse(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::uvec& i, const arma::uvec& j, const arma::vec& x, const std::string& distMethod, Rcpp::Nullable< Rcpp::NumericVector> seed, bool verbose);
+RcppExport SEXP largeVis_searchTreesTSparse(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP jSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP seedSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -239,8 +242,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::uvec& >::type j(jSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::NumericVector> >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(searchTreesTSparse(threshold, n_trees, K, maxIter, i, j, x, distMethod, verbose));
+    __result = Rcpp::wrap(searchTreesTSparse(threshold, n_trees, K, maxIter, i, j, x, distMethod, seed, verbose));
     return __result;
 END_RCPP
 }

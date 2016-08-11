@@ -12,14 +12,14 @@ vignette: |
 
 ```{r setupbenchmark,eval=T,echo=F,warning=F,error=F,message=F}
 # Note to reader:  Please don't steal the semi-distinctive visual style I spent several minutes creating for myself.
-require(ggplot2, 
+library(ggplot2, 
         quietly = TRUE)
-require(RColorBrewer, 
+library(RColorBrewer, 
         quietly = TRUE)
-require(wesanderson, 
+library(wesanderson, 
         quietly = TRUE)
-require(dplyr, quietly = TRUE)
-require(magrittr, quietly = TRUE)
+library(dplyr, quietly = TRUE)
+library(magrittr, quietly = TRUE)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>",
                       fig.width = 7, 

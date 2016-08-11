@@ -5,7 +5,7 @@
 \title{OPTICS}
 \usage{
 optics(data = NULL, neighbors = NULL, edges = NULL, eps,
-  minPts = nrow(data) + 1, eps_cl, xi, verbose = TRUE)
+  minPts = nrow(data) + 1, eps_cl, xi, verbose = getOption("verbose", TRUE))
 }
 \arguments{
 \item{data}{Input data, where examples are columns.}

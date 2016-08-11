@@ -324,6 +324,6 @@ Memory requirements during the neighbor search may be managed by reducing `n_tre
 
 ## References
 
-```{r save,eval=rebuild}
+```{r save,eval=rebuild,echo=F}
 save(agcoords, iriscoords, file = "vignettedata/vignettedata.Rda")
 ```

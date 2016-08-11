@@ -28,7 +28,14 @@
 #' enables the alternative distance function. \eqn{\alpha} below zero is meaningless.
 #' @param rho Initial learning rate.
 #' @param coords An initialized coordinate matrix.
+#' @param seed Random seed to be passed to the C++ functions; sampled from hardware entropy pool if \code{NULL} (the default).
+#' Note that if the seed is not \code{NULL} (the default), the maximum number of threads will be set to 1 in phases of the algorithm
+#' that would otherwise be non-deterministic.
 #' @param verbose Verbosity
+#'
+#' @note If specified, \code{seed} is passed to the C++ and used to initialize the random number generator. This will not, however, be
+#' sufficient to ensure reproducible results, because the initial coordinate matrix is generated using the \code{R} random number generator.
+#' To ensure reproducibility, call \code{\link[base]{set.seed}} before calling this function, or pass it a pre-allocated coordinate matrix.
 #'
 #' @return A dense [N,D] matrix of the coordinates projecting the w_ij matrix into the lower-dimensional space.
 #' @export
@@ -50,7 +57,8 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                         alpha = 1,
                         rho = 1,
                         coords = NULL,
-                        verbose = TRUE) {
+												seed = NULL,
+                        verbose = getOption("verbose", TRUE)) {
 
   if (alpha < 0) stop("alpha < 0 is meaningless")
   N <-  (length(wij@p) - 1)
@@ -86,6 +94,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 alpha = alpha, gamma = gamma, M = M,
                 rho = rho,
                 n_samples = sgd_batches,
+  							seed,
                 verbose = verbose)
 
   return(coords)

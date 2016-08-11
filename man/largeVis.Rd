@@ -6,10 +6,10 @@
 \alias{largeVis-package}
 \title{largeVis: high-quality visualizations for large, high-dimensionality datasets}
 \usage{
-largeVis(x, dim = 2, K = 40, n_trees = 50, tree_threshold = max(10,
-  ncol(x)), max_iter = 1, distance_method = "Euclidean", perplexity = 50,
-  sgd_batches = NULL, M = 5, alpha = 1, gamma = 7, rho = 1,
-  coords = NULL, save_neighbors = TRUE, verbose = TRUE, ...)
+largeVis(x, dim = 2, K = 50, n_trees = 50, tree_threshold = max(10,
+  ncol(x)), max_iter = 1, distance_method = "Euclidean",
+  perplexity = max(50, K/3), save_neighbors = TRUE,
+  verbose = getOption("verbose", TRUE), ...)
 }
 \arguments{
 \item{x}{A matrix, where the features are rows and the examples are columns.}
@@ -29,18 +29,6 @@ in the input set.}
 \item{distance_method}{One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.}
 
 \item{perplexity}{See \code{\link{buildWijMatrix}}.}
-
-\item{sgd_batches}{See \code{\link{projectKNNs}}.}
-
-\item{M}{See \code{\link{projectKNNs}}.}
-
-\item{alpha}{See \code{\link{projectKNNs}}.}
-
-\item{gamma}{See \code{\link{projectKNNs}}.}
-
-\item{rho}{See \code{\link{projectKNNs}}.}
-
-\item{coords}{A [N,K] matrix of coordinates to use as a starting point -- useful for refining an embedding in stages.}
 
 \item{save_neighbors}{Whether to include in the output the adjacency matrix of nearest neighbors.}
 

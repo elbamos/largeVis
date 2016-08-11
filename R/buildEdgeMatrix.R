@@ -12,7 +12,7 @@
 buildEdgeMatrix <- function(data,
                             neighbors,
                             distance_method = "Euclidean",
-                            verbose = TRUE) {
+                            verbose = options("verbose")) {
 	indices <- neighborsToVectors(neighbors)
 	distances <- distance(indices$i, indices$j, x = data, distance_method, verbose)
 	mat <- sparseMatrix(

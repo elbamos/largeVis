@@ -29,8 +29,8 @@ silhouetteDbscan <- function(edges, sil) {
     invisible(.Call('largeVis_silhouetteDbscan', PACKAGE = 'largeVis', edges, sil))
 }
 
-searchTrees <- function(threshold, n_trees, K, maxIter, data, distMethod, verbose) {
-    .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, data, distMethod, verbose)
+searchTrees <- function(threshold, n_trees, K, maxIter, data, distMethod, seed, verbose) {
+    .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, data, distMethod, seed, verbose)
 }
 
 fastDistance <- function(is, js, data, distMethod, verbose) {
@@ -49,15 +49,15 @@ referenceWij <- function(i, j, d, perplexity) {
     .Call('largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, perplexity)
 }
 
-sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, verbose) {
-    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, verbose)
+sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, verbose) {
+    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, verbose)
 }
 
-searchTreesCSparse <- function(threshold, n_trees, K, maxIter, i, p, x, distMethod, verbose) {
-    .Call('largeVis_searchTreesCSparse', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, i, p, x, distMethod, verbose)
+searchTreesCSparse <- function(threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, verbose) {
+    .Call('largeVis_searchTreesCSparse', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, verbose)
 }
 
-searchTreesTSparse <- function(threshold, n_trees, K, maxIter, i, j, x, distMethod, verbose) {
-    .Call('largeVis_searchTreesTSparse', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, i, j, x, distMethod, verbose)
+searchTreesTSparse <- function(threshold, n_trees, K, maxIter, i, j, x, distMethod, seed, verbose) {
+    .Call('largeVis_searchTreesTSparse', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, i, j, x, distMethod, seed, verbose)
 }
 

@@ -5,7 +5,8 @@
 \title{dbscan}
 \usage{
 dbscan(data = NULL, neighbors = NULL, edges = NULL, eps,
-  minPts = nrow(data) + 1, partition = !missing(edges), verbose = TRUE)
+  minPts = nrow(data) + 1, partition = !missing(edges),
+  verbose = getOption("verbose", TRUE))
 }
 \arguments{
 \item{data}{Input data, where examples are columns.}
