@@ -47,3 +47,11 @@ test_that("LOF is consistent 10", {
 	ourlof <- largeVis:::lof(edges)
 	expect_lt(sum(truelof - ourlof)^2 / ncol(dat), 0.4)
 })
+
+context("hdbscan")
+
+test_that("hdbscan doesn't crash", {
+  ret <- hdbscan(edges, 10);
+  print(ret)
+  print(table(factor(ret[1,])))
+})

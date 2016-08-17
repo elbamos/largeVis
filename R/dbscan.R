@@ -204,3 +204,41 @@ lof <- function(edges) {
 
   ret
 }
+
+#' hdbscan
+#' 
+#' Experiment implemenation of the hdbscan algorithm.
+#'
+#' @param edges An edge matrix of the type returned by \code{\link{buildEdgeMatrix}}.
+#' @param minPts The minimum number of points in a cluster.
+#' @param K The number of points in the core neighborhood. (See details.)
+#' @param verbose Verbosity.
+#'
+#' @details The hyperparameter \code{K} controls the size of core neighborhoods. 
+#' The algorithm measures the density around a point as 1 / the distance between
+#' that point and its \code{K}th nearest neighbor. A low value of \code{K} is similar
+#' to clustering nearest neighbors rather than based on density. A high value of
+#' \code{K} may cause the algorithm to miss some (usually contrived) clustering
+#' patterns, such as where clusters are made up of points arranged in lines to form
+#' shapes.
+#'
+#' @return
+#' @export
+hdbscan <- function(edges, minPts = 20, K = 5,
+                   verbose = getOption("verbose", TRUE)) {
+  
+  clusters <- hdbscanc(edges, K, minPts)
+  clustersframe <- data.frame(t(clusters$clusters))
+  colnames(clustersframe) <- c("cluster", "probability")
+  clustersframe$cluster[clustersframe$cluster == -1] <- NA
+  clustersframe$cluster <- factor(clustersframe$cluster, exclude = NULL)
+  clustersframe$cluster <- as.integer(clustersframe$cluster)
+  
+  ret <- list(
+    clusters = clustersframe$cluster,
+    probabilities = clustersframe$probability,
+    tree = clusters$tree + 1
+  )
+  class(ret) <- "hdbscan"
+  return(ret)
+}

@@ -83,6 +83,7 @@ public:
 			negAlias.initRandom();
 			posAlias.initRandom();
 		}
+		delete[] negweights;
 	}
 
   void setGradient(double alpha, double gamma, dimidxtype D) {

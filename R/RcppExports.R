@@ -49,12 +49,12 @@ referenceWij <- function(i, j, d, perplexity) {
     .Call('largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, perplexity)
 }
 
-sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, verbose) {
-    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, verbose)
+hdbscanc <- function(edges, K, minPts) {
+    .Call('largeVis_hdbscanc', PACKAGE = 'largeVis', edges, K, minPts)
 }
 
-testVisualize <- function(edges, S) {
-    .Call('largeVis_testVisualize', PACKAGE = 'largeVis', edges, S)
+sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, verbose) {
+    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, verbose)
 }
 
 searchTreesCSparse <- function(threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, verbose) {
