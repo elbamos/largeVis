@@ -49,7 +49,6 @@ arma::vec fastDistance(const IntegerVector is,
                        const arma::mat& data,
                        const std::string& distMethod,
                        bool verbose) {
-
   Progress p(is.size(), verbose);
   vec xs = vec(is.size());
   distancetype (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j);

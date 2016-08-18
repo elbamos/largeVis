@@ -4,9 +4,8 @@
 // [[Rcpp::depends(RcppProgress)]]
 #include "pq.h"
 
-class HDBSCAN {
+class HDBSCAN : UF<long long> {
 public:
-  typedef std::pair<long long, double> iddist;
   class CompareDist {
   public:
     bool operator()(iddist n1, iddist n2) {
@@ -17,24 +16,22 @@ public:
                               std::vector<iddist>, 
                               CompareDist> DistanceSorter;
   
-  typedef std::pair<std::pair<long long, long long>, double> pairdist;
-  class ComparePairDist {
-  public:
-    bool operator()(pairdist n1, pairdist n2) {
-      return n1.second > n2.second;
-    }
-  };
-  typedef std::priority_queue<pairdist, 
-                              std::vector<pairdist>, 
-                              ComparePairDist> PairDistanceSorter;
-  
-  const int                 K;
-  const long long           N;
   long long starterIndex;
+  arma::sp_mat mrdMatrix;
   
-  arma::vec makeCoreDistances(const arma::sp_mat& edges) {
+  long long*   minimum_spanning_tree;
+  double*      minimum_spanning_distances;
+  
+  HDBSCAN(const int N,
+          const long long nedges,
+          bool verbose) : UF(N, nedges, verbose) {
+            minimum_spanning_tree = new long long[N];
+            minimum_spanning_distances = new double[N];
+          }
+  
+  arma::vec makeCoreDistances(const arma::sp_mat& edges, const int K) {
     arma::vec coreDistances = arma::vec(N);
-    for (long long n = 0; n < N; n++) {
+    for (long long n = 0; n < N && p.increment() ; n++) {
       DistanceSorter srtr = DistanceSorter();
       for (auto it = edges.begin_col(n);
            it != edges.end_col(n);
@@ -45,15 +42,13 @@ public:
     return coreDistances;
   }
   
-  arma::sp_mat mrdMatrix;
-  
-  void makeMRD(const arma::sp_mat& edges) {
+  void makeMRD(const arma::sp_mat& edges, const int K) {
     mrdMatrix = arma::sp_mat(edges);
-    arma::vec coreDistances = makeCoreDistances(edges);
+    arma::vec coreDistances = makeCoreDistances(edges, K);
     double bestOverall = INFINITY;
     for (auto it = mrdMatrix.begin(); 
          it != mrdMatrix.end();
-         it++) {
+         it++) if (p.increment()) {
       long long i = it.row();
       long long j = it.col();
       double d = max(coreDistances[i], coreDistances[j]);
@@ -65,10 +60,7 @@ public:
       *it = d;
     }
   }
-  
-  long long*   minimum_spanning_tree;
-  double*      minimum_spanning_distances;
-  
+
   void primsAlgorithm() {
     double* Cv = minimum_spanning_distances;
     long long* Ev = minimum_spanning_tree;
@@ -80,72 +72,81 @@ public:
     }
     
     long long v;
-    while (! Q.isEmpty()) {
-      Rcout << "\n" << Q.minKey();
+    while (! Q.isEmpty() && p.increment()) {
       v = Q.deleteMin();
-      Rcout << " " << v;
       for (auto it = mrdMatrix.begin_row(v);
            it != mrdMatrix.end_row(v);
            it++) {
         long long w = it.col();
-        Rcout << " " << w;
-      //  if (Ev[w] == -1) {
-      //    Cv[w] = *it;
-      //    Ev[w] = v;
-      //  }
         if (Q.contains(w) && *it < Cv[w]) {
-          Rcout << "a";
           Q.changeKey(w, *it);
           Cv[w] = *it;
           Ev[w] = v;
         }
       }
     }
-    for (int n = 0; n < N; n++) Rcout << Cv[n] << " ";
-    Rcout << "\n";
-    for (int n = 0; n < N; n++) Rcout << Ev[n] << " ";
   }
-  UF<long long>* hierarchy = nullptr;
+
   void buildHierarchy() {
+    setup();
     DistanceSorter srtr = DistanceSorter();
-    for (long long n = 0; n != N; n++) {
-      // FIX ME - Handle the roots from the prior phase
+    for (long long n = 0; n != N && p.increment(); n++) {
       double distance = minimum_spanning_distances[n];
       srtr.push(iddist(n, distance));
     }
-    hierarchy = new UF<long long>(N);
-    while (! srtr.empty()) {
+
+    while (! srtr.empty() && p.increment()) {
       const iddist ijd = srtr.top();
       srtr.pop();
-      hierarchy -> agglomerate(ijd.first, minimum_spanning_tree[ijd.first], ijd.second);
+      agglomerate(ijd.first, minimum_spanning_tree[ijd.first], ijd.second);
     }
   }
   
-  HDBSCAN(const int N,
-          const int K) : K{K}, N{N} {
-            minimum_spanning_tree = new long long[N];
-            minimum_spanning_distances = new double[N];
-          }
-  
-  arma::mat process(const arma::sp_mat& edges, int minPts) {
-    makeMRD(edges);
+  arma::mat process(const arma::sp_mat& edges, const int K, const int minPts) {
+    makeMRD(edges, K);
     primsAlgorithm();
     buildHierarchy();
-    hierarchy -> condense(minPts);
-    hierarchy -> determineStability(minPts);
-    hierarchy -> extractClusters();
-    return hierarchy -> getClusters();
+    condense(minPts);
+    determineStability(minPts);
+    extractClusters();
+    return getClusters();
+  }
+  
+  
+  Rcpp::List reportHierarchy() {
+    long long survivingClusterCnt = survivingClusters.size();
+    IntegerVector parent = IntegerVector(survivingClusterCnt);
+    IntegerVector nodeMembership = IntegerVector(N);
+    NumericVector stabilities = NumericVector(survivingClusterCnt);
+    IntegerVector selected = IntegerVector(survivingClusterCnt);
+    
+    for (typename std::set< long long >::iterator it = roots.begin();
+         it != roots.end();
+         it++) reportAHierarchy(*it, *it, parent, nodeMembership, 
+         stabilities, selected, 0, 0);
+    
+    NumericVector lambdas = NumericVector(N);
+    // FIXME - need to adjust this to be lambda_p not birth
+    for (long long n = 0; n != N; n++) lambdas[n] = lambda_births[n];
+
+    return Rcpp::List::create(Rcpp::Named("nodemembership") = nodeMembership,
+                              Rcpp::Named("lambda") = lambdas, 
+                              Rcpp::Named("parent") = parent, 
+                              Rcpp::Named("stability") = stabilities,
+                              Rcpp::Named("selected") = selected);
   }
 };
 
 // [[Rcpp::export]]
-List hdbscanc(const arma::sp_mat& edges, int K, int minPts) {
-  HDBSCAN object = HDBSCAN(edges.n_cols, K);
-  arma::mat clusters = object.process(edges, minPts);
+List hdbscanc(const arma::sp_mat& edges, const int K, const int minPts, const bool verbose) {
+  HDBSCAN object = HDBSCAN(edges.n_cols, edges.n_elem, verbose);
+  arma::mat clusters = object.process(edges, K, minPts);
   arma::ivec tree = arma::ivec(edges.n_cols);
   for (int n = 0; n != edges.n_cols; n++) {
     tree[n] = object.minimum_spanning_tree[n];
   }
+  Rcpp::List hierarchy = object.reportHierarchy();
   return Rcpp::List::create(Rcpp::Named("clusters") = clusters,
-                            Rcpp::Named("tree") = tree);
+                            Rcpp::Named("tree") = tree,
+                            Rcpp::Named("hierarchy") = hierarchy);
 }

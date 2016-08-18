@@ -48,15 +48,15 @@ optics <- function(data = NULL,
     ret <- optics_nd(neighbors = neighbors, data = data,
                      eps = as.double(eps), minPts = as.integer(minPts),
                      verbose = verbose)
-
+  
   ret$minPts <- minPts
   ret$eps <- eps
   ret$eps_cl <- NA
   class(ret) <- "optics"
-
+  
   if(!missing(eps_cl)) ret <-optics_cut(ret, eps_cl)
   if(!missing(xi)) ret <- opticsXi(ret, xi)
-
+  
   ret
 }
 
@@ -97,7 +97,7 @@ dbscan <- function(data = NULL,
                    minPts = nrow(data) + 1,
                    partition = !missing(edges),
                    verbose = getOption("verbose", TRUE)) {
-
+  
   if (! is.null(edges) && is.null(data))
     ret <- dbscan_e(edges = edges,
                     eps = as.double(eps), minPts = as.integer(minPts),
@@ -110,9 +110,9 @@ dbscan <- function(data = NULL,
     ret <- dbscan_nd(neighbors = neighbors, data = data,
                      eps = as.double(eps), minPts = as.integer(minPts),
                      verbose = verbose)
-
+  
   ret <- structure(list(cluster = ret, eps = eps, minPts = minPts),
-            class = c("dbscan_fast", "dbscan"))
+                   class = c("dbscan_fast", "dbscan"))
   if (partition) {
     ret$call <- sys.call()
     sil <- silhouette.dbscan(ret$cluster, edges)
@@ -186,7 +186,7 @@ lof <- function(edges) {
   kNNlist <- edgeMatrixToKNNS(edges)
   N <- nrow(kNNlist$id)
   K <- kNNlist$k
-
+  
   # lrd <- rep(0, N)
   lrd <- rep(0, N)
   # for(i in 1:N) {
@@ -194,14 +194,14 @@ lof <- function(edges) {
   #   lrd[i] <- 1 / (sum(apply(input, MARGIN = 1, max)) / K)
   # }
   for(i in 1:N) lrd[i] <- 1/(sum(apply(
-  	cbind(kNNlist$dist[kNNlist$id[i,], K], kNNlist$dist[i,]),
-  	1, max)) / K)
-
+    cbind(kNNlist$dist[kNNlist$id[i,], K], kNNlist$dist[i,]),
+    1, max)) / K)
+  
   ret <- rep(0, N)
   for (i in 1:N) ret[i] <- sum(lrd[kNNlist$id[i,]])/K / lrd[i]
-
+  
   ret[is.nan(ret)] <- NA
-
+  
   ret
 }
 
@@ -222,23 +222,58 @@ lof <- function(edges) {
 #' patterns, such as where clusters are made up of points arranged in lines to form
 #' shapes.
 #'
-#' @return
+#' @return An object of type \code{hdbscan} with the following fields:
 #' @export
 hdbscan <- function(edges, minPts = 20, K = 5,
-                   verbose = getOption("verbose", TRUE)) {
+                    verbose = getOption("verbose", TRUE)) {
   
-  clusters <- hdbscanc(edges, K, minPts)
-  clustersframe <- data.frame(t(clusters$clusters))
-  colnames(clustersframe) <- c("cluster", "probability")
-  clustersframe$cluster[clustersframe$cluster == -1] <- NA
-  clustersframe$cluster <- factor(clustersframe$cluster, exclude = NULL)
-  clustersframe$cluster <- as.integer(clustersframe$cluster)
+  clustersout <- hdbscanc(edges, K, minPts, verbose)
+  clusters <- clustersout$clusters[1, ]
+  clusters[clusters == -1] <- NA
+  clusters = factor(clusters, exclude = NULL)
+  probs <- data.frame(
+    probs = clustersout$clusters[2, ]
+  )
+  sums = aggregate(probs, by = list(clusters), FUN = "max")
+  probs$probs[!is.na(clusters)] <- probs$probs[!is.na(clusters)] /
+    sums$probs[as.integer(clusters)[!is.na(clusters)]]
   
   ret <- list(
-    clusters = clustersframe$cluster,
-    probabilities = clustersframe$probability,
-    tree = clusters$tree + 1
+    clusters = clusters,
+    probabilities = probs$probs, 
+    tree = clustersout$tree,
+    hierarchy = clustersout$hierarchy
   )
   class(ret) <- "hdbscan"
   return(ret)
+}
+
+plot.hdbscan <- function(x, coords, text = FALSE) {
+  dframe <- data.frame(coords) 
+  colnames(dframe) <- c("x", "y")
+  dframe$cluster = x$clusters
+  dframe$probabilities = x$probabilities
+  tree <- x$tree
+  tree[tree == -1] <- NA
+  xy <- data.frame(coords[tree + 1, ])
+  colnames(xy) <- c("x2", "y2")
+  dframe <- cbind(dframe, xy)
+  dframe$lambda <- x$hierarchy$lambda / max(x$hierarchy$lambda)
+  dframe$label <- 0:(nrow(dframe) - 1)
+  dframe$parent <- x$hierarchy$nodemembership
+  plt <- ggplot(dframe, 
+                aes(x = x, y = y, 
+                    xend = x2, yend = y2, color = cluster)) + 
+    geom_point(aes(alpha = probabilities), size = 0.7) + 
+    geom_segment(size = 0.5, aes(alpha = lambda, size = lambda))
+  if (text == "parent") {
+    plt <- plt + geom_label(aes(label = parent), size = 1.5, 
+                            label.padding = unit(0.1, "lines"), 
+                            label.size = 0.1)
+  } else if (text) {
+    plt <- plt + geom_label(aes(label = label), size = 1.5, 
+                            label.padding = unit(0.1, "lines"), 
+                            label.size = 0.1)
+  }
+  plt
 }

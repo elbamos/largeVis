@@ -51,7 +51,6 @@ test_that("LOF is consistent 10", {
 context("hdbscan")
 
 test_that("hdbscan doesn't crash", {
-  ret <- hdbscan(edges, 10);
-  print(ret)
-  print(table(factor(ret[1,])))
+  ret <- hdbscan(edges, minPts = 20, K = 3, FALSE)
+  print(table(factor(ret$clusters)))
 })
