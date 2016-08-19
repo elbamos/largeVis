@@ -126,8 +126,8 @@ private:
   arma::Col< double > lambda_deaths;
   arma::Col< double > stabilities;
   arma::Col< VIDX > sizes;
-  std::vector< std::set< VIDX >> fallenPointses;
-  std::vector< std::set< VIDX >> goodChildrens;
+  std::unique_ptr< std::set< VIDX >[] > fallenPointses;
+  std::unique_ptr< std::set< VIDX >[] > goodChildrens;
   arma::Col< int > selected;
 protected:
   VIDX N;
@@ -258,12 +258,15 @@ protected:
   
   void condense(int minPts) {
     roots = std::set< VIDX >();
-    goodChildrens = std::vector< std::set< VIDX >>();
-    fallenPointses = std::vector< std::set< VIDX >>();
-    for (VIDX n = 0; n != parents.size(); n++) {
-      goodChildrens.push_back(std::set< VIDX >());
-      fallenPointses.push_back(std::set< VIDX >());
-      if (n < N) fallenPointses[n].insert(n);
+    goodChildrens = std::unique_ptr< std::set< VIDX >[] >(new std::set< VIDX >[2 * N + 1]);
+    fallenPointses = std::unique_ptr< std::set< VIDX >[] >(new std::set< VIDX >[2 * N + 1]);
+    for (VIDX n = 0; n != N; n++) {
+      fallenPointses[n] = std::set< VIDX >();
+      fallenPointses[n].insert(n);
+    }    
+    for (VIDX n = N; n != counter; n++) {
+      fallenPointses[n] = std::set< VIDX >();
+      goodChildrens[n] = std::set< VIDX >();
     }
     for (VIDX n = 0; n != counter; n++) if (p.increment()) {
       condenseOne(n, minPts);

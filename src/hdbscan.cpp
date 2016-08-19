@@ -19,14 +19,14 @@ public:
   long long starterIndex;
   arma::sp_mat mrdMatrix;
   
-  long long*   minimum_spanning_tree;
-  double*      minimum_spanning_distances;
+  std::unique_ptr<long long[]>   minimum_spanning_tree;
+  std::unique_ptr<double[]>    minimum_spanning_distances;
   
   HDBSCAN(const int N,
           const long long nedges,
           bool verbose) : UF(N, nedges, verbose) {
-            minimum_spanning_tree = new long long[N];
-            minimum_spanning_distances = new double[N];
+            minimum_spanning_tree = std::unique_ptr<long long[]>(new long long[N]);
+            minimum_spanning_distances = std::unique_ptr<double[]>(new double[N]);
           }
   
   arma::vec coreDistances;
@@ -72,13 +72,13 @@ public:
   }
 
   void primsAlgorithm() {
-    double* Cv = minimum_spanning_distances;
-    long long* Ev = minimum_spanning_tree;
+ //   double* Cv = minimum_spanning_distances;
+ //   long long* Ev = minimum_spanning_tree;
     MinIndexedPQ<long long, double> Q = MinIndexedPQ<long long, double>(N);
     for (long long n = 0; n != N; n++) {
-      Cv[n] = (n == starterIndex) ? -1 : INFINITY;
-      Ev[n] = -1;
-      Q.insert(n, Cv[n]);
+      minimum_spanning_distances[n] = (n == starterIndex) ? -1 : INFINITY;
+      minimum_spanning_tree[n] = -1;
+      Q.insert(n, minimum_spanning_distances[n]);
     }
     
     long long v;
@@ -88,10 +88,10 @@ public:
            it != mrdMatrix.end_row(v);
            it++) {
         long long w = it.col();
-        if (Q.contains(w) && *it < Cv[w]) {
+        if (Q.contains(w) && *it < minimum_spanning_distances[w]) {
           Q.changeKey(w, *it);
-          Cv[w] = *it;
-          Ev[w] = v;
+          minimum_spanning_distances[w] = *it;
+          minimum_spanning_tree[w] = v;
         }
       }
     }
