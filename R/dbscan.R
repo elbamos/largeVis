@@ -271,9 +271,9 @@ lof <- function(edges) {
 #' 
 #' largeHighDimensionalDataset <- matrix(rnorm(50000), ncol = 50)
 #' vis <- largeVis(largeHighDimensionalDataset)
-#' edges <- buildEdgeMatrix(vis$knns, largeHighDimensionalDataset)
-#' clustering <- hdbscan(edges, vis$knns)
-#' gplot(clustering, vis$coords)
+#' edges <- buildEdgeMatrix(largeHighDimensionalDataset, vis$knns)
+#' clustering <- hdbscan(edges)
+#' gplot(clustering, t(vis$coords))
 #' }
 #' @export
 hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL, 
