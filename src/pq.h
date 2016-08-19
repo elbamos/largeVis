@@ -180,7 +180,7 @@ protected:
     lambda_births[n_a] = lambda_births[n_b] = lambda_deaths[parent] = 1 / d;
   }
   
-  void condenseUp(VIDX p, VIDX mergeTarget, int minPts) {
+  void condenseUp(VIDX p, VIDX mergeTarget) {
     if (p == mergeTarget) return;
     sizes[p] = -1;
     for (typename std::set<VIDX>::iterator it = fallenPointses[p].begin();
@@ -219,8 +219,8 @@ protected:
       Rcout << "\n\tonly child ";
 #endif
       VIDX onlychild = *(goodChildrens[p].begin());
-      condenseUp(onlychild, p, minPts);
       goodChildrens[p].erase(goodChildrens[p].find(onlychild));
+      condenseUp(onlychild, p, minPts);
       condense(p, minPts);
     }
     if (sizes[p] < minPts) {

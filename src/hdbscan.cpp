@@ -29,8 +29,10 @@ public:
             minimum_spanning_distances = new double[N];
           }
   
-  arma::vec makeCoreDistances(const arma::sp_mat& edges, const int K) {
-    arma::vec coreDistances = arma::vec(N);
+  arma::vec coreDistances;
+  
+  void makeCoreDistances(const arma::sp_mat& edges, const int K) {
+    coreDistances = arma::vec(N);
     for (long long n = 0; n < N && p.increment() ; n++) {
       DistanceSorter srtr = DistanceSorter();
       for (auto it = edges.begin_col(n);
@@ -39,12 +41,20 @@ public:
       for (int k = 0; k != K && srtr.size() > 1; k++) srtr.pop();
       coreDistances[n] = srtr.top().second;
     }
-    return coreDistances;
+  }
+  
+  void makeCoreDistances(const arma::sp_mat& edges, 
+                         const IntegerMatrix& neighbors, 
+                         const int K) {
+    coreDistances = arma::vec(N);
+    for (long long n = 0; n < N; n++) {
+      coreDistances[n] = edges(neighbors(K, n), n);
+    }
+    p.increment(N);
   }
   
   void makeMRD(const arma::sp_mat& edges, const int K) {
     mrdMatrix = arma::sp_mat(edges);
-    arma::vec coreDistances = makeCoreDistances(edges, K);
     double bestOverall = INFINITY;
     for (auto it = mrdMatrix.begin(); 
          it != mrdMatrix.end();
@@ -102,10 +112,7 @@ public:
     }
   }
   
-  arma::mat process(const arma::sp_mat& edges, const int K, const int minPts) {
-    makeMRD(edges, K);
-    primsAlgorithm();
-    buildHierarchy();
+  arma::mat process(const int minPts) {
     condense(minPts);
     determineStability(minPts);
     extractClusters();
@@ -138,9 +145,22 @@ public:
 };
 
 // [[Rcpp::export]]
-List hdbscanc(const arma::sp_mat& edges, const int K, const int minPts, const bool verbose) {
+List hdbscanc(const arma::sp_mat& edges, 
+              Rcpp::Nullable< Rcpp::IntegerMatrix > neighbors,
+              const int K, 
+              const int minPts, 
+              const bool verbose) {
   HDBSCAN object = HDBSCAN(edges.n_cols, edges.n_elem, verbose);
-  arma::mat clusters = object.process(edges, K, minPts);
+  if (neighbors.isNotNull()) {
+    IntegerMatrix neigh = IntegerMatrix(neighbors);
+    object.makeCoreDistances(edges, neigh, K);
+  } else {
+    object.makeCoreDistances(edges, K);
+  }
+  object.makeMRD(edges, K);
+  object.primsAlgorithm();
+  object.buildHierarchy();
+  arma::mat clusters = object.process(minPts);
   arma::ivec tree = arma::ivec(edges.n_cols);
   for (int n = 0; n != edges.n_cols; n++) {
     tree[n] = object.minimum_spanning_tree[n];

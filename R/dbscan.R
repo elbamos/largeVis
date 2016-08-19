@@ -212,6 +212,7 @@ lof <- function(edges) {
 #' @param edges An edge matrix of the type returned by \code{\link{buildEdgeMatrix}}.
 #' @param minPts The minimum number of points in a cluster.
 #' @param K The number of points in the core neighborhood. (See details.)
+#' @param neighbors An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}.
 #' @param verbose Verbosity.
 #'
 #' @details The hyperparameter \code{K} controls the size of core neighborhoods. 
@@ -221,33 +222,74 @@ lof <- function(edges) {
 #' \code{K} may cause the algorithm to miss some (usually contrived) clustering
 #' patterns, such as where clusters are made up of points arranged in lines to form
 #' shapes.
+#' 
+#' If \code{neighbors} is specified, some costly sorts of neighbors in the edge
+#' matrix may be avoided.
 #'
 #' @return An object of type \code{hdbscan} with the following fields:
+#' \describe{
+#'    \item{'clusters'}{A vector of the cluster membership for each vertex. Outliers
+#'    are given \code{NA}}.
+#'    \item{'probabilities'}{A vector of the degree of each vertex' membership. This
+#'    is calculated as each vertex' \eqn{\lambda_p} over the highest \eqn{\lambda_p}
+#'    in the cluster. 
+#'    \item{'tree'}{The minimum spanning tree used to generate the clustering.}
+#'    \item{'hierarchy'}{A representation of the condensed cluster hierarchy.}
+#'    \item{'call'}{The call.}
+#'  }
 #' @export
-hdbscan <- function(edges, minPts = 20, K = 5,
+hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL, 
                     verbose = getOption("verbose", TRUE)) {
   
-  clustersout <- hdbscanc(edges, K, minPts, verbose)
+  clustersout <- hdbscanc(edges, neighbors, K, minPts, verbose)
   clusters <- clustersout$clusters[1, ]
   clusters[clusters == -1] <- NA
   clusters = factor(clusters, exclude = NULL)
   probs <- data.frame(
     probs = clustersout$clusters[2, ]
   )
-  sums = aggregate(probs, by = list(clusters), FUN = "max")
-  probs$probs[!is.na(clusters)] <- probs$probs[!is.na(clusters)] /
-    sums$probs[as.integer(clusters)[!is.na(clusters)]]
+  mins = aggregate(probs, by = list(clusters), FUN = "min")
+  maxes = aggregate(probs, by = list(clusters), FUN = "max") - mins
+  probs$probs[!is.na(clusters)] <- (probs$probs[!is.na(clusters)] - 
+                                    mins$probs[as.integer(clusters)[!is.na(clusters)]]) /
+    maxes$probs[as.integer(clusters)[!is.na(clusters)]]
   
   ret <- list(
     clusters = clusters,
     probabilities = probs$probs, 
     tree = clustersout$tree,
-    hierarchy = clustersout$hierarchy
+    hierarchy = clustersout$hierarchy, 
+    call = sys.call()
   )
   class(ret) <- "hdbscan"
   return(ret)
 }
 
+#' plot.hdbscan
+#' 
+#' Plot an \code{hdbscan} object, using \code{\link[ggplot2]{ggplot2}}. The 
+#' plot is primarily intended for diagnostic purposes, but can be useful to undertand
+#' how clusters were generated. 
+#' 
+#' Point color corresponds to clusters, with outliers as the \code{NA} color. Alpha 
+#' corresponds to the centrality of the node in the cluster (i.e., \eqn{\lambda_p} relative
+#' to \eqn{\lambda_{birth}} and \eqn{\lambda_{death}}). The segments on the plot
+#' correspond to the connections on the minimum spanning tree. Segment alpha 
+#' corresponds to \eqn{\lambda_p}. 
+#' 
+#' If the parameter \code{text} is set to \code{TRUE} or \code{"parent"}, the nodes will
+#' be labelled with the node index number or cluster index number, respectively. 
+#'
+#' @param x An \code{hdbscan} object.
+#' @param coords Coordinates for the points clustered in \code{x}.
+#' @param text If \code{TRUE}, include on the plot labels for each node's index.
+#' If \code{"parent"}, the labels will instead be the index number of the node's
+#' cluster.
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot.hdbscan <- function(x, coords, text = FALSE) {
   dframe <- data.frame(coords) 
   colnames(dframe) <- c("x", "y")
