@@ -1,5 +1,5 @@
 context("cluster")
-library(dbscan, quietly = TRUE)
+
 set.seed(1974)
 data(iris)
 dat <- as.matrix(iris[, 1:4])
@@ -33,24 +33,37 @@ test_that("dbscan doesn't crash on iris with partitions", {
                                    verbose = FALSE, partition = TRUE))
 })
 
-test_that(paste("LOF is consistent", K), {
-	truelof <- dbscan::lof(t(dat), k = K)
+test_that(paste("LOF is consistent", 20), {
+	load(system.file("extdata/truelof20.Rda", package = "largeVis"))
 	ourlof <- largeVis:::lof(edges)
-	expect_lt(sum(truelof - ourlof)^2 / ncol(dat), 0.4)
+	expect_lt(sum(truelof20 - ourlof)^2 / ncol(dat), 0.4)
 })
 
 test_that("LOF is consistent 10", {
 	edges <- buildEdgeMatrix(data = dat,
 													 neighbors = neighbors[1:10,],
 													 verbose = FALSE)
-	truelof <- dbscan::lof(t(dat), k = 10)
+	load(system.file("extdata/truelof10.Rda", package = "largeVis"))
 	ourlof <- largeVis:::lof(edges)
-	expect_lt(sum(truelof - ourlof)^2 / ncol(dat), 0.4)
+	expect_lt(sum(truelof10 - ourlof)^2 / ncol(dat), 0.4)
 })
 
 context("hdbscan")
 
 test_that("hdbscan doesn't crash", {
-  ret <- hdbscan(edges, minPts = 20, K = 3, FALSE)
-  print(table(factor(ret$clusters)))
+  expect_silent(hdbscan(edges, minPts = 20, K = 3, verbose = FALSE))
+})
+
+test_that("hdbscan doesn't crash with neighbors", {
+  expect_silent(hdbscan(edges, minPts = 20, neighbors = neighbors, K = 3, FALSE))
+})
+
+test_that("hdbscan is correct", {
+  clustering <- hdbscan(edges, minPts = 10, K = 3, verbose = FALSE)
+  expect_equal(length(unique(clustering$clusters)), 2)
+})
+
+test_that("hdbscan is correct with neighbors", {
+  clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, FALSE)
+  expect_equal(length(unique(clustering$clusters)), 2)
 })

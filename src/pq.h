@@ -1,8 +1,9 @@
 // [[Rcpp::plugins(openmp)]]
 // [[Rcpp::plugins(cpp11)]]
 #include "largeVis.h"
-// #define DEBUG
-// Basedon https://github.com/kartikkukreja/blog-codes/blob/master/src/Indexed%20Min%20Priority%20Queue.cpp
+//#define DEBUG
+//#define DEBUG2
+// MinIndexedPQ Basedon https://github.com/kartikkukreja/blog-codes/blob/master/src/Indexed%20Min%20Priority%20Queue.cpp
 
 template<class VIDX, class D>
 class MinIndexedPQ {
@@ -140,7 +141,36 @@ protected:
 
   }
   
+#ifdef DEBUG
+  std::set< VIDX > testers = std::set< VIDX >();
+  void setupTest() {
+    testers.insert(209);
+    testers.insert(234);
+    testers.insert(1541);
+    testers.insert(1546);
+    testers.insert(1548);
+    testers.insert(1553);
+    testers.insert(1560);
+    testers.insert(1569);
+  }
+  bool trace(const VIDX p) {
+    bool ret = testers.find(p) != testers.end();
+    if (ret) {
+      Rcout << "\ntrace " << p << ": ";
+      VIDX lastp = p;
+      while (lastp != parents[lastp]) {
+        Rcout << lastp << " ";
+        lastp = parents[lastp];
+      }
+    }
+    return ret;
+  }
+#endif   
+  
   void setup() {
+#ifdef DEBUG
+    setupTest();
+#endif
     reservesize = 2 * N + 1; 
     parents = arma::Col< VIDX >(reservesize);
     sizes = arma::Col< VIDX >(reservesize);
@@ -180,24 +210,20 @@ protected:
     lambda_births[n_a] = lambda_births[n_b] = lambda_deaths[parent] = 1 / d;
   }
   
+  std::set< VIDX > roots;
+  
   void condenseUp(VIDX p, VIDX mergeTarget) {
     if (p == mergeTarget) return;
     sizes[p] = -1;
     for (typename std::set<VIDX>::iterator it = fallenPointses[p].begin();
          it != fallenPointses[p].end();
          it++) {
-#ifdef DEBUG
-      Rcout << " t:" << *it;
-#endif
       parents[*it] = mergeTarget;
       fallenPointses[mergeTarget].insert(*it);
     }
     for (typename std::set<VIDX>::iterator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) {
-#ifdef DEBUG
-      Rcout << " c:" << *it;
-#endif
       goodChildrens[mergeTarget].insert(*it);
       parents[*it] = mergeTarget;
     }
@@ -208,35 +234,30 @@ protected:
     return;
   }
   
-  void condense(VIDX p, int minPts) {
-#ifdef DEBUG
-    Rcout << "\ncondense " << p << " sz " << sizes[p] << 
-      " fallen " << fallenPointses[p].size() << 
-        " children " << goodChildrens[p].size();
-#endif
-    if (goodChildrens[p].size() == 1) {
-#ifdef DEBUG
-      Rcout << "\n\tonly child ";
-#endif
-      VIDX onlychild = *(goodChildrens[p].begin());
-      goodChildrens[p].erase(goodChildrens[p].find(onlychild));
-      condenseUp(onlychild, p, minPts);
-      condense(p, minPts);
+  void condenseOne(VIDX p, int minPts) {
+    if (parents[p] ==  p) {
+      roots.insert(p);
+      return;
     }
     if (sizes[p] < minPts) {
-#ifdef DEBUG
-      Rcout << "\n\ttoo small ";
-#endif
-      condenseUp(p, parents[p], minPts);
+      condenseUp(p, parents[p]);
     } else if (parents[p] != p) goodChildrens[parents[p]].insert(p);
-#ifdef DEBUG
-    Rcout << "\n\t\tcondensed " << p << " to sz " << sizes[p] << 
-      " fallen " << fallenPointses[p].size() << 
-        " children " << goodChildrens[p].size();
-#endif
+  }
+  
+  void condenseTwo(VIDX p) {
+    if (sizes[p] == -1) stop("Recursion error");
+    while (goodChildrens[p].size() == 1) {
+      VIDX onlychild = *(goodChildrens[p].begin());
+      goodChildrens[p].erase(goodChildrens[p].find(onlychild));
+      condenseUp(onlychild, p);
+    }
+    for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
+         it != goodChildrens[p].end();
+         it++) condenseTwo(*it);
   }
   
   void condense(int minPts) {
+    roots = std::set< VIDX >();
     goodChildrens = std::vector< std::set< VIDX >>();
     fallenPointses = std::vector< std::set< VIDX >>();
     for (VIDX n = 0; n != parents.size(); n++) {
@@ -245,10 +266,13 @@ protected:
       if (n < N) fallenPointses[n].insert(n);
     }
     for (VIDX n = 0; n != counter; n++) if (p.increment()) {
-      condense(n, minPts);
+      condenseOne(n, minPts);
     }
+    for (typename std::set< VIDX >::iterator it = roots.begin();
+         it != roots.end();
+         it++) condenseTwo(*it);
   }
-  
+
   void determineStability(VIDX p, int minPts) {
     if (sizes[p] < minPts && p != parents[p]) {
       stop("Condense failed");
@@ -262,19 +286,24 @@ protected:
          it++) {
       stability += lambda_births[*it] - lambda_birth;
     }
+    VIDX descendantCount = 0;
+    for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
+         it != goodChildrens[p].end();
+         it++) {
+      descendantCount += sizes[*it];
+      determineStability(*it, minPts);
+    }
+    stability += descendantCount * (lambda_deaths[p] - lambda_births[p]);
     stabilities[p] = stability;
-    if (goodChildrens[p].size() == 0 && sizes[p] > minPts) selected[p] = true;
-    else selected[p] = false;
   }
   
   void determineStability(int minPts) {
     stabilities = arma::Col< double >(counter);
     selected = arma::Col< int >(counter);
     
-    for (VIDX n = 0; n != counter; n++) if (p.increment()) {
-      if (sizes[n] == -1) continue; // Lost point
-      determineStability(n, minPts);
-    }
+    for (typename std::set< VIDX >::iterator it = roots.begin();
+         it != roots.end();
+         it++) determineStability(*it, minPts);
   }
   
   void deselect(VIDX p) {
@@ -285,21 +314,16 @@ protected:
   }
   
   std::set< VIDX > survivingClusters;
-  std::set< VIDX > roots;
   
   void extractClusters(VIDX p) {
     survivingClusters.insert(p);
-    if (parents[p] == p) roots.insert(p);
-    if (selected[p]) return;
- //   if (parents[p] == p) {
-//      if (p == parents.size() - 1 && ! multipleRoots) return;
-//      else multipleRoots = true;
-//    }
- //   if (parents[p] == p && (goodChildrens[p].size() > 0)) return;
     double childStabilities = 0;
     for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
-         it++) childStabilities += stabilities[*it];
+         it++) {
+      extractClusters(*it);
+      childStabilities += stabilities[*it];
+    }
     if (childStabilities > stabilities[p]) {
       stabilities[p] = childStabilities;
     } else {
@@ -311,37 +335,38 @@ protected:
   }
   
   void extractClusters() {
-    std::set< VIDX > survivingClusters = std::set< VIDX >();
-    std::set< VIDX > roots = std::set< VIDX >();
-    for (VIDX n = 0; n != counter; n++) if (p.increment()) {
-      if (sizes[n] == -1) continue;
-      extractClusters(n);
-    }
+    survivingClusters = std::set< VIDX >();
+    for (typename std::set< VIDX >::iterator it = roots.begin();
+         it != roots.end();
+         it++) extractClusters(*it);
   }
   
-  void getClusters(arma::mat& ret, VIDX n, int cluster) {
+  int clusterCount = 0;
+  
+  void getClusters(arma::mat& ret, VIDX n, int cluster, double cluster_death) {
+    int thisCluster = cluster;
+    double thisDeath = cluster_death;
+    if (selected[n]) {
+      thisCluster = clusterCount++;
+      thisDeath = lambda_deaths[n];
+    }
     for (typename std::set< VIDX >::iterator it = fallenPointses[n].begin();
          it != fallenPointses[n].end();
          it++) {
-      ret(0, *it) = cluster;
-      ret(1, *it) = lambda_births[n] - lambda_births[*it];
+      ret(0, *it) = thisCluster;
+      ret(1, *it) = min(lambda_births[n], thisDeath) - lambda_births[*it];
     }
-//    for (typename std::set< VIDX >::iterator it = goodChildrens[n].begin();
-//                                     it != goodChildrens[n].end();
-//                                     it++) getClusters(ret, *it, -1);
-//    if (cluster != -1) for (typename std::set< VIDX >::iterator it = goodChildrens[n].begin();
-//                            it != goodChildrens[n].end();
-//                            it++) getClusters(ret, *it, cluster);
+    for (typename std::set< VIDX >::iterator it = goodChildrens[n].begin();
+         it != goodChildrens[n].end();
+         it++) getClusters(ret, *it, thisCluster, thisDeath);
   }
   
   arma::mat getClusters() {
-    int clusterCnt = 0;
     arma::mat ret = arma::mat(2, N, fill::zeros);
-    for (typename std::set< VIDX >::iterator it = survivingClusters.begin();
-         it != survivingClusters.end();
+    for (typename std::set< VIDX >::iterator it = roots.begin();
+         it != roots.end();
          it++) {
-      int clusterId = (selected[*it]) ? ++clusterCnt : -1;
-      getClusters(ret, *it, clusterId);      
+      getClusters(ret, *it, -1, lambda_deaths[*it]);      
     }
     return ret;
   }
@@ -359,7 +384,7 @@ protected:
     Rcout << "\n";
     for (int i = 0; i < level; i++) Rcout << " |";
     if (level != 0 && childNum == 0) Rcout << "\\_";
-    else if (level != 0) Rcout << "|_";
+    else if (level != 0) Rcout << "+-";
     Rcout << oldidx;
     if (level == 0) Rcout << "\t";
     Rcout << "\tstability: " << stabilities[oldidx] << 

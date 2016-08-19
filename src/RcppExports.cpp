@@ -187,16 +187,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // hdbscanc
-List hdbscanc(const arma::sp_mat& edges, const int K, const int minPts, const bool verbose);
-RcppExport SEXP largeVis_hdbscanc(SEXP edgesSEXP, SEXP KSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
+List hdbscanc(const arma::sp_mat& edges, Rcpp::Nullable< Rcpp::IntegerMatrix > neighbors, const int K, const int minPts, const bool verbose);
+RcppExport SEXP largeVis_hdbscanc(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP KSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< const arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::IntegerMatrix > >::type neighbors(neighborsSEXP);
     Rcpp::traits::input_parameter< const int >::type K(KSEXP);
     Rcpp::traits::input_parameter< const int >::type minPts(minPtsSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(hdbscanc(edges, K, minPts, verbose));
+    __result = Rcpp::wrap(hdbscanc(edges, neighbors, K, minPts, verbose));
     return __result;
 END_RCPP
 }

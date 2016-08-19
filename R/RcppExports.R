@@ -49,8 +49,8 @@ referenceWij <- function(i, j, d, perplexity) {
     .Call('largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, perplexity)
 }
 
-hdbscanc <- function(edges, K, minPts, verbose) {
-    .Call('largeVis_hdbscanc', PACKAGE = 'largeVis', edges, K, minPts, verbose)
+hdbscanc <- function(edges, neighbors, K, minPts, verbose) {
+    .Call('largeVis_hdbscanc', PACKAGE = 'largeVis', edges, neighbors, K, minPts, verbose)
 }
 
 sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, verbose) {
