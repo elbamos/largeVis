@@ -19,15 +19,15 @@ cluster.}
 A \code{\link[ggplot2]{ggplot}} object
 }
 \description{
-Plot an \code{hdbscan} object, using \code{\link[ggplot2]{ggplot2}}. The 
+Plot an \code{hdbscan} object, using \code{\link[ggplot2]{ggplot}}. The
 plot is primarily intended for diagnostic purposes, but can be useful to undertand
 how clusters were generated.
 }
 \details{
-Point color corresponds to clusters, with outliers as the \code{NA} color. Alpha 
+Point color corresponds to clusters, with outliers as the \code{NA} color. Alpha
 corresponds to the centrality of the node in the cluster (i.e., \eqn{\lambda_p} relative
 to \eqn{\lambda_{birth}} and \eqn{\lambda_{death}}). The segments on the plot
-correspond to the connections on the minimum spanning tree. Segment alpha 
+correspond to the connections on the minimum spanning tree. Segment alpha
 corresponds to \eqn{\lambda_p}.
 
 If the parameter \code{text} is set to \code{TRUE} or \code{"parent"}, the nodes will
@@ -39,7 +39,7 @@ library(largeVis)
 library(clusteringdatasets)
 data(Aggregation)
 dat <- as.matrix(Aggregation[, 1:2])
-neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100, 
+neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
                                        max_iter = 5)
 edges <- buildEdgeMatrix(t(dat), neighbors)
 clusters <- hdbscan(edges, verbose = FALSE)
