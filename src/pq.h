@@ -11,22 +11,22 @@ private:
   VIDX NMAX, N;
   std::unique_ptr< VIDX[] > heap, index;
   std::unique_ptr< D[] > keys;
-  
+
   void swap(VIDX i, VIDX j) {
-    VIDX t = heap[i]; 
-    heap[i] = heap[j]; 
+    VIDX t = heap[i];
+    heap[i] = heap[j];
     heap[j] = t;
-    index[heap[i]] = i; 
+    index[heap[i]] = i;
     index[heap[j]] = j;
   }
-  
+
   void bubbleUp(VIDX k)    {
     while(k > 1 && keys[heap[k/2]] > keys[heap[k]])   {
       swap(k, k/2);
       k = k/2;
     }
   }
-  
+
   void bubbleDown(VIDX k)  {
     VIDX j;
     while(2*k <= N) {
@@ -39,32 +39,32 @@ private:
       k = j;
     }
   }
-  
+
 public:
   // Create an empty MinIndexedPQ which can contain atmost NMAX elements
-  MinIndexedPQ(VIDX NMAX) : NMAX{NMAX}, 
+  MinIndexedPQ(VIDX NMAX) : NMAX{NMAX},
                                      N(0) {
     keys = std::unique_ptr< D[] >(new D[NMAX + 1]);
     heap = std::unique_ptr< VIDX[] >(new VIDX[NMAX + 1]);
     index = std::unique_ptr< VIDX[] >(new VIDX[NMAX + 1]);
     for(VIDX n = 0; n != NMAX; n++) index[n] = -1;
   }
-  
+
   // check if the PQ is empty
   bool isEmpty()  {
     return N == 0;
   }
-  
+
   // check if i is an index on the PQ
   bool contains(VIDX i)    {
     return index[i] != -1;
   }
-  
+
   // return the number of elements in the PQ
   VIDX size()  {
     return N;
   }
-  
+
   // associate key with index i; 0 < i < NMAX
   void insert(VIDX i, D key) {
     N++;
@@ -73,17 +73,17 @@ public:
     keys[i] = key;
     bubbleUp(N);
   }
-  
+
   // returns the index associated with the minimal key
   VIDX minIndex()  {
     return heap[1];
   }
-  
+
   // returns the minimal key
   D minKey()    {
     return keys[heap[1]];
   }
-  
+
   // delete the minimal key and return its associated index
   // Warning: Don't try to read from this index after calling this function
   VIDX deleteMin() {
@@ -94,20 +94,19 @@ public:
     heap[N+1] = -1;
     return min;
   }
-  
+
   // returns the key associated with index i
   D keyOf(VIDX i)    {
     return keys[i];
   }
-  
+
   // change the key associated with index i to the specified value
   void changeKey(VIDX i, D key)  {
-    VIDX oldkey = keys[i];
     keys[i] = key;
     bubbleUp(index[i]);
     bubbleDown(index[i]);
   }
-  
+
   // delete the key associated with index i
   void remove(VIDX i)   {
     VIDX ind = index[i];
@@ -134,13 +133,12 @@ protected:
   typedef std::pair<VIDX, double> iddist;
   Progress p;
   arma::Col< double > lambda_births;
-  bool verbose;
-    
-  UF(VIDX N, VIDX nedges, bool verbose) : N{N}, verbose{verbose}, 
+
+  UF(VIDX N, VIDX nedges, bool verbose) : N{N},
                                           p(Progress((9 * N) + (nedges), verbose)) {
 
   }
-  
+
 #ifdef DEBUG
   std::set< VIDX > testers = std::set< VIDX >();
   void setupTest() {
@@ -165,26 +163,26 @@ protected:
     }
     return ret;
   }
-#endif   
-  
+#endif
+
   void setup() {
 #ifdef DEBUG
     setupTest();
 #endif
-    reservesize = 2 * N + 1; 
+    reservesize = 2 * N + 1;
     parents = arma::Col< VIDX >(reservesize);
     sizes = arma::Col< VIDX >(reservesize);
     lambda_births = arma::Col< double >(reservesize);
     lambda_deaths = arma::Col< double >(reservesize);
     for (VIDX n = 0; n != N; n++) add();
   }
-  
+
   VIDX getRoot(VIDX p) {
     return (parents[p] == p) ? p : getRoot(parents[p]);
   }
-  
+
   VIDX counter = 0;
-  
+
   VIDX add() {
     VIDX newid = counter++;
     parents[newid] = newid;
@@ -193,7 +191,7 @@ protected:
     lambda_deaths[newid] = 0;
     return newid;
   }
-  
+
   void agglomerate(VIDX a, VIDX b, double d) {
     if (b == -1) {
       lambda_births[a] = (lambda_births[a] > 0) ? lambda_births[a] : -1;
@@ -209,9 +207,9 @@ protected:
     sizes[parent] = sizes[n_a] + sizes[n_b];
     lambda_births[n_a] = lambda_births[n_b] = lambda_deaths[parent] = 1 / d;
   }
-  
+
   std::set< VIDX > roots;
-  
+
   void condenseUp(VIDX p, VIDX mergeTarget) {
     if (p == mergeTarget) return;
     sizes[p] = -1;
@@ -229,11 +227,11 @@ protected:
     }
     fallenPointses[p].clear();
     goodChildrens[p].clear();
-    lambda_deaths[parents[p]] = max(lambda_deaths[mergeTarget], 
+    lambda_deaths[parents[p]] = max(lambda_deaths[mergeTarget],
                                     lambda_deaths[p]);
     return;
   }
-  
+
   void condenseOne(VIDX p, int minPts) {
     if (parents[p] ==  p) {
       roots.insert(p);
@@ -243,7 +241,7 @@ protected:
       condenseUp(p, parents[p]);
     } else if (parents[p] != p) goodChildrens[parents[p]].insert(p);
   }
-  
+
   void condenseTwo(VIDX p) {
     if (sizes[p] == -1) stop("Recursion error");
     while (goodChildrens[p].size() == 1) {
@@ -255,7 +253,7 @@ protected:
          it != goodChildrens[p].end();
          it++) condenseTwo(*it);
   }
-  
+
   void condense(int minPts) {
     roots = std::set< VIDX >();
     goodChildrens = std::unique_ptr< std::set< VIDX >[] >(new std::set< VIDX >[2 * N + 1]);
@@ -263,7 +261,7 @@ protected:
     for (VIDX n = 0; n != N; n++) {
       fallenPointses[n] = std::set< VIDX >();
       fallenPointses[n].insert(n);
-    }    
+    }
     for (VIDX n = N; n != counter; n++) {
       fallenPointses[n] = std::set< VIDX >();
       goodChildrens[n] = std::set< VIDX >();
@@ -283,7 +281,7 @@ protected:
     if (goodChildrens[p].size() == 1) stop("Only child");
     double stability = 0;
     double lambda_birth = lambda_births[p];
-    
+
     for (typename std::set< VIDX >::iterator it = fallenPointses[p].begin();
          it != fallenPointses[p].end();
          it++) {
@@ -299,25 +297,25 @@ protected:
     stability += descendantCount * (lambda_deaths[p] - lambda_births[p]);
     stabilities[p] = stability;
   }
-  
+
   void determineStability(int minPts) {
     stabilities = arma::Col< double >(counter);
     selected = arma::Col< int >(counter);
-    
+
     for (typename std::set< VIDX >::iterator it = roots.begin();
          it != roots.end();
          it++) determineStability(*it, minPts);
   }
-  
+
   void deselect(VIDX p) {
     selected[p] = false;
     for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) deselect(*it);
   }
-  
+
   std::set< VIDX > survivingClusters;
-  
+
   void extractClusters(VIDX p) {
     survivingClusters.insert(p);
     double childStabilities = 0;
@@ -336,16 +334,16 @@ protected:
            it++) deselect(*it);
     }
   }
-  
+
   void extractClusters() {
     survivingClusters = std::set< VIDX >();
     for (typename std::set< VIDX >::iterator it = roots.begin();
          it != roots.end();
          it++) extractClusters(*it);
   }
-  
+
   int clusterCount = 0;
-  
+
   void getClusters(arma::mat& ret, VIDX n, int cluster, double cluster_death) {
     int thisCluster = cluster;
     double thisDeath = cluster_death;
@@ -363,25 +361,25 @@ protected:
          it != goodChildrens[n].end();
          it++) getClusters(ret, *it, thisCluster, thisDeath);
   }
-  
+
   arma::mat getClusters() {
     arma::mat ret = arma::mat(2, N, fill::zeros);
     for (typename std::set< VIDX >::iterator it = roots.begin();
          it != roots.end();
          it++) {
-      getClusters(ret, *it, -1, lambda_deaths[*it]);      
+      getClusters(ret, *it, -1, lambda_deaths[*it]);
     }
     return ret;
   }
-  
+
   VIDX reportClusterCnt = 0;
-  
+
   void reportAHierarchy(VIDX last, VIDX oldidx,
-                       IntegerVector& newparent, 
-                       IntegerVector& nodeMembership, 
-                       NumericVector& newstabilities, 
+                       IntegerVector& newparent,
+                       IntegerVector& nodeMembership,
+                       NumericVector& newstabilities,
                        IntegerVector& newselected,
-                       int level, 
+                       int level,
                        int childNum) {
 #ifdef DEBUG
     Rcout << "\n";
@@ -390,8 +388,8 @@ protected:
     else if (level != 0) Rcout << "+-";
     Rcout << oldidx;
     if (level == 0) Rcout << "\t";
-    Rcout << "\tstability: " << stabilities[oldidx] << 
-      "  selected: " << selected[oldidx] << "  fallen: " << 
+    Rcout << "\tstability: " << stabilities[oldidx] <<
+      "  selected: " << selected[oldidx] << "  fallen: " <<
         fallenPointses[oldidx].size() << " sz: " << sizes[oldidx];
     Rcout << " lambda " << lambda_births[oldidx] << "/" << lambda_deaths[oldidx];
 #endif
@@ -406,9 +404,9 @@ protected:
     for (typename std::set< VIDX >::iterator it = goodChildrens[oldidx].begin();
          it != goodChildrens[oldidx].end();
          it++) {
-      reportAHierarchy(newidx, *it, newparent, nodeMembership, 
+      reportAHierarchy(newidx, *it, newparent, nodeMembership,
                        newstabilities, newselected, level + 1, child++);
     }
   }
-  
+
 };
