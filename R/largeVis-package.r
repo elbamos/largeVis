@@ -16,10 +16,8 @@
 #' \item Using stochastic gradient descent, estimate an embedding for each vertex in the low-dimensional space.
 #' }
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
-#'
-#' @name largeVis
+#' @name largeVis-package
 #' @docType package
 #' @useDynLib largeVis
 #' @importFrom Rcpp sourceCpp
-#'
-NULL
+"_PACKAGE"
