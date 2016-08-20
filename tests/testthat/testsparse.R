@@ -6,26 +6,21 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 
+neighbors <- randomProjectionTreeSearch(dat,
+																				K = 5,
+																				n_trees = 10,
+																				tree_threshold = 20,
+																				max_iter = 10,
+																				verbose = FALSE)
+
 test_that("buildEdgeMatrix are the same, Euclidean", {
-  neighbors <- randomProjectionTreeSearch(dat,
-                                          K = 5,
-                                          n_trees = 10,
-                                          tree_threshold = 20,
-                                          max_iter = 10,
-                                          verbose = FALSE)
-  edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
+	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
   edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE)
   score <- sum(edges1@x - edges2@x)
   expect_lt(score, 1)
 })
 
 test_that("buildEdgeMatrix are the same, Cosine", {
-	neighbors <- randomProjectionTreeSearch(dat,
-																					K = 5,
-																					n_trees = 10,
-																					tree_threshold = 20,
-																					max_iter = 10,
-																					verbose = FALSE)
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
 	edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
 	score <- sum(edges1@x - edges2@x)
@@ -53,14 +48,14 @@ test_that("sparseDistances", {
 })
 
 test_that("Can determine sparse iris neighbors accurately", {
-  d <- as.matrix(dist(t(as.matrix(mat)), method = "euclidean"))
   bests <- apply(d, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1,] - 1
   neighbors <- randomProjectionTreeSearch(mat,
                                           K = M,
-                                          n_trees = 10,
+                                          n_trees = 20,
                                           max_iter = 2,
-                                          tree_threshold = 20,
+                                          tree_threshold = 30,
+  																				seed = 1974,
                                           verbose = FALSE)
   expect_lte(sum(neighbors - bests, na.rm = TRUE), 5)
 })

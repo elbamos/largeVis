@@ -276,6 +276,7 @@ lof <- function(edges) {
 #' gplot(clustering, t(vis$coords))
 #' }
 #' @export
+#' @importFrom stats aggregate
 hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
                     verbose = getOption("verbose", TRUE)) {
 
@@ -286,8 +287,8 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
   probs <- data.frame(
     probs = clustersout$clusters[2, ]
   )
-  mins = aggregate(probs, by = list(clusters), FUN = "min")$probs
-  maxes = aggregate(probs, by = list(clusters), FUN = "max")$probs - mins
+  mins = stats::aggregate(probs, by = list(clusters), FUN = "min")$probs
+  maxes = stats::aggregate(probs, by = list(clusters), FUN = "max")$probs - mins
   probs$probs[!is.na(clusters)] <- (probs$probs[!is.na(clusters)] -
                                     mins[as.integer(clusters)[!is.na(clusters)]]) /
     maxes[as.integer(clusters)[!is.na(clusters)]]
@@ -339,7 +340,7 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 #' clusters <- hdbscan(edges, verbose = FALSE)
 #' plot(clusters, dat)
 #' }
-#' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes
+#' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes_
 gplot <- function(x, coords, text = FALSE) {
   dframe <- data.frame(coords)
   colnames(dframe) <- c("x", "y")
