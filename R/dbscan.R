@@ -28,6 +28,7 @@
 #' @return An \code{\link[dbscan]{optics}} object.
 #' @export
 #' @importFrom dbscan optics_cut opticsXi
+#' @importClassFrom dbscan optics
 optics <- function(data = NULL,
                    neighbors = NULL,
                    edges = NULL,
@@ -54,8 +55,8 @@ optics <- function(data = NULL,
   ret$eps_cl <- NA
   class(ret) <- "optics"
 
-  if(!missing(eps_cl)) ret <-optics_cut(ret, eps_cl)
-  if(!missing(xi)) ret <- opticsXi(ret, xi)
+  if(!missing(eps_cl)) ret <- dbscan::optics_cut(ret, eps_cl)
+  if(!missing(xi)) ret <- dbscan::opticsXi(ret, xi)
 
   ret
 }
@@ -88,6 +89,7 @@ optics <- function(data = NULL,
 #' `largeVis`.
 #'
 #' @importFrom stats aggregate
+#' @importClassFrom dbscan dbscan
 #'
 #' @return An \code{\link[dbscan]{dbscan}} object.
 dbscan <- function(data = NULL,
