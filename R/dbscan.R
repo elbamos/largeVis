@@ -359,14 +359,14 @@ gplot <- function(x, coords, text = FALSE) {
   plt <- ggplot2::ggplot(dframe,
                          ggplot2::aes_(x = quote(x), y = quote(y),
                     xend = quote(x2), yend = quote(y2), color = quote(cluster))) +
-    ggplot2::geom_point(aes(alpha = quote(probabilities)), size = 0.7) +
+    ggplot2::geom_point(aes_(alpha = quote(probabilities)), size = 0.7) +
     ggplot2::geom_segment(size = 0.5, ggplot2::aes_(alpha = quote(lambda), size = quote(lambda)))
   if (text == "parent") {
     plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(parent)), size = 2.5,
                             label.padding = ggplot2::unit(0.1, "lines"),
                             label.size = 0.1, alpha = 0.7)
   } else if (text) {
-    plt <- plt + ggplot2::geom_label(ggplot2::aes(label = quote(label)), size = 2.5,
+    plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(label)), size = 2.5,
                             label.padding = ggplot2::unit(0.1, "lines"),
                             label.size = 0.1, alpha = 0.7)
   }

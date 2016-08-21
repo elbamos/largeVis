@@ -328,6 +328,12 @@ protected:
     if (childStabilities > stabilities[p]) {
       stabilities[p] = childStabilities;
     } else {
+      // If this is the only root, and there are children, don't let it be selected, 
+      // because then we'd have only one cluster.
+      if (parents[p] == p && roots.size() == 1 && goodChildrens[p].size() > 0) {
+        selected[p] = false;
+        return;
+      }
       selected[p] = true;
       for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
            it != goodChildrens[p].end();

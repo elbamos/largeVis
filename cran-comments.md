@@ -2,11 +2,14 @@
  
 This is a resubmission of a new release. 
 
-The original submission produced this error:  "ERROR Package required but not available: ‘dbscan’ "
+The last submission produced this response:  
+    "FOSS licence with BuildVignettes: false
+    Package has a VignetteBuilder field but no prebuilt vignette index."
+
 
 In this version I have:
-* Removed references to dbscan in the tests, replacing them with a new data file of test data. 
-* Added implementations of the OPTICS and HDBSCAN clustering algorithms, bumping the version to 0.1.8.
+* Changed BuildVignettes: to TRUE
+* Fixed a bug in the routine for plotting hdbscan results
  
 ## Test environments
 * local OS X install, R 3.3.1
