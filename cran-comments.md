@@ -9,6 +9,7 @@ The last submission produced this response:
 
 In this version I have:
 * Changed BuildVignettes: to TRUE
+* Rebuilt vignettes
 * Fixed a bug in the routine for plotting hdbscan results
  
 ## Test environments

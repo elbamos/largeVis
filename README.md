@@ -39,8 +39,6 @@ Examples
 
 ![](README_files/figure-markdown_github/drawwikiwords-1.png)
 
-![](README_files/figure-markdown_github/drawwikidocs-1.png)
-
 ### 20 Newsgroups
 
 ![](README_files/figure-markdown_github/draw20ng-1.png)
