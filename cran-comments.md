@@ -3,9 +3,9 @@
 This is a resubmission of a new release. 
 
 The last submission produced this response:  
-    "FOSS licence with BuildVignettes: false
-    Package has a VignetteBuilder field but no prebuilt vignette index."
+    "Package required but not available: ‘dbscan’ "
 
+Very sorry about this -- I think it had been resolved in the prior submission, and there may have been a reversion in the one after. If 
 
 In this version I have:
 * Changed BuildVignettes: to TRUE

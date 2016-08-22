@@ -24,15 +24,6 @@ test_that("optics doesn't crash on iris with edges and data", {
   expect_silent(largeVis:::optics(edges = edges, data = dat, eps = 10, minPts = 10, verbose = FALSE))
 })
 
-test_that("dbscan doesn't crash on iris with edges", {
-  expect_silent(largeVis:::dbscan(edges = edges, eps = 10, minPts = 10, verbose = FALSE, partition = FALSE))
-})
-
-test_that("dbscan doesn't crash on iris with partitions", {
-  expect_silent(clusters <- largeVis:::dbscan(edges = edges, eps = 10, minPts = 10,
-                                   verbose = FALSE, partition = TRUE))
-})
-
 test_that(paste("LOF is consistent", 20), {
 	load(system.file("extdata/truelof20.Rda", package = "largeVis"))
 	ourlof <- largeVis:::lof(edges)
