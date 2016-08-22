@@ -400,7 +400,9 @@ protected:
     Rcout << " lambda " << lambda_births[oldidx] << "/" << lambda_deaths[oldidx];
 #endif
     VIDX newidx = reportClusterCnt++;
-    newparent[newidx] = last;
+    if (last == oldidx) newparent[newidx] = newidx;
+    else newparent[newidx] = last;
+    
     for (typename std::set< VIDX >::iterator it = fallenPointses[oldidx].begin();
          it != fallenPointses[oldidx].end();
          it++) nodeMembership[*it] = newidx;
