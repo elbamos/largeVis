@@ -53,7 +53,7 @@ public:
 	void initAlias(arma::ivec& newps,
                  const arma::vec& weights,
                  const arma::ivec& targets,
-                Rcpp::Nullable<Rcpp::NumericVector> seed) {
+                 Rcpp::Nullable<Rcpp::NumericVector> seed) {
 		vertexidxtype N = newps.n_elem - 1;
 		ps = newps.memptr();
 		distancetype* negweights = new distancetype[N];
@@ -83,6 +83,7 @@ public:
 			negAlias.initRandom();
 			posAlias.initRandom();
 		}
+		delete[] negweights;
 	}
 
   void setGradient(double alpha, double gamma, dimidxtype D) {

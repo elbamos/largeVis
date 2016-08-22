@@ -124,13 +124,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // fastDistance
-arma::vec fastDistance(const NumericVector is, const NumericVector js, const arma::mat& data, const std::string& distMethod, bool verbose);
+arma::vec fastDistance(const IntegerVector is, const IntegerVector js, const arma::mat& data, const std::string& distMethod, bool verbose);
 RcppExport SEXP largeVis_fastDistance(SEXP isSEXP, SEXP jsSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const NumericVector >::type is(isSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector >::type is(isSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector >::type js(jsSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
@@ -139,13 +139,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // fastCDistance
-arma::vec fastCDistance(const arma::vec& is, const arma::vec& js, const arma::uvec& i_locations, const arma::uvec& p_locations, const arma::vec& x, const std::string& distMethod, bool verbose);
+arma::vec fastCDistance(const arma::ivec& is, const arma::ivec& js, const arma::uvec& i_locations, const arma::uvec& p_locations, const arma::vec& x, const std::string& distMethod, bool verbose);
 RcppExport SEXP largeVis_fastCDistance(SEXP isSEXP, SEXP jsSEXP, SEXP i_locationsSEXP, SEXP p_locationsSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const arma::vec& >::type is(isSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type is(isSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type js(jsSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type i_locations(i_locationsSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type p_locations(p_locationsSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
@@ -156,13 +156,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // fastSDistance
-arma::vec fastSDistance(const arma::vec& is, const arma::vec& js, const arma::uvec& i_locations, const arma::uvec& j_locations, const arma::vec& x, const std::string& distMethod, bool verbose);
+arma::vec fastSDistance(const arma::ivec& is, const arma::ivec& js, const arma::uvec& i_locations, const arma::uvec& j_locations, const arma::vec& x, const std::string& distMethod, bool verbose);
 RcppExport SEXP largeVis_fastSDistance(SEXP isSEXP, SEXP jsSEXP, SEXP i_locationsSEXP, SEXP j_locationsSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const arma::vec& >::type is(isSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type is(isSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type js(jsSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type i_locations(i_locationsSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type j_locations(j_locationsSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
@@ -183,6 +183,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec& >::type d(dSEXP);
     Rcpp::traits::input_parameter< double >::type perplexity(perplexitySEXP);
     __result = Rcpp::wrap(referenceWij(i, j, d, perplexity));
+    return __result;
+END_RCPP
+}
+// hdbscanc
+List hdbscanc(const arma::sp_mat& edges, Rcpp::Nullable< Rcpp::IntegerMatrix > neighbors, const int K, const int minPts, const bool verbose);
+RcppExport SEXP largeVis_hdbscanc(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP KSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::IntegerMatrix > >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(hdbscanc(edges, neighbors, K, minPts, verbose));
     return __result;
 END_RCPP
 }
