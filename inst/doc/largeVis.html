@@ -201,7 +201,7 @@ youTube_coordinates$alpha &lt;-<span class="st"> </span><span class="kw">factor<
 edges &lt;-<span class="st"> </span><span class="kw">buildEdgeMatrix</span>(<span class="dt">data =</span> largeDataset, <span class="dt">neighbors =</span> neighbors)
 <span class="kw">rm</span>(neighbors)
 <span class="kw">gc</span>()
-wij &lt;-<span class="st"> </span><span class="kw">buildWijMaatrix</span>(edges)
+wij &lt;-<span class="st"> </span><span class="kw">buildWijMatrix</span>(edges)
 <span class="kw">rm</span>(edges)
 <span class="kw">gc</span>()
 coords &lt;-<span class="st"> </span><span class="kw">projectKNNs</span>(wij)</code></pre></div>

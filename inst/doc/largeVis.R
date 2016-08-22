@@ -198,7 +198,7 @@ ggplot(iriscoords,
 #  edges <- buildEdgeMatrix(data = largeDataset, neighbors = neighbors)
 #  rm(neighbors)
 #  gc()
-#  wij <- buildWijMaatrix(edges)
+#  wij <- buildWijMatrix(edges)
 #  rm(edges)
 #  gc()
 #  coords <- projectKNNs(wij)
