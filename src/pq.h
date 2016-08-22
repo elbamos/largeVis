@@ -143,13 +143,6 @@ protected:
   std::set< VIDX > testers = std::set< VIDX >();
   void setupTest() {
     testers.insert(209);
-    testers.insert(234);
-    testers.insert(1541);
-    testers.insert(1546);
-    testers.insert(1548);
-    testers.insert(1553);
-    testers.insert(1560);
-    testers.insert(1569);
   }
   bool trace(const VIDX p) {
     bool ret = testers.find(p) != testers.end();
@@ -278,14 +271,14 @@ protected:
 #endif
     for (it2 = roots.begin();
          it2 != roots.end();
-         it2++) {
+         it2++)
 #ifdef _OPENMP
 #pragma omp task
-    	condenseTwo(*it2);
-    }
 #endif
+		{condenseTwo(*it2);}
 #ifdef _OPENMP
-}}
+}
+}
 #endif
   }
 
@@ -476,5 +469,4 @@ protected:
                        newstabilities, newselected, level + 1, child++);
     }
   }
-
 };

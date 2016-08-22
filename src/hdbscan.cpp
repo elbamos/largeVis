@@ -157,8 +157,9 @@ public:
 #ifdef _OPENMP
 #pragma omp task
 #endif
-    	reportAHierarchy(*it, *it, parent, nodeMembership,
-         stabilities, selected, 0, 0);
+{
+    	reportAHierarchy(*it, *it, parent, nodeMembership, stabilities, selected, 0, 0);
+}
 #ifdef _OPENMP
 }
 }
