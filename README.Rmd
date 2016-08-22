@@ -22,7 +22,6 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 * Tested with (dense) matrices > 2.5 Million rows, and sparse matrices with > 10,000 features. 
 * Performance and memory efficiency are good. 
 * I have been able to replicate, in the sense of producing characteristically similar visualizations, the results in the original paper. 
-* With version 0.1.8, the package now includes implementations of the OPTICS and HDBSCAN clustering algorithms, implemented to take advantage of the nearest-neighbor data collected by largeVis. 
 
 ### Notes
 * On Mac OS X, the Apple compiler does not support OpenMP.  Compiling `largeVis` with OpenMP support requires some fiddling.  Here are some instructions that may work for you:

@@ -482,7 +482,5 @@ void silhouetteDbscan(const arma::sp_mat& edges,
     else bn = (bn - an) / std::max(bn, an);
     sil(n, 2) = bn;
   }
-  delete[] counts;
-  delete[] diC;
 }
 

@@ -178,11 +178,3 @@ test_that("With a bigger dataset, increasing iters improves result", {
     oldscore <- score
   }
 })
-
-context("Edge Matrix")
-
-test_that("Edge Matrix doesn't crash", {
-	neighbors <- randomProjectionTreeSearch(dat,
-																						K = 20, verbose = FALSE)
-	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
-})

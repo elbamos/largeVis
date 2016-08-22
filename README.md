@@ -1,7 +1,7 @@
 largeVis
 ================
 
-[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=hdbscan)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/hdbscan.svg)](https://codecov.io/gh/elbamos/largeVis/branch/hdbscan) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=hdbscan&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis?branch=hdbscan)
+[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=0.1.7)](https://travis-ci.org/elbamos/largeVis) [![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/0.1.7.svg)](https://codecov.io/gh/elbamos/largeVis/branch/0.1.7) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=0.1.7&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis?branch=0.1.7)
 
 This is an implementation of the `largeVis` algorithm described in (<https://arxiv.org/abs/1602.00370>). It also incorporates a very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`, and for visualizing a map of the manifold like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
 
@@ -11,7 +11,6 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
 -   Tested with (dense) matrices &gt; 2.5 Million rows, and sparse matrices with &gt; 10,000 features.
 -   Performance and memory efficiency are good.
 -   I have been able to replicate, in the sense of producing characteristically similar visualizations, the results in the original paper.
--   With version 0.1.8, the package now includes implementations of the OPTICS and HDBSCAN clustering algorithms, implemented to take advantage of the nearest-neighbor data collected by largeVis.
 
 ### Notes
 
@@ -305,5 +304,9 @@ Memory requirements during the neighbor search may be managed by reducing `n_tre
 
 References
 ----------
+
+``` r
+save(agcoords, iriscoords, file = "vignettedata/vignettedata.Rda")
+```
 
 Tang, Jian, Jingzhou Liu, Ming Zhang, and Qiaozhu Mei. 2016. “Visualizing Large-Scale and High-Dimensional Data.” In *Proceedings of the 25th International Conference on World Wide Web*, 287–97. International World Wide Web Conferences Steering Committee.

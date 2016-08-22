@@ -22,6 +22,7 @@
 ^wikiwords\.Rda
 ^wij$
 ^visscratch\.R$
+^ng20wij\.Rda$
 ^woordcoords\.Rda$
 ^vignettedata$
 ^mnistCoords\.wij$
@@ -50,6 +51,7 @@
 ^m.*\.Rda$
 ^f.*\.Rda$
 ^vignettes/.*\.Rda$
+^vignettes/.*\.Rda$
 ^Examples/.Rmd
 ^Examples/.html
 ^faceshighres.png$
@@ -63,4 +65,3 @@
 ^vignettedatangcoords/.Rda$
 ^wordcoordsweightingbyp/.Rda$
 ^words/.png$
-^cran-comments\.md$

@@ -43,13 +43,13 @@ require(largeVis,quietly = TRUE)
 load(system.file(package = "largeVis", "extdata/vignettedata.Rda"))
 
 ## ----drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis',cache=FALSE----
-if (! exists("agcoords") && rebuild) {
+if (! exists("agcoords")) {
   data(wiki)
   inputs <- data.frame(
     g = rep(c(.5,1,7,14), 5),
     a = rep(c(0,.1,1,5,10), each = 4)
   )
-  wij <- buildWijMatrix(wiki, perplexity = 50)
+  wij <- buildWijMatrix(wiki)
   set.seed(1974) 
   initialcoords <- matrix(rnorm(ncol(wij) * 2), nrow = 2)
   
@@ -203,6 +203,6 @@ ggplot(iriscoords,
 #  gc()
 #  coords <- projectKNNs(wij)
 
-## ----save,eval=rebuild,echo=F--------------------------------------------
+## ----save,eval=rebuild---------------------------------------------------
 #  save(agcoords, iriscoords, file = "vignettedata/vignettedata.Rda")
 

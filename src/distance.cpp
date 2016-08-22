@@ -44,11 +44,12 @@ distancetype sparseRelDist(const sp_mat& i, const sp_mat& j) {
  * Fast calculation of pairwise distances with the result stored in a pre-allocated vector.
  */
 // [[Rcpp::export]]
-arma::vec fastDistance(const IntegerVector is,
-                       const IntegerVector js,
+arma::vec fastDistance(const NumericVector is,
+                       const NumericVector js,
                        const arma::mat& data,
                        const std::string& distMethod,
                        bool verbose) {
+
   Progress p(is.size(), verbose);
   vec xs = vec(is.size());
   distancetype (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j);
@@ -62,8 +63,8 @@ arma::vec fastDistance(const IntegerVector is,
   return xs;
 };
 
-arma::vec fastSparseDistance(const arma::ivec& is,
-                             const arma::ivec& js,
+arma::vec fastSparseDistance(const arma::vec& is,
+                             const arma::vec& js,
                              const sp_mat& data,
                              const std::string& distMethod,
                              bool verbose) {
@@ -84,8 +85,8 @@ arma::vec fastSparseDistance(const arma::ivec& is,
 };
 
 // [[Rcpp::export]]
-arma::vec fastCDistance(const arma::ivec& is,
-                        const arma::ivec& js,
+arma::vec fastCDistance(const arma::vec& is,
+                        const arma::vec& js,
                         const arma::uvec& i_locations,
                         const arma::uvec& p_locations,
                         const arma::vec& x,
@@ -97,8 +98,8 @@ arma::vec fastCDistance(const arma::ivec& is,
 }
 
 // [[Rcpp::export]]
-arma::vec fastSDistance(const arma::ivec& is,
-                        const arma::ivec& js,
+arma::vec fastSDistance(const arma::vec& is,
+                        const arma::vec& js,
                         const arma::uvec& i_locations,
                         const arma::uvec& j_locations,
                         const arma::vec& x,

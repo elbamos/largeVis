@@ -1,7 +1,3 @@
-### largeVis 0.1.8
-* hdbscan algorithm added
-* Miscellaneous small changes for CRAN submission
-
 ### largeVis 0.1.7
 * Bug fixes
 		+	Largely reduced the "fuzzies"

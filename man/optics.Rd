@@ -28,7 +28,7 @@ optics(data = NULL, neighbors = NULL, edges = NULL, eps,
 An \code{\link[dbscan]{optics}} object.
 }
 \description{
-Experimental implementation of the OPTICS algorithm.
+An implementation of the OPTICS algorithm.
 }
 \details{
 This is a preliminary implementation of a variant of the OPTICS algorithm that attempts
