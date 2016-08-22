@@ -33,15 +33,15 @@ public:
 
   void makeCoreDistances(const arma::sp_mat& edges, const int K) {
     coreDistances = arma::vec(N);
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for (long long n = 0; n < N; n++) if (p.increment()) {
+    for (long long n = 0; n < N; n++) //if (p.increment())
+    	{
       DistanceSorter srtr = DistanceSorter();
-      for (auto it = edges.begin_col(n);
-           it != edges.end_col(n);
-           it++) srtr.emplace(iddist(it.row(), *it));
-      for (int k = 0; k != K && srtr.size() > 1; k++) srtr.pop();
+      for (auto it = edges.begin_row(n);
+           it != edges.end_row(n);
+           it++) srtr.emplace(iddist(it.col(), *it));
+      int k = 0;
+      for (k = 0; k != K && srtr.size() > 1; k++) srtr.pop();
+      if (k != K) stop("Insufficient neighbors.");
       coreDistances[n] = srtr.top().second;
     }
   }
@@ -79,7 +79,7 @@ public:
       double d = max(coreDistances[i], coreDistances[j]);
       d = (d > *it) ? d : *it;
       if (d < bestOverall) {
-        starterIndex = j;
+        starterIndex = i;
         bestOverall = d;
       }
       *it = d;
@@ -137,7 +137,6 @@ public:
     extractClusters();
     return getClusters();
   }
-
 
   Rcpp::List reportHierarchy() {
     long long survivingClusterCnt = survivingClusters.size();

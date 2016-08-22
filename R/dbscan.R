@@ -54,8 +54,8 @@ optics <- function(data = NULL,
   ret$eps_cl <- NA
   class(ret) <- "optics"
 
-  if(!missing(eps_cl)) ret <-optics_cut(ret, eps_cl)
-  if(!missing(xi)) ret <- opticsXi(ret, xi)
+  if(!missing(eps_cl)) ret <- dbscan::optics_cut(ret, eps_cl)
+  if(!missing(xi)) ret <- dbscan::opticsXi(ret, xi)
 
   ret
 }

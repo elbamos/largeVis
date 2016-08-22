@@ -395,7 +395,11 @@ protected:
   void getClusters(arma::mat& ret, VIDX n, int cluster, double cluster_death) {
     int thisCluster = cluster;
     double thisDeath = cluster_death;
-    if (selected[n]) {
+    if (selected[n])
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+		{
       thisCluster = clusterCount++;
       thisDeath = lambda_deaths[n];
     }
@@ -456,7 +460,9 @@ protected:
     Rcout << " lambda " << lambda_births[oldidx] << "/" << lambda_deaths[oldidx];
 #endif
     VIDX newidx = reportClusterCnt++;
-    newparent[newidx] = last;
+    if (last == oldidx) newparent[newidx] = newidx;
+    else newparent[newidx] = last;
+
     for (typename std::set< VIDX >::iterator it = fallenPointses[oldidx].begin();
          it != fallenPointses[oldidx].end();
          it++) nodeMembership[*it] = newidx;

@@ -67,3 +67,8 @@ test_that("hdbscan is correct with neighbors", {
   clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, FALSE)
   expect_equal(length(unique(clustering$clusters)), 2)
 })
+
+test_that("hdbscan doesn't crash on glass edges", {
+	load(system.file("extdata/glassEdges.Rda", package = "largeVis"))
+	expect_silent(clustering <- hdbscan(edges))
+})
