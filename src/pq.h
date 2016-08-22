@@ -269,9 +269,24 @@ protected:
     for (VIDX n = 0; n != counter; n++) if (p.increment()) {
       condenseOne(n, minPts);
     }
-    for (typename std::set< VIDX >::iterator it = roots.begin();
-         it != roots.end();
-         it++) condenseTwo(*it);
+    typename std::set< VIDX >::iterator it2;
+#ifdef _OPENMP
+#pragma omp parallel
+{
+#pragma omp single private(it2)
+{
+#endif
+    for (it2 = roots.begin();
+         it2 != roots.end();
+         it2++) {
+#ifdef _OPENMP
+#pragma omp task
+    	condenseTwo(*it2);
+    }
+#endif
+#ifdef _OPENMP
+}}
+#endif
   }
 
   void determineStability(VIDX p, int minPts) {
@@ -301,10 +316,23 @@ protected:
   void determineStability(int minPts) {
     stabilities = arma::Col< double >(counter);
     selected = arma::Col< int >(counter);
-
-    for (typename std::set< VIDX >::iterator it = roots.begin();
+    typename std::set< VIDX >::iterator it;
+#ifdef _OPENMP
+#pragma omp parallel
+{
+#pragma omp single private(it)
+{
+#endif
+    for (it = roots.begin();
          it != roots.end();
-         it++) determineStability(*it, minPts);
+         it++)
+#ifdef _OPENMP
+#pragma omp task
+#endif
+    	{determineStability(*it, minPts);}
+#ifdef _OPENMP
+}}
+#endif
   }
 
   void deselect(VIDX p) {
@@ -328,7 +356,7 @@ protected:
     if (childStabilities > stabilities[p]) {
       stabilities[p] = childStabilities;
     } else {
-      // If this is the only root, and there are children, don't let it be selected, 
+      // If this is the only root, and there are children, don't let it be selected,
       // because then we'd have only one cluster.
       if (parents[p] == p && roots.size() == 1 && goodChildrens[p].size() > 0) {
         selected[p] = false;
@@ -343,9 +371,23 @@ protected:
 
   void extractClusters() {
     survivingClusters = std::set< VIDX >();
-    for (typename std::set< VIDX >::iterator it = roots.begin();
+  	typename std::set< VIDX >::iterator it;
+#ifdef _OPENMP
+#pragma omp parallel
+{
+#pragma omp single private(it)
+{
+#endif
+    for (it = roots.begin();
          it != roots.end();
-         it++) extractClusters(*it);
+         it++)
+#ifdef _OPENMP
+#pragma omp task
+#endif
+    	    	{extractClusters(*it);}
+#ifdef _OPENMP
+}}
+#endif
   }
 
   int clusterCount = 0;
@@ -370,11 +412,25 @@ protected:
 
   arma::mat getClusters() {
     arma::mat ret = arma::mat(2, N, fill::zeros);
-    for (typename std::set< VIDX >::iterator it = roots.begin();
+  	typename std::set< VIDX >::iterator it;
+#ifdef _OPENMP
+#pragma omp parallel
+{
+#pragma omp single private(it)
+{
+#endif
+    for (it = roots.begin();
          it != roots.end();
-         it++) {
+         it++)
+#ifdef _OPENMP
+#pragma omp task
+#endif
+    	{
       getClusters(ret, *it, -1, lambda_deaths[*it]);
     }
+#ifdef _OPENMP
+}}
+#endif
     return ret;
   }
 

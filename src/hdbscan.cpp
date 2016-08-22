@@ -12,28 +12,31 @@ public:
       return n1.second > n2.second;
     }
   };
-  typedef std::priority_queue<iddist, 
-                              std::vector<iddist>, 
+  typedef std::priority_queue<iddist,
+                              std::vector<iddist>,
                               CompareDist> DistanceSorter;
-  
+
   long long starterIndex;
   arma::sp_mat mrdMatrix;
-  
+
   std::unique_ptr<long long[]>   minimum_spanning_tree;
   std::unique_ptr<double[]>    minimum_spanning_distances;
-  
+
   HDBSCAN(const int N,
           const long long nedges,
           bool verbose) : UF(N, nedges, verbose) {
             minimum_spanning_tree = std::unique_ptr<long long[]>(new long long[N]);
             minimum_spanning_distances = std::unique_ptr<double[]>(new double[N]);
           }
-  
+
   arma::vec coreDistances;
-  
+
   void makeCoreDistances(const arma::sp_mat& edges, const int K) {
     coreDistances = arma::vec(N);
-    for (long long n = 0; n < N && p.increment() ; n++) {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for (long long n = 0; n < N; n++) if (p.increment()) {
       DistanceSorter srtr = DistanceSorter();
       for (auto it = edges.begin_col(n);
            it != edges.end_col(n);
@@ -42,23 +45,35 @@ public:
       coreDistances[n] = srtr.top().second;
     }
   }
-  
-  void makeCoreDistances(const arma::sp_mat& edges, 
-                         const IntegerMatrix& neighbors, 
+
+  void makeCoreDistances(const arma::sp_mat& edges,
+                         const IntegerMatrix& neighbors,
                          const int K) {
     coreDistances = arma::vec(N);
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for (long long n = 0; n < N; n++) {
       coreDistances[n] = edges(neighbors(K, n), n);
     }
     p.increment(N);
   }
-  
+
   void makeMRD(const arma::sp_mat& edges, const int K) {
     mrdMatrix = arma::sp_mat(edges);
     double bestOverall = INFINITY;
-    for (auto it = mrdMatrix.begin(); 
+    arma::sp_mat::iterator it;
+#ifdef _OPENMP
+#pragma omp parallel
+{
+#pragma omp single private(it)
+{
+#endif
+    for (it = mrdMatrix.begin();
          it != mrdMatrix.end();
-         it++) if (p.increment()) {
+         it++) if (p.increment())
+#pragma omp task
+         	{
       long long i = it.row();
       long long j = it.col();
       double d = max(coreDistances[i], coreDistances[j]);
@@ -69,6 +84,10 @@ public:
       }
       *it = d;
     }
+#ifdef _OPENMP
+}
+}
+#endif
   }
 
   void primsAlgorithm() {
@@ -80,7 +99,7 @@ public:
       minimum_spanning_tree[n] = -1;
       Q.insert(n, minimum_spanning_distances[n]);
     }
-    
+
     long long v;
     while (! Q.isEmpty() && p.increment()) {
       v = Q.deleteMin();
@@ -111,44 +130,57 @@ public:
       agglomerate(ijd.first, minimum_spanning_tree[ijd.first], ijd.second);
     }
   }
-  
+
   arma::mat process(const int minPts) {
     condense(minPts);
     determineStability(minPts);
     extractClusters();
     return getClusters();
   }
-  
-  
+
+
   Rcpp::List reportHierarchy() {
     long long survivingClusterCnt = survivingClusters.size();
     IntegerVector parent = IntegerVector(survivingClusterCnt);
     IntegerVector nodeMembership = IntegerVector(N);
     NumericVector stabilities = NumericVector(survivingClusterCnt);
     IntegerVector selected = IntegerVector(survivingClusterCnt);
-    
-    for (typename std::set< long long >::iterator it = roots.begin();
+    std::set< long long >::iterator it;
+#ifdef _OPENMP
+#pragma omp parallel
+{
+#pragma omp single private(it)
+{
+#endif
+    for (it = roots.begin();
          it != roots.end();
-         it++) reportAHierarchy(*it, *it, parent, nodeMembership, 
+         it++)
+#ifdef _OPENMP
+#pragma omp task
+#endif
+    	reportAHierarchy(*it, *it, parent, nodeMembership,
          stabilities, selected, 0, 0);
-    
+#ifdef _OPENMP
+}
+}
+#endif
     NumericVector lambdas = NumericVector(N);
     // FIXME - need to adjust this to be lambda_p not birth
     for (long long n = 0; n != N; n++) lambdas[n] = lambda_births[n];
 
     return Rcpp::List::create(Rcpp::Named("nodemembership") = nodeMembership,
-                              Rcpp::Named("lambda") = lambdas, 
-                              Rcpp::Named("parent") = parent, 
+                              Rcpp::Named("lambda") = lambdas,
+                              Rcpp::Named("parent") = parent,
                               Rcpp::Named("stability") = stabilities,
                               Rcpp::Named("selected") = selected);
   }
 };
 
 // [[Rcpp::export]]
-List hdbscanc(const arma::sp_mat& edges, 
+List hdbscanc(const arma::sp_mat& edges,
               Rcpp::Nullable< Rcpp::IntegerMatrix > neighbors,
-              const int K, 
-              const int minPts, 
+              const int K,
+              const int minPts,
               const bool verbose) {
   HDBSCAN object = HDBSCAN(edges.n_cols, edges.n_elem, verbose);
   if (neighbors.isNotNull()) {
