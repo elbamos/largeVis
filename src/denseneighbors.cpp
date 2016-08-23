@@ -63,7 +63,11 @@ arma::imat searchTrees(const int& threshold,
                        const arma::mat& data,
                        const std::string& distMethod,
                        Rcpp::Nullable< Rcpp::NumericVector> seed,
+                       Rcpp::Nullable<Rcpp::NumericVector> threads,
                        bool verbose) {
+#ifdef _OPENMP
+	checkCRAN(threads);
+#endif
   const vertexidxtype N = data.n_cols;
 	std::shared_ptr< DistanceAdder<arma::mat, arma::vec> > adder;
 	if (distMethod.compare(std::string("Cosine")) == 0) adder = std::shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new CosineAdder(data, K));

@@ -30,7 +30,6 @@ Suggests:
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes
-OS_type: unix, windows
 BuildVignettes: TRUE
 VignetteBuilder: knitr
 SystemRequirements: C++11

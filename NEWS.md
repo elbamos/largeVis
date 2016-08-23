@@ -1,5 +1,7 @@
 ### largeVis 0.1.8
 * hdbscan algorithm added
+* Added thread number parameter to facilitate CRAN limitation on number of cores
+* Removed facevector data to facilitate CRAN size limit
 * Miscellaneous small changes for CRAN submission
 
 ### largeVis 0.1.7

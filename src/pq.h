@@ -120,7 +120,8 @@ public:
 template<class VIDX>
 class UF {
 private:
-  VIDX reservesize;
+  VIDX reservesize; // used during initialization
+	// Used after buildHierarchy to manage condensation, stability extraction, and cluster identificaTION
   arma::Col< VIDX > parents;
   arma::Col< double > lambda_deaths;
   arma::Col< double > stabilities;
@@ -128,15 +129,41 @@ private:
   std::unique_ptr< std::set< VIDX >[] > fallenPointses;
   std::unique_ptr< std::set< VIDX >[] > goodChildrens;
   arma::Col< int > selected;
+
 protected:
-  VIDX N;
   typedef std::pair<VIDX, double> iddist;
+  class CompareDist {
+  public:
+  	bool operator()(iddist n1, iddist n2) const {
+  		return n1.second > n2.second;
+  	}
+  };
+  typedef std::priority_queue<iddist,
+                              std::vector<iddist>,
+                              CompareDist> DistanceSorter;
+
+  VIDX N;
   Progress p;
   arma::Col< double > lambda_births;
 
+  arma::vec coreDistances;
+
+  std::unique_ptr< VIDX[] >   	minimum_spanning_tree;
+  std::unique_ptr< double[] >   minimum_spanning_distances;
+
+  VIDX counter = 0;
+
+  std::set< VIDX > survivingClusters;
+
+  int clusterCount = 0;
+
+  // Used after condensation to speed-up remaining phases
+  std::set< VIDX > roots;
+
   UF(VIDX N, VIDX nedges, bool verbose) : N{N},
                                           p(Progress((9 * N) + (nedges), verbose)) {
-
+    	minimum_spanning_tree = std::unique_ptr<VIDX[]>(new VIDX[N]);
+    	minimum_spanning_distances = std::unique_ptr<double[]>(new double[N]);
   }
 
 #ifdef DEBUG
@@ -144,7 +171,7 @@ protected:
   void setupTest() {
     testers.insert(209);
   }
-  bool trace(const VIDX p) {
+  bool trace(const VIDX p) const {
     bool ret = testers.find(p) != testers.end();
     if (ret) {
       Rcout << "\ntrace " << p << ": ";
@@ -158,23 +185,43 @@ protected:
   }
 #endif
 
-  void setup() {
-#ifdef DEBUG
-    setupTest();
-#endif
-    reservesize = 2 * N + 1;
-    parents = arma::Col< VIDX >(reservesize);
-    sizes = arma::Col< VIDX >(reservesize);
-    lambda_births = arma::Col< double >(reservesize);
-    lambda_deaths = arma::Col< double >(reservesize);
-    for (VIDX n = 0; n != N; n++) add();
+  double getMRD(const long long i, const long long j, const double dist) const {
+  	double d = max(coreDistances[i], coreDistances[j]);
+  	d = max(d, dist);
+  	return d;
   }
 
+  void primsAlgorithm(const arma::sp_mat& edges, VIDX starterIndex) {
+  	MinIndexedPQ<VIDX, double> Q = MinIndexedPQ<VIDX, double>(N);
+  	for (VIDX n = 0; n != N; n++) {
+  		minimum_spanning_distances[n] = (n == starterIndex) ? -1 : INFINITY;
+  		minimum_spanning_tree[n] = -1;
+  		Q.insert(n, minimum_spanning_distances[n]);
+  	}
+
+  	VIDX v;
+  	while (! Q.isEmpty() && p.increment()) {
+  		v = Q.deleteMin();
+  		for (auto it = edges.begin_row(v);
+         it != edges.end_row(v);
+         it++) {
+  			VIDX w = it.col();
+  			double d = getMRD(v, w, *it);
+  			if (Q.contains(w) && d < minimum_spanning_distances[w]) {
+  				Q.changeKey(w, d);
+  				minimum_spanning_distances[w] = d;
+  				minimum_spanning_tree[w] = v;
+  			}
+  		}
+  	}
+  }
+
+  /*
+   * The hierarchy construction phase
+   */
   VIDX getRoot(VIDX p) {
     return (parents[p] == p) ? p : getRoot(parents[p]);
   }
-
-  VIDX counter = 0;
 
   VIDX add() {
     VIDX newid = counter++;
@@ -201,8 +248,38 @@ protected:
     lambda_births[n_a] = lambda_births[n_b] = lambda_deaths[parent] = 1 / d;
   }
 
-  std::set< VIDX > roots;
+  void buildHierarchy() {
+#ifdef DEBUG
+  	setupTest();
+#endif
+  	reservesize = 2 * N + 1;
+  	parents = arma::Col< VIDX >(reservesize);
+  	sizes = arma::Col< VIDX >(reservesize);
+  	lambda_births = arma::Col< double >(reservesize);
+  	lambda_deaths = arma::Col< double >(reservesize);
+  	for (VIDX n = 0; n != N; n++) add();
+  	DistanceSorter srtr = DistanceSorter();
+  	for (long long n = 0; n != N && p.increment(); n++) {
+  		double distance = minimum_spanning_distances[n];
+  		srtr.push(iddist(n, distance));
+  	}
 
+  	while (! srtr.empty() && p.increment()) {
+  		const iddist ijd = srtr.top();
+  		srtr.pop();
+  		agglomerate(ijd.first, minimum_spanning_tree[ijd.first], ijd.second);
+  	}
+  }
+
+  /*
+   * The condensation phase.
+   *
+   * First, breadthwise search for leaves with < minPts nodes. While doing that,
+   * identify the roots.
+   *
+   * Then, top-down search for nodes with only one child, iterating through roots.
+   *
+   */
   void condenseUp(VIDX p, VIDX mergeTarget) {
     if (p == mergeTarget) return;
     sizes[p] = -1;
@@ -282,6 +359,13 @@ protected:
 #endif
   }
 
+  /*
+   * Cluster identification phase.
+   * Determine stability, starting with roots and recursing.
+   * Extract clusters, starting with roots and recursing.
+   *
+   */
+
   void determineStability(VIDX p, int minPts) {
     if (sizes[p] < minPts && p != parents[p]) {
       stop("Condense failed");
@@ -335,8 +419,6 @@ protected:
          it++) deselect(*it);
   }
 
-  std::set< VIDX > survivingClusters;
-
   void extractClusters(VIDX p) {
     survivingClusters.insert(p);
     double childStabilities = 0;
@@ -383,8 +465,6 @@ protected:
 #endif
   }
 
-  int clusterCount = 0;
-
   void getClusters(arma::mat& ret, VIDX n, int cluster, double cluster_death) {
     int thisCluster = cluster;
     double thisDeath = cluster_death;
@@ -430,6 +510,11 @@ protected:
 #endif
     return ret;
   }
+
+  /*
+   * Fetch the hierarchy.
+   *
+   */
 
   VIDX reportClusterCnt = 0;
 

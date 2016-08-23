@@ -28,6 +28,11 @@ typedef long long iterationtype;
 typedef int dimidxtype;
 typedef int kidxtype;
 
+
+#ifdef _OPENMP
+void checkCRAN(Rcpp::Nullable<Rcpp::NumericVector> threads);
+#endif
+
 /*
  * Distance Functions
  */

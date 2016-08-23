@@ -101,7 +101,11 @@ arma::imat searchTreesCSparse(const int& threshold,
                              const arma::vec& x,
                              const std::string& distMethod,
                              Rcpp::Nullable< Rcpp::NumericVector> seed,
+                             Rcpp::Nullable< Rcpp::NumericVector> threads,
                              bool verbose) {
+#ifdef _OPENMP
+	checkCRAN(threads);
+#endif
   const vertexidxtype N = p.size() -1;
   const sp_mat data = sp_mat(i,p,x,N,N);
   return searchTreesSparse(threshold,n_trees,K,maxIter,data,distMethod,seed,verbose);
@@ -117,7 +121,11 @@ arma::imat searchTreesTSparse(const int& threshold,
                              const arma::vec& x,
                              const std::string& distMethod,
                              Rcpp::Nullable< Rcpp::NumericVector> seed,
+                             Rcpp::Nullable< Rcpp::NumericVector> threads,
                              bool verbose) {
+#ifdef _OPENMP
+	checkCRAN(threads);
+#endif
   const umat locations = join_cols(i,j);
   const sp_mat data = sp_mat(locations,x);
   return searchTreesSparse(threshold,n_trees,K,maxIter,data,distMethod,seed,verbose);

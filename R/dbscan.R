@@ -135,6 +135,7 @@ lof <- function(edges) {
 #' @param minPts The minimum number of points in a cluster.
 #' @param K The number of points in the core neighborhood. (See details.)
 #' @param neighbors An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}.
+#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param verbose Verbosity.
 #'
 #' @details The hyperparameter \code{K} controls the size of core neighborhoods.
@@ -200,9 +201,10 @@ lof <- function(edges) {
 #' @export
 #' @importFrom stats aggregate
 hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
+										threads = NULL,
                     verbose = getOption("verbose", TRUE)) {
 
-  clustersout <- hdbscanc(edges, neighbors, K, minPts, verbose)
+  clustersout <- hdbscanc(edges, neighbors, K, minPts, threads, verbose)
   clusters <- clustersout$clusters[1, ]
   clusters[clusters == -1] <- NA
   clusters = factor(clusters, exclude = NULL)

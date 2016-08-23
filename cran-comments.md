@@ -3,14 +3,22 @@
 This is a resubmission of a new release. 
 
 The last submission produced this response:  
-    "Package required but not available: ‘dbscan’ "
-
-Very sorry about this -- I think it had been resolved in the prior submission, and there may have been a reversion in the one after. If 
+"You incorrectly have  OS_type: unix, windows  in your DESCRIPTION, which needs to be removed. Once done, we're down 
+to  Possibly mis-spelled words in DESCRIPTION:  largeVis (7:29) 
+Size of tarball: 8398002 bytes 
+Examples with CPU or elapsed time > 5s 
+user system elapsed 
+largeVis 41.712 0.012 11.009 
+which all need fixing. The last would seem to indicate that you make 
+use of more than 2 cores, in violation of the CRAN Policy."
 
 In this version I have:
-* Changed BuildVignettes: to TRUE
-* Rebuilt vignettes
-* Fixed a bug in the routine for plotting hdbscan results
+* Removed the OS_type: line from Description (Thank you Kurt Hornik!)
+* Added a parameter to all functions that use OpenMP, to limit the number of threads, and set the number of threads used in tests to 2.
+* Removed the facevectors dataset to reduce size. 
+* Limited the number of batches run for one example that used excessive CPU.
+
+* NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
  
 ## Test environments
 * local OS X install, R 3.3.1

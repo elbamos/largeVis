@@ -146,7 +146,11 @@ public:
 arma::sp_mat referenceWij(const arma::ivec& i,
 				                  const arma::ivec& j,
 				                  arma::vec& d,
+				                  Rcpp::Nullable<Rcpp::NumericVector> threads,
 				                  double perplexity) {
+#ifdef _OPENMP
+	checkCRAN(threads);
+#endif
   ReferenceEdges ref = ReferenceEdges(perplexity, i, j, d);
   // vec sigmas = ref.getSigmas();
   ref.run();

@@ -4,7 +4,7 @@
 \alias{hdbscan}
 \title{hdbscan}
 \usage{
-hdbscan(edges, minPts = 20, K = 5, neighbors = NULL,
+hdbscan(edges, minPts = 20, K = 5, neighbors = NULL, threads = NULL,
   verbose = getOption("verbose", TRUE))
 }
 \arguments{
@@ -15,6 +15,8 @@ hdbscan(edges, minPts = 20, K = 5, neighbors = NULL,
 \item{K}{The number of points in the core neighborhood. (See details.)}
 
 \item{neighbors}{An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}.}
+
+\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
 
 \item{verbose}{Verbosity.}
 }

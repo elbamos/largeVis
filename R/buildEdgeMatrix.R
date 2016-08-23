@@ -28,6 +28,7 @@ buildEdgeMatrix <- function(data,
 #' Rescale the weights in an edge matrix to match a given perplexity.
 #'
 #' @param x A sparse matrix
+#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param perplexity Given perplexity.
 #'
 #' @return A \code{list} with the following components: \describe{
@@ -38,18 +39,20 @@ buildEdgeMatrix <- function(data,
 #'  }
 #' @export
 buildWijMatrix <- function(x,
+													 threads = NULL,
 										       perplexity = 50) UseMethod("buildWijMatrix")
 #' @export
 #' @rdname buildWijMatrix
 buildWijMatrix.TsparseMatrix <- function(x,
+																				 threads = NULL,
 																	 perplexity = 50) {
-	wij <- referenceWij(x@j, x@i, x@x^2, perplexity)
+	wij <- referenceWij(x@j, x@i, x@x^2, threads, perplexity)
 	return(wij)
 }
 #' @export
 #' @rdname buildWijMatrix
-buildWijMatrix.CsparseMatrix <- function(x, perplexity = 50) {
+buildWijMatrix.CsparseMatrix <- function(x, threads = NULL, perplexity = 50) {
 	is <- rep(0:(ncol(x) - 1), diff(x@p))
-  wij <- referenceWij(is, x@i, x@x^2,perplexity)
+  wij <- referenceWij(is, x@i, x@x^2, threads, perplexity)
   return(wij)
 }

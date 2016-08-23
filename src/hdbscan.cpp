@@ -4,32 +4,14 @@
 // [[Rcpp::depends(RcppProgress)]]
 #include "pq.h"
 
-class HDBSCAN : UF<long long> {
+class HDBSCAN : public UF<long long> {
 public:
-  class CompareDist {
-  public:
-    bool operator()(iddist n1, iddist n2) {
-      return n1.second > n2.second;
-    }
-  };
-  typedef std::priority_queue<iddist,
-                              std::vector<iddist>,
-                              CompareDist> DistanceSorter;
-
-  long long starterIndex;
-  arma::sp_mat mrdMatrix;
-
-  std::unique_ptr<long long[]>   minimum_spanning_tree;
-  std::unique_ptr<double[]>    minimum_spanning_distances;
 
   HDBSCAN(const int N,
           const long long nedges,
           bool verbose) : UF(N, nedges, verbose) {
-            minimum_spanning_tree = std::unique_ptr<long long[]>(new long long[N]);
-            minimum_spanning_distances = std::unique_ptr<double[]>(new double[N]);
-          }
 
-  arma::vec coreDistances;
+  }
 
   void makeCoreDistances(const arma::sp_mat& edges, const int K) {
     coreDistances = arma::vec(N);
@@ -59,79 +41,12 @@ public:
     p.increment(N);
   }
 
-  void makeMRD(const arma::sp_mat& edges, const int K) {
-    mrdMatrix = arma::sp_mat(edges);
-    double bestOverall = INFINITY;
-    arma::sp_mat::iterator it;
-#ifdef _OPENMP
-#pragma omp parallel
-{
-#pragma omp single private(it)
-{
-#endif
-    for (it = mrdMatrix.begin();
-         it != mrdMatrix.end();
-         it++) if (p.increment())
-#pragma omp task
-         	{
-      long long i = it.row();
-      long long j = it.col();
-      double d = max(coreDistances[i], coreDistances[j]);
-      d = (d > *it) ? d : *it;
-      if (d < bestOverall) {
-        starterIndex = i;
-        bestOverall = d;
-      }
-      *it = d;
-    }
-#ifdef _OPENMP
-}
-}
-#endif
-  }
-
-  void primsAlgorithm() {
- //   double* Cv = minimum_spanning_distances;
- //   long long* Ev = minimum_spanning_tree;
-    MinIndexedPQ<long long, double> Q = MinIndexedPQ<long long, double>(N);
-    for (long long n = 0; n != N; n++) {
-      minimum_spanning_distances[n] = (n == starterIndex) ? -1 : INFINITY;
-      minimum_spanning_tree[n] = -1;
-      Q.insert(n, minimum_spanning_distances[n]);
-    }
-
-    long long v;
-    while (! Q.isEmpty() && p.increment()) {
-      v = Q.deleteMin();
-      for (auto it = mrdMatrix.begin_row(v);
-           it != mrdMatrix.end_row(v);
-           it++) {
-        long long w = it.col();
-        if (Q.contains(w) && *it < minimum_spanning_distances[w]) {
-          Q.changeKey(w, *it);
-          minimum_spanning_distances[w] = *it;
-          minimum_spanning_tree[w] = v;
-        }
-      }
-    }
-  }
-
-  void buildHierarchy() {
-    setup();
-    DistanceSorter srtr = DistanceSorter();
-    for (long long n = 0; n != N && p.increment(); n++) {
-      double distance = minimum_spanning_distances[n];
-      srtr.push(iddist(n, distance));
-    }
-
-    while (! srtr.empty() && p.increment()) {
-      const iddist ijd = srtr.top();
-      srtr.pop();
-      agglomerate(ijd.first, minimum_spanning_tree[ijd.first], ijd.second);
-    }
-  }
+	void primsAlgorithm(const sp_mat& edges) {
+		UF<long long>::primsAlgorithm(edges, 0);
+	}
 
   arma::mat process(const int minPts) {
+  	buildHierarchy();
     condense(minPts);
     determineStability(minPts);
     extractClusters();
@@ -174,6 +89,10 @@ public:
                               Rcpp::Named("stability") = stabilities,
                               Rcpp::Named("selected") = selected);
   }
+
+	long long* getMinimumSpanningTree() {
+		return minimum_spanning_tree.get();
+	}
 };
 
 // [[Rcpp::export]]
@@ -181,7 +100,11 @@ List hdbscanc(const arma::sp_mat& edges,
               Rcpp::Nullable< Rcpp::IntegerMatrix > neighbors,
               const int K,
               const int minPts,
+              Rcpp::Nullable<Rcpp::NumericVector> threads,
               const bool verbose) {
+#ifdef _OPENMP
+	checkCRAN(threads);
+#endif
   HDBSCAN object = HDBSCAN(edges.n_cols, edges.n_elem, verbose);
   if (neighbors.isNotNull()) {
     IntegerMatrix neigh = IntegerMatrix(neighbors);
@@ -189,13 +112,12 @@ List hdbscanc(const arma::sp_mat& edges,
   } else {
     object.makeCoreDistances(edges, K);
   }
-  object.makeMRD(edges, K);
-  object.primsAlgorithm();
-  object.buildHierarchy();
+  object.primsAlgorithm(edges);
   arma::mat clusters = object.process(minPts);
   arma::ivec tree = arma::ivec(edges.n_cols);
+  long long* mst = object.getMinimumSpanningTree();
   for (int n = 0; n != edges.n_cols; n++) {
-    tree[n] = object.minimum_spanning_tree[n];
+    tree[n] = mst[n];
   }
   Rcpp::List hierarchy = object.reportHierarchy();
   return Rcpp::List::create(Rcpp::Named("clusters") = clusters,

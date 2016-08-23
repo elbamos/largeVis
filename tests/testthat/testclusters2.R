@@ -8,7 +8,7 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 20
-neighbors <- randomProjectionTreeSearch(dat, K = K, verbose = FALSE)
+neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat,
                           neighbors = neighbors,
                           verbose = FALSE)
@@ -42,20 +42,20 @@ test_that("LOF is consistent 10", {
 context("hdbscan")
 
 test_that("hdbscan doesn't crash", {
-  expect_silent(hdbscan(edges, minPts = 20, K = 3, verbose = FALSE))
+  expect_silent(hdbscan(edges, minPts = 20, K = 3, threads = 2, verbose = FALSE))
 })
 
 test_that("hdbscan doesn't crash with neighbors", {
-  expect_silent(hdbscan(edges, minPts = 20, neighbors = neighbors, K = 3, FALSE))
+  expect_silent(hdbscan(edges, minPts = 20, neighbors = neighbors, K = 3, threads = 2,  FALSE))
 })
 
 test_that("hdbscan is correct", {
-  clustering <- hdbscan(edges, minPts = 10, K = 3, verbose = FALSE)
+  clustering <- hdbscan(edges, minPts = 10, K = 3,  threads = 2, verbose = FALSE)
   expect_equal(length(unique(clustering$clusters)), 2)
 })
 
 test_that("hdbscan is correct with neighbors", {
-  clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, FALSE)
+  clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3,  threads = 2, FALSE)
   expect_equal(length(unique(clustering$clusters)), 2)
 })
 

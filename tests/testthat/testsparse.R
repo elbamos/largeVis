@@ -41,7 +41,7 @@ test_that("sparseDistances", {
   new_distances <- distance(mat,
                             as.vector(index_matrix[, 2]),
                             as.vector(index_matrix[, 1]),
-                            "Euclidean",
+                            "Euclidean", threads = 2,
                             verbose = FALSE)
   diffs <- as.vector(d) - new_distances
   expect_lt(sum(diffs), 1e-10)
@@ -55,7 +55,7 @@ test_that("Can determine sparse iris neighbors accurately", {
                                           n_trees = 20,
                                           max_iter = 2,
                                           tree_threshold = 30,
-  																				seed = 1974,
+  																				seed = 1974, threads = 2,
                                           verbose = FALSE)
   expect_lte(sum(neighbors - bests, na.rm = TRUE), 5)
 })
