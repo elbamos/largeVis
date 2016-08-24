@@ -2,19 +2,25 @@
 #' Build an nearest-neighbor graph weighted by distance.
 #'
 #' @param data A matrix with a number of columns equal to the number of columns in `x`
-#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}.
+#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}. If \code{NULL}, \code{\link{randomProjectionTreeSearch}}
+#' will be run with parameters given by \code{...}.
 #' @param distance_method One of "Euclidean" or "Cosine"
+#' @param threads The number of threads to use in calculating distance; set automatically if \code{NULL} (the default).
 #' @param verbose Verbosity
+#' @param ... Additional parameters passed to \code{\link{randomProjectionTreeSearch}} if \code{neighbors} is \code{NULL}.
 #'
 #' @return A `sparseMatrix`
 #' @importFrom Matrix sparseMatrix
 #' @export
 buildEdgeMatrix <- function(data,
-                            neighbors,
+                            neighbors = NULL,
                             distance_method = "Euclidean",
-                            verbose = getOption("verbose", TRUE)) {
+														threads = NULL,
+                            verbose = getOption("verbose", TRUE),
+														...) {
+	if (is.null(neighbors)) neighbors <- randomProjectionTreeSearch(data, threads = threads, ...)
 	indices <- neighborsToVectors(neighbors)
-	distances <- distance(indices$i, indices$j, x = data, distance_method, verbose)
+	distances <- distance(i = indices$i, j = indices$j, x = data, distance_method = distance_method, verbose = verbose)
 	mat <- sparseMatrix(
 		                  i = indices$i + 1,
 											j = indices$j + 1,

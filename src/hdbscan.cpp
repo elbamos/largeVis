@@ -8,15 +8,13 @@ class HDBSCAN : public UF<long long> {
 public:
 
   HDBSCAN(const int N,
-          const long long nedges,
-          bool verbose) : UF(N, nedges, verbose) {
+          bool verbose) : UF(N, verbose) {
 
   }
 
   void makeCoreDistances(const arma::sp_mat& edges, const int K) {
     coreDistances = arma::vec(N);
-    for (long long n = 0; n < N; n++) //if (p.increment())
-    	{
+    for (long long n = 0; n < N; n++) if (p.increment()) {
       DistanceSorter srtr = DistanceSorter();
       for (auto it = edges.begin_row(n);
            it != edges.end_row(n);
@@ -45,11 +43,21 @@ public:
 		UF<long long>::primsAlgorithm(edges, 0);
 	}
 
+	void primsAlgorithm(const sp_mat& edges, const Rcpp::IntegerMatrix& neighbors) {
+		long long bestidx = -1;
+		double bestdist = INFINITY;
+		for (long long n = 0; n != N; n++) if (edges(n, neighbors(0, n)) < bestdist) {
+			bestdist = edges(n, neighbors(0, n));
+			bestidx = n;
+		}
+		UF<long long>::primsAlgorithm(edges, bestidx);
+	}
+
   arma::mat process(const int minPts) {
-  	buildHierarchy();
-    condense(minPts);
-    determineStability(minPts);
-    extractClusters();
+  	buildHierarchy(); // 2 N
+    condense(minPts); // 2 N
+    determineStability(minPts); // N
+    extractClusters(); // N
     return getClusters();
   }
 
@@ -105,14 +113,15 @@ List hdbscanc(const arma::sp_mat& edges,
 #ifdef _OPENMP
 	checkCRAN(threads);
 #endif
-  HDBSCAN object = HDBSCAN(edges.n_cols, edges.n_elem, verbose);
-  if (neighbors.isNotNull()) {
+  HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
+  if (neighbors.isNotNull()) { // 1 N
     IntegerMatrix neigh = IntegerMatrix(neighbors);
     object.makeCoreDistances(edges, neigh, K);
+    object.primsAlgorithm(edges, neigh); // 1 N
   } else {
     object.makeCoreDistances(edges, K);
+  	object.primsAlgorithm(edges); // 1 N
   }
-  object.primsAlgorithm(edges);
   arma::mat clusters = object.process(minPts);
   arma::ivec tree = arma::ivec(edges.n_cols);
   long long* mst = object.getMinimumSpanningTree();

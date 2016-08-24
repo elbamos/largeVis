@@ -51,17 +51,17 @@ public:
   }
 
   // check if the PQ is empty
-  bool isEmpty()  {
+  bool isEmpty() const {
     return N == 0;
   }
 
   // check if i is an index on the PQ
-  bool contains(VIDX i)    {
+  bool contains(VIDX i) const {
     return index[i] != -1;
   }
 
   // return the number of elements in the PQ
-  VIDX size()  {
+  VIDX size() const {
     return N;
   }
 
@@ -75,12 +75,12 @@ public:
   }
 
   // returns the index associated with the minimal key
-  VIDX minIndex()  {
+  VIDX minIndex() const {
     return heap[1];
   }
 
   // returns the minimal key
-  D minKey()    {
+  D minKey() const {
     return keys[heap[1]];
   }
 
@@ -96,16 +96,22 @@ public:
   }
 
   // returns the key associated with index i
-  D keyOf(VIDX i)    {
+  D keyOf(VIDX i) const {
     return keys[i];
   }
 
   // change the key associated with index i to the specified value
   void changeKey(VIDX i, D key)  {
     keys[i] = key;
+  	if (keys[i] == -1) return;
     bubbleUp(index[i]);
     bubbleDown(index[i]);
   }
+
+	// change the key without updating the heap
+	void forceKey(VIDX i, D key) {
+		keys[i] = key;
+	}
 
   // delete the key associated with index i
   void remove(VIDX i)   {
@@ -128,12 +134,12 @@ private:
   arma::Col< VIDX > sizes;
   std::unique_ptr< std::set< VIDX >[] > fallenPointses;
   std::unique_ptr< std::set< VIDX >[] > goodChildrens;
-  arma::Col< int > selected;
+  std::unique_ptr< bool[] > selected;
 
 protected:
   typedef std::pair<VIDX, double> iddist;
   class CompareDist {
-  public:
+	public:
   	bool operator()(iddist n1, iddist n2) const {
   		return n1.second > n2.second;
   	}
@@ -148,28 +154,37 @@ protected:
 
   arma::vec coreDistances;
 
+  VIDX starterIndex = 0;
+  MinIndexedPQ<VIDX, double> Q;
   std::unique_ptr< VIDX[] >   	minimum_spanning_tree;
-  std::unique_ptr< double[] >   minimum_spanning_distances;
 
   VIDX counter = 0;
 
   std::set< VIDX > survivingClusters;
 
-  int clusterCount = 0;
+  int clusterCount = 1;
 
   // Used after condensation to speed-up remaining phases
   std::set< VIDX > roots;
 
-  UF(VIDX N, VIDX nedges, bool verbose) : N{N},
-                                          p(Progress((9 * N) + (nedges), verbose)) {
+  UF(VIDX N, bool verbose) : N{N}, p(Progress(8 * N, verbose)), Q(MinIndexedPQ<VIDX, double>(N)) {
     	minimum_spanning_tree = std::unique_ptr<VIDX[]>(new VIDX[N]);
-    	minimum_spanning_distances = std::unique_ptr<double[]>(new double[N]);
+#ifdef DEBUG
+  	setupTest();
+#endif
   }
 
 #ifdef DEBUG
   std::set< VIDX > testers = std::set< VIDX >();
   void setupTest() {
-    testers.insert(209);
+    testers.insert(1);
+  	testers.insert(2);
+  	testers.insert(3);
+  	testers.insert(107);
+  	testers.insert(108);
+  	testers.insert(208);
+  	testers.insert(209);
+  	testers.insert(210);
   }
   bool trace(const VIDX p) const {
     bool ret = testers.find(p) != testers.end();
@@ -191,35 +206,66 @@ protected:
   	return d;
   }
 
-  void primsAlgorithm(const arma::sp_mat& edges, VIDX starterIndex) {
-  	MinIndexedPQ<VIDX, double> Q = MinIndexedPQ<VIDX, double>(N);
-  	for (VIDX n = 0; n != N; n++) {
-  		minimum_spanning_distances[n] = (n == starterIndex) ? -1 : INFINITY;
-  		minimum_spanning_tree[n] = -1;
-  		Q.insert(n, minimum_spanning_distances[n]);
+  inline void updateVWD(VIDX v, VIDX w, double d) {
+  	double mrd = getMRD(v, w, d);
+  	if (mrd < Q.keyOf(w)) {
+  		Q.changeKey(w, mrd);
+  		minimum_spanning_tree[w] = v;
   	}
+  }
 
-  	VIDX v;
-  	while (! Q.isEmpty() && p.increment()) {
-  		v = Q.deleteMin();
-  		for (auto it = edges.begin_row(v);
-         it != edges.end_row(v);
-         it++) {
-  			VIDX w = it.col();
-  			double d = getMRD(v, w, *it);
-  			if (Q.contains(w) && d < minimum_spanning_distances[w]) {
-  				Q.changeKey(w, d);
-  				minimum_spanning_distances[w] = d;
-  				minimum_spanning_tree[w] = v;
-  			}
+  inline void forceUpdateVMW(VIDX v, VIDX w, double mrd) {
+#ifdef DEBUG
+  	if (testers.find(w) != testers.end()) {
+  		Rcout << "\tprim updating " << w << " with " << mrd << " to " << v;
+  	}
+#endif
+  	Q.forceKey(w, mrd);
+  	minimum_spanning_tree[w] = v;
+  }
+
+  inline void checkAndUpdateVWD(VIDX v, VIDX w, double d) {
+  	if (Q.contains(w)) updateVWD(v, w, d);
+  	else if (w == starterIndex) {
+  		if (Q.keyOf(w) == -1) forceUpdateVMW(v, w, getMRD(v, w, d));
+  		else {
+  			double mrd = getMRD(v, w, d);
+  			if (mrd < Q.keyOf(w)) forceUpdateVMW(v, w, d);
   		}
+  	}
+  }
+
+  void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
+  	starterIndex = start;
+  	for (VIDX n = 0; n != N; n++) {
+  		minimum_spanning_tree[n] = -1;
+  		Q.insert(n, (n == starterIndex) ? -1 : INFINITY);
+  	}
+  	VIDX v;
+
+  	while (! Q.isEmpty() && p.increment()) {
+#ifdef DEBUG
+  		if (testers.find(v) != testers.end()) {
+  			Rcout << "\nprim adding " << v << " with " << Q.keyOf(v);
+  		}
+#endif
+  		v = Q.deleteMin();
+  		if (Q.keyOf(v) == INFINITY) starterIndex = v;
+  		arma::sp_mat::const_row_iterator it;
+  		for (it = edges.begin_row(v);
+         it != edges.end_row(v);
+         it++) checkAndUpdateVWD(v, it.col(), *it);
+  		arma::sp_mat::const_iterator it2;
+  		for (it2 = edges.begin_col(v);
+         it2 != edges.end_col(v);
+         it2++) checkAndUpdateVWD(v, it2.row(), *it2);
   	}
   }
 
   /*
    * The hierarchy construction phase
    */
-  VIDX getRoot(VIDX p) {
+  VIDX getRoot(VIDX p) const {
     return (parents[p] == p) ? p : getRoot(parents[p]);
   }
 
@@ -233,7 +279,7 @@ protected:
   }
 
   void agglomerate(VIDX a, VIDX b, double d) {
-    if (b == -1) {
+    if (b == -1 || d == INFINITY) {
       lambda_births[a] = (lambda_births[a] > 0) ? lambda_births[a] : -1;
       return;
     } else if (lambda_births[b] == -1) lambda_births[b] = 1 / d;
@@ -249,19 +295,18 @@ protected:
   }
 
   void buildHierarchy() {
-#ifdef DEBUG
-  	setupTest();
-#endif
   	reservesize = 2 * N + 1;
   	parents = arma::Col< VIDX >(reservesize);
   	sizes = arma::Col< VIDX >(reservesize);
   	lambda_births = arma::Col< double >(reservesize);
   	lambda_deaths = arma::Col< double >(reservesize);
+
   	for (VIDX n = 0; n != N; n++) add();
+
   	DistanceSorter srtr = DistanceSorter();
   	for (long long n = 0; n != N && p.increment(); n++) {
-  		double distance = minimum_spanning_distances[n];
-  		srtr.push(iddist(n, distance));
+  		double distance = Q.keyOf(n);
+  		srtr.emplace(n, distance);
   	}
 
   	while (! srtr.empty() && p.increment()) {
@@ -352,7 +397,7 @@ protected:
 #ifdef _OPENMP
 #pragma omp task
 #endif
-		{condenseTwo(*it2);}
+		 {if (p.increment(sizes[*it2])) {condenseTwo(*it2);}}
 #ifdef _OPENMP
 }
 }
@@ -392,7 +437,7 @@ protected:
 
   void determineStability(int minPts) {
     stabilities = arma::Col< double >(counter);
-    selected = arma::Col< int >(counter);
+    selected = std::unique_ptr< bool[] >(new bool[counter]);
     typename std::set< VIDX >::iterator it;
 #ifdef _OPENMP
 #pragma omp parallel
@@ -406,7 +451,7 @@ protected:
 #ifdef _OPENMP
 #pragma omp task
 #endif
-    	{determineStability(*it, minPts);}
+    	{if (p.increment(sizes[*it])) {determineStability(*it, minPts);}}
 #ifdef _OPENMP
 }}
 #endif
@@ -429,18 +474,32 @@ protected:
       childStabilities += stabilities[*it];
     }
     if (childStabilities > stabilities[p]) {
+#ifdef DEBUG
+    	Rcout << "\npoint " << p << " children are more stable.";
+#endif
+    	selected[p] = false;
       stabilities[p] = childStabilities;
     } else {
+#ifdef DEBUG
+Rcout << "\n point " << p << " more stable than children ";
+#endif
       // If this is the only root, and there are children, don't let it be selected,
       // because then we'd have only one cluster.
-      if (parents[p] == p && roots.size() == 1 && goodChildrens[p].size() > 0) {
+      if (parents[p] == p && roots.size() == 1) {
+#ifdef DEBUG
+      	Rcout << "not selecting top parent";
+#endif
         selected[p] = false;
         return;
-      }
-      selected[p] = true;
-      for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
-           it != goodChildrens[p].end();
-           it++) deselect(*it);
+      } else {
+#ifdef DEBUG
+      	Rcout << "selecting, deselcting children.";
+#endif
+      	selected[p] = true;
+      	for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
+            it != goodChildrens[p].end();
+            it++) deselect(*it);
+      	}
     }
   }
 
@@ -459,7 +518,7 @@ protected:
 #ifdef _OPENMP
 #pragma omp task
 #endif
-    	    	{extractClusters(*it);}
+    	   {if (p.increment(sizes[*it])) 	{extractClusters(*it);}}
 #ifdef _OPENMP
 }}
 #endif
@@ -473,6 +532,9 @@ protected:
 #pragma omp critical
 #endif
 		{
+#ifdef DEBUG
+	Rcout << "\n selecting cluster " << clusterCount << " node " << n;
+#endif
       thisCluster = clusterCount++;
       thisDeath = lambda_deaths[n];
     }

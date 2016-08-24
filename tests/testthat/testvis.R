@@ -62,3 +62,13 @@ test_that("largeVis continues to work as it scales up", {
 		expect_false(any(is.infinite(coords)))
 	}
 })
+
+context("specific issue tests")
+
+test_that("dim064 issue is resolved", {
+	load(system.file("extdata/badmat.Rda", package = "largeVis"))
+	expect_silent(neighbors <- randomProjectionTreeSearch(badmat, K = 50, threads = 2))
+	expect_silent(edges <- buildEdgeMatrix(badmat, neighbors = neighbors, threads = 2))
+	expect_silent(wij <- buildWijMatrix(edges, threads = 2))
+	expect_silent(vis <- largeVis(badmat, K = 50, sgd_batches = 1000))
+})

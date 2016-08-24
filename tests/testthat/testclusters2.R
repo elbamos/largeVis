@@ -41,25 +41,34 @@ test_that("LOF is consistent 10", {
 
 context("hdbscan")
 
-test_that("hdbscan doesn't crash", {
-  expect_silent(hdbscan(edges, minPts = 20, K = 3, threads = 2, verbose = FALSE))
+test_that("hdbscan finds 3 clusters and outliers in spiral", {
+	load(system.file("extdata/spiral.Rda", package = "largeVis"))
+	clustering <- hdbscan(spiral, K = 3, minPts = 10, threads = 1)
+	expect_equal(length(unique(clustering$clusters)), 4)
 })
 
 test_that("hdbscan doesn't crash with neighbors", {
-  expect_silent(hdbscan(edges, minPts = 20, neighbors = neighbors, K = 3, threads = 2,  FALSE))
+  hdbscan(edges, minPts = 20, neighbors = neighbors, K = 3, threads = 2,  FALSE)
 })
 
 test_that("hdbscan is correct", {
   clustering <- hdbscan(edges, minPts = 10, K = 3,  threads = 2, verbose = FALSE)
-  expect_equal(length(unique(clustering$clusters)), 2)
+  expect_equal(length(unique(clustering$clusters)), 3)
 })
 
-test_that("hdbscan is correct with neighbors", {
+test_that("hdbscan is less correct with neighbors", {
   clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3,  threads = 2, FALSE)
   expect_equal(length(unique(clustering$clusters)), 2)
 })
 
 test_that("hdbscan doesn't crash on glass edges", {
 	load(system.file("extdata/glassEdges.Rda", package = "largeVis"))
-	expect_silent(clustering <- hdbscan(edges))
+	clustering <- hdbscan(edges, threads = 2)
+	expect_equal(length(unique(clustering$clusters)), 3)
+})
+
+test_that("hdbscan doesn't crash on big bad edges", {
+	skip_on_cran()
+#	load(system.file("extdata/badedges.Rda", package = "largeVis"))
+#	expect_silent(clustering <- hdbscan(badedges, threads = 2))
 })
