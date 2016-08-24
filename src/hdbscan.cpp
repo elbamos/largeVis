@@ -43,16 +43,6 @@ public:
 		UF<long long>::primsAlgorithm(edges, 0);
 	}
 
-	void primsAlgorithm(const sp_mat& edges, const Rcpp::IntegerMatrix& neighbors) {
-		long long bestidx = -1;
-		double bestdist = INFINITY;
-		for (long long n = 0; n != N; n++) if (edges(n, neighbors(0, n)) < bestdist) {
-			bestdist = edges(n, neighbors(0, n));
-			bestidx = n;
-		}
-		UF<long long>::primsAlgorithm(edges, bestidx);
-	}
-
   arma::mat process(const int minPts) {
   	buildHierarchy(); // 2 N
     condense(minPts); // 2 N
@@ -117,11 +107,11 @@ List hdbscanc(const arma::sp_mat& edges,
   if (neighbors.isNotNull()) { // 1 N
     IntegerMatrix neigh = IntegerMatrix(neighbors);
     object.makeCoreDistances(edges, neigh, K);
-    object.primsAlgorithm(edges, neigh); // 1 N
+//    object.primsAlgorithm(edges, neigh); // 1 N
   } else {
     object.makeCoreDistances(edges, K);
-  	object.primsAlgorithm(edges); // 1 N
   }
+  object.primsAlgorithm(edges); // 1 N
   arma::mat clusters = object.process(minPts);
   arma::ivec tree = arma::ivec(edges.n_cols);
   long long* mst = object.getMinimumSpanningTree();

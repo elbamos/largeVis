@@ -226,13 +226,13 @@ protected:
 
   inline void checkAndUpdateVWD(VIDX v, VIDX w, double d) {
   	if (Q.contains(w)) updateVWD(v, w, d);
-  	else if (w == starterIndex) {
-  		if (Q.keyOf(w) == -1) forceUpdateVMW(v, w, getMRD(v, w, d));
-  		else {
-  			double mrd = getMRD(v, w, d);
-  			if (mrd < Q.keyOf(w)) forceUpdateVMW(v, w, d);
-  		}
-  	}
+//  	else if (w == starterIndex) {
+//  		if (Q.keyOf(w) == -1) forceUpdateVMW(v, w, getMRD(v, w, d));
+//  		else {
+//  			double mrd = getMRD(v, w, d);
+//  			if (mrd < Q.keyOf(w)) forceUpdateVMW(v, w, d);
+//  		}
+//  	}
   }
 
   void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
@@ -250,15 +250,38 @@ protected:
   		}
 #endif
   		v = Q.deleteMin();
-  		if (Q.keyOf(v) == INFINITY) starterIndex = v;
-  		arma::sp_mat::const_row_iterator it;
-  		for (it = edges.begin_row(v);
-         it != edges.end_row(v);
-         it++) checkAndUpdateVWD(v, it.col(), *it);
+  		if (Q.keyOf(v) == INFINITY) {
+  		  starterIndex = v;
+  		  arma::sp_mat::const_row_iterator it;
+  		  for (it = edges.begin_row(v);
+           it != edges.end_row(v);
+           it++) {
+  		    VIDX w = it.col();
+  		    double mrd = getMRD(w, v, *it);
+  		    if (mrd < Q.keyOf(w)) {
+  		      Q.forceKey(v, mrd);
+  		      minimum_spanning_tree[v] = w;
+  		    }
+  		  }
+  		}
+//  		arma::sp_mat::const_row_iterator it;
+//  		for (it = edges.begin_row(v);
+//         it != edges.end_row(v);
+//         it++) checkAndUpdateVWD(v, it.col(), *it);
   		arma::sp_mat::const_iterator it2;
+  		// We only need to check for nodes where v is one of their nearest neighbors --
+  		// we don't need to check v's nearest neighbors
   		for (it2 = edges.begin_col(v);
          it2 != edges.end_col(v);
          it2++) checkAndUpdateVWD(v, it2.row(), *it2);
+  		// But, if this would be the end of the graph, put in some extra cycles to avoid
+  		// resetting the starter index.
+  		if (! Q.isEmpty() && Q.minKey() == INFINITY) {
+  		    		arma::sp_mat::const_row_iterator it;
+  		    		for (it = edges.begin_row(v);
+  		           it != edges.end_row(v);
+  		           it++) checkAndUpdateVWD(v, it.col(), *it);  		  
+  		}
   	}
   }
 
