@@ -13,6 +13,7 @@ test_that("Euclidean distances are correct", {
                             as.vector(index_matrix[, 1]),
                             x = test_matrix,
                             "Euclidean",
+  													threads = 2,
                             verbose = FALSE)
   diffs <- as.vector(distances) - new_distances
   expect_lt(sum(diffs), 1e-10)
@@ -32,7 +33,22 @@ test_that("Cosine distances are correct", {
                             as.vector(index_matrix[, 1]),
                             x = test_matrix,
                             "Cosine",
+  													threads = 2,
                             verbose = FALSE)
   diffs <- as.vector(distances) - new_distances
   expect_lt(sum(diffs), 1e-10)
+})
+
+context("build edge matrix")
+
+test_that("build edge matrix works as expected", {
+  data (iris)
+  set.seed(1974)
+  dat <- as.matrix(iris[, 1:4])
+  dat <- scale(dat)
+  dupes <- which(duplicated(dat))
+  dat <- dat[-dupes, ]
+  dat <- t(dat)
+  neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
+  expect_silent(edges <- buildEdgeMatrix(dat, neighbors))
 })

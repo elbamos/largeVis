@@ -7,16 +7,16 @@
 \alias{distance.matrix}
 \title{Calculate pairwise Euclidean or angular distances efficiently}
 \usage{
-distance(x, i, j, distance_method, verbose)
+distance(x, i, j, distance_method, threads = NULL, verbose)
 
 \method{distance}{matrix}(x, i, j, distance_method = "Euclidean",
-  verbose = getOption("verbose", TRUE))
+  threads = NULL, verbose = getOption("verbose", TRUE))
 
 \method{distance}{CsparseMatrix}(x, i, j, distance_method = "Euclidean",
-  verbose = getOption("verbose", TRUE))
+  threads = NULL, verbose = getOption("verbose", TRUE))
 
 \method{distance}{TsparseMatrix}(x, i, j, distance_method = "Euclidean",
-  verbose = getOption("verbose", TRUE))
+  threads = NULL, verbose = getOption("verbose", TRUE))
 }
 \arguments{
 \item{x}{A (potentially sparse) matrix, where examples are columns and features are rows.}
@@ -26,6 +26,8 @@ distance(x, i, j, distance_method, verbose)
 \item{j}{0-indexed vector of column indices.}
 
 \item{distance_method}{One of "Euclidean" or "Cosine."}
+
+\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
 
 \item{verbose}{Verbosity.}
 }

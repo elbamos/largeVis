@@ -31,6 +31,7 @@
 #' @param seed Random seed to be passed to the C++ functions; sampled from hardware entropy pool if \code{NULL} (the default).
 #' Note that if the seed is not \code{NULL} (the default), the maximum number of threads will be set to 1 in phases of the algorithm
 #' that would otherwise be non-deterministic.
+#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param verbose Verbosity
 #'
 #' @note If specified, \code{seed} is passed to the C++ and used to initialize the random number generator. This will not, however, be
@@ -39,16 +40,8 @@
 #'
 #' @return A dense [N,D] matrix of the coordinates projecting the w_ij matrix into the lower-dimensional space.
 #' @export
-#' @examples
-#' \dontrun{
-#' data(wiki)
-#' coords <- projectKNNs(wiki)
-#' coords <- scale(coords)
-#' plot(coords, xlim = c(-1.5,1.5), ylim = c(-1.5,1.5))
-#' }
 #' @importFrom stats runif
 #'
-
 projectKNNs <- function(wij, # symmetric sparse matrix
                         dim = 2, # dimension of the projection space
                         sgd_batches = NULL,
@@ -58,6 +51,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                         rho = 1,
                         coords = NULL,
 												seed = NULL,
+												threads = NULL,
                         verbose = getOption("verbose", TRUE)) {
 
   if (alpha < 0) stop("alpha < 0 is meaningless")
@@ -94,7 +88,8 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 alpha = alpha, gamma = gamma, M = M,
                 rho = rho,
                 n_samples = sgd_batches,
-  							seed,
+  							seed = seed,
+  							threads = threads,
                 verbose = verbose)
 
   return(coords)

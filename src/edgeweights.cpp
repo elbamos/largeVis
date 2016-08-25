@@ -78,7 +78,7 @@ public:
   }
 
   void searchReverse(vertexidxtype id) {
-    vertexidxtype y;
+  	vertexidxtype y;
   	edgeidxtype p, q;
     for (p = head[id]; p >= 0; p = next[p]) {
       y = edge_to[p];
@@ -146,7 +146,11 @@ public:
 arma::sp_mat referenceWij(const arma::ivec& i,
 				                  const arma::ivec& j,
 				                  arma::vec& d,
+				                  Rcpp::Nullable<Rcpp::NumericVector> threads,
 				                  double perplexity) {
+#ifdef _OPENMP
+	checkCRAN(threads);
+#endif
   ReferenceEdges ref = ReferenceEdges(perplexity, i, j, d);
   // vec sigmas = ref.getSigmas();
   ref.run();

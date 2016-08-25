@@ -11,6 +11,9 @@
 #' @param distance_method One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See \code{\link{buildWijMatrix}}.
 #' @param save_neighbors Whether to include in the output the adjacency matrix of nearest neighbors.
+#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).  It is unlikely that
+#' this parameter should ever need to be adjusted.  It is only available to make it possible to abide by the CRAN limitation that no package
+#' use more than two cores.
 #' @param verbose Verbosity
 #' @param ... Additional arguments passed to \code{\link{projectKNNs}}.
 #'
@@ -34,15 +37,18 @@
 #' dupes = which(duplicated(dat))
 #' dat <- dat[-dupes,] # duplicates can cause the algorithm to fail
 #' dat <- t(dat)
-#' visObject <- largeVis(dat, max_iter = 20, K = 10)
-#'\dontrun{
+#' visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000)
+#' plot(t(visObject$coords))
+#'
+#' \dontrun{
 #' # mnist
 #' load("./mnist.Rda")
 #' dat <- mnist$images
 #' dim(dat) <- c(42000, 28 * 28)
 #' dat <- (dat / 255) - 0.5
 #' dat <- t(dat)
-#' coords <- largeVis(dat, n_trees = 50, tree_th = 200, K = 50)
+#' visObject <- largeVis(dat, n_trees = 50, tree_th = 200, K = 50)
+#' plot(t(visObject$coords))
 #' }
 #'
 largeVis <- function(x,
@@ -58,6 +64,8 @@ largeVis <- function(x,
 
                      save_neighbors = TRUE,
 
+										 threads = NULL,
+
                      verbose = getOption("verbose", TRUE),
                     ...) {
 
@@ -70,6 +78,7 @@ largeVis <- function(x,
                                      K = K,
                                      max_iter = max_iter,
                                      distance_method = distance_method,
+  																	 threads,
                                      verbose = verbose)
   #############################################
   # Clean knns
@@ -87,7 +96,7 @@ largeVis <- function(x,
   		"Scaling the distance vector."))
   	edges@x <- scale(edges@x, center = FALSE)
   } # nocov end
-  wij <- buildWijMatrix(edges, perplexity)
+  wij <- buildWijMatrix(edges, threads, perplexity)
   rm(edges)
 
   #######################################################
@@ -96,6 +105,7 @@ largeVis <- function(x,
   coords <- projectKNNs(wij = wij,
                         dim = dim,
                         verbose = verbose,
+  											threads = threads,
                         ...)
 
   #######################################################

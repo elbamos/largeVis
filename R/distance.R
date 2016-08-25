@@ -8,6 +8,7 @@
 #' @param j 0-indexed vector of column indices.
 #' @param x A (potentially sparse) matrix, where examples are columns and features are rows.
 #' @param distance_method One of "Euclidean" or "Cosine."
+#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param verbose Verbosity.
 #'
 #' @return A vector of the distances between the columns in `x` indexed by `i` and `j`.
@@ -17,6 +18,7 @@ distance <- function(x,
                      i,
                      j,
                      distance_method,
+										 threads = NULL,
                      verbose) UseMethod("distance")
 
 #' @export
@@ -25,11 +27,13 @@ distance.matrix <- function(x,
                      i,
                      j,
                      distance_method = "Euclidean",
+										 threads = NULL,
                      verbose = getOption("verbose", TRUE)) {
   return (fastDistance(i,
                        j,
                        x,
                        distance_method,
+  										 threads,
                        verbose))
 }
 
@@ -39,6 +43,7 @@ distance.CsparseMatrix <- function(x,
                                    i,
                                    j,
                                    distance_method = "Euclidean",
+																	 threads = NULL,
                                    verbose = getOption("verbose", TRUE)) {
   return(fastCDistance(i,
                        j,
@@ -46,6 +51,7 @@ distance.CsparseMatrix <- function(x,
                        x@p,
                        x@x,
                        distance_method,
+  										 threads,
                        verbose))
 }
 
@@ -56,6 +62,7 @@ distance.TsparseMatrix <- function(
                                   i,
                                   j,
                                   distance_method="Euclidean",
+                                  threads = NULL,
                                   verbose = getOption("verbose", TRUE)) {
   return(fastSDistance(i,
                        j,
@@ -63,6 +70,7 @@ distance.TsparseMatrix <- function(
                        x@j,
                        x@p,
                        distance_method,
+  										 threads,
                        verbose))
 }
 

@@ -8,6 +8,16 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
+#ifdef _OPENMP
+void checkCRAN(Rcpp::Nullable<Rcpp::NumericVector> threads) {
+	if (threads.isNotNull()) {
+		int nthreads = NumericVector(threads)[0];
+		if (nthreads > 0) omp_set_num_threads(nthreads);
+	}
+}
+#endif
+
+
 class Visualizer {
 protected:
   const dimidxtype D;
@@ -53,7 +63,7 @@ public:
 	void initAlias(arma::ivec& newps,
                  const arma::vec& weights,
                  const arma::ivec& targets,
-                Rcpp::Nullable<Rcpp::NumericVector> seed) {
+                 Rcpp::Nullable<Rcpp::NumericVector> seed) {
 		vertexidxtype N = newps.n_elem - 1;
 		ps = newps.memptr();
 		distancetype* negweights = new distancetype[N];
@@ -83,6 +93,7 @@ public:
 			negAlias.initRandom();
 			posAlias.initRandom();
 		}
+		delete[] negweights;
 	}
 
   void setGradient(double alpha, double gamma, dimidxtype D) {
@@ -160,7 +171,11 @@ arma::mat sgd(arma::mat coords,
               const int M,
               const double alpha,
               const Rcpp::Nullable<Rcpp::NumericVector> seed,
+              Rcpp::Nullable<Rcpp::NumericVector> threads,
               const bool verbose) {
+#ifdef _OPENMP
+	checkCRAN(threads);
+#endif
   Progress progress(n_samples, verbose);
 	dimidxtype D = coords.n_rows;
   if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");

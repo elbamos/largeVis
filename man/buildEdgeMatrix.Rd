@@ -4,17 +4,22 @@
 \alias{buildEdgeMatrix}
 \title{Build an nearest-neighbor graph weighted by distance.}
 \usage{
-buildEdgeMatrix(data, neighbors, distance_method = "Euclidean",
-  verbose = options("verbose"))
+buildEdgeMatrix(data, neighbors = NULL, distance_method = "Euclidean",
+  threads = NULL, verbose = getOption("verbose", TRUE), ...)
 }
 \arguments{
 \item{data}{A matrix with a number of columns equal to the number of columns in `x`}
 
-\item{neighbors}{An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}.}
+\item{neighbors}{An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}. If \code{NULL}, \code{\link{randomProjectionTreeSearch}}
+will be run with parameters given by \code{...}.}
 
 \item{distance_method}{One of "Euclidean" or "Cosine"}
 
+\item{threads}{The number of threads to use in calculating distance; set automatically if \code{NULL} (the default).}
+
 \item{verbose}{Verbosity}
+
+\item{...}{Additional parameters passed to \code{\link{randomProjectionTreeSearch}} if \code{neighbors} is \code{NULL}.}
 }
 \value{
 A `sparseMatrix`

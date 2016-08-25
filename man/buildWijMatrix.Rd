@@ -6,14 +6,16 @@
 \alias{buildWijMatrix.TsparseMatrix}
 \title{buildWijMatrix}
 \usage{
-buildWijMatrix(x, perplexity = 50)
+buildWijMatrix(x, threads = NULL, perplexity = 50)
 
-\method{buildWijMatrix}{TsparseMatrix}(x, perplexity = 50)
+\method{buildWijMatrix}{TsparseMatrix}(x, threads = NULL, perplexity = 50)
 
-\method{buildWijMatrix}{CsparseMatrix}(x, perplexity = 50)
+\method{buildWijMatrix}{CsparseMatrix}(x, threads = NULL, perplexity = 50)
 }
 \arguments{
 \item{x}{A sparse matrix}
+
+\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
 
 \item{perplexity}{Given perplexity.}
 }

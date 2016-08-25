@@ -13,7 +13,7 @@ test_that("Trees does not error", {
                                                         K = 5,
                                                         n_trees = 10,
                                                         tree_threshold = 20,
-                                                        max_iter = 0,
+                                                        max_iter = 0, threads = 2,
                                                         verbose = FALSE))
 
 })
@@ -23,7 +23,7 @@ test_that("Trees does not error if neighbors are explored once", {
                                                         K = 5,
                                                         n_trees = 50,
                                                         tree_threshold = 20,
-                                                        max_iter = 1,
+                                                        max_iter = 1, threads = 2,
                                                         verbose = FALSE))
 
 })
@@ -33,7 +33,7 @@ test_that("Trees does not error if neighbors are explored more than once", {
                                                         K = 5,
                                                         n_trees = 50,
                                                         tree_threshold = 20,
-                                                        max_iter = 2,
+                                                        max_iter = 2, threads = 2,
                                                         verbose = FALSE))
 })
 
@@ -42,7 +42,7 @@ test_that("Can determine iris neighbors", {
                                           K = 5,
                                           n_trees = 20,
                                           tree_threshold = 30,
-                                          max_iter = 10,
+                                          max_iter = 10, threads = 2,
                                           verbose = FALSE)
   expect_equal(nrow(neighbors), 5)
   expect_equal(ncol(neighbors), ncol(dat))
@@ -60,7 +60,7 @@ test_that("max threshold is sufficient to find all neighbors", {
                                           K = M,
                                           n_trees = 1,
                                           tree_threshold = ncol(dat),
-                                          max_iter = 0,
+                                          max_iter = 0, threads = 2,
                                           verbose = FALSE)
   scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[,x] %in% bests[,x]))
   score <- sum(as.numeric(scores))
@@ -77,7 +77,7 @@ test_that("exploring after max threshold does not reduce accuracy", {
                                           K = M,
                                           n_trees = 1,
                                           tree_threshold = ncol(dat),
-                                          max_iter = 1,
+                                          max_iter = 1, threads = 2,
                                           verbose = FALSE)
   scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
   score <- sum(as.numeric(scores))
@@ -88,7 +88,7 @@ test_that("exploring after max threshold does not reduce accuracy", {
                                           K = M,
                                           n_trees = 1,
                                           tree_threshold = ncol(dat),
-                                          max_iter = 5,
+                                          max_iter = 5, threads = 2,
                                           verbose = FALSE)
   scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
   score <- sum(as.numeric(scores))
@@ -106,7 +106,7 @@ test_that("Can determine iris neighbors accurately, Euclidean", {
                                           n_trees = 20,
                                           tree_threshold = 30,
                                           max_iter = 12,
-                                          verbose = FALSE,
+                                          verbose = FALSE,  threads = 2,
   																				seed = 1974)
   expect_lte(sum(neighbors != bests, na.rm = TRUE), 5)
 })
@@ -130,7 +130,7 @@ test_that("With a bigger dataset, increasing threshold improves result", {
                                             n_trees = 20,
                                             tree_threshold = t,
                                             max_iter = 0,
-                                            verbose = FALSE,
+                                            verbose = FALSE, threads = 2,
     																				seed = 1974)
     score <- sum(neighbors != bests, na.rm = TRUE)
     expect_lte(score, oldscore, label = t)
@@ -150,7 +150,7 @@ test_that("With a bigger dataset, increasing n_trees improves result", {
                                             n_trees = t,
                                             tree_threshold = 10,
                                             max_iter = 0,
-                                            verbose = FALSE,
+                                            verbose = FALSE, threads = 2,
     																				seed = 1974)
     score <- sum(neighbors != bests, na.rm = TRUE)
     expect_lte(score, oldscore, label = t)
@@ -171,10 +171,18 @@ test_that("With a bigger dataset, increasing iters improves result", {
                                             n_trees = 5,
                                             tree_threshold = 10,
                                             max_iter = t,
-                                            verbose = FALSE,
+                                            verbose = FALSE, threads = 2,
     																				seed = 1974)
     score <- max(0, sum(neighbors != bests, na.rm = TRUE))
     expect_lte(score, oldscore, label = t)
     oldscore <- score
   }
+})
+
+context("Edge Matrix")
+
+test_that("Edge Matrix doesn't crash", {
+	neighbors <- randomProjectionTreeSearch(dat,
+																						K = 20,  threads = 2, verbose = FALSE)
+	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
 })
