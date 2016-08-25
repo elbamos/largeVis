@@ -48,7 +48,7 @@ test_that("hdbscan finds 3 clusters and outliers in spiral", {
 })
 
 test_that("hdbscan doesn't crash with neighbors", {
-  hdbscan(edges, minPts = 20, neighbors = neighbors, K = 3, threads = 2,  FALSE)
+  expect_silent(hdbscan(edges, minPts = 20, neighbors = neighbors, K = 3, threads = 2,  FALSE))
 })
 
 test_that("hdbscan is correct", {

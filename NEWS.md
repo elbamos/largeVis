@@ -3,6 +3,7 @@
 * Added thread number parameter to facilitate CRAN limitation on number of cores
 * Removed facevector data to facilitate CRAN size limit
 * Miscellaneous small changes for CRAN submission
+* Note that as of August 22, compilation difficulties on Windows began to appear.  This were likely caused by an update to either RcppArmadillo or some Win32-specific software.  While I believe the issue has been worked-around, please contact me if you experience any issues dealing with very large datasets on Win32 systems.
 
 ### largeVis 0.1.7
 * Bug fixes

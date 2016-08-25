@@ -17,6 +17,7 @@ In this version I have:
 * Added a parameter to all functions that use OpenMP, to limit the number of threads, and set the number of threads used in tests to 2.
 * Removed the facevectors dataset to reduce size. 
 * Limited the number of batches run for one example that used excessive CPU.
+* Added additional tests for hdbscan
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
  
