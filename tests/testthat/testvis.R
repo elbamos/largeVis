@@ -62,4 +62,3 @@ test_that("largeVis continues to work as it scales up", {
 		expect_false(any(is.infinite(coords)))
 	}
 })
-

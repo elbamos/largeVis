@@ -1,7 +1,7 @@
 ### largeVis 0.1.8.1
 * Fixed insidious bug that would arise if the edge matrix contained distances > 27.
 
-### ### largeVis 0.1.8
+### largeVis 0.1.8
 * hdbscan algorithm added
 * Added thread number parameter to facilitate CRAN limitation on number of cores
 * Removed facevector data to facilitate CRAN size limit
