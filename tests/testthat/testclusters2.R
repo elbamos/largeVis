@@ -1,4 +1,4 @@
-context("cluster")
+context("optics")
 
 set.seed(1974)
 data(iris)
@@ -24,6 +24,8 @@ test_that("optics doesn't crash on iris with edges and data", {
   expect_silent(largeVis:::optics(edges = edges, data = dat, eps = 10, minPts = 10, verbose = FALSE))
 })
 
+context("LOF")
+
 test_that(paste("LOF is consistent", 20), {
 	load(system.file("extdata/truelof20.Rda", package = "largeVis"))
 	ourlof <- largeVis:::lof(edges)
@@ -43,7 +45,7 @@ context("hdbscan")
 
 test_that("hdbscan finds 3 clusters and outliers in spiral", {
 	load(system.file("extdata/spiral.Rda", package = "largeVis"))
-	clustering <- hdbscan(spiral, K = 3, minPts = 10, threads = 1)
+	clustering <- hdbscan(spiral, K = 3, minPts = 20, threads = 1)
 	expect_equal(length(unique(clustering$clusters)), 4)
 })
 

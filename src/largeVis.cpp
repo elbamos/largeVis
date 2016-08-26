@@ -17,7 +17,6 @@ void checkCRAN(Rcpp::Nullable<Rcpp::NumericVector> threads) {
 }
 #endif
 
-
 class Visualizer {
 protected:
   const dimidxtype D;
@@ -179,13 +178,13 @@ arma::mat sgd(arma::mat coords,
   Progress progress(n_samples, verbose);
 	dimidxtype D = coords.n_rows;
   if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
-  Visualizer v(sources_j.memptr(),
-               targets_i.memptr(),
-               coords.n_rows,
-               (coordinatetype*) coords.memptr(),
-               M,
-               (distancetype) rho,
-               (iterationtype) n_samples);
+  Visualizer v( (vertexidxtype*) sources_j.memptr(),
+                (vertexidxtype*) targets_i.memptr(),
+                coords.n_rows,
+                (coordinatetype*) coords.memptr(),
+                M,
+                (distancetype) rho,
+                (iterationtype) n_samples);
   v.initAlias(ps, weights, targets_i, seed);
   v.setGradient(alpha, gamma, D);
   const int batchSize = 8192;

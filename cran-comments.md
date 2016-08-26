@@ -3,21 +3,11 @@
 This is a resubmission of a new release. 
 
 The last submission produced this response:  
-"You incorrectly have  OS_type: unix, windows  in your DESCRIPTION, which needs to be removed. Once done, we're down 
-to  Possibly mis-spelled words in DESCRIPTION:  largeVis (7:29) 
-Size of tarball: 8398002 bytes 
-Examples with CPU or elapsed time > 5s 
-user system elapsed 
-largeVis 41.712 0.012 11.009 
-which all need fixing. The last would seem to indicate that you make 
-use of more than 2 cores, in violation of the CRAN Policy."
+It failed to compile on Windows.  This was a reversion of a fix I'd put in to deal with an upstream change that happened earlier in the week.  Very sorry about that.  
 
 In this version I have:
-* Removed the OS_type: line from Description (Thank you Kurt Hornik!)
-* Added a parameter to all functions that use OpenMP, to limit the number of threads, and set the number of threads used in tests to 2.
-* Removed the facevectors dataset to reduce size. 
-* Limited the number of batches run for one example that used excessive CPU.
-* Added additional tests for hdbscan
+* Changed variable type for parameter that caused casting error on some Win32 systems. 
+* Added tests and test data to resolve several rare bugs that 
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
  
@@ -29,9 +19,8 @@ In this version I have:
 
 ## R CMD check results
 
-0 errors | 0 warnings | 2 notes
+0 errors | 0 warnings | 1 note
 
-* 1 NOTE relates to the install size - I would like to include a data file. 
 * 1 NOTE relates to the inclusion of covr in "suggests".
 
 * This is a new release.

@@ -23,7 +23,7 @@ using namespace arma;
 typedef double distancetype;
 typedef double coordinatetype;
 #ifdef _WIN32
-typedef int vertexidxtype;
+typedef long long int vertexidxtype;
 #else
 typedef long long vertexidxtype;
 #endif
@@ -31,7 +31,6 @@ typedef long long edgeidxtype;
 typedef long long iterationtype;
 typedef int dimidxtype;
 typedef int kidxtype;
-
 
 #ifdef _OPENMP
 void checkCRAN(Rcpp::Nullable<Rcpp::NumericVector> threads);

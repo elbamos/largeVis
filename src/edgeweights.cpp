@@ -4,6 +4,8 @@
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
 
+//#define DEBUG
+
 using namespace Rcpp;
 using namespace std;
 using namespace arma;
@@ -148,12 +150,24 @@ arma::sp_mat referenceWij(const arma::ivec& i,
 				                  arma::vec& d,
 				                  Rcpp::Nullable<Rcpp::NumericVector> threads,
 				                  double perplexity) {
+#ifdef DEBUG
+	Rcout << "\n\nIN REF WIJ";
+#endif
 #ifdef _OPENMP
 	checkCRAN(threads);
 #endif
+#ifdef DEBUG
+	Rcout << "\n\nMaking reference edges\n";
+#endif
   ReferenceEdges ref = ReferenceEdges(perplexity, i, j, d);
+#ifdef DEBUG
+  Rcout << "Made, running\n";
+#endif
   // vec sigmas = ref.getSigmas();
   ref.run();
+#ifdef DEBUG
+  Rcout << "Ran, getting WIJ\n";
+#endif
   return ref.getWIJ();
   // return wij;
 }

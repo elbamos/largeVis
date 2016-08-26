@@ -1,7 +1,7 @@
 Package: largeVis
 Type: Package
 Title: High-Quality Visualizations of Large, High-Dimensional Datasets
-Version: 0.1.8
+Version: 0.1.8.1
 Author: Amos B. Elberg
 Maintainer: Amos Elberg <amos.elberg@gmail.com>
 Description: Implements the largeVis algorithm for visualizing very large high-dimensional datasets. Also very fast search for approximate nearest neighbors, outlier detection, and optimized implementations of several clustering algorithms.
@@ -17,7 +17,7 @@ Imports:
     abind,
     ggplot2 (>= 0.9.2.1),
     dbscan
-LinkingTo: Rcpp,RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.100.3.0),testthat(>= 1.0.2)
+LinkingTo: Rcpp,RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.400.2.0),testthat(>= 1.0.2)
 Suggests:
 		testthat,
     covr,

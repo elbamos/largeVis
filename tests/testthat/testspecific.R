@@ -1,7 +1,6 @@
 context("specific issue tests")
 
 test_that("dim064 issue is resolved", {
-	skip_on_cran()
 	load(system.file("extdata/badmat.Rda", package = "largeVis"))
 	expect_silent(neighbors <- randomProjectionTreeSearch(badmat, K = 50, threads = 2))
 	expect_silent(edges <- buildEdgeMatrix(badmat, neighbors = neighbors, threads = 2))

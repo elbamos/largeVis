@@ -19,9 +19,14 @@ public:
       for (auto it = edges.begin_row(n);
            it != edges.end_row(n);
            it++) srtr.emplace(iddist(it.col(), *it));
-      int k = 0;
-      for (k = 0; k != K && srtr.size() > 1; k++) srtr.pop();
-      if (k != K) stop("Insufficient neighbors.");
+      if (srtr.size() < K) for (auto it = edges.begin_col(n);
+          it != edges.end_col(n);
+          it++) srtr.emplace(iddist(it.row(), *it));
+      if (srtr.size() < K) {
+      	Function warning("warning");
+      	warning("Insufficient neighbors, selecting furthest");
+      }
+      for (int k = 0; k != K && srtr.size() > 1; k++) srtr.pop();
       coreDistances[n] = srtr.top().second;
     }
   }
@@ -33,10 +38,11 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (long long n = 0; n < N; n++) {
+    for (long long n = 0; n < N; n++) if (p.increment()) {
       coreDistances[n] = edges(neighbors(K, n), n);
+    	if (coreDistances[n] == 0) coreDistances[n] = edges(neighbors(n, K), n);
+    	if (coreDistances[n] == -1) stop("Insufficient neighbors.");
     }
-    p.increment(N);
   }
 
 	void primsAlgorithm(const sp_mat& edges) {
@@ -85,7 +91,8 @@ public:
                               Rcpp::Named("lambda") = lambdas,
                               Rcpp::Named("parent") = parent,
                               Rcpp::Named("stability") = stabilities,
-                              Rcpp::Named("selected") = selected);
+                              Rcpp::Named("selected") = selected,
+                              Rcpp::Named("coredistances") = coreDistances);
   }
 
 	long long* getMinimumSpanningTree() {
@@ -107,7 +114,6 @@ List hdbscanc(const arma::sp_mat& edges,
   if (neighbors.isNotNull()) { // 1 N
     IntegerMatrix neigh = IntegerMatrix(neighbors);
     object.makeCoreDistances(edges, neigh, K);
-//    object.primsAlgorithm(edges, neigh); // 1 N
   } else {
     object.makeCoreDistances(edges, K);
   }
