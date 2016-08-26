@@ -64,7 +64,7 @@ public:
                  const arma::ivec& targets,
                  Rcpp::Nullable<Rcpp::NumericVector> seed) {
 		vertexidxtype N = newps.n_elem - 1;
-		ps = newps.memptr();
+		ps = (vertexidxtype*) newps.memptr();
 		distancetype* negweights = new distancetype[N];
 		for (vertexidxtype n = 0; n < N; n++) negweights[n] = 0;
 		for (vertexidxtype p = 0; p < N; p++) {
