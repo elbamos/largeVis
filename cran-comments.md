@@ -2,12 +2,14 @@
  
 This is a resubmission of a new release. 
 
-The last submission produced this response:  
-It failed to compile on Windows.  This was a reversion of a fix I'd put in to deal with an upstream change that happened earlier in the week.  Very sorry about that.  
+The last submission received this response:
+
+Can you pls provide a reference for this algorithm?
+
+The paper is:  Tang, et al. (2016) <DOI: 10.1145/2872427.2883041> available at https://arxiv.org/abs/1602.00370
 
 In this version I have:
-* Changed variable type for parameter that caused casting error on some Win32 systems. 
-* Added tests and test data to resolve several rare bugs that 
+* Added the DOI to the DESCRIPTION file. Note that I am not one of the paper authors. I did communicate extensively with the paper authors in preparing this implementation. They provided the datasets used in the paper, which I used to verify the correctness of the implementation. They have also reviewed and commented on the code, but not in any "official" capacity. I believe they also include this R implementation in their presentations.
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
  

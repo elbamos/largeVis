@@ -53,6 +53,14 @@ hdbscanc <- function(edges, neighbors, K, minPts, threads, verbose) {
     .Call('largeVis_hdbscanc', PACKAGE = 'largeVis', edges, neighbors, K, minPts, threads, verbose)
 }
 
+checkBits <- function() {
+    .Call('largeVis_checkBits', PACKAGE = 'largeVis')
+}
+
+checkOpenMP <- function() {
+    .Call('largeVis_checkOpenMP', PACKAGE = 'largeVis')
+}
+
 sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, threads, verbose) {
     .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, threads, verbose)
 }

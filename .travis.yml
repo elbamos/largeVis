@@ -53,4 +53,4 @@ before_install: |
 
 
 after_success:
-  - Rscript -e 'covr::codecov()'
+  - Rscript -e 'covr::codecov(Sys.getenv("TRAVIS_BRANCH"))'

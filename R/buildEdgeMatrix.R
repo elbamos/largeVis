@@ -1,4 +1,3 @@
-
 #' Build an nearest-neighbor graph weighted by distance.
 #'
 #' @param data A matrix with a number of columns equal to the number of columns in `x`
@@ -21,6 +20,7 @@ buildEdgeMatrix <- function(data,
 	if (is.null(neighbors)) neighbors <- randomProjectionTreeSearch(data, threads = threads, ...)
 	indices <- neighborsToVectors(neighbors)
 	distances <- distance(i = indices$i, j = indices$j, x = data, distance_method = distance_method, verbose = verbose)
+	distances <- pmax(distances, 1e-5)
 	mat <- sparseMatrix(
 		                  i = indices$i + 1,
 											j = indices$j + 1,
@@ -52,7 +52,7 @@ buildWijMatrix <- function(x,
 buildWijMatrix.TsparseMatrix <- function(x,
 																				 threads = NULL,
 																	 perplexity = 50) {
-	wij <- referenceWij(x@j, x@i, x@x^2, threads, perplexity)
+	wij <- referenceWij(x@j, x@i, x@x^2, threads, perplexity);
 	return(wij)
 }
 #' @export

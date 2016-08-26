@@ -42,16 +42,18 @@ use more than two cores.}
 A `largeVis` object with the following slots:
  \describe{
    \item{'knns'}{An [N,K] 0-indexed integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
-   If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s.}
+   If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s. Note that this matrix is not identical to the output
+   from \code{\link{randomProjectionTreeSearch}}: missing neighbors are \code{NA}'s rather than \code{-1}'s, and the matrix is transposed.}
    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
    \item{'call'}{The call.}
-   \item{'coords'}{A [N,D] matrix of the embedding of the dataset in the low-dimensional space.}
+   \item{'coords'}{A [D,N] matrix of the embedding of the dataset in the low-dimensional space.}
  }
 }
 \description{
 Apply the LargeVis algorithm for visualizing large high-dimensional datasets.
 }
 \examples{
+\dontrun{
 # iris
 data(iris)
 dat <- as.matrix(iris[,1:4])
@@ -62,7 +64,6 @@ dat <- t(dat)
 visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000)
 plot(t(visObject$coords))
 
-\dontrun{
 # mnist
 load("./mnist.Rda")
 dat <- mnist$images

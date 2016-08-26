@@ -8,38 +8,35 @@ class HDBSCAN : public UF<long long> {
 public:
 
   HDBSCAN(const int N,
-          bool verbose) : UF(N, verbose) {
-
+          bool verbose) : UF(N, verbose, true) {
   }
 
   void makeCoreDistances(const arma::sp_mat& edges, const int K) {
     coreDistances = arma::vec(N);
     for (long long n = 0; n < N; n++) if (p.increment()) {
-      DistanceSorter srtr = DistanceSorter();
+    	DistanceSorter srtr = DistanceSorter();
       for (auto it = edges.begin_row(n);
            it != edges.end_row(n);
-           it++) srtr.emplace(iddist(it.col(), *it));
+           it++) srtr.emplace(it.col(), *it);
       if (srtr.size() < K) for (auto it = edges.begin_col(n);
           it != edges.end_col(n);
-          it++) srtr.emplace(iddist(it.row(), *it));
+          it++) srtr.emplace(it.row(), *it);
       if (srtr.size() < K) {
       	Function warning("warning");
       	warning("Insufficient neighbors, selecting furthest");
       }
       for (int k = 0; k != K && srtr.size() > 1; k++) srtr.pop();
-      coreDistances[n] = srtr.top().second;
+      coreDistances[n] = max(srtr.top().second, 1e-5);
     }
   }
 
   void makeCoreDistances(const arma::sp_mat& edges,
                          const IntegerMatrix& neighbors,
                          const int K) {
+  	if (neighbors.nrow() < K) stop("Specified K bigger than the number of neighbors in the adjacency matrix.");
     coreDistances = arma::vec(N);
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
     for (long long n = 0; n < N; n++) if (p.increment()) {
-      coreDistances[n] = edges(neighbors(K, n), n);
+      coreDistances[n] = max(edges(neighbors(K, n), n), 1e-5);
     	if (coreDistances[n] == 0) coreDistances[n] = edges(neighbors(n, K), n);
     	if (coreDistances[n] == -1) stop("Insufficient neighbors.");
     }
@@ -49,11 +46,15 @@ public:
 		UF<long long>::primsAlgorithm(edges, 0);
 	}
 
-  arma::mat process(const int minPts) {
+	void primsAlgorithm(const sp_mat& edges, const IntegerMatrix& neighbors) {
+		UF<long long>::primsAlgorithm(edges, neighbors, 0);
+	}
+
+  arma::mat process(const int& minPts) {
   	buildHierarchy(); // 2 N
     condense(minPts); // 2 N
     determineStability(minPts); // N
-    extractClusters(); // N
+    extractClusters(minPts); // N
     return getClusters();
   }
 
@@ -63,7 +64,7 @@ public:
     IntegerVector nodeMembership = IntegerVector(N);
     NumericVector stabilities = NumericVector(survivingClusterCnt);
     IntegerVector selected = IntegerVector(survivingClusterCnt);
-    std::set< long long >::iterator it;
+    set< long long >::iterator it;
 #ifdef _OPENMP
 #pragma omp parallel
 {
@@ -114,10 +115,11 @@ List hdbscanc(const arma::sp_mat& edges,
   if (neighbors.isNotNull()) { // 1 N
     IntegerMatrix neigh = IntegerMatrix(neighbors);
     object.makeCoreDistances(edges, neigh, K);
+    object.primsAlgorithm(edges, neigh); // 1 N
   } else {
     object.makeCoreDistances(edges, K);
+  	object.primsAlgorithm(edges);
   }
-  object.primsAlgorithm(edges); // 1 N
   arma::mat clusters = object.process(minPts);
   arma::ivec tree = arma::ivec(edges.n_cols);
   long long* mst = object.getMinimumSpanningTree();
