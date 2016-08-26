@@ -7,7 +7,7 @@ It failed to compile on Windows.  This was a reversion of a fix I'd put in to de
 
 In this version I have:
 * Changed variable type for parameter that caused casting error on some Win32 systems. 
-* Added tests and test data to resolve several rare bugs that 
+* Added tests and test data to resolve several rare bugs that appeared when testing on large datasets.
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
  
