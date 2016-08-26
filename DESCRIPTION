@@ -17,7 +17,7 @@ Imports:
     abind,
     ggplot2 (>= 0.9.2.1),
     dbscan
-LinkingTo: Rcpp,RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.400.2.0),testthat(>= 1.0.2)
+LinkingTo: Rcpp,RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.200.2.0),testthat(>= 1.0.2)
 Suggests:
 		testthat,
     covr,

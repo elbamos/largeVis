@@ -22,7 +22,7 @@ using namespace arma;
  */
 typedef double distancetype;
 typedef double coordinatetype;
-#ifdef _WIN32
+#ifdef __MINGW32__
 typedef long long int vertexidxtype;
 #else
 typedef long long vertexidxtype;
