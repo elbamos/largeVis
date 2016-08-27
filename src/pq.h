@@ -12,8 +12,8 @@ private:
   VIDX reservesize; // used during initialization
 	// Used after buildHierarchy to manage condensation, stability extraction, and cluster identificaTION
   arma::Col< VIDX > parents;
-  arma::Col< double > lambda_deaths;
-  arma::Col< double > stabilities;
+  arma::vec lambda_deaths;
+  arma::vec stabilities;
   arma::Col< VIDX > sizes;
   std::unique_ptr< std::set< VIDX >[] > fallenPointses;
   std::unique_ptr< std::set< VIDX >[] > goodChildrens;
@@ -27,13 +27,15 @@ protected:
   		return n1.second > n2.second;
   	}
   };
+
   typedef std::priority_queue<iddist,
-                              std::vector<iddist>,
+                              std::vector< iddist >,
                               CompareDist> DistanceSorter;
+  typedef typename std::set<VIDX>::iterator Vidxerator;
 
   VIDX N;
   Progress p;
-  arma::Col< double > lambda_births;
+  arma::vec lambda_births;
 
   arma::vec coreDistances;
 
@@ -50,7 +52,7 @@ protected:
   // Used after condensation to speed-up remaining phases
   std::set< VIDX > roots;
 
-  UF(VIDX N, bool verbose) : N{N}, p(Progress(9 * N, verbose)), Q(MinIndexedPQ<VIDX, double>(N)) {
+  UF(VIDX N, bool verbose) : N{N}, p(Progress(10 * N, verbose)), Q(MinIndexedPQ<VIDX, double>(N)) {
     	minimum_spanning_tree = std::unique_ptr<VIDX[]>(new VIDX[N]);
 #ifdef DEBUG
   	setupTest();
@@ -95,10 +97,10 @@ protected:
 
   void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
   	starterIndex = start;
-  	for (VIDX n = 0; n != N; n++) {
-  		minimum_spanning_tree[n] = -1;
-  		Q.insert(n, (n == starterIndex) ? -1 : INFINITY);
-  	}
+  	for (VIDX n = 0; n != N; n++) minimum_spanning_tree[n] = -1;
+  	Q.batchInsert(N);
+  	Q.decreaseKey(starterIndex, -1);
+  	p.increment(N);
   	VIDX v;
 
   	while (! Q.isEmpty() && p.increment()) {
@@ -134,6 +136,9 @@ protected:
     return newid;
   }
 
+	/*
+	 * The union part of union-find
+	 */
   void agglomerate(VIDX a, VIDX b, double d) {
     if (b == -1 || d == INFINITY) {
       lambda_births[a] = (lambda_births[a] > 0) ? lambda_births[a] : -1;
@@ -154,17 +159,20 @@ protected:
   	reservesize = 2 * N + 1;
   	parents = arma::Col< VIDX >(reservesize);
   	sizes = arma::Col< VIDX >(reservesize);
-  	lambda_births = arma::Col< double >(reservesize);
-  	lambda_deaths = arma::Col< double >(reservesize);
+  	lambda_births = arma::vec(reservesize);
+  	lambda_deaths = arma::vec(reservesize);
 
   	for (VIDX n = 0; n != N; n++) add();
 
-  	DistanceSorter srtr = DistanceSorter();
-  	for (long long n = 0; n != N; n++) if (p.increment()) {
-  		double distance = Q.keyOf(n);
-  		srtr.emplace(n, distance);
+  	std::vector< iddist > container = std::vector< iddist >();
+  	container.reserve(N);
+  	typename std::vector< iddist >::iterator adder = container.end();
+  	for (VIDX n = 0; n != N; n++) {
+  		container.emplace(adder++, n, Q.keyOf(n));
+  		if (n % 50 == 0 ) if (!p.increment(50)) return;
   	}
 
+  	DistanceSorter srtr = DistanceSorter(CompareDist(), container);
   	while (! srtr.empty() && p.increment()) {
   		const iddist ijd = srtr.top();
   		srtr.pop();
@@ -184,13 +192,13 @@ protected:
   void condenseUp(VIDX p, VIDX mergeTarget) {
     if (p == mergeTarget) return;
     sizes[p] = -1;
-    for (typename std::set<VIDX>::iterator it = fallenPointses[p].begin();
+    for (Vidxerator it = fallenPointses[p].begin();
          it != fallenPointses[p].end();
          it++) {
       parents[*it] = mergeTarget;
       fallenPointses[mergeTarget].insert(*it);
     }
-    for (typename std::set<VIDX>::iterator it = goodChildrens[p].begin();
+    for (Vidxerator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) {
       goodChildrens[mergeTarget].insert(*it);
@@ -220,7 +228,7 @@ protected:
       goodChildrens[p].erase(goodChildrens[p].find(onlychild));
       condenseUp(onlychild, p);
     }
-    for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
+    for (Vidxerator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) condenseTwo(*it);
   }
@@ -240,7 +248,7 @@ protected:
     for (VIDX n = 0; n != counter; n++) if (p.increment()) {
       condenseOne(n, minPts);
     }
-    typename std::set< VIDX >::iterator it2;
+    Vidxerator it2;
 #ifdef _OPENMP
 #pragma omp parallel
 {
@@ -275,13 +283,13 @@ protected:
     double stability = 0;
     double lambda_birth = lambda_births[p];
 
-    for (typename std::set< VIDX >::iterator it = fallenPointses[p].begin();
+    for (Vidxerator it = fallenPointses[p].begin();
          it != fallenPointses[p].end();
          it++) {
       stability += lambda_births[*it] - lambda_birth;
     }
     VIDX descendantCount = 0;
-    for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
+    for (Vidxerator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) {
       descendantCount += sizes[*it];
@@ -294,7 +302,7 @@ protected:
   void determineStability(int minPts) {
     stabilities = arma::Col< double >(counter);
     selected = std::unique_ptr< bool[] >(new bool[counter]);
-    typename std::set< VIDX >::iterator it;
+    Vidxerator it;
 #ifdef _OPENMP
 #pragma omp parallel
 {
@@ -315,7 +323,7 @@ protected:
 
   void deselect(VIDX p) {
     selected[p] = false;
-    for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
+    for (Vidxerator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) deselect(*it);
   }
@@ -323,7 +331,7 @@ protected:
   void extractClusters(VIDX p) {
     survivingClusters.insert(p);
     double childStabilities = 0;
-    for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
+    for (Vidxerator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) {
       extractClusters(*it);
@@ -352,7 +360,7 @@ Rcout << "\n point " << p << " more stable than children ";
       	Rcout << "selecting, deselcting children.";
 #endif
       	selected[p] = true;
-      	for (typename std::set< VIDX >::iterator it = goodChildrens[p].begin();
+      	for (Vidxerator it = goodChildrens[p].begin();
             it != goodChildrens[p].end();
             it++) deselect(*it);
       	}
@@ -361,7 +369,7 @@ Rcout << "\n point " << p << " more stable than children ";
 
   void extractClusters() {
     survivingClusters = std::set< VIDX >();
-  	typename std::set< VIDX >::iterator it;
+  	Vidxerator it;
 #ifdef _OPENMP
 #pragma omp parallel
 {
@@ -394,20 +402,20 @@ Rcout << "\n point " << p << " more stable than children ";
       thisCluster = clusterCount++;
       thisDeath = lambda_deaths[n];
     }
-    for (typename std::set< VIDX >::iterator it = fallenPointses[n].begin();
+    for (Vidxerator it = fallenPointses[n].begin();
          it != fallenPointses[n].end();
          it++) {
       ret(0, *it) = thisCluster;
       ret(1, *it) = min(lambda_births[n], thisDeath) - lambda_births[*it];
     }
-    for (typename std::set< VIDX >::iterator it = goodChildrens[n].begin();
+    for (Vidxerator it = goodChildrens[n].begin();
          it != goodChildrens[n].end();
          it++) getClusters(ret, *it, thisCluster, thisDeath);
   }
 
   arma::mat getClusters() {
     arma::mat ret = arma::mat(2, N, fill::zeros);
-  	typename std::set< VIDX >::iterator it;
+  	Vidxerator it;
 #ifdef _OPENMP
 #pragma omp parallel
 {
@@ -459,13 +467,13 @@ Rcout << "\n point " << p << " more stable than children ";
     if (last == oldidx) newparent[newidx] = newidx;
     else newparent[newidx] = last;
 
-    for (typename std::set< VIDX >::iterator it = fallenPointses[oldidx].begin();
+    for (Vidxerator it = fallenPointses[oldidx].begin();
          it != fallenPointses[oldidx].end();
          it++) nodeMembership[*it] = newidx;
     newstabilities[newidx] = stabilities[oldidx];
     newselected[newidx] = selected[oldidx];
     int child = 0;
-    for (typename std::set< VIDX >::iterator it = goodChildrens[oldidx].begin();
+    for (Vidxerator it = goodChildrens[oldidx].begin();
          it != goodChildrens[oldidx].end();
          it++) {
       reportAHierarchy(newidx, *it, newparent, nodeMembership,

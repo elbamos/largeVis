@@ -1,3 +1,13 @@
+/*
+ * We need:
+ * 	PUSH
+ * 	POP
+ * 	keyOf
+ * 	contains
+ * 	decreaseKey
+ * 	isEmpty
+ */
+
 /**
  * Fibonacci Heap
  * Copyright (c) 2014, Emmanuel Benazera beniz@droidnik.fr, All rights reserved.
@@ -25,68 +35,56 @@
 #include <unordered_map>
 #include <algorithm>
 
-template<class T>
-class FibHeap
-{
-public:
-
+template<class T, class V>
+class FibHeap {
+private:
 	// node
-	class FibNode
-	{
+	class FibNode {
 	public:
-		FibNode(T k, void *pl)
-			:key(k),mark(false),p(nullptr),left(nullptr),right(nullptr),child(nullptr),degree(-1),payload(pl)
-		{
+		FibNode(T k)
+			:key(k),mark(false),p(nullptr),left(nullptr),right(nullptr),child(nullptr),degree(-1) {
 		}
-
-		~FibNode()
-		{
-		}
-
 		T key;
 		bool mark;
 		FibNode *p;
 		FibNode *left;
 		FibNode *right;
 		FibNode *child;
+		bool present = true;
 		int degree;
-		void *payload;
 	}; // end FibNode
 
-	FibHeap()
-		:n(0),min(nullptr)
-	{
+	typename std::unordered_map<T, FibNode*> 					 NodeMap;
+	typename std::unordered_map<T, FibNode*>::iterator MapIterator;
+
+	int n;
+	int counter;
+	FibNode *min;
+
+	std::unordered_multimap<T,FibNode*> fstore;
+	std::unique_ptr< FibNode[] > index;
+
+	FibHeap(T N) :n(0),min(nullptr) {
+		index  = std::unique_ptr< FibNode[] >(new FibNode[N]);
 	}
 
-	~FibHeap()
-	{
+	~FibHeap() {
 		// delete all nodes.
 		delete_fibnodes(min);
 	}
 
-	void delete_fibnodes(FibNode *x)
-	{
-		if (!x)
-			return;
-
+	void delete_fibnodes(FibNode *x) {
+		if (!x) return;
 		FibNode *cur = x;
-		while(true)
-		{
-			/*std::cerr << "cur: " << cur << std::endl;
-			std::cerr << "x: " << x << std::endl;*/
-			if (cur->left && cur->left != x)
-			{
-				//std::cerr << "cur left: " << cur->left << std::endl;
+		while(true) {
+			if (cur->left && cur->left != x) {
 				FibNode *tmp = cur;
 				cur = cur->left;
 				if (tmp->child)
 					delete_fibnodes(tmp->child);
 				delete tmp;
-			}
-			else
-			{
-				if (cur->child)
-					delete_fibnodes(cur->child);
+			} else {
+				if (cur->child) delete_fibnodes(cur->child);
 				delete cur;
 				break;
 			}
@@ -107,82 +105,28 @@ public:
 	*10. 		H.min = x
 	*11. H.n = H.n + 1
 	*/
-	void insert(FibNode *x)
-	{
-		// 1
+	void insert(FibNode *x) {
 		x->degree = 0;
-		// 2
 		x->p = nullptr;
-		// 3
 		x->child = nullptr;
-		// 4
 		x->mark = false;
-		// 5
-		if ( min == nullptr)
-		{
-			// 6, 7
-			min = x->left = x->right = x;
-		}
-		else
-		{
-			// 8
+		if ( min == nullptr)  min = x->left = x->right = x;
+		else {
 			min->left->right = x;
 			x->left = min->left;
 			min->left = x;
 			x->right = min;
-			// 9
-			if ( x->key < min->key )
-			{
-				// 10
-				min = x;
-			}
+			if ( x->key < min->key ) min = x;
 		}
-		// 11
 		++n;
+		index[counter++] = x;
 	}
 
 	/*
 	* The minimum node of the heap.
 	*/
-	FibNode* minimum()
-	{
+	FibNode* minimum() const {
 		return min;
-	}
-
-	/*
-	* union_fibheap(H1,H2)
-	* 1. H = MAKE-FIB-HEAP()
-	* 2. H.min = H1.min
-	* 3. concatenate the root list of H2 with the root list of H
-	* 4. if (H1.min == NIL) or (H2.min != NIL and H2.min.key < H1.min.key)
-	* 5. 	H.min = H2.min
-	* 6. H.n = H1.n + H2.n
-	* 7. return H
-	*/
-	static FibHeap* union_fibheap(FibHeap *H1, FibHeap *H2)
-	{
-		// 1
-		FibHeap* H = new FibHeap();
-		// 2
-		H->min = H1->min;
-		// 3
-		if ( H->min != nullptr && H2->min != nullptr )
-		{
-			H->min->right->left = H2->min->left;
-			H2->min->left->right = H->min->right;
-			H->min->right = H2->min;
-			H2->min->left = H->min;
-		}
-		// 4
-		if ( H1->min == nullptr || ( H2->min != nullptr && H2->min->key < H1->min->key ) )
-		{
-			// 5
-			H->min = H2->min;
-		}
-		// 6
-		H->n = H1->n + H2->n;
-		// 7
-		return H;
 	}
 
 	/*
@@ -200,60 +144,41 @@ public:
 	*11. 	H.n = H.n - 1
 	*12. return z
 	*/
-	FibNode* extract_min()
-	{
+	FibNode* extract_min() {
 		FibNode *z, *x, *next;
 		FibNode ** childList;
 
 		// 1
 		z = min;
-		// 2
-		if ( z != nullptr )
-		{
-			// 3
+		if ( z != nullptr ) {
 			x = z->child;
-			if ( x != nullptr )
-			{
+			if ( x != nullptr ) {
 				childList = new FibNode*[z->degree];
 				next = x;
-				for ( int i = 0; i < (int)z->degree; i++ )
-				{
+				for ( int i = 0; i < (int)z->degree; i++ ) {
 					childList[i] = next;
 					next = next->right;
 				}
-				for ( int i = 0; i < (int)z->degree; i++ )
-				{
+				for ( int i = 0; i < (int)z->degree; i++ ) {
 					x = childList[i];
-					// 4
 					min->left->right = x;
 					x->left = min->left;
 					min->left = x;
 					x->right = min;
-					// 5
 					x->p = nullptr;
 				}
 				delete [] childList;
 			}
-			// 6
 			z->left->right = z->right;
 			z->right->left = z->left;
-			// 7
-			if ( z == z->right )
-			{
-				// 8
-				min = nullptr;
-			}
-			else
-			{
-				// 9
+			if ( z == z->right ) min = nullptr;
+			else {
 				min = z->right;
-				// 10
 				consolidate();
 			}
-			// 11
 			n--;
 		}
-		// 12
+		z -> present = false;
 		return z;
 	}
 
@@ -283,91 +208,54 @@ public:
 	*22. 			if A[i].key < H.min.key
 	*23. 				H.min = A[i]
 	*/
-	void consolidate()
-	{
+	void consolidate() {
 		FibNode* w, * next, * x, * y, * temp;
 		FibNode** A, ** rootList;
 		// Max degree <= log base golden ratio of n
 		int d, rootSize;
 		int max_degree = static_cast<int>(floor(log(static_cast<double>(n))/log(static_cast<double>(1 + sqrt(static_cast<double>(5)))/2)));
-
-		// 1
 		A = new FibNode*[max_degree+2]; // plus two both for indexing to max degree and so A[max_degree+1] == NIL
-		// 2, 3
 		std::fill_n(A, max_degree+2, nullptr);
-		// 4
 		w = min;
 		rootSize = 0;
 		next = w;
-		do
-		{
+		do {
 			rootSize++;
 			next = next->right;
 		} while ( next != w );
 		rootList = new FibNode*[rootSize];
-		for ( int i = 0; i < rootSize; i++ )
-		{
+		for ( int i = 0; i < rootSize; i++ ) {
 			rootList[i] = next;
 			next = next->right;
 		}
-		for ( int i = 0; i < rootSize; i++ )
-		{
+		for ( int i = 0; i < rootSize; i++ ) {
 			w = rootList[i];
-			// 5
 			x = w;
-			// 6
 			d = x->degree;
-			// 7
-			while ( A[d] != nullptr )
-			{
-				// 8
+			while ( A[d] != nullptr )	{
 				y = A[d];
-				// 9
-				if ( x->key > y->key )
-				{
-					// 10
+				if ( x->key > y->key ) {
 					temp = x;
 					x = y;
 					y = temp;
 				}
-				// 11
 				fib_heap_link(y,x);
-				// 12
 				A[d] = nullptr;
-				// 13
 				d++;
 			}
-			// 14
 			A[d] = x;
 		}
 		delete [] rootList;
-		// 15
 		min = nullptr;
-		// 16
-		for ( int i = 0; i < max_degree+2; i++ )
-		{
-			// 17
-			if ( A[i] != nullptr )
-			{
-				// 18
-				if ( min == nullptr )
-				{
-					// 19, 20
-					min = A[i]->left = A[i]->right = A[i];
-				}
-				else
-				{
-					// 21
+		for ( int i = 0; i < max_degree+2; i++ ) {
+			if ( A[i] != nullptr ) {
+				if ( min == nullptr ) min = A[i]->left = A[i]->right = A[i];
+				else {
 					min->left->right = A[i];
 					A[i]->left = min->left;
 					min->left = A[i];
 					A[i]->right = min;
-					// 22
-					if ( A[i]->key < min->key )
-					{
-						// 23
-						min = A[i];
-					}
+					if ( A[i]->key < min->key ) min = A[i];
 				}
 			}
 		}
@@ -380,21 +268,17 @@ public:
 	* 2. make y a child of x, incrementing x.degree
 	* 3. y.mark = FALSE
 	*/
-	void fib_heap_link( FibNode* y, FibNode* x )
-	{
+	void fib_heap_link( FibNode* y, FibNode* x ) {
 		// 1
 		y->left->right = y->right;
 		y->right->left = y->left;
 		// 2
-		if ( x->child != nullptr )
-		{
+		if ( x->child != nullptr ) {
 			x->child->left->right = y;
 			y->left = x->child->left;
 			x->child->left = y;
 			y->right = x->child;
-		}
-		else
-		{
+		} else {
 			x->child = y;
 			y->right = y;
 			y->left = y;
@@ -406,48 +290,6 @@ public:
 	}
 
 
-	/*
-	* decrease_key(x,k)
-	* 1. if k > x.key
-	* 2. 	error "new key is greater than current key"
-	* 3. x.key = k
-	* 4. y = x.p
-	* 5. if y != NIL and x.key < y.key
-	* 6. 	CUT(H,x,y)
-	* 7. 	CASCADING-CUT(H,y)
-	* 8. if x.key < H.min.key
-	* 9. 	H.min = x
-	*/
-	void decrease_key( FibNode* x, int k )
-	{
-		FibNode* y;
-
-		// 1
-		if ( k > x->key )
-		{
-			// 2
-			// error( "new key is greater than current key" );
-			return;
-		}
-		// 3
-		x->key = k;
-		// 4
-		y = x->p;
-		// 5
-		if ( y != nullptr && x->key < y->key )
-		{
-			// 6
-			cut(x,y);
-			// 7
-			cascading_cut(y);
-		}
-		// 8
-		if ( x->key < min->key )
-		{
-			// 9
-			min = x;
-		}
-	}
 
 	/*
 	* cut(x,y)
@@ -456,31 +298,22 @@ public:
 	* 3. x.p = NIL
 	* 4. x.mark = FALSE
 	*/
-	void cut( FibNode* x, FibNode* y )
-	{
-		// 1
-		if ( x->right == x )
-		{
+	void cut( FibNode* x, FibNode* y ) {
+		if ( x->right == x ) {
 			y->child = nullptr;
-		}
-		else
-		{
+		}	else {
 			x->right->left = x->left;
 			x->left->right = x->right;
-			if ( y->child == x )
-			{
+			if ( y->child == x ) {
 				y->child = x->right;
 			}
 		}
 		y->degree--;
-		// 2
 		min->right->left = x;
 		x->right = min->right;
 		min->right = x;
 		x->left = min;
-		// 3
 		x->p = nullptr;
-		// 4
 		x->mark = false;
 	}
 
@@ -493,26 +326,14 @@ public:
 	* 5. 	else CUT(H,y,z)
 	* 6. 		CASCADING-CUT(H,z)
 	*/
-	void cascading_cut( FibNode* y )
-	{
+	void cascading_cut( FibNode* y ) {
 		FibNode* z;
-
-		// 1
 		z = y->p;
-		// 2
-		if ( z != nullptr )
-		{
-			// 3
-			if ( y->mark == false )
-			{
-				// 4
+		if ( z != nullptr ) {
+			if ( y->mark == false ) {
 				y->mark = true;
-			}
-			else
-			{
-				// 5
+			} else {
 				cut(y,z);
-				// 6
 				cascading_cut(z);
 			}
 		}
@@ -521,130 +342,88 @@ public:
 	/*
 	* set to infinity so that it hits the top of the heap, then easily remove.
 	*/
-	void remove_fibnode( FibNode* x )
-	{
-		decrease_key(x,std::numeric_limits<T>::min());
+	void remove_fibnode( FibNode* x ) {
+		decrease_key(x, - INFINITY);
 		FibNode *fn = extract_min();
 		delete fn;
+	}
+
+public:
+
+	/*
+	 * decrease_key(x,k)
+	 * 1. if k > x.key
+	 * 2. 	error "new key is greater than current key"
+	 * 3. x.key = k
+	 * 4. y = x.p
+	 * 5. if y != NIL and x.key < y.key
+	 * 6. 	CUT(H,x,y)
+	 * 7. 	CASCADING-CUT(H,y)
+	 * 8. if x.key < H.min.key
+	 * 9. 	H.min = x
+	 */
+	void decrease_key( FibNode* x, T k ) {
+		typename std::unordered_map<T, FibNode*>::iterator mit = find(x->key);
+		fstore.erase(mit);
+		fstore.insert(std::pair<T, FibNode*>(k,x));
+
+		FibNode* y;
+
+		if ( k > x->key ) return;
+		x->key = k;
+		y = x->p;
+		if ( y != nullptr && x->key < y->key ) {
+			cut(x,y);
+			cascading_cut(y);
+		}
+		if ( x->key < min->key ) min = x;
 	}
 
 	/*
 	* mapping operations to STL-compatible signatures.
 	*/
-	bool empty() const
-	{
+	bool empty() const {
 		return n == 0;
 	}
 
-	FibNode* topNode()
-	{
-		return minimum();
-	}
-
-	T top()
-	{
+	T minKey() const {
 		return minimum()->key;
 	}
 
-	void pop()
-	{
-		if (empty())
-			return;
-		FibNode *x = extract_min();
-		if (x)
-			delete x;
-	}
-
-	FibNode* push(T k, void *pl)
-	{
-		FibNode *x = new FibNode(k,pl);
+	FibNode* push(T k) {
+		FibNode *x = new FibNode(k);
 		insert(x);
+		fstore.insert(std::pair<T,FibNode>(k,x));
 		return x;
 	}
 
-	FibNode* push(T k)
-	{
-		return push(k,nullptr);
-	}
-
-	unsigned int size()
-	{
+	unsigned int size() const {
 		return (unsigned int) n;
 	}
 
-	int n;
-	FibNode *min;
-
-};
-
-template<class T>
-class FibQueue : public FibHeap<T>
-{
-public:
-	FibQueue()
-		:FibHeap<T>()
-		{
-		}
-
-	~FibQueue()
-	{
+	FibNode* findIndex(V x) {
+		return index[x];
 	}
 
-	void decrease_key(typename FibHeap<T>::FibNode *x, int k)
-	{
-		typename std::unordered_map<T,typename FibHeap<T>::FibNode*>::iterator mit
-		= find(x->key);
-		fstore.erase(mit);
-		fstore.insert(std::pair<T,typename FibHeap<T>::FibNode*>(k,x));
-		FibHeap<T>::decrease_key(x,k);
-	}
-
-	typename FibHeap<T>::FibNode* push(T k, void *pl)
-	{
-		typename FibHeap<T>::FibNode *x = FibHeap<T>::push(k,pl);
-		fstore.insert(std::pair<T,typename FibHeap<T>::FibNode*>(k,x));
-		return x;
-	}
-
-	typename FibHeap<T>::FibNode* push(T k)
-	{
-		return push(k,NULL);
-	}
-
-	typename std::unordered_map<T,typename FibHeap<T>::FibNode*>::iterator find(T k)
-	{
-		typename std::unordered_map<T,typename FibHeap<T>::FibNode*>::iterator mit
-		=fstore.find(k);
+	typename std::unordered_map<T, FibNode*>::iterator find(T k) {
+		typename std::unordered_map<T, FibNode*>::iterator mit = fstore.find(k);
 		return mit;
 	}
 
-	typename FibHeap<T>::FibNode* findNode(T k)
-	{
-		typename std::unordered_map<T,typename FibHeap<T>::FibNode*>::iterator mit
-		= find(k);
-		return (*mit).second;
-	}
-
-	void pop()
-	{
-		if (FibHeap<T>::empty())
-			return;
-		typename FibHeap<T>::FibNode *x = FibHeap<T>::extract_min();
-		if (!x)
-			return; // should not happen.
+	void pop() {
+		if (empty()) return;
+		FibNode *x = extract_min();
+		if (!x)  return; // should not happen.
 		auto range = fstore.equal_range(x->key);
 		auto mit = std::find_if(range.first, range.second,
-                          [x](const std::pair<T,typename FibHeap<T>::FibNode*> &ele){
+                          [x](const std::pair<T, FibNode*> &ele){
                           	return ele.second == x;
                           }
 		);
-		if (mit != range.second)
-			fstore.erase(mit);
+		if (mit != range.second) fstore.erase(mit);
 		else std::cerr << "[Error]: key " << x->key << " cannot be found in FiboQueue fast store\n";
 		delete x;
 	}
-
-	std::unordered_multimap<T,typename FibHeap<T>::FibNode*> fstore;
 };
 
 #endif

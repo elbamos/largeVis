@@ -71,6 +71,7 @@ test_that("hdbscan doesn't crash on glass edges", {
 
 test_that("hdbscan doesn't crash on big bad edges", {
 	skip_on_cran()
-#	load(system.file("extdata/badedges.Rda", package = "largeVis"))
-#	expect_silent(clustering <- hdbscan(badedges, threads = 2))
+	skip("skipping long test")
+	load(system.file("extdata/badedges.Rda", package = "largeVis"))
+	expect_silent(clustering <- hdbscan(badedges, threads = 2))
 })

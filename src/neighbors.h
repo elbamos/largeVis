@@ -87,7 +87,6 @@ protected:
 
 	void recurse(const arma::ivec& indices) {
 		const vertexidxtype I = indices.n_elem;
-		// const int D = data.n_rows;
 		if (p.check_abort()) return;
 		if (I < 2) stop("Tree split failure.");
 		if (I <= threshold) {

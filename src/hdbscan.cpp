@@ -9,19 +9,18 @@ public:
 
   HDBSCAN(const int N,
           bool verbose) : UF(N, verbose) {
-
   }
 
   void makeCoreDistances(const arma::sp_mat& edges, const int K) {
     coreDistances = arma::vec(N);
     for (long long n = 0; n < N; n++) if (p.increment()) {
-      DistanceSorter srtr = DistanceSorter();
+    	DistanceSorter srtr = DistanceSorter();
       for (auto it = edges.begin_row(n);
            it != edges.end_row(n);
-           it++) srtr.emplace(iddist(it.col(), *it));
+           it++) srtr.emplace(it.col(), *it);
       if (srtr.size() < K) for (auto it = edges.begin_col(n);
           it != edges.end_col(n);
-          it++) srtr.emplace(iddist(it.row(), *it));
+          it++) srtr.emplace(it.row(), *it);
       if (srtr.size() < K) {
       	Function warning("warning");
       	warning("Insufficient neighbors, selecting furthest");
@@ -35,9 +34,6 @@ public:
                          const IntegerMatrix& neighbors,
                          const int K) {
     coreDistances = arma::vec(N);
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
     for (long long n = 0; n < N; n++) if (p.increment()) {
       coreDistances[n] = edges(neighbors(K, n), n);
     	if (coreDistances[n] == 0) coreDistances[n] = edges(neighbors(n, K), n);

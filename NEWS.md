@@ -2,6 +2,8 @@
 * Fixed insidious bug that would arise if the edge matrix contained distances > 27.
 * Fixed bug in hdbscan where it would mistakenly conclude that it lacked sufficient neighbors.
 * Change to address apparent upstream issue causing compilation problem on Win32 systems.
+* Fixed bug in hdbscan caused by the knn matrix not matching output from randomProjectionTreeSearch. 
+* Batch insert in hdbscan speeds up Prim's algorithm.
 
 ### largeVis 0.1.8
 * hdbscan algorithm added

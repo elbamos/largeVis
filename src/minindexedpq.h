@@ -64,6 +64,16 @@ public:
 		return N;
 	}
 
+	// We can pre-load the data structure quickly because we don't need to
+	// bubbleUp when they're all INFINITY.
+	void batchInsert(VIDX n) {
+		for (VIDX i = 0; i != n; i++) {
+			N++;
+			index[i] = N;
+			heap[N] = i;
+			keys[i] = INFINITY;
+		}
+	}
 	// associate key with index i; 0 < i < NMAX
 	void insert(VIDX i, D key) {
 		N++;
