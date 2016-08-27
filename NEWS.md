@@ -4,6 +4,7 @@
 * Change to address apparent upstream issue causing compilation problem on Win32 systems.
 * Fixed bug in hdbscan caused by the knn matrix not matching output from randomProjectionTreeSearch. 
 * Batch insert in hdbscan speeds up Prim's algorithm.
+* Tests and examples are disabled on i386
 
 ### largeVis 0.1.8
 * hdbscan algorithm added

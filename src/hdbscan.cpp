@@ -46,9 +46,13 @@ public:
 	}
 
   arma::mat process(const int minPts) {
+  	Rcout << "\nbuild\n";
   	buildHierarchy(); // 2 N
+  	Rcout << "\ncondense\n";
     condense(minPts); // 2 N
+    Rcout << "\nstability\n";
     determineStability(minPts); // N
+    Rcout << "\nextract\n";
     extractClusters(); // N
     return getClusters();
   }
@@ -107,13 +111,16 @@ List hdbscanc(const arma::sp_mat& edges,
 	checkCRAN(threads);
 #endif
   HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
+  Rcout << "\n make core\n";
   if (neighbors.isNotNull()) { // 1 N
     IntegerMatrix neigh = IntegerMatrix(neighbors);
     object.makeCoreDistances(edges, neigh, K);
   } else {
     object.makeCoreDistances(edges, K);
   }
+  Rcout << "\nprims\n";
   object.primsAlgorithm(edges); // 1 N
+  Rcout << "\nprocess\n";
   arma::mat clusters = object.process(minPts);
   arma::ivec tree = arma::ivec(edges.n_cols);
   long long* mst = object.getMinimumSpanningTree();

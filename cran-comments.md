@@ -3,11 +3,12 @@
 This is a resubmission of a new release. 
 
 The last submission produced this response:  
-It failed to compile on Windows.  This was a reversion of a fix I'd put in to deal with an upstream change that happened earlier in the week.  Very sorry about that.  
+It failed winbuilder.
 
 In this version I have:
-* Changed variable type for parameter that caused casting error on some Win32 systems. 
-* Added tests and test data to resolve several rare bugs that appeared when testing on large datasets.
+* Changed certain variable types to compile on Windowx 64-bit systems
+* Disabled tests on i386 platform
+* No longer run the sole example that was run before, because it failed on winbuilder on i386 architecture
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
  

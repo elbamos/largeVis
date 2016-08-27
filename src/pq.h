@@ -97,19 +97,21 @@ protected:
 
   void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
   	starterIndex = start;
+  	Rcout << "\n prims load \n";
   	for (VIDX n = 0; n != N; n++) minimum_spanning_tree[n] = -1;
   	Q.batchInsert(N);
   	Q.decreaseKey(starterIndex, -1);
   	p.increment(N);
   	VIDX v;
-
-  	while (! Q.isEmpty() && p.increment()) {
+	  Rcout << "\nprims run\n";
+  	while (! Q.isEmpty()) {
 #ifdef DEBUG
   		if (testers.find(v) != testers.end()) {
   			Rcout << "\nprim adding " << v << " with " << Q.keyOf(v);
   		}
 #endif
   		v = Q.deleteMin();
+  		if (! p.increment()) break;
 	  	if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
 		  for (auto it = edges.begin_row(v);
          it != edges.end_row(v);
@@ -156,6 +158,7 @@ protected:
   }
 
   void buildHierarchy() {
+  	Rcout << "\n hierarchy begin\n";
   	reservesize = 2 * N + 1;
   	parents = arma::Col< VIDX >(reservesize);
   	sizes = arma::Col< VIDX >(reservesize);
@@ -171,7 +174,7 @@ protected:
   		container.emplace(adder++, n, Q.keyOf(n));
   		if (n % 50 == 0 ) if (!p.increment(50)) return;
   	}
-
+		Rcout << "\nhierarchy run\n";
   	DistanceSorter srtr = DistanceSorter(CompareDist(), container);
   	while (! srtr.empty() && p.increment()) {
   		const iddist ijd = srtr.top();

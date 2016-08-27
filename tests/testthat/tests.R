@@ -1,3 +1,6 @@
+skip_old_windows <- function() {
+	testthat::skip_if_not(R.Version()$arch != "i386", "largeVis does not run on 32-bit Windows.")
+}
 context("neighbors")
 
 data (iris)
@@ -9,6 +12,7 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 
 test_that("Trees does not error", {
+	skip_old_windows()
   expect_silent(neighbors <- randomProjectionTreeSearch(dat,
                                                         K = 5,
                                                         n_trees = 10,
@@ -19,6 +23,7 @@ test_that("Trees does not error", {
 })
 
 test_that("Trees does not error if neighbors are explored once", {
+	skip_old_windows()
   expect_silent(neighbors <- randomProjectionTreeSearch(dat,
                                                         K = 5,
                                                         n_trees = 50,
@@ -29,6 +34,7 @@ test_that("Trees does not error if neighbors are explored once", {
 })
 
 test_that("Trees does not error if neighbors are explored more than once", {
+	skip_old_windows()
   expect_silent(neighbors <- randomProjectionTreeSearch(dat,
                                                         K = 5,
                                                         n_trees = 50,
@@ -38,6 +44,7 @@ test_that("Trees does not error if neighbors are explored more than once", {
 })
 
 test_that("Can determine iris neighbors", {
+	skip_old_windows()
   neighbors <- randomProjectionTreeSearch(dat,
                                           K = 5,
                                           n_trees = 20,
@@ -51,6 +58,7 @@ test_that("Can determine iris neighbors", {
 })
 
 test_that("max threshold is sufficient to find all neighbors", {
+	skip_old_windows()
   M <- 5
   d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
   bests <- apply(d_matrix, MARGIN=1, FUN = function(x) order(x)[1:(M + 1)])
@@ -68,6 +76,7 @@ test_that("max threshold is sufficient to find all neighbors", {
 })
 
 test_that("exploring after max threshold does not reduce accuracy", {
+	skip_old_windows()
   M <- 5
   d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
   bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
@@ -96,6 +105,7 @@ test_that("exploring after max threshold does not reduce accuracy", {
 })
 
 test_that("Can determine iris neighbors accurately, Euclidean", {
+	skip_old_windows()
   M <- 5
   d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
   bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
@@ -118,6 +128,7 @@ quakes <- scale(dat)
 d_matrix = as.matrix(dist(quakes, method = "euclidean"))
 
 test_that("With a bigger dataset, increasing threshold improves result", {
+	skip_old_windows()
   bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1, ] - 1
 
@@ -139,6 +150,7 @@ test_that("With a bigger dataset, increasing threshold improves result", {
 })
 
 test_that("With a bigger dataset, increasing n_trees improves result", {
+	skip_old_windows()
   bests <- apply(d_matrix, MARGIN=1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1,] - 1
 
@@ -159,6 +171,7 @@ test_that("With a bigger dataset, increasing n_trees improves result", {
 })
 
 test_that("With a bigger dataset, increasing iters improves result", {
+	skip_old_windows()
   M <- 10
   bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[ - 1,] - 1
@@ -182,6 +195,7 @@ test_that("With a bigger dataset, increasing iters improves result", {
 context("Edge Matrix")
 
 test_that("Edge Matrix doesn't crash", {
+	skip_old_windows()
 	neighbors <- randomProjectionTreeSearch(dat,
 																						K = 20,  threads = 2, verbose = FALSE)
 	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))

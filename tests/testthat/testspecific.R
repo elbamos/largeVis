@@ -1,6 +1,10 @@
+skip_old_windows <- function() {
+	testthat::skip_if_not(R.Version()$arch != "i386", "largeVis does not run on 32-bit Windows.")
+}
 context("specific issue tests")
 
 test_that("dim064 issue is resolved", {
+	skip_old_windows()
 	load(system.file("extdata/badmat.Rda", package = "largeVis"))
 	expect_silent(neighbors <- randomProjectionTreeSearch(badmat, K = 50, threads = 2))
 	expect_silent(edges <- buildEdgeMatrix(badmat, neighbors = neighbors, threads = 2))

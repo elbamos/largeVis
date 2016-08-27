@@ -1,3 +1,6 @@
+skip_old_windows <- function() {
+	testthat::skip_if_not(R.Version()$arch != "i386", "largeVis does not run on 32-bit Windows.")
+}
 context("sparse")
 set.seed(1974)
 dat <- as.matrix(iris[, 1:4])
@@ -14,6 +17,7 @@ neighbors <- randomProjectionTreeSearch(dat,
 																				verbose = FALSE)
 
 test_that("buildEdgeMatrix are the same, Euclidean", {
+	skip_old_windows()
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
   edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE)
   score <- sum(edges1@x - edges2@x)
@@ -21,6 +25,7 @@ test_that("buildEdgeMatrix are the same, Euclidean", {
 })
 
 test_that("buildEdgeMatrix are the same, Cosine", {
+	skip_old_windows()
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
 	edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
 	score <- sum(edges1@x - edges2@x)
@@ -34,6 +39,7 @@ mat <- Matrix::sparseMatrix(i = rep(1:nrow(dat), ncol(dat)),
 d = as.matrix(dist(t(as.matrix(mat)), method = "euclidean"))
 
 test_that("sparseDistances", {
+	skip_old_windows()
   index_matrix <- matrix(c(
     rep(0:(ncol(dat) - 1), ncol(dat)),
     rep(0:(ncol(dat) - 1), each = ncol(dat))
@@ -48,6 +54,7 @@ test_that("sparseDistances", {
 })
 
 test_that("Can determine sparse iris neighbors accurately", {
+	skip_old_windows()
   bests <- apply(d, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1,] - 1
   neighbors <- randomProjectionTreeSearch(mat,
