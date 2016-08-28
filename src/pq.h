@@ -132,17 +132,11 @@ protected:
   	Q -> decreaseIf(starterIndex, -1);
   	p.increment(N);
   	VIDX v;
-  	Rcout << "\nprim ";
   	while (! Q -> isEmpty()) {
-  		Rcout << ".";
   		v = Q -> pop();
-  		Rcout << ">";
   		if (! p.increment()) break;
-  		Rcout << "<";
   		if (Q -> keyOf(v) == INFINITY || Q -> keyOf(v) == -1) starterIndex = v;
-  		Rcout << ":";
   		IntegerVector vNeighbors = neighbors.column(v);
-  		Rcout << "|";
   		for (auto it = vNeighbors.begin();
          	 it != vNeighbors.end() && *it != -1;
          	 it++) {Rcout << ","; updateVWD(v, *it, max(edges(v, *it), edges(*it, v)));}

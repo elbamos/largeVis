@@ -193,18 +193,15 @@ private:
       second->prev = first->prev;
       first->prev = second;
       first->nextSibling = second->leftChild;
-      if (first->nextSibling != NULL)
-        first->nextSibling->prev = first;
+      if (first->nextSibling != NULL) first->nextSibling->prev = first;
       second->leftChild = first;
       first = second;
     } else {
       second->prev = first;
       first->nextSibling = second->nextSibling;
-      if (first->nextSibling != NULL)
-        first->nextSibling->prev = first;
+      if (first->nextSibling != NULL) first->nextSibling->prev = first;
       second->nextSibling = first->leftChild;
-      if (second->nextSibling != NULL)
-        second->nextSibling->prev = second;
+      if (second->nextSibling != NULL) second->nextSibling->prev = second;
       first->leftChild = second;
     }
   }
@@ -225,13 +222,9 @@ private:
     int numSiblings = 0;
     Rcout << "b";
     for (; firstSibling != NULL; numSiblings++) {
-    	Rcout << "\\";
       if (numSiblings == treeArray.size()) treeArray.resize(numSiblings * 2);
-      Rcout << "|";
       treeArray[numSiblings] = firstSibling;
-      Rcout << "/";
       firstSibling->prev->nextSibling = NULL;
-      Rcout << "-";
       firstSibling = firstSibling->nextSibling;
     }
     Rcout << "d";
@@ -254,21 +247,26 @@ private:
   * Internal method to clone subtree.
   */
   NodePointer clone(NodePointer t) {
-    if (t == NULL) return NULL;
-    else {
-    	NodePointer p = NodePointer(new PairNode(t->element));
-      if ((p->leftChild = clone( t->leftChild)) != NULL)
-        p->leftChild->prev = p;
-      if ((p->nextSibling = clone( t->nextSibling)) != NULL)
-        p->nextSibling->prev = p;
-      return p;
-    }
+  	stop("called clone");
   }
+//  NodePointer clone(NodePointer t) {
+//    if (t == NULL) return NULL;
+//    else {
+//    	NodePointer p = NodePointer(new PairNode(t->element));
+//      if ((p->leftChild = clone( t->leftChild)) != NULL)
+//        p->leftChild->prev = p;
+//      if ((p->nextSibling = clone( t->nextSibling)) != NULL)
+//        p->nextSibling->prev = p;
+//      return p;
+//   }
+//  }
 
 protected:
+
   PairingHeap(PairingHeap & rhs) {
-    root = NULL;
-    *this = rhs;
+  	stop("called other constructor.");
+  //  root = NULL;
+  //  *this = rhs;
   }
   /*
    * Find the smallest item in the priority queue.
@@ -315,13 +313,16 @@ protected:
     }
     return true;
   }
-  PairingHeap &operator=(PairingHeap & rhs) {
-    if (this != &rhs) {
-      makeEmpty( );
-      root = clone(rhs.root);
-    }
-    return *this;
-  }
+	PairingHeap &operator=(PairingHeap & rhs) {
+		stop("it got called");
+	}
+//  PairingHeap &operator=(PairingHeap & rhs) {
+//    if (this != &rhs) {
+//      makeEmpty( );
+//      root = clone(rhs.root);
+//    }
+//    return *this;
+//  }
 
   VIDX MaxSize = 0;
 

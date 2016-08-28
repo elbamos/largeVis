@@ -85,11 +85,8 @@ test_that("hdbscan doesn't crash on glass edges", {
 test_that("hdbscan doesn't crash on big bad edges", {
 	skip_old_windows()
 	skip_on_cran()
-	library(clusteringdatasets)
-	data(kddcup04bio)
-	dat <- t(as.matrix(kddcup04bio))
-	neighbors <- randomProjectionTreeSearch(dat, K = 20, verbose = TRUE)
-	edges <- buildEdgeMatrix(dat, neighbors)
+	load(system.file("extdata/kddneighbors.Rda", package = "largeVis"))
+	load(system.file("extdata/kddedges.Rda", package = "largeVis"))
 	clusters <- hdbscan(edges, neighbors = neighbors, verbose = TRUE)
 })
 
