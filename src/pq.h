@@ -52,13 +52,15 @@ protected:
   // Used after condensation to speed-up remaining phases
   std::set< VIDX > roots;
 
-  UF(VIDX N, bool verbose) : N{N}, p(Progress(10 * N, verbose)), Q(new PairingHeap<VIDX, double>(N)) {
-    	minimum_spanning_tree = std::unique_ptr<VIDX[]>(new VIDX[N]);
+  UF(VIDX N, bool verbose, bool pq) : N{N}, p(Progress(10 * N, verbose)) {
+	  if (pq) Q = new PairingHeap<VIDX, double>(N);
+	  else Q = new MinIndexedPQ<VIDX, double>(N);
+  	minimum_spanning_tree = std::unique_ptr<VIDX[]>(new VIDX[N]);
 #ifdef DEBUG
   	setupTest();
 #endif
   }
-  
+
 //  ~UF() {
 //    delete Q;
 //  }
@@ -95,36 +97,55 @@ protected:
   	return d;
   }
 
-  inline void updateVWD(VIDX v, VIDX w, double d) {
+  void updateVWD(VIDX v, VIDX w, double d) {
   	if (Q -> contains(w) || w == starterIndex ) if (Q -> decreaseIf(w, getMRD(v, w, d))) minimum_spanning_tree[w] = v;
   }
 
   void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
   	starterIndex = start;
-#ifdef DEBUG3
-  	Rcout << "\n prims load \n";
-#endif
   	for (VIDX n = 0; n != N; n++) minimum_spanning_tree[n] = -1;
   	Q -> batchInsert(N);
   	Q -> decreaseIf(starterIndex, -1);
   	p.increment(N);
   	VIDX v;
-#ifdef DEBUG3
-  	Rcout << "\nprims run\n";
-#endif 
   	while (! Q -> isEmpty()) {
-#ifdef DEBUG3
-  		Rcout << "\nnew ";
-#endif
   		v = Q -> pop();
   		if (! p.increment()) break;
 	  	if (Q -> keyOf(v) == INFINITY || Q -> keyOf(v) == -1) starterIndex = v;
 		  for (auto it = edges.begin_row(v);
          it != edges.end_row(v);
-         it++) updateVWD(v, it.col(), *it);
+         it++) {
+		  	updateVWD(v, it.col(), *it);
+		  }
 		  for (auto it = edges.begin_col(v);
          it != edges.end_col(v);
-         it++) updateVWD(v, it.row(), *it);
+         it++) {
+		  	updateVWD(v, it.row(), *it);
+		  }
+  	}
+  }
+
+  void primsAlgorithm(const arma::sp_mat& edges, const IntegerMatrix& neighbors, VIDX start) {
+  	starterIndex = start;
+  	for (VIDX n = 0; n != N; n++) minimum_spanning_tree[n] = -1;
+  	Q -> batchInsert(N);
+  	Q -> decreaseIf(starterIndex, -1);
+  	p.increment(N);
+  	VIDX v;
+  	Rcout << "\nprim ";
+  	while (! Q -> isEmpty()) {
+  		Rcout << ".";
+  		v = Q -> pop();
+  		Rcout << ">";
+  		if (! p.increment()) break;
+  		Rcout << "<";
+  		if (Q -> keyOf(v) == INFINITY || Q -> keyOf(v) == -1) starterIndex = v;
+  		Rcout << ":";
+  		IntegerVector vNeighbors = neighbors.column(v);
+  		Rcout << "|";
+  		for (auto it = vNeighbors.begin();
+         	 it != vNeighbors.end() && *it != -1;
+         	 it++) {Rcout << ","; updateVWD(v, *it, max(edges(v, *it), edges(*it, v)));}
   	}
   }
 
@@ -164,7 +185,6 @@ protected:
   }
 
   void buildHierarchy() {
-  	Rcout << "\n hierarchy begin\n";
   	reservesize = 2 * N + 1;
   	parents = arma::Col< VIDX >(reservesize);
   	sizes = arma::Col< VIDX >(reservesize);
@@ -180,7 +200,6 @@ protected:
   		container.emplace(adder++, n, Q -> keyOf(n));
   		if (n % 50 == 0 ) if (!p.increment(50)) return;
   	}
-		Rcout << "\nhierarchy run\n";
   	DistanceSorter srtr = DistanceSorter(CompareDist(), container);
   	while (! srtr.empty() && p.increment()) {
   		const iddist ijd = srtr.top();
@@ -338,7 +357,7 @@ protected:
   }
 
   void extractClusters(VIDX p) {
-#ifdef DEBUG3 
+#ifdef DEBUG3
     Rcout << "\nextract " << p;
 #endif
     survivingClusters.insert(p);

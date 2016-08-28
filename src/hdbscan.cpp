@@ -8,7 +8,7 @@ class HDBSCAN : public UF<long long> {
 public:
 
   HDBSCAN(const int N,
-          bool verbose) : UF(N, verbose) {
+          bool verbose) : UF(N, verbose, true) {
   }
 
   void makeCoreDistances(const arma::sp_mat& edges, const int K) {
@@ -43,6 +43,10 @@ public:
 
 	void primsAlgorithm(const sp_mat& edges) {
 		UF<long long>::primsAlgorithm(edges, 0);
+	}
+
+	void primsAlgorithm(const sp_mat& edges, const IntegerMatrix& neighbors) {
+		UF<long long>::primsAlgorithm(edges, neighbors, 0);
 	}
 
   arma::mat process(const int minPts) {
@@ -110,10 +114,11 @@ List hdbscanc(const arma::sp_mat& edges,
   if (neighbors.isNotNull()) { // 1 N
     IntegerMatrix neigh = IntegerMatrix(neighbors);
     object.makeCoreDistances(edges, neigh, K);
+    object.primsAlgorithm(edges, neigh); // 1 N
   } else {
     object.makeCoreDistances(edges, K);
+  	object.primsAlgorithm(edges);
   }
-  object.primsAlgorithm(edges); // 1 N
   arma::mat clusters = object.process(minPts);
   arma::ivec tree = arma::ivec(edges.n_cols);
   long long* mst = object.getMinimumSpanningTree();

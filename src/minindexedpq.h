@@ -157,20 +157,22 @@ template<class VIDX, class D>
 class PairingHeap : public PQ<VIDX, D> {
 private:
   class PairNode {
+  typedef std::shared_ptr< PairNode > NodePointer;
   public:
     D element;
     VIDX index;
-    PairNode *leftChild;
-    PairNode *nextSibling;
-    PairNode *prev;
+    NodePointer leftChild;
+    NodePointer nextSibling;
+    NodePointer prev;
     PairNode(VIDX index, D element) : element{element}, index{index} {
       leftChild = NULL;
       nextSibling = NULL;
       prev = NULL;
     }
   };
-  PairNode *root;
-  void reclaimMemory(PairNode * t) {
+	typedef std::shared_ptr< PairNode > NodePointer;
+	NodePointer root;
+  void reclaimMemory(NodePointer t) {
     if (t != NULL) {
       reclaimMemory(t->leftChild);
       reclaimMemory(t->nextSibling);
@@ -185,7 +187,7 @@ private:
    * second is root of tree 2, which may be NULL.
    * first becomes the result of the tree merge.
    */
-  void compareAndLink(PairNode * &first, PairNode *second) {
+  void compareAndLink(NodePointer &first, NodePointer second) {
     if (second == NULL) return;
     if (second->element < first->element) {
       second->prev = first->prev;
@@ -206,41 +208,55 @@ private:
       first->leftChild = second;
     }
   }
-  
+
   /*
   * Internal method that implements two-pass merging.
   * firstSibling the root of the conglomerate;
   *     assumed not NULL.
   */
-  PairNode *combineSiblings(PairNode *firstSibling) {
-    if (firstSibling->nextSibling == NULL)
-      return firstSibling;
-    static vector<PairNode *> treeArray(5);
+  NodePointer combineSiblings(NodePointer firstSibling) {
+  	Rcout << "c";
+    if (firstSibling->nextSibling == NULL) {
+    	Rcout << "c";
+    	return firstSibling;
+  	}
+    Rcout << "a";
+    static vector< NodePointer > treeArray(5);
     int numSiblings = 0;
+    Rcout << "b";
     for (; firstSibling != NULL; numSiblings++) {
-      if (numSiblings == treeArray.size())
-        treeArray.resize(numSiblings * 2);
+    	Rcout << "\\";
+      if (numSiblings == treeArray.size()) treeArray.resize(numSiblings * 2);
+      Rcout << "|";
       treeArray[numSiblings] = firstSibling;
+      Rcout << "/";
       firstSibling->prev->nextSibling = NULL;
+      Rcout << "-";
       firstSibling = firstSibling->nextSibling;
     }
+    Rcout << "d";
     if (numSiblings == treeArray.size()) treeArray.resize(numSiblings + 1);
     treeArray[numSiblings] = NULL;
     int i = 0;
+    Rcout << "e";
     for (; i + 1 < numSiblings; i += 2) compareAndLink(treeArray[i], treeArray[i + 1]);
+    Rcout << "f";
     int j = i - 2;
+    Rcout << "g";
     if (j == numSiblings - 3) compareAndLink (treeArray[j], treeArray[j + 2]);
+    Rcout << "h";
     for (; j >= 2; j -= 2) compareAndLink(treeArray[j - 2], treeArray[j] );
+    Rcout << "c";
     return treeArray[0];
   }
-  
+
   /*
   * Internal method to clone subtree.
   */
-  PairNode *clone(PairNode * t) {
+  NodePointer clone(NodePointer t) {
     if (t == NULL) return NULL;
     else {
-      PairNode *p = new PairNode(t->element);
+    	NodePointer p = NodePointer(new PairNode(t->element));
       if ((p->leftChild = clone( t->leftChild)) != NULL)
         p->leftChild->prev = p;
       if ((p->nextSibling = clone( t->nextSibling)) != NULL)
@@ -248,7 +264,7 @@ private:
       return p;
     }
   }
-  
+
 protected:
   PairingHeap(PairingHeap & rhs) {
     root = NULL;
@@ -265,8 +281,8 @@ protected:
    * Insert item x into the priority queue, maintaining heap order.
    * Return a pointer to the node containing the new item.
    */
-  PairNode* Insert(VIDX &n, D &x) {
-    PairNode *newNode = new PairNode(n, x);
+  NodePointer Insert(VIDX &n, D &x) {
+  	NodePointer newNode = NodePointer(new PairNode(n, x));
     if (root == NULL) root = newNode;
     else compareAndLink(root, newNode);
     PointerArray.push_back(newNode);
@@ -284,15 +300,8 @@ protected:
    * newVal is the new value, which must be smaller
    *    than the currently stored value.
    */
-   bool decreaseIf(PairNode *p, D &newVal) {
-#ifdef DEBUG3
-     Rcout << "i";
-#endif
-    if (p->element < newVal)
-      return false;
-#ifdef DEBUG3
-    Rcout << "u";
-#endif
+   bool decreaseIf(NodePointer p, D &newVal) {
+    if (p->element < newVal) return false;
     p->element = newVal;
     if (p != root) {
       if (p->nextSibling != NULL)
@@ -313,16 +322,16 @@ protected:
     }
     return *this;
   }
-  
+
   VIDX MaxSize = 0;
-  
-  std::vector< PairNode* > PointerArray;
+
+  std::vector< NodePointer > PointerArray;
   bool* ContentsArray;
-  
+
 public:
   PairingHeap(VIDX N) : MaxSize{N} {
     root = NULL;
-    PointerArray = std::vector< PairNode *>();
+    PointerArray = std::vector< NodePointer >();
     PointerArray.reserve(N);
     ContentsArray = new bool[N];
   }
@@ -331,7 +340,7 @@ public:
    */
   /*virtual ~PairingHeap() {
     makeEmpty();
-    for (auto it = PointerArray.begin(); 
+    for (auto it = PointerArray.begin();
          it != PointerArray.end();
          it++) delete *it;
     delete[] ContentsArray;
@@ -341,47 +350,34 @@ public:
    * Throws Underflow if empty.
    */
   virtual VIDX pop() {
-#ifdef DEBUG3
-    Rcout << " pop ";
-#endif
-    PairNode *oldRoot = root;
-    if (root->leftChild == NULL)
-      root = NULL;
-    else
-      root = combineSiblings(root->leftChild);
+  	NodePointer oldRoot = root;
+  	Rcout << "l";
+    if (root->leftChild == NULL) root = NULL;
+    else root = combineSiblings(root->leftChild);
+    Rcout << "i";
     VIDX ret = oldRoot -> index;
     //delete oldRoot;
     ContentsArray[ret] = false;
     return ret;
   }
-  
-  virtual bool isEmpty() const { 
+
+  virtual bool isEmpty() const {
     return root == NULL;
   }
   virtual bool contains(VIDX i) const {
     return ContentsArray[i];
   }
   double inf = INFINITY;
-  
+
   virtual void batchInsert(VIDX n) {
     for (VIDX i = 0; i != n; i++) Insert(i, inf);
   };
-  
+
   virtual bool decreaseIf(VIDX i, D newKey) {
-#ifdef DEBUG3
-    Rcout << "di" << i << " ";
-#endif
-    PairNode *node = PointerArray[i];
-#ifdef DEBUG3
-    Rcout << "r";
-#endif
-    return decreaseIf(node, newKey);
+    return decreaseIf(PointerArray[i], newKey);
   };
-  
+
   virtual D keyOf(VIDX i) const {
-#ifdef DEBUG3
-    Rcout << "ko" << i << " ";
-#endif
     return PointerArray[i] -> element;
   };
 };
