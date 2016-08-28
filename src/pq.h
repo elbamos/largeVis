@@ -40,7 +40,7 @@ protected:
   arma::vec coreDistances;
 
   VIDX starterIndex = 0;
-  MinIndexedPQ<VIDX, double> Q;
+  PQ<VIDX, double>* Q;
   std::unique_ptr< VIDX[] >   	minimum_spanning_tree;
 
   VIDX counter = 0;
@@ -52,12 +52,16 @@ protected:
   // Used after condensation to speed-up remaining phases
   std::set< VIDX > roots;
 
-  UF(VIDX N, bool verbose) : N{N}, p(Progress(10 * N, verbose)), Q(MinIndexedPQ<VIDX, double>(N)) {
+  UF(VIDX N, bool verbose) : N{N}, p(Progress(10 * N, verbose)), Q(new PairingHeap<VIDX, double>(N)) {
     	minimum_spanning_tree = std::unique_ptr<VIDX[]>(new VIDX[N]);
 #ifdef DEBUG
   	setupTest();
 #endif
   }
+  
+//  ~UF() {
+//    delete Q;
+//  }
 
 #ifdef DEBUG
   std::set< VIDX > testers = std::set< VIDX >();
@@ -92,27 +96,29 @@ protected:
   }
 
   inline void updateVWD(VIDX v, VIDX w, double d) {
-  	if (Q.contains(w) || w == starterIndex ) if (Q.decreaseIf(w, getMRD(v, w, d))) minimum_spanning_tree[w] = v;
+  	if (Q -> contains(w) || w == starterIndex ) if (Q -> decreaseIf(w, getMRD(v, w, d))) minimum_spanning_tree[w] = v;
   }
 
   void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
   	starterIndex = start;
+#ifdef DEBUG3
   	Rcout << "\n prims load \n";
+#endif
   	for (VIDX n = 0; n != N; n++) minimum_spanning_tree[n] = -1;
-  	Q.batchInsert(N);
-  	Q.decreaseKey(starterIndex, -1);
+  	Q -> batchInsert(N);
+  	Q -> decreaseIf(starterIndex, -1);
   	p.increment(N);
   	VIDX v;
-	  Rcout << "\nprims run\n";
-  	while (! Q.isEmpty()) {
-#ifdef DEBUG
-  		if (testers.find(v) != testers.end()) {
-  			Rcout << "\nprim adding " << v << " with " << Q.keyOf(v);
-  		}
+#ifdef DEBUG3
+  	Rcout << "\nprims run\n";
+#endif 
+  	while (! Q -> isEmpty()) {
+#ifdef DEBUG3
+  		Rcout << "\nnew ";
 #endif
-  		v = Q.deleteMin();
+  		v = Q -> pop();
   		if (! p.increment()) break;
-	  	if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
+	  	if (Q -> keyOf(v) == INFINITY || Q -> keyOf(v) == -1) starterIndex = v;
 		  for (auto it = edges.begin_row(v);
          it != edges.end_row(v);
          it++) updateVWD(v, it.col(), *it);
@@ -171,7 +177,7 @@ protected:
   	container.reserve(N);
   	typename std::vector< iddist >::iterator adder = container.end();
   	for (VIDX n = 0; n != N; n++) {
-  		container.emplace(adder++, n, Q.keyOf(n));
+  		container.emplace(adder++, n, Q -> keyOf(n));
   		if (n % 50 == 0 ) if (!p.increment(50)) return;
   	}
 		Rcout << "\nhierarchy run\n";
@@ -332,6 +338,9 @@ protected:
   }
 
   void extractClusters(VIDX p) {
+#ifdef DEBUG3 
+    Rcout << "\nextract " << p;
+#endif
     survivingClusters.insert(p);
     double childStabilities = 0;
     for (Vidxerator it = goodChildrens[p].begin();
