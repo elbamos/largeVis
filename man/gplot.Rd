@@ -43,7 +43,7 @@ neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
                                        max_iter = 5)
 edges <- buildEdgeMatrix(t(dat), neighbors)
 clusters <- hdbscan(edges, verbose = FALSE)
-plot(clusters, dat)
+gplot(clusters, dat)
 }
 }
 

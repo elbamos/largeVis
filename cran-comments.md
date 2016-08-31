@@ -3,7 +3,7 @@
 This is a resubmission of a new release. 
 
 The last submission produced this response:  
-It failed winbuilder.
+It failed to compile on Windows.  This was a reversion of a fix I'd put in to deal with an upstream change that happened earlier in the week.  Very sorry about that.  
 
 In this version I have:
 * Changed certain variable types to compile on Windowx 64-bit systems

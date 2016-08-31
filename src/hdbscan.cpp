@@ -26,16 +26,17 @@ public:
       	warning("Insufficient neighbors, selecting furthest");
       }
       for (int k = 0; k != K && srtr.size() > 1; k++) srtr.pop();
-      coreDistances[n] = srtr.top().second;
+      coreDistances[n] = max(srtr.top().second, 1e-5);
     }
   }
 
   void makeCoreDistances(const arma::sp_mat& edges,
                          const IntegerMatrix& neighbors,
                          const int K) {
+  	if (neighbors.nrow() < K) stop("Specified K bigger than the number of neighbors in the adjacency matrix.");
     coreDistances = arma::vec(N);
     for (long long n = 0; n < N; n++) if (p.increment()) {
-      coreDistances[n] = edges(neighbors(K, n), n);
+      coreDistances[n] = max(edges(neighbors(K, n), n), 1e-5);
     	if (coreDistances[n] == 0) coreDistances[n] = edges(neighbors(n, K), n);
     	if (coreDistances[n] == -1) stop("Insufficient neighbors.");
     }
@@ -49,11 +50,11 @@ public:
 		UF<long long>::primsAlgorithm(edges, neighbors, 0);
 	}
 
-  arma::mat process(const int minPts) {
+  arma::mat process(const int& minPts) {
   	buildHierarchy(); // 2 N
     condense(minPts); // 2 N
     determineStability(minPts); // N
-    extractClusters(); // N
+    extractClusters(minPts); // N
     return getClusters();
   }
 

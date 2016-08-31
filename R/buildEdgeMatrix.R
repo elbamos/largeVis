@@ -21,6 +21,7 @@ buildEdgeMatrix <- function(data,
 	if (is.null(neighbors)) neighbors <- randomProjectionTreeSearch(data, threads = threads, ...)
 	indices <- neighborsToVectors(neighbors)
 	distances <- distance(i = indices$i, j = indices$j, x = data, distance_method = distance_method, verbose = verbose)
+	distances <- pmax(distances, 1e-5)
 	mat <- sparseMatrix(
 		                  i = indices$i + 1,
 											j = indices$j + 1,

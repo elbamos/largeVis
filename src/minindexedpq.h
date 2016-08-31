@@ -9,10 +9,10 @@ template<class VIDX, class D>
 class PQ {
 public:
   virtual bool isEmpty() const = 0;
-  virtual bool contains(VIDX i) const = 0;
-  virtual void batchInsert(VIDX n) = 0;
-  virtual bool decreaseIf(VIDX i, D newKey) = 0;
-  virtual D keyOf(VIDX i) const = 0;
+  virtual bool contains(const VIDX& i) const = 0;
+  virtual void batchInsert(const VIDX& n, const VIDX& start) = 0;
+  virtual bool decreaseIf(const VIDX& i, const D& newKey) = 0;
+  virtual D keyOf(const VIDX& i) const = 0;
   virtual VIDX pop() = 0;
 };
 
@@ -23,8 +23,8 @@ template<class VIDX, class D>
 class MinIndexedPQ : public PQ<VIDX, D> {
 private:
 	VIDX N;
-	std::unique_ptr< VIDX[] > heap, index;
-	std::unique_ptr< D[] > keys;
+	unique_ptr< VIDX[] > heap, index;
+	unique_ptr< D[] > keys;
 
 	void swap(VIDX i, VIDX j) {
 		VIDX t = heap[i];
@@ -57,9 +57,9 @@ private:
 public:
 	// Create an empty MinIndexedPQ which can contain atmost NMAX elements
 	MinIndexedPQ(VIDX NMAX) : N(0) {
-		keys = std::unique_ptr< D[] >(new D[NMAX + 1]);
-		heap = std::unique_ptr< VIDX[] >(new VIDX[NMAX + 1]);
-		index = std::unique_ptr< VIDX[] >(new VIDX[NMAX + 1]);
+		keys = unique_ptr< D[] >(new D[NMAX + 1]);
+		heap = unique_ptr< VIDX[] >(new VIDX[NMAX + 1]);
+		index = unique_ptr< VIDX[] >(new VIDX[NMAX + 1]);
 		for(VIDX n = 0; n != NMAX; n++) index[n] = -1;
 	}
 
@@ -69,7 +69,7 @@ public:
 	}
 
 	// check if i is an index on the PQ
-	virtual bool contains(VIDX i) const {
+	virtual bool contains(const VIDX& i) const {
 		return index[i] != -1;
 	}
 
@@ -80,31 +80,22 @@ public:
 
 	// We can pre-load the data structure quickly because we don't need to
 	// bubbleUp when they're all INFINITY.
-	virtual void batchInsert(VIDX n) {
+	virtual void batchInsert(const VIDX& n, const VIDX& start) {
 		for (VIDX i = 0; i != n; i++) {
+			D key = (i == start) ? -1 : INFINITY;
 			N++;
 			index[i] = N;
 			heap[N] = i;
-			keys[i] = INFINITY;
+			keys[i] = key;
 		}
 	}
 	// associate key with index i; 0 < i < NMAX
-	void insert(VIDX i, D key) {
+	void insert(const VIDX& i, const D& key) {
 		N++;
 		index[i] = N;
 		heap[N] = i;
 		keys[i] = key;
 		bubbleUp(N);
-	}
-
-	// returns the index associated with the minimal key
-	VIDX minIndex() const {
-		return heap[1];
-	}
-
-	// returns the minimal key
-	virtual D minKey() const {
-		return keys[heap[1]];
 	}
 
 	// delete the minimal key and return its associated index
@@ -119,32 +110,24 @@ public:
 	}
 
 	// returns the key associated with index i
-	virtual D keyOf(VIDX i) const {
+	virtual D keyOf(const VIDX& i) const {
 		return keys[i];
 	}
 
 	// change the key associated with index i to the specified value
-	void decreaseKey(VIDX i, D key)  {
+	void decreaseKey(const VIDX& i, const D &key)  {
 		keys[i] = key;
 		if (index[i] == -1 || keys[i] == -1) return;
 		bubbleUp(index[i]);
 	}
 
-	virtual bool decreaseIf(VIDX i, D key) {
+	virtual bool decreaseIf(const VIDX& i, const D& key) {
 		if (key < keys[i]) {
 			decreaseKey(i, key);
 			return true;
 		} else return false;
 	}
 
-	// delete the key associated with index i
-	void remove(VIDX i)   {
-		VIDX ind = index[i];
-		swap(ind, N--);
-		bubbleUp(ind);
-		bubbleDown(ind);
-		index[i] = -1;
-	}
 };
 
 
@@ -176,7 +159,7 @@ private:
     if (t != NULL) {
       reclaimMemory(t->leftChild);
       reclaimMemory(t->nextSibling);
-      delete t;
+//      delete t;
     }
   }
   /*
@@ -212,69 +195,28 @@ private:
   *     assumed not NULL.
   */
   NodePointer combineSiblings(NodePointer firstSibling) {
-  	Rcout << "c";
     if (firstSibling->nextSibling == NULL) {
-    	Rcout << "c";
     	return firstSibling;
   	}
-    Rcout << "a";
     static vector< NodePointer > treeArray(5);
     int numSiblings = 0;
-    Rcout << "b";
     for (; firstSibling != NULL; numSiblings++) {
       if (numSiblings == treeArray.size()) treeArray.resize(numSiblings * 2);
       treeArray[numSiblings] = firstSibling;
       firstSibling->prev->nextSibling = NULL;
       firstSibling = firstSibling->nextSibling;
     }
-    Rcout << "d";
     if (numSiblings == treeArray.size()) treeArray.resize(numSiblings + 1);
     treeArray[numSiblings] = NULL;
     int i = 0;
-    Rcout << "e";
     for (; i + 1 < numSiblings; i += 2) compareAndLink(treeArray[i], treeArray[i + 1]);
-    Rcout << "f";
     int j = i - 2;
-    Rcout << "g";
     if (j == numSiblings - 3) compareAndLink (treeArray[j], treeArray[j + 2]);
-    Rcout << "h";
     for (; j >= 2; j -= 2) compareAndLink(treeArray[j - 2], treeArray[j] );
-    Rcout << "c";
     return treeArray[0];
   }
 
-  /*
-  * Internal method to clone subtree.
-  */
-  NodePointer clone(NodePointer t) {
-  	stop("called clone");
-  }
-//  NodePointer clone(NodePointer t) {
-//    if (t == NULL) return NULL;
-//    else {
-//    	NodePointer p = NodePointer(new PairNode(t->element));
-//      if ((p->leftChild = clone( t->leftChild)) != NULL)
-//        p->leftChild->prev = p;
-//      if ((p->nextSibling = clone( t->nextSibling)) != NULL)
-//        p->nextSibling->prev = p;
-//      return p;
-//   }
-//  }
-
 protected:
-
-  PairingHeap(PairingHeap & rhs) {
-  	stop("called other constructor.");
-  //  root = NULL;
-  //  *this = rhs;
-  }
-  /*
-   * Find the smallest item in the priority queue.
-   * Return the smallest item, or throw Underflow if empty.
-   */
-  D &findMin() {
-    return root->element;
-  }
   /*
    * Insert item x into the priority queue, maintaining heap order.
    * Return a pointer to the node containing the new item.
@@ -298,7 +240,7 @@ protected:
    * newVal is the new value, which must be smaller
    *    than the currently stored value.
    */
-   bool decreaseIf(NodePointer p, D &newVal) {
+   bool decreaseIf(NodePointer& p, const D &newVal) {
     if (p->element < newVal) return false;
     p->element = newVal;
     if (p != root) {
@@ -313,16 +255,6 @@ protected:
     }
     return true;
   }
-	PairingHeap &operator=(PairingHeap & rhs) {
-		stop("it got called");
-	}
-//  PairingHeap &operator=(PairingHeap & rhs) {
-//    if (this != &rhs) {
-//      makeEmpty( );
-//      root = clone(rhs.root);
-//    }
-//    return *this;
-//  }
 
   VIDX MaxSize = 0;
 
@@ -339,23 +271,21 @@ public:
   /*
    * Destroy the leftist heap.
    */
-  /*virtual ~PairingHeap() {
+  virtual ~PairingHeap() {
     makeEmpty();
-    for (auto it = PointerArray.begin();
-         it != PointerArray.end();
-         it++) delete *it;
+//    for (auto it = PointerArray.begin();
+//         it != PointerArray.end();
+//         it++) delete *it;
     delete[] ContentsArray;
-  }*/
+  }
   /*
    * Remove the smallest item from the priority queue.
    * Throws Underflow if empty.
    */
   virtual VIDX pop() {
   	NodePointer oldRoot = root;
-  	Rcout << "l";
     if (root->leftChild == NULL) root = NULL;
     else root = combineSiblings(root->leftChild);
-    Rcout << "i";
     VIDX ret = oldRoot -> index;
     //delete oldRoot;
     ContentsArray[ret] = false;
@@ -365,20 +295,22 @@ public:
   virtual bool isEmpty() const {
     return root == NULL;
   }
-  virtual bool contains(VIDX i) const {
+  virtual bool contains(const VIDX& i) const {
     return ContentsArray[i];
   }
-  double inf = INFINITY;
 
-  virtual void batchInsert(VIDX n) {
-    for (VIDX i = 0; i != n; i++) Insert(i, inf);
+  virtual void batchInsert(const VIDX& n, const VIDX& start) {
+    for (VIDX i = 0; i != n; i++) {
+    	D key = (start == i) ? -1 : INFINITY;
+    	Insert(i, key);
+    }
   };
 
-  virtual bool decreaseIf(VIDX i, D newKey) {
+  virtual bool decreaseIf(const VIDX& i, const D& newKey) {
     return decreaseIf(PointerArray[i], newKey);
   };
 
-  virtual D keyOf(VIDX i) const {
+  virtual D keyOf(const VIDX& i) const {
     return PointerArray[i] -> element;
   };
 };

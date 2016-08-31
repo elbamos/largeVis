@@ -5,6 +5,9 @@
 * Fixed bug in hdbscan caused by the knn matrix not matching output from randomProjectionTreeSearch. 
 * Batch insert in hdbscan speeds up Prim's algorithm.
 * Tests and examples are disabled on i386
+* Added a regularization constant to buildEdgeMatrix. Duplicates will be given a distance of 1e-5. This resolves an issue that 
+could arise in some circumstances with datasets that contained significant numbers of duplicates, because Matrix and 
+armadillo::sp_mat both erase zeros.
 
 ### largeVis 0.1.8
 * hdbscan algorithm added

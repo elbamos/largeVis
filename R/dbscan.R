@@ -232,11 +232,17 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
                                     mins[as.integer(clusters)[!is.na(clusters)]]) /
     maxes[as.integer(clusters)[!is.na(clusters)]]
 
+  # Adjust C->R style numbering
+  hierarchy <- clustersout$hierarchy
+  hierarchy$nodemembership <- hierarchy$nodemembership + 1
+  hierarchy$parent <- hierarchy$parent + 1
+  hierarchy$coredistances <- hierarchy$coredistances[, 1]
+
   ret <- list(
     clusters = clusters,
     probabilities = probs$probs,
-    tree = clustersout$tree,
-    hierarchy = clustersout$hierarchy,
+    tree = clustersout$tree[, 1] + 1,
+    hierarchy = hierarchy,
     call = sys.call()
   )
   class(ret) <- "hdbscan"
@@ -277,7 +283,7 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 #'                                        max_iter = 5)
 #' edges <- buildEdgeMatrix(t(dat), neighbors)
 #' clusters <- hdbscan(edges, verbose = FALSE)
-#' plot(clusters, dat)
+#' gplot(clusters, dat)
 #' }
 #' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes_
 gplot <- function(x, coords, text = FALSE) {

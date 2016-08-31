@@ -58,9 +58,20 @@ test_that("hdbscan finds 3 clusters and outliers in spiral", {
 	expect_equal(length(unique(clustering$clusters)), 4)
 })
 
+set.seed(1974)
+data(iris)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+K <- 20
+neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
+
 test_that("hdbscan doesn't crash with neighbors", {
 	skip_old_windows()
-  expect_silent(hdbscan(edges, minPts = 20, neighbors = neighbors, K = 3, threads = 2,  FALSE))
+	expect_silent(hdbscan(edges, minPts = 10, neighbors = neighbors, K = 3, threads = 2, verbose = FALSE))
 })
 
 test_that("hdbscan is correct", {
@@ -71,23 +82,22 @@ test_that("hdbscan is correct", {
 
 test_that("hdbscan is less correct with neighbors", {
 	skip_old_windows()
-  clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3,  threads = 2, FALSE)
+  clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3,  threads = 2, verbose = FALSE)
   expect_equal(length(unique(clustering$clusters)), 2)
 })
 
 test_that("hdbscan doesn't crash on glass edges", {
 	skip_old_windows()
 	load(system.file("extdata/glassEdges.Rda", package = "largeVis"))
-	clustering <- hdbscan(edges, threads = 2)
+	clustering <- hdbscan(edges, threads = 2, verbose = FALSE)
 	expect_equal(length(unique(clustering$clusters)), 3)
 })
 
 test_that("hdbscan doesn't crash on big bad edges", {
-	skip_old_windows()
-	skip_on_cran()
+	skip("skipping big bad edges test because the data is too big for cran")
 	load(system.file("extdata/kddneighbors.Rda", package = "largeVis"))
 	load(system.file("extdata/kddedges.Rda", package = "largeVis"))
-	clusters <- hdbscan(edges, neighbors = neighbors, verbose = TRUE)
+	expect_silent(clusters <- hdbscan(edges, neighbors = neighbors, threads = 2, verbose = FALSE))
 })
 
 test_that("hdbscan doesn't crash on big bad edges", {
@@ -95,5 +105,5 @@ test_that("hdbscan doesn't crash on big bad edges", {
 	skip_on_cran()
 	skip("skipping long test")
 	load(system.file("extdata/badedges.Rda", package = "largeVis"))
-	expect_silent(clustering <- hdbscan(badedges, threads = 2))
+	expect_silent(clustering <- hdbscan(badedges, threads = 2, verbose = FALSE))
 })

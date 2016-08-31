@@ -47,8 +47,6 @@ protected:
 
   std::set< VIDX > survivingClusters;
 
-  int clusterCount = 1;
-
   // Used after condensation to speed-up remaining phases
   std::set< VIDX > roots;
 
@@ -91,7 +89,7 @@ protected:
   }
 #endif
 
-  inline double getMRD(const long long i, const long long j, const double dist) const {
+  inline double getMRD(const VIDX i, const VIDX j, const double dist) const {
   	double d = max(coreDistances[i], coreDistances[j]);
   	d = max(d, dist);
   	return d;
@@ -104,7 +102,7 @@ protected:
   void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
   	starterIndex = start;
   	for (VIDX n = 0; n != N; n++) minimum_spanning_tree[n] = -1;
-  	Q -> batchInsert(N);
+  	Q -> batchInsert(N, start);
   	Q -> decreaseIf(starterIndex, -1);
   	p.increment(N);
   	VIDX v;
@@ -128,7 +126,7 @@ protected:
   void primsAlgorithm(const arma::sp_mat& edges, const IntegerMatrix& neighbors, VIDX start) {
   	starterIndex = start;
   	for (VIDX n = 0; n != N; n++) minimum_spanning_tree[n] = -1;
-  	Q -> batchInsert(N);
+  	Q -> batchInsert(N, start);
   	Q -> decreaseIf(starterIndex, -1);
   	p.increment(N);
   	VIDX v;
@@ -139,14 +137,16 @@ protected:
   		IntegerVector vNeighbors = neighbors.column(v);
   		for (auto it = vNeighbors.begin();
          	 it != vNeighbors.end() && *it != -1;
-         	 it++) {Rcout << ","; updateVWD(v, *it, max(edges(v, *it), edges(*it, v)));}
+         	 it++) {
+  			updateVWD(v, *it, max(edges(v, *it), edges(*it, v)));
+  			}
   	}
   }
 
   /*
    * The hierarchy construction phase
    */
-  VIDX getRoot(VIDX p) const {
+  VIDX getRoot(const VIDX& p) const {
     return (parents[p] == p) ? p : getRoot(parents[p]);
   }
 
@@ -162,7 +162,7 @@ protected:
 	/*
 	 * The union part of union-find
 	 */
-  void agglomerate(VIDX a, VIDX b, double d) {
+  void agglomerate(const VIDX& a, const VIDX& b, const double& d) {
     if (b == -1 || d == INFINITY) {
       lambda_births[a] = (lambda_births[a] > 0) ? lambda_births[a] : -1;
       return;
@@ -175,6 +175,7 @@ protected:
     parents[n_a] = parent;
     parents[n_b] = parent;
     sizes[parent] = sizes[n_a] + sizes[n_b];
+    if (d == 0 || (1 / d) == INFINITY) stop("Infinite lambda");
     lambda_births[n_a] = lambda_births[n_b] = lambda_deaths[parent] = 1 / d;
   }
 
@@ -211,7 +212,7 @@ protected:
    * Then, top-down search for nodes with only one child, iterating through roots.
    *
    */
-  void condenseUp(VIDX p, VIDX mergeTarget) {
+  void condenseUp(const VIDX& p, const VIDX& mergeTarget) {
     if (p == mergeTarget) return;
     sizes[p] = -1;
     for (Vidxerator it = fallenPointses[p].begin();
@@ -230,10 +231,12 @@ protected:
     goodChildrens[p].clear();
     lambda_deaths[parents[p]] = max(lambda_deaths[mergeTarget],
                                     lambda_deaths[p]);
+    parents[p] = -1;
     return;
   }
 
-  void condenseOne(VIDX p, int minPts) {
+  void condenseOne(const VIDX& p, const int& minPts) {
+  	if (sizes[p] == -1) return;
     if (parents[p] ==  p) {
       roots.insert(p);
       return;
@@ -243,7 +246,7 @@ protected:
     } else if (parents[p] != p) goodChildrens[parents[p]].insert(p);
   }
 
-  void condenseTwo(VIDX p) {
+  void condenseTwo(const VIDX& p) {
     if (sizes[p] == -1) stop("Recursion error");
     while (goodChildrens[p].size() == 1) {
       VIDX onlychild = *(goodChildrens[p].begin());
@@ -255,7 +258,7 @@ protected:
          it++) condenseTwo(*it);
   }
 
-  void condense(int minPts) {
+  void condense(const int& minPts) {
     roots = std::set< VIDX >();
     goodChildrens = std::unique_ptr< std::set< VIDX >[] >(new std::set< VIDX >[2 * N + 1]);
     fallenPointses = std::unique_ptr< std::set< VIDX >[] >(new std::set< VIDX >[2 * N + 1]);
@@ -271,23 +274,11 @@ protected:
       condenseOne(n, minPts);
     }
     Vidxerator it2;
-#ifdef _OPENMP
-#pragma omp parallel
-{
-#pragma omp single private(it2)
-{
-#endif
     for (it2 = roots.begin();
          it2 != roots.end();
-         it2++)
-#ifdef _OPENMP
-#pragma omp task
-#endif
-		 {if (p.increment(sizes[*it2])) {condenseTwo(*it2);}}
-#ifdef _OPENMP
-}
-}
-#endif
+         it2++) {
+    	if (p.increment(sizes[*it2])) condenseTwo(*it2);
+    	}
   }
 
   /*
@@ -296,8 +287,8 @@ protected:
    * Extract clusters, starting with roots and recursing.
    *
    */
-
-  void determineStability(VIDX p, int minPts) {
+  void determineStability(const VIDX& p, const int& minPts) {
+  	if (sizes[p] < minPts && p != parents[p]) stop("Condense failed");
     if (sizes[p] < minPts && p != parents[p]) {
       stop("Condense failed");
     }
@@ -322,105 +313,65 @@ protected:
   }
 
   void determineStability(int minPts) {
-    stabilities = arma::Col< double >(counter);
-    selected = std::unique_ptr< bool[] >(new bool[counter]);
+    stabilities = arma::vec(counter);
+    selected = unique_ptr< bool[] >(new bool[counter]);
     Vidxerator it;
-#ifdef _OPENMP
-#pragma omp parallel
-{
-#pragma omp single private(it)
-{
-#endif
     for (it = roots.begin();
          it != roots.end();
-         it++)
-#ifdef _OPENMP
-#pragma omp task
-#endif
-    	{if (p.increment(sizes[*it])) {determineStability(*it, minPts);}}
-#ifdef _OPENMP
-}}
-#endif
+         it++) {
+    	if (p.increment(sizes[*it])) determineStability(*it, minPts);
+    }
   }
 
-  void deselect(VIDX p) {
+  void deselect(const VIDX& p) {
     selected[p] = false;
     for (Vidxerator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) deselect(*it);
   }
 
-  void extractClusters(VIDX p) {
-#ifdef DEBUG3
-    Rcout << "\nextract " << p;
-#endif
+  void extractClusters(const VIDX& p, const int& minPts) {
     survivingClusters.insert(p);
     double childStabilities = 0;
     for (Vidxerator it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) {
-      extractClusters(*it);
+      extractClusters(*it, minPts);
       childStabilities += stabilities[*it];
     }
-    if (childStabilities > stabilities[p]) {
-#ifdef DEBUG
-    	Rcout << "\npoint " << p << " children are more stable.";
-#endif
-    	selected[p] = false;
-      stabilities[p] = childStabilities;
-    } else {
-#ifdef DEBUG
-Rcout << "\n point " << p << " more stable than children ";
-#endif
-      // If this is the only root, and there are children, don't let it be selected,
-      // because then we'd have only one cluster.
-      if (parents[p] == p && roots.size() == 1) {
-#ifdef DEBUG
-      	Rcout << "not selecting top parent";
-#endif
-        selected[p] = false;
-        return;
-      } else {
-#ifdef DEBUG
-      	Rcout << "selecting, deselcting children.";
-#endif
-      	selected[p] = true;
-      	for (Vidxerator it = goodChildrens[p].begin();
-            it != goodChildrens[p].end();
-            it++) deselect(*it);
-      	}
+    if (childStabilities > stabilities[p]) { // Children are superior
+    		selected[p] = false;
+    		stabilities[p] = childStabilities;
+	  } else if (sizes[p] < minPts) {
+    	if (parents[p] != p) stop("child with too few points");
+			selected[p] = false;
+		} else if (parents[p] == p && roots.size() == 1) {
+			selected[p] = false;
+    } else if (sizes[p] >= minPts && stabilities[p] > childStabilities) {
+			selected[p] = true;
+    	for (Vidxerator it = goodChildrens[p].begin();
+       it != goodChildrens[p].end();
+       it++) deselect(*it);
+		} else stop("Uncaught category");
+  }
+
+
+  void extractClusters(const VIDX& minPts) {
+    survivingClusters = std::set< VIDX >();
+  	Vidxerator it;
+    for (it = roots.begin();
+         it != roots.end();
+         it++) {
+    	if (p.increment(sizes[*it])) 	extractClusters(*it, minPts);
     }
   }
 
-  void extractClusters() {
-    survivingClusters = std::set< VIDX >();
-  	Vidxerator it;
-#ifdef _OPENMP
-#pragma omp parallel
-{
-#pragma omp single private(it)
-{
-#endif
-    for (it = roots.begin();
-         it != roots.end();
-         it++)
-#ifdef _OPENMP
-#pragma omp task
-#endif
-    	   {if (p.increment(sizes[*it])) 	{extractClusters(*it);}}
-#ifdef _OPENMP
-}}
-#endif
-  }
+  int clusterCount = 1;
 
-  void getClusters(arma::mat& ret, VIDX n, int cluster, double cluster_death) {
-    int thisCluster = cluster;
+  void getClusters(arma::mat& ret, const VIDX& n, const int& cluster, const double& cluster_death) {
+  	int thisCluster = cluster;
     double thisDeath = cluster_death;
-    if (selected[n])
-#ifdef _OPENMP
-#pragma omp critical
-#endif
-		{
+    if (selected[n]) {
 #ifdef DEBUG
 	Rcout << "\n selecting cluster " << clusterCount << " node " << n;
 #endif
@@ -441,34 +392,20 @@ Rcout << "\n point " << p << " more stable than children ";
   arma::mat getClusters() {
     arma::mat ret = arma::mat(2, N, fill::zeros);
   	Vidxerator it;
-#ifdef _OPENMP
-#pragma omp parallel
-{
-#pragma omp single private(it)
-{
-#endif
     for (it = roots.begin();
          it != roots.end();
-         it++)
-#ifdef _OPENMP
-#pragma omp task
-#endif
-    	{
+         it++) {
       getClusters(ret, *it, -1, lambda_deaths[*it]);
     }
-#ifdef _OPENMP
-}}
-#endif
     return ret;
   }
+
+  VIDX reportClusterCnt = 0;
 
   /*
    * Fetch the hierarchy.
    *
    */
-
-  VIDX reportClusterCnt = 0;
-
   void reportAHierarchy(VIDX last, VIDX oldidx,
                        IntegerVector& newparent,
                        IntegerVector& nodeMembership,
