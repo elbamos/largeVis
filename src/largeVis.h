@@ -22,11 +22,7 @@ using namespace arma;
  */
 typedef double distancetype;
 typedef double coordinatetype;
-#ifdef __MINGW32__
-typedef long long int vertexidxtype;
-#else
 typedef long long vertexidxtype;
-#endif
 typedef long long edgeidxtype;
 typedef long long iterationtype;
 typedef int dimidxtype;
@@ -42,9 +38,9 @@ void checkCRAN(Rcpp::Nullable<Rcpp::NumericVector> threads);
 distancetype dist(const arma::vec& i, const arma::vec& j);
 distancetype relDist(const arma::vec& i, const arma::vec& j);
 distancetype cosDist(const arma::vec& i, const arma::vec& j);
-distancetype sparseDist(const sp_mat& i, const sp_mat& j);
-distancetype sparseRelDist(const sp_mat& i, const sp_mat& j);
-distancetype sparseCosDist(const sp_mat& i, const sp_mat& j);
+distancetype sparseDist(const arma::sp_mat& i, const arma::sp_mat& j);
+distancetype sparseRelDist(const arma::sp_mat& i, const arma::sp_mat& j);
+distancetype sparseCosDist(const arma::sp_mat& i, const arma::sp_mat& j);
 
 // Exported distance functions for high dimensional space
 arma::vec fastDistance(const NumericVector is,
@@ -54,7 +50,7 @@ arma::vec fastDistance(const NumericVector is,
                        bool verbose);
 arma::vec fastSparseDistance(const arma::vec& is,
                              const arma::vec& js,
-                             const sp_mat& data,
+                             const arma::sp_mat& data,
                              const std::string& distMethod,
                              bool verbose);
 arma::vec fastCDistance(const arma::vec& is,
@@ -79,10 +75,10 @@ arma::vec fastSDistance(const arma::vec& is,
 template <class T>
 class AliasTable {
 private:
-	std::unique_ptr< coordinatetype[] > probs;
-	std::unique_ptr< T[] > aliases;
-  std::uniform_real_distribution< coordinatetype > rnd = std::uniform_real_distribution< coordinatetype >();
-  std::mt19937_64 mt;
+	unique_ptr< coordinatetype[] > probs;
+	unique_ptr< T[] > aliases;
+  uniform_real_distribution< coordinatetype > rnd = uniform_real_distribution< coordinatetype >();
+  mt19937_64 mt;
   T N;
 
 public:
@@ -91,8 +87,8 @@ public:
 
 	void initialize(const distancetype* weights, T N) {
 		this -> N = N;
-		probs = std::unique_ptr< coordinatetype[] >( new coordinatetype[N] );
-		aliases = std::unique_ptr< T[] >(new T[N]);
+		probs = unique_ptr< coordinatetype[] >( new coordinatetype[N] );
+		aliases = unique_ptr< T[] >(new T[N]);
 		distancetype sm = 0;
 		for (T i = 0; i != N; i++) sm += weights[i];
   	for (T i = 0; i != N; i++) probs[i] = weights[i] * N / sm;
@@ -134,7 +130,7 @@ public:
   	return mt();
   }
   void initRandom() {
-  	std::random_device seed;
+  	random_device seed;
   	initRandom(seed());
   }
   coordinatetype getRand() {

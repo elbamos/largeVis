@@ -16,7 +16,6 @@ public:
   virtual VIDX pop() = 0;
 };
 
-
 // MinIndexedPQ Basedon https://github.com/kartikkukreja/blog-codes/blob/master/src/Indexed%20Min%20Priority%20Queue.cpp
 
 template<class VIDX, class D>
@@ -89,14 +88,6 @@ public:
 			keys[i] = key;
 		}
 	}
-	// associate key with index i; 0 < i < NMAX
-	void insert(const VIDX& i, const D& key) {
-		N++;
-		index[i] = N;
-		heap[N] = i;
-		keys[i] = key;
-		bubbleUp(N);
-	}
 
 	// delete the minimal key and return its associated index
 	// Warning: Don't try to read from this index after calling this function
@@ -130,17 +121,11 @@ public:
 
 };
 
-
-
-
-/*
-* Implementation based on code found at http://www.sanfoundry.com/cpp-program-implement-pairing-heap/
-*/
 template<class VIDX, class D>
 class PairingHeap : public PQ<VIDX, D> {
 private:
   class PairNode {
-  typedef std::shared_ptr< PairNode > NodePointer;
+  typedef shared_ptr< PairNode > NodePointer;
   public:
     D element;
     VIDX index;
@@ -152,24 +137,18 @@ private:
       nextSibling = NULL;
       prev = NULL;
     }
-  };
-	typedef std::shared_ptr< PairNode > NodePointer;
-	NodePointer root;
-  void reclaimMemory(NodePointer t) {
-    if (t != NULL) {
-      reclaimMemory(t->leftChild);
-      reclaimMemory(t->nextSibling);
-//      delete t;
+    void reclaimMemory() {
+    	leftChild = nextSibling = prev = NULL;
     }
+  };
+
+	typedef shared_ptr< PairNode > NodePointer;
+	NodePointer root;
+
+  void reclaimMemory(NodePointer t) {
+  	t -> reclaimMemory();
   }
-  /*
-   * Internal method that is the basic operation to maintain order.
-   * Links first and second together to satisfy heap order.
-   * first is root of tree 1, which may not be NULL.
-   *    first->nextSibling MUST be NULL on entry.
-   * second is root of tree 2, which may be NULL.
-   * first becomes the result of the tree merge.
-   */
+
   void compareAndLink(NodePointer &first, NodePointer second) {
     if (second == NULL) return;
     if (second->element < first->element) {
@@ -189,11 +168,6 @@ private:
     }
   }
 
-  /*
-  * Internal method that implements two-pass merging.
-  * firstSibling the root of the conglomerate;
-  *     assumed not NULL.
-  */
   NodePointer combineSiblings(NodePointer firstSibling) {
     if (firstSibling->nextSibling == NULL) {
     	return firstSibling;
@@ -216,30 +190,23 @@ private:
     return treeArray[0];
   }
 
-protected:
-  /*
-   * Insert item x into the priority queue, maintaining heap order.
-   * Return a pointer to the node containing the new item.
-   */
   NodePointer Insert(VIDX &n, D &x) {
-  	NodePointer newNode = NodePointer(new PairNode(n, x));
+  	NodePointer newNode = make_shared< PairNode >(n, x);
     if (root == NULL) root = newNode;
     else compareAndLink(root, newNode);
     PointerArray.push_back(newNode);
     ContentsArray[n] = true;
     return newNode;
   }
+
   void makeEmpty() {
-    reclaimMemory(root);
     root = NULL;
+    for (VIDX n = 0; n != PointerArray.size(); n++) {
+    	PointerArray[n] -> reclaimMemory();
+    	PointerArray[n] = NULL;
+    }
   }
-  /*
-   * Change the value of the item stored in the pairing heap.
-   * Does nothing if newVal is larger than currently stored value.
-   * p points to a node returned by insert.
-   * newVal is the new value, which must be smaller
-   *    than the currently stored value.
-   */
+
    bool decreaseIf(NodePointer& p, const D &newVal) {
     if (p->element < newVal) return false;
     p->element = newVal;
@@ -258,13 +225,13 @@ protected:
 
   VIDX MaxSize = 0;
 
-  std::vector< NodePointer > PointerArray;
+  vector< NodePointer > PointerArray;
   bool* ContentsArray;
 
 public:
   PairingHeap(VIDX N) : MaxSize{N} {
     root = NULL;
-    PointerArray = std::vector< NodePointer >();
+    PointerArray = vector< NodePointer >();
     PointerArray.reserve(N);
     ContentsArray = new bool[N];
   }

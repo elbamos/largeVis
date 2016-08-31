@@ -15,12 +15,12 @@ private:
   arma::vec lambda_deaths;
   arma::vec stabilities;
   arma::Col< VIDX > sizes;
-  std::unique_ptr< std::set< VIDX >[] > fallenPointses;
-  std::unique_ptr< std::set< VIDX >[] > goodChildrens;
-  std::unique_ptr< bool[] > selected;
+  unique_ptr< set< VIDX >[] > fallenPointses;
+  unique_ptr< set< VIDX >[] > goodChildrens;
+  unique_ptr< bool[] > selected;
 
 protected:
-  typedef std::pair<VIDX, double> iddist;
+  typedef pair<VIDX, double> iddist;
   class CompareDist {
 	public:
   	bool operator()(iddist n1, iddist n2) const {
@@ -28,10 +28,10 @@ protected:
   	}
   };
 
-  typedef std::priority_queue<iddist,
-                              std::vector< iddist >,
+  typedef priority_queue<iddist,
+                              vector< iddist >,
                               CompareDist> DistanceSorter;
-  typedef typename std::set<VIDX>::iterator Vidxerator;
+  typedef typename set<VIDX>::iterator Vidxerator;
 
   VIDX N;
   Progress p;
@@ -41,19 +41,19 @@ protected:
 
   VIDX starterIndex = 0;
   PQ<VIDX, double>* Q;
-  std::unique_ptr< VIDX[] >   	minimum_spanning_tree;
+  unique_ptr< VIDX[] >   	minimum_spanning_tree;
 
   VIDX counter = 0;
 
-  std::set< VIDX > survivingClusters;
+  set< VIDX > survivingClusters;
 
   // Used after condensation to speed-up remaining phases
-  std::set< VIDX > roots;
+  set< VIDX > roots;
 
   UF(VIDX N, bool verbose, bool pq) : N{N}, p(Progress(10 * N, verbose)) {
 	  if (pq) Q = new PairingHeap<VIDX, double>(N);
 	  else Q = new MinIndexedPQ<VIDX, double>(N);
-  	minimum_spanning_tree = std::unique_ptr<VIDX[]>(new VIDX[N]);
+  	minimum_spanning_tree = unique_ptr<VIDX[]>(new VIDX[N]);
 #ifdef DEBUG
   	setupTest();
 #endif
@@ -64,7 +64,7 @@ protected:
 //  }
 
 #ifdef DEBUG
-  std::set< VIDX > testers = std::set< VIDX >();
+  set< VIDX > testers = set< VIDX >();
   void setupTest() {
     testers.insert(1);
   	testers.insert(2);
@@ -188,9 +188,9 @@ protected:
 
   	for (VIDX n = 0; n != N; n++) add();
 
-  	std::vector< iddist > container = std::vector< iddist >();
+  	vector< iddist > container = vector< iddist >();
   	container.reserve(N);
-  	typename std::vector< iddist >::iterator adder = container.end();
+  	typename vector< iddist >::iterator adder = container.end();
   	for (VIDX n = 0; n != N; n++) {
   		container.emplace(adder++, n, Q -> keyOf(n));
   		if (n % 50 == 0 ) if (!p.increment(50)) return;
@@ -259,16 +259,16 @@ protected:
   }
 
   void condense(const int& minPts) {
-    roots = std::set< VIDX >();
-    goodChildrens = std::unique_ptr< std::set< VIDX >[] >(new std::set< VIDX >[2 * N + 1]);
-    fallenPointses = std::unique_ptr< std::set< VIDX >[] >(new std::set< VIDX >[2 * N + 1]);
+    roots = set< VIDX >();
+    goodChildrens = unique_ptr< set< VIDX >[] >(new set< VIDX >[2 * N + 1]);
+    fallenPointses = unique_ptr< set< VIDX >[] >(new set< VIDX >[2 * N + 1]);
     for (VIDX n = 0; n != N; n++) {
-      fallenPointses[n] = std::set< VIDX >();
+      fallenPointses[n] = set< VIDX >();
       fallenPointses[n].insert(n);
     }
     for (VIDX n = N; n != counter; n++) {
-      fallenPointses[n] = std::set< VIDX >();
-      goodChildrens[n] = std::set< VIDX >();
+      fallenPointses[n] = set< VIDX >();
+      goodChildrens[n] = set< VIDX >();
     }
     for (VIDX n = 0; n != counter; n++) if (p.increment()) {
       condenseOne(n, minPts);
@@ -357,7 +357,7 @@ protected:
 
 
   void extractClusters(const VIDX& minPts) {
-    survivingClusters = std::set< VIDX >();
+    survivingClusters = set< VIDX >();
   	Vidxerator it;
     for (it = roots.begin();
          it != roots.end();

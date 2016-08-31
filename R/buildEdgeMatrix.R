@@ -1,4 +1,3 @@
-
 #' Build an nearest-neighbor graph weighted by distance.
 #'
 #' @param data A matrix with a number of columns equal to the number of columns in `x`
@@ -53,7 +52,7 @@ buildWijMatrix <- function(x,
 buildWijMatrix.TsparseMatrix <- function(x,
 																				 threads = NULL,
 																	 perplexity = 50) {
-	wij <- referenceWij(x@j, x@i, x@x^2, threads, perplexity)
+	wij <- referenceWij(x@j, x@i, x@x^2, threads, perplexity);
 	return(wij)
 }
 #' @export

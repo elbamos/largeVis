@@ -275,7 +275,7 @@ public:
 
       if(visited[o]) continue;
 
-      newreachdist = std::max(coredist[p], o_d);
+      newreachdist = max(coredist[p], o_d);
 
       if(reachdist[o] == INFINITY) {
         reachdist[o] = newreachdist;

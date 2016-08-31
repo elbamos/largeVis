@@ -16,9 +16,9 @@ protected:
   const double perplexity;
 	const edgeidxtype n_edges;
 	const vertexidxtype n_vertices;
-  std::vector< vertexidxtype > edge_from, edge_to;
-  std::vector< edgeidxtype> head, next, reverse;
-  std::vector< double > edge_weight;
+  vector< vertexidxtype > edge_from, edge_to;
+  vector< edgeidxtype> head, next, reverse;
+  vector< double > edge_weight;
 
 public:
 	ReferenceEdges(double perplexity,
@@ -27,12 +27,12 @@ public:
                  const arma::vec& weights) : perplexity{perplexity},
                  														 n_edges(from.size()),
                                              n_vertices(from[(long) n_edges - 1] + 1),
-																						 edge_from(std::vector< vertexidxtype >()),
-																						 edge_to(std::vector< vertexidxtype >()),
-																						 head(std::vector< edgeidxtype >()),
-																						 next(std::vector< edgeidxtype >()),
-																						 reverse(std::vector< edgeidxtype >()),
-																						 edge_weight(std::vector<double>()) {
+																						 edge_from(vector< vertexidxtype >()),
+																						 edge_to(vector< vertexidxtype >()),
+																						 head(vector< edgeidxtype >()),
+																						 next(vector< edgeidxtype >()),
+																						 reverse(vector< edgeidxtype >()),
+																						 edge_weight(vector<double>()) {
 		// sigmas = vec(n_vertices);
 		edgeidxtype n_edge = 0;
 		for (vertexidxtype i = 0; i < n_vertices; i++) head.push_back(-1);
@@ -138,10 +138,6 @@ public:
     );
     return wij;
   }
-
-  // arma::vec getSigmas() {
-  //   return sigmas;
-  // }
 };
 
 // [[Rcpp::export]]
@@ -168,6 +164,8 @@ arma::sp_mat referenceWij(const arma::ivec& i,
 #ifdef DEBUG
   Rcout << "Ran, getting WIJ\n";
 #endif
-  return ref.getWIJ();
-  // return wij;
+  sp_mat wij = ref.getWIJ();
+  wij = wij.t();
+  wij = wij.t();
+  return wij;
 }

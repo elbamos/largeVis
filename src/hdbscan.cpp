@@ -64,7 +64,7 @@ public:
     IntegerVector nodeMembership = IntegerVector(N);
     NumericVector stabilities = NumericVector(survivingClusterCnt);
     IntegerVector selected = IntegerVector(survivingClusterCnt);
-    std::set< long long >::iterator it;
+    set< long long >::iterator it;
 #ifdef _OPENMP
 #pragma omp parallel
 {

@@ -1,5 +1,5 @@
 skip_old_windows <- function() {
-	testthat::skip_if_not(R.Version()$arch != "i386", "largeVis does not run on 32-bit Windows.")
+#	testthat::skip_if_not(R.Version()$arch != "i386", "largeVis does not run on 32-bit Windows.")
 }
 context("vis")
 set.seed(1974)

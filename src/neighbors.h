@@ -42,15 +42,15 @@ protected:
 	const M& data;
 	const vertexidxtype N;
 	Progress& p;
-	std::unique_ptr< Neighborhood[] > treeNeighborhoods;
-	std::unique_ptr< set< vertexidxtype >[] > treeHolder;
+	unique_ptr< Neighborhood[] > treeNeighborhoods;
+	unique_ptr< set< vertexidxtype >[] > treeHolder;
 	imat knns;
 
 	int threshold = 0;
 	int storedThreads = 0;
 
-	std::uniform_real_distribution<double> rnd;
-	std::mt19937_64 mt;
+	uniform_real_distribution<double> rnd;
+	mt19937_64 mt;
 
 	virtual arma::vec hyperplane(const arma::ivec& indices) = 0;
 
@@ -144,7 +144,7 @@ public:
 #endif
 			innerSeed = NumericVector(seed)[0];
 		} else {
-			std::random_device hardseed;
+			random_device hardseed;
 			innerSeed = hardseed();
 		}
 		mt = mt19937_64(innerSeed);
@@ -152,7 +152,7 @@ public:
 
 	void trees(const int n_trees, const int newThreshold) {
 		threshold = newThreshold;
-		treeNeighborhoods = std::unique_ptr< Neighborhood[] >(new Neighborhood[N]);
+		treeNeighborhoods = unique_ptr< Neighborhood[] >(new Neighborhood[N]);
 		for (vertexidxtype i = 0; i < N; i++) {
 			treeNeighborhoods[i].push_back(i);
 		}
@@ -169,8 +169,8 @@ public:
 	}
 
 	void reduce(const kidxtype K,
-             std::shared_ptr< DistanceAdder<M, V> >  adder) {
-		treeHolder = std::unique_ptr< set<vertexidxtype>[] >(new set< vertexidxtype >[N]);
+             shared_ptr< DistanceAdder<M, V> >  adder) {
+		treeHolder = unique_ptr< set<vertexidxtype>[] >(new set< vertexidxtype >[N]);
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -202,7 +202,7 @@ public:
 	/*
 	 * Re-sort by distance.
 	 */
-	arma::imat getMatrix(std::shared_ptr< DistanceAdder<M,V> > adder) {
+	arma::imat getMatrix(shared_ptr< DistanceAdder<M,V> > adder) {
 	const kidxtype K = knns.n_rows;
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -226,7 +226,7 @@ public:
 	}
 
 	arma::imat exploreNeighborhood(const int maxIter,
-                                std::shared_ptr< DistanceAdder<M, V> > adder) {
+                                shared_ptr< DistanceAdder<M, V> > adder) {
 		const kidxtype K = knns.n_rows;
 		imat old_knns  = imat(K,N);
 		for (int T = 0; T < maxIter; T++) if (! p.check_abort()) {

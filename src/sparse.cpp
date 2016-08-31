@@ -65,19 +65,19 @@ arma::imat searchTreesSparse(const int& threshold,
                             const kidxtype& K,
                             const int& maxIter,
                             const sp_mat& data,
-                            const std::string& distMethod,
+                            const string& distMethod,
                             Rcpp::Nullable< Rcpp::NumericVector> seed,
                             bool verbose) {
 	const vertexidxtype N = data.n_cols;
 
-	std::shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >  adder;
-	if (distMethod.compare(std::string("Cosine")) == 0) adder = std::shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new CosineSparseAdder(data, K));
-	else adder = std::shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new EuclideanSparseAdder(data, K));
+	shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >  adder;
+	if (distMethod.compare(string("Cosine")) == 0) adder = shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new CosineSparseAdder(data, K));
+	else adder = shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new EuclideanSparseAdder(data, K));
 
 	Progress p((N * n_trees) + (2 * N) + (N * maxIter), verbose);
 
 	sp_mat dataMat;
-	if (distMethod.compare(std::string("Cosine")) == 0) {
+	if (distMethod.compare(string("Cosine")) == 0) {
 		dataMat = sp_mat(data);
 		for (vertexidxtype d = 0; d < dataMat.n_cols; d++) dataMat.col(d) /= norm(dataMat.col(d));
 	} else {

@@ -69,14 +69,14 @@ arma::imat searchTrees(const int& threshold,
 	checkCRAN(threads);
 #endif
   const vertexidxtype N = data.n_cols;
-	std::shared_ptr< DistanceAdder<arma::mat, arma::vec> > adder;
-	if (distMethod.compare(std::string("Cosine")) == 0) adder = std::shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new CosineAdder(data, K));
-	else adder = std::shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new EuclideanAdder(data, K));
+	shared_ptr< DistanceAdder<arma::mat, arma::vec> > adder;
+	if (distMethod.compare(string("Cosine")) == 0) adder = shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new CosineAdder(data, K));
+	else adder = shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new EuclideanAdder(data, K));
 
   Progress p((N * n_trees) + (2 * N) + (N * maxIter), verbose);
 
 	mat dataMat;
-	if (distMethod.compare(std::string("Cosine")) == 0) dataMat = normalise(data, 2, 0);
+	if (distMethod.compare(string("Cosine")) == 0) dataMat = normalise(data, 2, 0);
 	else dataMat = data;
 	DenseAnnoySearch annoy = DenseAnnoySearch(dataMat, p);
 	annoy.setSeed(seed);

@@ -33,7 +33,7 @@ protected:
 
   AliasTable< vertexidxtype > negAlias;
   AliasTable< edgeidxtype > posAlias;
-  std::shared_ptr< Gradient > grad;
+  shared_ptr< Gradient > grad;
 
   vertexidxtype* ps;
 
@@ -96,9 +96,9 @@ public:
 	}
 
   void setGradient(double alpha, double gamma, dimidxtype D) {
-  	if (alpha == 0) grad = std::shared_ptr< Gradient > (new ExpGradient(gamma, D));
-  	else if (alpha == 1) grad = std::shared_ptr< Gradient > (new AlphaOneGradient(gamma, D));
-  	else grad = std::shared_ptr< Gradient > (new AlphaGradient(alpha, gamma, D));
+  	if (alpha == 0) grad = shared_ptr< Gradient > (new ExpGradient(gamma, D));
+  	else if (alpha == 1) grad = shared_ptr< Gradient > (new AlphaOneGradient(gamma, D));
+  	else grad = shared_ptr< Gradient > (new AlphaGradient(alpha, gamma, D));
   }
 
   void operator()(iterationtype startSampleIdx, int batchSize) {

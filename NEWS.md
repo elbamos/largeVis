@@ -3,11 +3,10 @@
 * Fixed bug in hdbscan where it would mistakenly conclude that it lacked sufficient neighbors.
 * Change to address apparent upstream issue causing compilation problem on Win32 systems.
 * Fixed bug in hdbscan caused by the knn matrix not matching output from randomProjectionTreeSearch. 
-* Batch insert in hdbscan speeds up Prim's algorithm.
+* Hdbscan now uses a PairingHeap insead of a Binary Heap, which should improve performance on large datasets. 
 * Tests and examples are disabled on i386
-* Added a regularization constant to buildEdgeMatrix. Duplicates will be given a distance of 1e-5. This resolves an issue that 
-could arise in some circumstances with datasets that contained significant numbers of duplicates, because Matrix and 
-armadillo::sp_mat both erase zeros.
+* NOTE:  buildEdgeMatrix not incorporates a regularization constant. Duplicates are now recorded as being a Euclidean distances of 1e-5 apart. The reason for this is that the Matrix package and armadillo sparse matrices do not preserve information about zeros. As a result, with datasets with large numbers of duplicates, the edge matrices appeared to contain no (or too little) neighbor data for some rows. This created issues with other functions dependent on
+the output of buildEdgeMatrix, such as hdbscan. 
 
 ### largeVis 0.1.8
 * hdbscan algorithm added

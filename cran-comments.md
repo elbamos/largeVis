@@ -2,13 +2,14 @@
  
 This is a resubmission of a new release. 
 
-The last submission produced this response:  
-It failed to compile on Windows.  This was a reversion of a fix I'd put in to deal with an upstream change that happened earlier in the week.  Very sorry about that.  
+The last submission failed to compile on Windows.  This was a reversion of a fix I'd put in to deal with an upstream change that happened earlier in the week.  Very sorry about that.  
 
 In this version I have:
 * Changed certain variable types to compile on Windowx 64-bit systems
 * Disabled tests on i386 platform
-* No longer run the sole example that was run before, because it failed on winbuilder on i386 architecture
+* Add regularization to certain functions, to handle an edge-case where a dataset contains a large number of duplicates.
+* Implemented Pairing Heap for hdbscan implementation of Prim's algorithm.
+* Worked around apparent bug in RcppArmadillo that caused intermitted seg faults when returning a sparse matrix from C++ to R.
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
  
