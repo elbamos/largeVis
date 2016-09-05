@@ -9,7 +9,7 @@ In this version I have:
 * Disabled tests on i386 platform
 * Add regularization to certain functions, to handle an edge-case where a dataset contains a large number of duplicates.
 * Implemented Pairing Heap for hdbscan implementation of Prim's algorithm.
-* Worked around apparent bug in RcppArmadillo that caused intermitted seg faults when returning a sparse matrix from C++ to R.
+* Worked around apparent bug in RcppArmadillo that caused intermittent seg faults when returning a sparse matrix from C++ to R.
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
  

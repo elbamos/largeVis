@@ -3,6 +3,7 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
+#include "alias.h"
 
 using namespace Rcpp;
 using namespace std;
@@ -31,8 +32,8 @@ protected:
   distancetype rho;
   distancetype rhoIncrement;
 
-  AliasTable< vertexidxtype > negAlias;
-  AliasTable< edgeidxtype > posAlias;
+  AliasTable< vertexidxtype, coordinatetype, double > negAlias;
+  AliasTable< edgeidxtype, coordinatetype, double > posAlias;
   shared_ptr< Gradient > grad;
 
   vertexidxtype* ps;
@@ -64,8 +65,8 @@ public:
                  const arma::ivec& targets,
                  Rcpp::Nullable<Rcpp::NumericVector> seed) {
 		vertexidxtype N = newps.n_elem - 1;
-		ps = (vertexidxtype*) newps.memptr();
-		distancetype* negweights = new distancetype[N];
+		ps = newps.memptr();
+		unique_ptr< double[] > negweights(new double[N]);
 		for (vertexidxtype n = 0; n < N; n++) negweights[n] = 0;
 		for (vertexidxtype p = 0; p < N; p++) {
 			for (edgeidxtype e = newps[p];
@@ -75,9 +76,9 @@ public:
 				negweights[p] += weights[e];
 			}
 		}
-		distancetype sum_weight = 0;
+		double sum_weight = 0;
 		for (vertexidxtype n = 0; n < N; n++) sum_weight += negweights[n] = pow(negweights[n], 0.75);
-		negAlias.initialize(negweights, N);
+		negAlias.initialize(negweights.get(), N);
 		posAlias.initialize(weights.memptr(), weights.n_elem);
 
 		if (seed.isNotNull()) {
@@ -85,14 +86,13 @@ public:
 			storedThreads = omp_get_max_threads();
 			omp_set_num_threads(1);
 #endif
-			long long innerSeed = Rcpp::NumericVector(seed)[0];
+			vertexidxtype innerSeed = Rcpp::NumericVector(seed)[0];
 			innerSeed = negAlias.initRandom(innerSeed);
 			posAlias.initRandom(innerSeed);
 		} else {
 			negAlias.initRandom();
 			posAlias.initRandom();
 		}
-		delete[] negweights;
 	}
 
   void setGradient(double alpha, double gamma, dimidxtype D) {
@@ -111,23 +111,22 @@ public:
 
     distancetype localRho = rho;
     while (example++ != batchSize && localRho > 0) {
-      // * (1 - (startSampleIdx / n_samples));
       e_ij = posAlias();
+
       j = targetPointer[e_ij];
       i = sourcePointer[e_ij];
 
       y_i = coordsPtr + (i * D);
       y_j = coordsPtr + (j * D);
-
-      grad -> positiveGradient(y_i, y_j, firstholder);
+			grad -> positiveGradient(y_i, y_j, firstholder);
 
       for (d = 0; d != D; d++) y_j[d] -= firstholder[d] * localRho;
 
       searchBegin = targetPointer + ps[i];
       searchEnd = targetPointer + ps[i + 1];
-      shortcircuit = 0; m = 0;
+      shortcircuit = m = 0;
       while (m != M && shortcircuit != M2) {
-        k = negAlias();
+        k =  negAlias();
         shortcircuit++;
         // Check that the draw isn't one of i's edges
         if (k == i ||
@@ -143,18 +142,10 @@ public:
         for (d = 0; d != D; d++) y_j[d] -= secondholder[d] * localRho;
         for (d = 0; d != D; d++) firstholder[d] += secondholder[d];
       }
-      for (d = 0; d != D; d++) y_i[d] += firstholder[d] * localRho;
+       for (d = 0; d != D; d++) y_i[d] += firstholder[d] * localRho;
       localRho -= rhoIncrement;
     }
     rho -= (rhoIncrement * batchSize);
-//#ifdef _OPENMP
-//#pragma omp critical
-//#endif/
-//		{/
-//	    actualIterationCount += batchSize;
-//	    rho = initialRho * (1 - actualIterationCount / n_samples + 1.0);
-	    // rho -= (rhoIncrement * batchSize);/
-//		}
   }
 };
 
@@ -166,7 +157,7 @@ arma::mat sgd(arma::mat coords,
               arma::vec& weights, // w{ij}
               const double gamma,
               const double rho,
-              const long long n_samples,
+							const long long n_samples,
               const int M,
               const double alpha,
               const Rcpp::Nullable<Rcpp::NumericVector> seed,
@@ -178,13 +169,13 @@ arma::mat sgd(arma::mat coords,
   Progress progress(n_samples, verbose);
 	dimidxtype D = coords.n_rows;
   if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
-  Visualizer v( (vertexidxtype*) sources_j.memptr(),
-                (vertexidxtype*) targets_i.memptr(),
+  Visualizer v( sources_j.memptr(),
+                targets_i.memptr(),
                 coords.n_rows,
-                (coordinatetype*) coords.memptr(),
+                coords.memptr(),
                 M,
-                (distancetype) rho,
-                (iterationtype) n_samples);
+                rho,
+                n_samples);
   v.initAlias(ps, weights, targets_i, seed);
   v.setGradient(alpha, gamma, D);
   const int batchSize = 8192;

@@ -74,7 +74,7 @@ arma::imat searchTreesSparse(const int& threshold,
 	if (distMethod.compare(string("Cosine")) == 0) adder = shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new CosineSparseAdder(data, K));
 	else adder = shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new EuclideanSparseAdder(data, K));
 
-	Progress p((N * n_trees) + (2 * N) + (N * maxIter), verbose);
+	Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
 
 	sp_mat dataMat;
 	if (distMethod.compare(string("Cosine")) == 0) {
