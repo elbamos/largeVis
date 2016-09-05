@@ -18,6 +18,21 @@ void checkCRAN(Rcpp::Nullable<Rcpp::NumericVector> threads) {
 }
 #endif
 
+// [[Rcpp::export]]
+bool checkBits() {
+	if (sizeof( vertexidxtype ) == 8) return true;
+	else return false;
+}
+
+// [[Rcpp::export]]
+bool checkOpenMP() {
+#ifdef _OPENMP
+	return true;
+#else
+	return false;
+#endif
+}
+
 class Visualizer {
 protected:
   const dimidxtype D;
