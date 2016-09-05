@@ -1,7 +1,7 @@
 Package: largeVis
 Type: Package
 Title: High-Quality Visualizations of Large, High-Dimensional Datasets
-Version: 0.1.8.1
+Version: 0.1.9
 Author: Amos B. Elberg
 Maintainer: Amos Elberg <amos.elberg@gmail.com>
 Description: Implements the largeVis algorithm for visualizing very large high-dimensional datasets. Also very fast search for approximate nearest neighbors, outlier detection, and optimized implementations of several clustering algorithms.

@@ -5,8 +5,10 @@ This is a resubmission of a new release.
 The last submission failed to compile on Windows.  This was a reversion of a fix I'd put in to deal with an upstream change that happened earlier in the week.  Very sorry about that.  
 
 In this version I have:
-* Changed certain variable types to compile on Windowx 64-bit systems
-* Disabled tests on i386 platform
+* Bumped the version to 0.1.9
+* Changed certain variable types to better support 32-bit systems.
+* Added C++ unit tests.
+* Added package startup messages if the package was compiled for 32-bit or without OpenMP
 * Add regularization to certain functions, to handle an edge-case where a dataset contains a large number of duplicates.
 * Implemented Pairing Heap for hdbscan implementation of Prim's algorithm.
 * Worked around apparent bug in RcppArmadillo that caused intermittent seg faults when returning a sparse matrix from C++ to R.
