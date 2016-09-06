@@ -2,16 +2,17 @@
  
 This is a resubmission of a new release. 
 
-The last submission received this response:
+The last submission had a space between DOI and the DOI number.  
+The last submission also showed an exception in a test run on winbuilder on i386 with R-devel.
 
-Can you pls provide a reference for this algorithm?
-
-The paper is:  Tang, et al. (2016) <DOI: 10.1145/2872427.2883041> available at https://arxiv.org/abs/1602.00370
+I could not replicate the winbuilder error.  (See http://win-builder.r-project.org/6YruaSH7GHJV http://win-builder.r-project.org/Zy8AVTN130Kv http://win-builder.r-project.org/usCkIgX5m4F1 http://win-builder.r-project.org/AugD9S5NGEgM http://win-builder.r-project.org/NZWg67o6dKd6 http://win-builder.r-project.org/Xe0ibnk9oAz9 http://win-builder.r-project.org/0ReKR5A3Ai73/00check.log).  I have disabled the offfending test on i386. 
 
 In this version I have:
-* Added the DOI to the DESCRIPTION file. Note that I am not one of the paper authors. I did communicate extensively with the paper authors in preparing this implementation. They provided the datasets used in the paper, which I used to verify the correctness of the implementation. They have also reviewed and commented on the code, but not in any "official" capacity. I believe they also include this R implementation in their presentations.
+* Removed the space before the DOI number in the description file. 
+* Disabled a test that threw an error on Windows i386, which error could not be replicated.
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
+* NOTE:  On win-builder, check shows a second "Note" for the size of the installation (5.5mb), and reports that the DOI is possibly invalid. The size note is accurate on Windows (it compiles smaller on other systems), and the DOI note is a false alarm, the DOI is correct. 
  
 ## Test environments
 * local OS X install, R 3.3.1

@@ -1,10 +1,7 @@
-skip_old_windows <- function() {
-#	testthat::skip_if_not(R.Version()$arch != "i386", "largeVis does not run on 32-bit Windows.")
-}
 context("specific issue tests")
 
 test_that("dim064 issue is resolved", {
-	skip_old_windows()
+  testthat::skip_if_not(R.Version()$arch != "i386", "certain tests disabled on i386")
 	load(system.file("extdata/badmat.Rda", package = "largeVis"))
 	badmat <- badmat
 	expect_silent(neighbors <- randomProjectionTreeSearch(x = badmat, K = 50, threads = 2))
@@ -14,8 +11,8 @@ test_that("dim064 issue is resolved", {
 })
 
 test_that("dim512 issue (excessive distances in the edge matrix)", {
-	skip_on_cran()
-	load(system.file("extdata/dim512.Rda", package = "largeVis"))
+  testthat::skip_if_not(R.Version()$arch != "i386", "certain tests disabled on i386")
+  load(system.file("extdata/dim512.Rda", package = "largeVis"))
 	dim512 <- dim512
 	dat <- t(scale(as.matrix(dim512)))
 	expect_warning(vis <- largeVis(dat, K = 100, threads = 2, sgd_batches = 1000))
