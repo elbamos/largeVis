@@ -2,14 +2,14 @@
  
 This is a resubmission of a new release. 
 
-The last submission received this response:
+The last submission had a space between DOI and the DOI number.  
+The last submission also showed an exception in a test run on winbuilder on i386 with R-devel.
 
-Can you pls provide a reference for this algorithm?
-
-The paper is:  Tang, et al. (2016) <DOI: 10.1145/2872427.2883041> available at https://arxiv.org/abs/1602.00370
+I could not replicate the winbuilder error.  (See http://win-builder.r-project.org/6YruaSH7GHJV http://win-builder.r-project.org/Zy8AVTN130Kv http://win-builder.r-project.org/usCkIgX5m4F1 http://win-builder.r-project.org/AugD9S5NGEgM http://win-builder.r-project.org/NZWg67o6dKd6 http://win-builder.r-project.org/Xe0ibnk9oAz9).  I have disabled the offfending test on i386. 
 
 In this version I have:
-* Added the DOI to the DESCRIPTION file. Note that I am not one of the paper authors. I did communicate extensively with the paper authors in preparing this implementation. They provided the datasets used in the paper, which I used to verify the correctness of the implementation. They have also reviewed and commented on the code, but not in any "official" capacity. I believe they also include this R implementation in their presentations.
+* Removed the space before the DOI number. 
+* Disabled a test that threw an error on Windows i386.
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
  
