@@ -29,15 +29,19 @@ public:
                                              n_vertices(from[(long) n_edges - 1] + 1),
 																						 edge_from(vector< vertexidxtype >()),
 																						 edge_to(vector< vertexidxtype >()),
-																						 head(vector< edgeidxtype >()),
+																						 head(vector< edgeidxtype >(n_vertices, -1)),
 																						 next(vector< edgeidxtype >()),
 																						 reverse(vector< edgeidxtype >()),
 																						 edge_weight(vector<double>()) {
 		// sigmas = vec(n_vertices);
 		edgeidxtype n_edge = 0;
-		for (vertexidxtype i = 0; i < n_vertices; i++) head.push_back(-1);
+		edge_from.reserve(n_edges);
+		edge_to.reserve(n_edges);
+		edge_weight.reserve(n_edges);
+		next.reserve(n_edges);
+		reverse.reserve(n_edges);
 		for (vertexidxtype x = 0; x < n_vertices; x++) {
-			while (from[n_edge] == x) {
+			while (n_edge < n_edges && from[n_edge] == x) {
 				edge_from.push_back(x);
 				edge_to.push_back(to[n_edge]);
 				edge_weight.push_back(weights[n_edge] * weights[n_edge]);
