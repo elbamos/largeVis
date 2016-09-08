@@ -6,9 +6,17 @@ matrix:
     - os: linux
       dist: trusty
       r: release
+    - os: linux
+      dist: trusty
+      r: release
+      env: ARMA_64BIT_WORD
     - os: osx
       osx_image: xcode7.4
       r: release
+    - os: osx
+      osx_image: xcode7.4
+      r: release
+      env: ARMA_64BIT_WORD
   allow_failures:
     - os: osx
       osx_image: xcode6.4
@@ -28,7 +36,7 @@ matrix:
     - os: linux
       dist: trusty
       r: devel
-      
+
 sudo: false
 cache: packages
 
@@ -40,7 +48,8 @@ r_packages:
   - RcppArmadillo
   - devtools
   - dbscan
-  - abind
+  - testthat
+  - rmarkdown
 
 addons:
   apt:

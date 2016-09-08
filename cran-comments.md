@@ -2,10 +2,12 @@
  
 This is a resubmission of a new release. 
 
-On the last submission, it was observed that the DOI produces a "not found."
+On the last submission, Uwe Ligges found a crash running on Windows 32. 
 
 In this submission, I have:
-Replaced the <DOI: > link with an arxiv URL.  
+* Run the full test suite through valgrind
+* Fixed a bug in the ReferenceEdges object in which, under certain circumstances, a read could take place from beyond the end of a vector. This is likely what caused Ligges' seg fault. Thank you for pointing it out! It had not shown up for any users or in any of the test environments I'd tried. 
+* Reenabled two tests on 32-bit. Please note that at no point were all tests disabled on 32-bit. Kurt Hornik had seen a segfault in a single test on 32-bit through winbuilder with R-devel. Repeatedly resubmitting the same code to winbuilder did not reproduce the error. I then disabled only the individual test context on 32-bit; that test context related to an edge case where HDBSCAN would fail on certain artificial datasets with pathological features. No other tests were disabled. I noted this in cran-comments, along with links to the winbuilder logs from resubmitting the same code that KH had seen.
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
 

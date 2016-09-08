@@ -6,7 +6,6 @@ test_that("dim064 issue is resolved", {
 	badmat <- badmat
 	expect_silent(neighbors <- randomProjectionTreeSearch(x = badmat, K = 50, threads = 2))
 	expect_silent(edges <- buildEdgeMatrix(data = badmat, neighbors = neighbors, threads = 2))
-	wij <- buildWijMatrix(edges, threads = 2)
 	expect_silent(vis <- largeVis(badmat, K = 50, threads = 2, sgd_batches = 1000))
 })
 
