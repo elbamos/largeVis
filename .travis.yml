@@ -42,7 +42,6 @@ r_github_packages:
 r_packages:
   - Rcpp
   - RcppArmadillo
-  - devtools
   - dbscan
   - testthat
 
