@@ -45,7 +45,6 @@ r_packages:
   - devtools
   - dbscan
   - testthat
-  - rmarkdown
 
 addons:
   apt:
