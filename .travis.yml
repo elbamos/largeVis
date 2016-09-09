@@ -16,8 +16,7 @@ sudo: false
 cache: packages
 
 env:
-  - OS=$(uname -s)
-  - _R_CHECK_CRAN_INCOMING_=TRUE
+  - OS=$(uname -s) _R_CHECK_CRAN_INCOMING_=TRUE
 
 r_binary_packages:
   - stringi
