@@ -26,9 +26,6 @@ env:
   - OS=$(uname -s) _R_CHECK_CRAN_INCOMING_=TRUE
 
 r_binary_packages:
-  - Rcpp
-  - RcppArmadillo
-  - dbscan
   - testthat
   - covr
 
@@ -48,6 +45,7 @@ addons:
       - g++-4.9
       - gfortran-4.9
       - r-cran-devtools
+      - r-cran-stringi
       
 after_success:
   - Rscript -e 'covr::codecov(Sys.getenv("TRAVIS_BRANCH"))'
