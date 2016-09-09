@@ -1,53 +1,16 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: r
-matrix:
-  - os: linux
-    dist: trusty
-    compiler:
-    - gcc
-    - clang
-    r: release
-    r_check_revdep: true
-  - os: linux
-    dist: trusty
-    compiler: clang
-    before_install: |
-      mkdir ~/.R
-      cat <<EOF >> ~/.R/Makevars
-      CXX1X=g++-4.9
-      FC=gfortran-4.9
-      CXX1XSTD=-std=c++11
-    r: devel
-  - os: osx
-    osx_image: xcode7.4
-    r: release
-    before_install: |
-      mkdir ~/.R
-      cat <<EOF >> ~/.R/Makevars
-      CXX1X=g++-4.9
-      FC=gfortran-4.9
-      CXX1XSTD=-std=c++11
-  - os: osx
-    osx_image: xcode7.4
-    r: devel
-    before_install: |
-      mkdir ~/.R
-      cat <<EOF >> ~/.R/Makevars
-      CXX1X=g++-4.9
-      FC=gfortran-4.9
-      CXX1XSTD=-std=c++11
-  - os: osx
-    osx_image:
-    - xcode6.4
-    - xcode8
-    r: release
-    before_install: |
-      mkdir ~/.R
-      cat <<EOF >> ~/.R/Makevars
-      CXX1X=g++-4.9
-      FC=gfortran-4.9
-      CXX1XSTD=-std=c++11
+os:
+  - linux
+  - osx
+r:
+  - release
+  - devel
+dist: trusty
+osx_image:
+  - xcode7.4
+  - xcode7.2
 
 sudo: false
 cache: packages
@@ -64,6 +27,13 @@ r_binary_packages:
   - testthat
   - devtools
   - covr
+
+before_install: |
+  mkdir ~/.R
+  cat <<EOF >> ~/.R/Makevars
+  CXX1X=g++-4.9
+  FC=gfortran-4.9
+  CXX1XSTD=-std=c++11
 
 addons:
   apt:
