@@ -13,41 +13,41 @@ matrix:
     dist: trusty
     compiler: clang
     before_install: |
-  mkdir ~/.R
-  cat <<EOF >> ~/.R/Makevars
-  CXX1X=g++-4.9
-  FC=gfortran-4.9
-  CXX1XSTD=-std=c++11
+      mkdir ~/.R
+      cat <<EOF >> ~/.R/Makevars
+      CXX1X=g++-4.9
+      FC=gfortran-4.9
+      CXX1XSTD=-std=c++11
     r: devel
   - os: osx
     osx_image: xcode7.4
     r: release
     before_install: |
-  mkdir ~/.R
-  cat <<EOF >> ~/.R/Makevars
-  CXX1X=g++-4.9
-  FC=gfortran-4.9
-  CXX1XSTD=-std=c++11
+      mkdir ~/.R
+      cat <<EOF >> ~/.R/Makevars
+      CXX1X=g++-4.9
+      FC=gfortran-4.9
+      CXX1XSTD=-std=c++11
   - os: osx
     osx_image: xcode7.4
     r: devel
     before_install: |
-  mkdir ~/.R
-  cat <<EOF >> ~/.R/Makevars
-  CXX1X=g++-4.9
-  FC=gfortran-4.9
-  CXX1XSTD=-std=c++11
+      mkdir ~/.R
+      cat <<EOF >> ~/.R/Makevars
+      CXX1X=g++-4.9
+      FC=gfortran-4.9
+      CXX1XSTD=-std=c++11
   - os: osx
     osx_image:
     - xcode6.4
     - xcode8
     r: release
     before_install: |
-  mkdir ~/.R
-  cat <<EOF >> ~/.R/Makevars
-  CXX1X=g++-4.9
-  FC=gfortran-4.9
-  CXX1XSTD=-std=c++11
+      mkdir ~/.R
+      cat <<EOF >> ~/.R/Makevars
+      CXX1X=g++-4.9
+      FC=gfortran-4.9
+      CXX1XSTD=-std=c++11
 
 sudo: false
 cache: packages
