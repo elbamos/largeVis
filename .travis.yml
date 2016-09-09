@@ -44,6 +44,7 @@ r_packages:
   - RcppArmadillo
   - dbscan
   - testthat
+  - stringi
 
 addons:
   apt:
