@@ -13,15 +13,11 @@ matrix:
   - r: devel
     os: linux
     dist: trusty
-    before_install: |
-      cat <<EOF >> ~/.R/Makevars
-      CXXFLAGS=-fPIC
+    env: CXXFLAGS=-fPIC
   - r: devel
     os: linux
     dist: trusty
-    before_install: |
-      cat <<EOF >> ~/.R/Makevars
-      CXXFLAGS=-fPIC
+    env: CXXFLAGS=-fPIC
 
 cache: packages
 
