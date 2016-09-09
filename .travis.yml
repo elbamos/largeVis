@@ -8,32 +8,23 @@ matrix:
       compiler:
       - gcc
       - clang
-      env:
-      - CXXFLAGS=-DARMA_32BIT_WORD
-      - CXXFLAGS=-DARMA_64BIT_WORD
       r: release
       r_check_revdep: true
     - os: linux
       dist: trusty
       compiler: clang
-      env: CXXFLAGS=-DARMA_64BIT_WORD
       r: devel
     - os: osx
       osx_image: xcode7.4
-      env:
-      - CXXFLAGS=-DARMA_32BIT_WORD
-      - CXXFLAGS=-DARMA_64BIT_WORD
       r: release
     - os: osx
       osx_image: xcode7.4
-      env: CXXFLAGS=-DARMA_64BIT_WORD
       r: devel
     - os: osx
       osx_image:
-      - xcode7.3
+      - xcode6.4
       - xcode8
       r: release
-      env: CXXFLAGS=-DARMA_64BIT_WORD
 
 sudo: false
 cache: packages
