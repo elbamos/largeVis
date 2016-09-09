@@ -25,12 +25,13 @@ env:
   global:
   - OS=$(uname -s) _R_CHECK_CRAN_INCOMING_=TRUE
 
+cran: http://cran.rstudio.com
+
 r_packages:
   - testthat
 
 before_install: |
   mkdir ~/.R
-  if [[ $TRAVIS_R_VERSION == '3.3.1' ]]; then Rscript -e 'install.packages("covr")'; fi
   cat <<EOF >> ~/.R/Makevars
   CXX1X=g++-4.9
   FC=gfortran-4.9
@@ -44,8 +45,6 @@ addons:
       - gcc-4.9
       - g++-4.9
       - gfortran-4.9
-      - r-cran-devtools
-      - r-cran-stringi
       
 after_success:
-  - if [[ $TRAVIS_R_VERSION == '3.3.1' ]]; then Rscript -e 'covr::codecov(Sys.getenv("TRAVIS_BRANCH"))'; fi
+  - if [[ $TRAVIS_R_VERSION == '3.3.1' ]]; then Rscript -e 'install.packages("covr"); covr::codecov(Sys.getenv("TRAVIS_BRANCH"));'; fi
