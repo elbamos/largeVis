@@ -2,6 +2,13 @@
  
 This is a resubmission of a new release. 
 
+On the last submission, a SourceTree temp file was inadvertantly left in the directory.
+
+In this submission I have:
+* Removed it.
+
+*** I am also including the submission notes from the last submission. The reason is, it seems like UL and KH are switching-off by the day, that would make today UL's turn, and I don't want him to think that his last comments were not addressed.
+
 On the last submission, Uwe Ligges found a crash running on Windows 32. 
 
 In this submission, I have:
