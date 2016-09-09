@@ -12,6 +12,7 @@ matrix:
       - ARMA_32BIT_WORD
       - ARMA_64BIT_WORD
       r: release
+      r_check_revdep: true
     - os: linux
       dist: trusty
       compiler: clang
@@ -36,15 +37,18 @@ matrix:
 sudo: false
 cache: packages
 
-r_github_packages:
-  - jimhester/covr
+env:
+  - OS=$(uname -s)
+  - _R_CHECK_CRAN_INCOMING_=TRUE
 
-r_packages:
+r_binary_packages:
+  - stringi
   - Rcpp
   - RcppArmadillo
   - dbscan
   - testthat
-  - stringi
+  - devtools
+  - covr
 
 addons:
   apt:
