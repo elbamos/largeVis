@@ -8,22 +8,18 @@ r:
   - release
   - devel
 dist: trusty
-osx_image:
-  - xcode7.4
-  - xcode7.2
 
 cache: packages
 
 env:
+  global:
   - OS=$(uname -s) _R_CHECK_CRAN_INCOMING_=TRUE
 
 r_binary_packages:
-  - stringi
   - Rcpp
   - RcppArmadillo
   - dbscan
   - testthat
-  - devtools
   - covr
 
 before_install: |
@@ -41,6 +37,7 @@ addons:
       - gcc-4.9
       - g++-4.9
       - gfortran-4.9
+      - r-cran-devtools
       
 after_success:
   - Rscript -e 'covr::codecov(Sys.getenv("TRAVIS_BRANCH"))'
