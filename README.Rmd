@@ -18,7 +18,8 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 
 #### News Highlights
 * Pending submission to CRAN!
-* As of version 0.1.10, `projectKNNs` now has a `momentum` parameter. By setting this parameter between `0` and `1` and reducing the number of `sgd_batches`, excellent results can be obtained in a fraction of the training time. In my experiments, setting momenum to `0.8`, and setting `sgd_batches` to 1/10th of the default, usually works well. 
+* As of version 0.1.10, `projectKNNs` now has a `momentum` parameter. By setting this parameter between `0` and `1` and reducing the number of `sgd_batches`, excellent results can be obtained in a fraction of the training time. In my experiments, setting momenum to `0.8`, and setting `sgd_batches` to 1/10th of the default, usually works well. To facilitate this, if `sgd_batches` is
+between `0` and `1`, this is used as a multiplier to adjust the number of batches from the default. 
 
 #### Project Status & Caveats
 * 
