@@ -13,11 +13,9 @@ matrix:
   - r: devel
     os: linux
     dist: trusty
-    env: CXXFLAGS=-fPIC
   - r: devel
     os: linux
     dist: trusty
-    env: CXXFLAGS=-fPIC
 
 cache: packages
 
@@ -25,9 +23,15 @@ env:
   global:
   - OS=$(uname -s) _R_CHECK_CRAN_INCOMING_=TRUE
 
+cran: http://cran.rstudio.com
+
 r_binary_packages:
+  - stringi
   - testthat
   - covr
+  - devtools
+
+sudo: required
 
 before_install: |
   mkdir ~/.R
@@ -44,8 +48,6 @@ addons:
       - gcc-4.9
       - g++-4.9
       - gfortran-4.9
-      - r-cran-devtools
-      - r-cran-stringi
       
 after_success:
   - Rscript -e 'covr::codecov(Sys.getenv("TRAVIS_BRANCH"))'
