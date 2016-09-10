@@ -22,6 +22,9 @@ cache: packages
 env:
   global:
   - OS=$(uname -s) _R_CHECK_CRAN_INCOMING_=TRUE
+  matrix:
+  - CXXFLAGS=-DARMA_32BIT_WORD
+  - CXXFLAGS=-DARMA_64BIT_WORD
 
 cran: http://cran.rstudio.com
 
