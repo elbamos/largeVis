@@ -13,11 +13,9 @@ matrix:
   - r: devel
     os: linux
     dist: trusty
-    env: CXXFLAGS=-fPIC
   - r: devel
     os: linux
     dist: trusty
-    env: CXXFLAGS=-fPIC
 
 cache: packages
 
@@ -36,6 +34,8 @@ before_install: |
   CXX1X=g++-4.9
   FC=gfortran-4.9
   CXX1XSTD=-std=c++11
+  CFLAGS=-fPIC
+  CXXFLAGS=-fPIC
 
 addons:
   apt:
