@@ -28,14 +28,17 @@ cran: http://cran.rstudio.com
 r_packages:
   - testthat
 
+r_binary_packages:
+  - stringi
+
+sudo: required
+
 before_install: |
   mkdir ~/.R
   cat <<EOF >> ~/.R/Makevars
   CXX1X=g++-4.9
   FC=gfortran-4.9
   CXX1XSTD=-std=c++11
-  CFLAGS=-fPIC
-  CXXFLAGS=-fPIC
 
 addons:
   apt:
