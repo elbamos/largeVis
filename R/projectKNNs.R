@@ -19,7 +19,8 @@
 #'
 #' @param wij A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.
 #' @param dim The number of dimensions for the projection space.
-#' @param sgd_batches The number of edges to process during SGD.
+#' @param sgd_batches The number of edges to process during SGD. Defaults to a value set based on the size of the dataset. If the parameter given is
+#' between \code{0} and \code{1}, the default value will be multiplied by the parameter.
 #' @param M The number of negative edges to sample for each positive edge.
 #' @param gamma The strength of the force pushing non-neighbor nodes apart.
 #' @param alpha Hyperparameter used in the default distance function, \eqn{1 / (1 + \alpha \dot ||y_i - y_j||^2)}.  The function relates the distance
@@ -28,6 +29,8 @@
 #' enables the alternative distance function. \eqn{\alpha} below zero is meaningless.
 #' @param rho Initial learning rate.
 #' @param coords An initialized coordinate matrix.
+#' @param momentum If not \code{NULL} (the default), SGD with momentum is used, with this multiplier, which must be between 0 and 1. Note that
+#' momentum can drastically speed-up training time, at the cost of additional memory consumed.
 #' @param seed Random seed to be passed to the C++ functions; sampled from hardware entropy pool if \code{NULL} (the default).
 #' Note that if the seed is not \code{NULL} (the default), the maximum number of threads will be set to 1 in phases of the algorithm
 #' that would otherwise be non-deterministic.
@@ -50,6 +53,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                         alpha = 1,
                         rho = 1,
                         coords = NULL,
+												momentum = NULL,
 												seed = NULL,
 												threads = NULL,
                         verbose = getOption("verbose", TRUE)) {
@@ -63,8 +67,14 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   ##############################################
   # Initialize coordinate matrix
   ##############################################
-  if (is.null(coords)) #coords <- matrix(rnorm(N * dim), nrow = dim)
-                        coords <- matrix((runif(N * dim) - 0.5) / dim * 0.0001, nrow = dim)
+  if (is.null(coords)) coords <- matrix((runif(N * dim) - 0.5) / dim * 0.0001, nrow = dim)
+
+  if (sgd_batches < 0) stop("sgd batches must be > 0")
+  if (sgd_batches < 1) {
+  	multiplier <- sgd_batches
+  	sgd_batches <- NULL
+  } else multiplier <- 1
+
   if (is.null(sgd_batches)) {
     if (N < 10000) {
       sgd_batches <- 20000 * length(wij@x)
@@ -75,6 +85,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
       sgd_batches <- 10000 * N
     }
   }
+  sgd_batches <- sgd_batches * multiplier
 
   #################################################
   # SGD
@@ -88,6 +99,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 alpha = alpha, gamma = gamma, M = M,
                 rho = rho,
                 n_samples = sgd_batches,
+  							momentum = momentum,
   							seed = seed,
   							threads = threads,
                 verbose = verbose)

@@ -55,6 +55,13 @@ protected:
 
   int storedThreads = 0;
 
+  virtual void updateMinus(coordinatetype* from,
+                           const vertexidxtype& i,
+                           const distancetype& rho) {
+  	coordinatetype* to = coordsPtr + (i * D);
+  	for (dimidxtype d = 0; d != D; d++) to[d] -= from[d] * rho;
+  }
+
 public:
   Visualizer(vertexidxtype * sourcePtr,
              vertexidxtype * targetPtr,
@@ -135,7 +142,7 @@ public:
       y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
 
-      for (d = 0; d != D; d++) y_j[d] -= firstholder[d] * localRho;
+			updateMinus(firstholder, j, localRho);
 
       searchBegin = targetPointer + ps[i];
       searchEnd = targetPointer + ps[i + 1];
@@ -154,14 +161,47 @@ public:
         y_j = coordsPtr + (k * D);
         grad -> negativeGradient(y_i, y_j, secondholder);
 
-        for (d = 0; d != D; d++) y_j[d] -= secondholder[d] * localRho;
-        for (d = 0; d != D; d++) firstholder[d] += secondholder[d];
+        updateMinus(secondholder, k, localRho);
+        for (dimidxtype d = 0; d != D; d++) firstholder[d] += secondholder[d];
       }
-       for (d = 0; d != D; d++) y_i[d] += firstholder[d] * localRho;
+      updateMinus(firstholder, i, - localRho);
       localRho -= rhoIncrement;
     }
     rho -= (rhoIncrement * batchSize);
   }
+};
+
+class MomentumVisualizer : public Visualizer {
+protected:
+	float momentum;
+	coordinatetype* momentumarray;
+
+	virtual void updateMinus(coordinatetype* from,
+                          const vertexidxtype& i,
+                          const distancetype& rho) {
+		coordinatetype* moment = momentumarray + (i * D);
+		coordinatetype* to = coordsPtr + (i * D);
+		for (dimidxtype d = 0; d != D; d++) to[d] -= moment[d] = (moment[d] * momentum) + (from[d] * rho);
+	}
+
+public:
+	MomentumVisualizer(vertexidxtype * sourcePtr,
+            vertexidxtype * targetPtr,
+            dimidxtype D,
+            coordinatetype * coordPtr,
+            int M,
+            distancetype rho,
+            iterationtype n_samples,
+            const float& momentum,
+            const vertexidxtype& N ) : Visualizer(sourcePtr, targetPtr, D, coordPtr,
+            																			M, rho, n_samples) {
+		this -> momentum = momentum;
+		momentumarray = new coordinatetype[D * N];
+		for (vertexidxtype i = 0; i != D*N; i++) momentumarray[i] = 0;
+	}
+	~MomentumVisualizer() {
+		delete[] momentumarray;
+	}
 };
 
 // [[Rcpp::export]]
@@ -175,8 +215,9 @@ arma::mat sgd(arma::mat coords,
 							const long long n_samples,
               const int M,
               const double alpha,
+              const Rcpp::Nullable<Rcpp::NumericVector> momentum,
               const Rcpp::Nullable<Rcpp::NumericVector> seed,
-              Rcpp::Nullable<Rcpp::NumericVector> threads,
+              const Rcpp::Nullable<Rcpp::NumericVector> threads,
               const bool verbose) {
 #ifdef _OPENMP
 	checkCRAN(threads);
@@ -184,15 +225,30 @@ arma::mat sgd(arma::mat coords,
   Progress progress(n_samples, verbose);
 	dimidxtype D = coords.n_rows;
   if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
-  Visualizer v( sources_j.memptr(),
-                targets_i.memptr(),
-                coords.n_rows,
-                coords.memptr(),
-                M,
-                rho,
-                n_samples);
-  v.initAlias(ps, weights, targets_i, seed);
-  v.setGradient(alpha, gamma, D);
+  Visualizer* v;
+  if (momentum.isNull()) v = new Visualizer(  sources_j.memptr(),
+															                targets_i.memptr(),
+															                coords.n_rows,
+															                coords.memptr(),
+															                M,
+															                rho,
+															                n_samples);
+  else {
+  	float moment = NumericVector(momentum)[0];
+  	if (moment < 0) stop("Momentum cannot be negative.");
+  	if (moment > 1) stop("Momentum canot be > 1.");
+  	v = new MomentumVisualizer(  sources_j.memptr(),
+                        targets_i.memptr(),
+                        coords.n_rows,
+                        coords.memptr(),
+                        M,
+                        rho,
+                        n_samples,
+                        moment,
+                        coords.n_cols);
+  }
+  v -> initAlias(ps, weights, targets_i, seed);
+  v -> setGradient(alpha, gamma, D);
   const int batchSize = 8192;
   const iterationtype barrier = (n_samples * .95 < n_samples - coords.n_cols) ? n_samples * .95 : n_samples - coords.n_cols;
 
@@ -200,12 +256,12 @@ arma::mat sgd(arma::mat coords,
 #pragma omp parallel for schedule(static)
 #endif
   for (iterationtype eIdx = 0; eIdx < barrier; eIdx += batchSize) if (progress.increment(batchSize)) {
-    v(eIdx, batchSize);
+    (*v)(eIdx, batchSize);
   }
 #ifdef _OPENMP
 #pragma omp barrier
 #endif
-  for (iterationtype eIdx = barrier; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) v(eIdx, batchSize);
+  for (iterationtype eIdx = barrier; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) (*v)(eIdx, batchSize);
   return coords;
 };
 

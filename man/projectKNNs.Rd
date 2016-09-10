@@ -5,8 +5,8 @@
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
 projectKNNs(wij, dim = 2, sgd_batches = NULL, M = 5, gamma = 7,
-  alpha = 1, rho = 1, coords = NULL, seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+  alpha = 1, rho = 1, coords = NULL, momentum = NULL, seed = NULL,
+  threads = NULL, verbose = getOption("verbose", TRUE))
 }
 \arguments{
 \item{wij}{A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.}
@@ -27,6 +27,9 @@ enables the alternative distance function. \eqn{\alpha} below zero is meaningles
 \item{rho}{Initial learning rate.}
 
 \item{coords}{An initialized coordinate matrix.}
+
+\item{momentum}{If not \code{NULL} (the default), SGD with momentum is used, with this multiplier, which must be between 0 and 1. Note that
+momentum can drastically speed-up training time, at the cost of additional memory consumed.}
 
 \item{seed}{Random seed to be passed to the C++ functions; sampled from hardware entropy pool if \code{NULL} (the default).
 Note that if the seed is not \code{NULL} (the default), the maximum number of threads will be set to 1 in phases of the algorithm

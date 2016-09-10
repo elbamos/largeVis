@@ -61,8 +61,8 @@ checkOpenMP <- function() {
     .Call('largeVis_checkOpenMP', PACKAGE = 'largeVis')
 }
 
-sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, threads, verbose) {
-    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, threads, verbose)
+sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, seed, threads, verbose) {
+    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, seed, threads, verbose)
 }
 
 searchTreesCSparse <- function(threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, threads, verbose) {
