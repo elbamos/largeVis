@@ -50,4 +50,4 @@ addons:
       - gfortran-4.9
       
 after_success:
-  - if [[ $TRAVIS_R_VERSION == '3.3.1' ]]; then Rscript -e 'install.packages("covr"); covr::codecov(Sys.getenv("TRAVIS_BRANCH"));'; fi
+  - Rscript -e 'covr::codecov(Sys.getenv("TRAVIS_BRANCH"))'
