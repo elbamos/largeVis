@@ -1,6 +1,3 @@
-skip_old_windows <- function() {
-#	testthat::skip_if_not(R.Version()$arch != "i386", "largeVis does not run on 32-bit Windows.")
-}
 context("vis")
 set.seed(1974)
 data(iris)
@@ -11,7 +8,6 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 
 test_that("largeVis works", {
-	skip_old_windows()
 	visObject <- largeVis(dat, max_iter = 20, n_trees = 100,
 												tree_threshold = 50, sgd_batches = 1000,  threads = 2,
 												K = 20,  verbose = FALSE)
@@ -21,7 +17,6 @@ test_that("largeVis works", {
 })
 
 test_that("largeVis does not NaN on iris", {
-	skip_old_windows()
 	visObject <- largeVis(dat, max_iter = 20,
 												coords = matrix(rnorm(ncol(dat) * 2), nrow = 2),  threads = 2,
 												K = 20,  verbose = FALSE,
@@ -32,7 +27,6 @@ test_that("largeVis does not NaN on iris", {
 })
 
 test_that("largeVis works when alpha == 0", {
-	skip_old_windows()
 	visObject <- largeVis(dat,
 												max_iter = 20,
 												sgd_batches = 10000,  threads = 2,
@@ -45,7 +39,6 @@ test_that("largeVis works when alpha == 0", {
 })
 
 test_that("largeVis works with cosine", {
-	skip_old_windows()
 	visObject <- largeVis(dat, max_iter = 20,
 												sgd_batches = 1000,  threads = 2,
 												K = 10, verbose = FALSE,
@@ -56,7 +49,6 @@ test_that("largeVis works with cosine", {
 })
 
 test_that("largeVis continues to work as it scales up", {
-	skip_old_windows()
 	visObject <- largeVis(dat, max_iter = 20, sgd_batches = 1000,  threads = 2,
 												K = 10,  gamma = 0.5, verbose = FALSE)
 	expect_false(any(is.na(visObject$coords)))

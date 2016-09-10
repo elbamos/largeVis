@@ -1,11 +1,6 @@
-skip_old_windows <- function() {
-#	testthat::skip_if_not(R.Version()$arch != "i386", "largeVis does not run on 32-bit Windows.")
-}
-
 context("Edge Matrix")
 
 test_that("Edge Matrix doesn't crash", {
-	skip_old_windows()
 	M <- 10
 	data (quakes)
 	dat <- t(scale(as.matrix(quakes)))
@@ -15,7 +10,6 @@ test_that("Edge Matrix doesn't crash", {
 })
 
 test_that("build edge matrix works as expected", {
-	skip_old_windows()
 	data (iris)
 	set.seed(1974)
 	dat <- as.matrix(iris[, 1:4])
@@ -30,7 +24,6 @@ test_that("build edge matrix works as expected", {
 context("wij")
 
 test_that("wij doesn't crash", {
-	skip_old_windows()
 	data (iris)
 	set.seed(1974)
 	dat <- as.matrix(iris[, 1:4])
@@ -46,7 +39,6 @@ test_that("wij doesn't crash", {
 context("project knns")
 
 test_that("project knns doesn't crash", {
-	skip_old_windows()
 	data (iris)
 	set.seed(1974)
 	dat <- as.matrix(iris[, 1:4])

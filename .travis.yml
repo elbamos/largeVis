@@ -1,46 +1,44 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: r
+
 matrix:
   include:
-    - os: linux
-      dist: trusty
-      r: release
-    - os: osx
-      osx_image: xcode7.4
-      r: release
-  allow_failures:
-    - os: osx
-      osx_image: xcode6.4
-      r: release
-    - os: osx
-      osx_image: xcode8
-      r: release
-    - os: osx
-      osx_image: xcode7.4
-      r: devel
-    - os: osx
-      osx_image: xcode7.3
-      r: release
-    - os: osx
-      osx_image: xcode7.2
-      r: release
-    - os: linux
-      dist: trusty
-      r: devel
-      
-sudo: false
+  - os: linux
+    dist: trusty
+    r: release
+  - os: osx
+    osx_image: xcode7.4
+    r: release
+  - r: devel
+    os: linux
+    dist: trusty
+  - r: devel
+    os: linux
+    dist: trusty
+
 cache: packages
 
-r_github_packages:
-  - jimhester/covr
+env:
+  global:
+  - OS=$(uname -s) _R_CHECK_CRAN_INCOMING_=TRUE
+
+cran: http://cran.rstudio.com
 
 r_packages:
-  - Rcpp
-  - RcppArmadillo
-  - devtools
-  - dbscan
-  - abind
+  - testthat
+
+r_binary_packages:
+  - stringi
+
+sudo: required
+
+before_install: |
+  mkdir ~/.R
+  cat <<EOF >> ~/.R/Makevars
+  CXX1X=g++-4.9
+  FC=gfortran-4.9
+  CXX1XSTD=-std=c++11
 
 addons:
   apt:
@@ -50,14 +48,6 @@ addons:
       - gcc-4.9
       - g++-4.9
       - gfortran-4.9
-
-before_install: |
-  mkdir ~/.R
-  cat <<EOF > ~/.R/Makevars
-  CXX1X=g++-4.9
-  FC=gfortran-4.9
-  CXX1XSTD=-std=c++11
-
-
+      
 after_success:
   - Rscript -e 'covr::codecov(Sys.getenv("TRAVIS_BRANCH"))'

@@ -1,11 +1,15 @@
 ### largeVis 0.1.9
-* Fixed insidious bug that would arise if the edge matrix contained distances > 27.
-* Fixed bug in hdbscan where it would mistakenly conclude that it lacked sufficient neighbors.
-* Change to address apparent upstream issue causing compilation problem on 32-bit systems.
-* Fixed bug in hdbscan caused by the knn matrix not matching output from randomProjectionTreeSearch. 
-* Hdbscan now uses a PairingHeap insead of a Binary Heap, which should improve performance on large datasets. 
-* NOTE:  buildEdgeMatrix no2 incorporates a regularization constant. Duplicates are now recorded as being a Euclidean distances of 1e-5 apart. The reason for this is that the Matrix package and armadillo sparse matrices do not preserve information about zeros. As a result, with datasets with large numbers of duplicates, the edge matrices appeared to contain no (or too little) neighbor data for some rows. This created issues with other functions dependent on the output of buildEdgeMatrix, such as hdbscan. Adding a regularization constant fixes the issue.
-* On load, now inform the user if the package was compiled for 32-bit or without OpenMP. 
+* Fixes
+		+ Fixed insidious bug that would arise if the edge matrix contained distances > 27.
+		+ Fixed bug in hdbscan where it would mistakenly conclude that it lacked sufficient neighbors.
+		+ Fixed bug in buildWijMatrix that caused a segfault on certain 32-bit systems in certain cases. 
+		+ Change to address apparent upstream issue causing compilation problem on 32-bit systems.
+		+ Fixed bug in hdbscan caused by the knn matrix not matching output from randomProjectionTreeSearch. 
+* Algorithm Improvements
+		+ Hdbscan now uses a PairingHeap insead of a Binary Heap, which should improve performance on large datasets. 
+		+ NOTE:  buildEdgeMatrix no2 incorporates a regularization constant. Duplicates are now recorded as being a Euclidean distances of 1e-5 apart. The reason for this is that the Matrix package and armadillo sparse matrices do not preserve information about zeros. As a result, with datasets with large numbers of duplicates, the edge matrices appeared to contain no (or too little) neighbor data for some rows. This created issues with other functions dependent on the output of buildEdgeMatrix, such as hdbscan. Adding a regularization constant fixes the issue.
+* Interface Improvements
+		+ On load, now inform the user if the package was compiled for 32-bit or without OpenMP. 
 
 ### largeVis 0.1.8
 * hdbscan algorithm added
