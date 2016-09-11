@@ -29,6 +29,7 @@
 #' enables the alternative distance function. \eqn{\alpha} below zero is meaningless.
 #' @param rho Initial learning rate.
 #' @param coords An initialized coordinate matrix.
+#' @param useDegree Whether to use vertex degree to determine weights in negative sampling (if \code{TRUE}), or the sum of the vertex's edges (the default). See Notes.
 #' @param momentum If not \code{NULL} (the default), SGD with momentum is used, with this multiplier, which must be between 0 and 1. Note that
 #' momentum can drastically speed-up training time, at the cost of additional memory consumed.
 #' @param seed Random seed to be passed to the C++ functions; sampled from hardware entropy pool if \code{NULL} (the default).
@@ -40,6 +41,11 @@
 #' @note If specified, \code{seed} is passed to the C++ and used to initialize the random number generator. This will not, however, be
 #' sufficient to ensure reproducible results, because the initial coordinate matrix is generated using the \code{R} random number generator.
 #' To ensure reproducibility, call \code{\link[base]{set.seed}} before calling this function, or pass it a pre-allocated coordinate matrix.
+#'
+#' @note The original paper called for weights in negative sampling to be calculated according to the degree of each vertex, the number of edges
+#' connecting to the vertex. The reference implementation, however, uses the sum of the weights of the edges to each vertex. In experiments, the
+#' difference was imperceptible with small (MNIST-size) datasets, but the results seems aesthetically preferrable using degree. The default
+#' is to use the edge weights, consistent with the reference implementation.
 #'
 #' @return A dense [N,D] matrix of the coordinates projecting the w_ij matrix into the lower-dimensional space.
 #' @export
@@ -53,6 +59,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                         alpha = 1,
                         rho = 1,
                         coords = NULL,
+												useDegree = FALSE,
 												momentum = NULL,
 												seed = NULL,
 												threads = NULL,

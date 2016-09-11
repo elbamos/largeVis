@@ -23,7 +23,7 @@ protected:
   typedef pair<VIDX, double> iddist;
   class CompareDist {
 	public:
-  	bool operator()(iddist n1, iddist n2) const {
+  	bool operator()(const iddist& n1, const iddist& n2) const {
   		return n1.second > n2.second;
   	}
   };
@@ -101,7 +101,7 @@ protected:
 
   void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
   	starterIndex = start;
-  	for (VIDX n = 0; n != N; n++) minimum_spanning_tree[n] = -1;
+  	for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
   	Q -> batchInsert(N, start);
   	Q -> decreaseIf(starterIndex, -1);
   	p.increment(N);
@@ -125,7 +125,7 @@ protected:
 
   void primsAlgorithm(const arma::sp_mat& edges, const IntegerMatrix& neighbors, VIDX start) {
   	starterIndex = start;
-  	for (VIDX n = 0; n != N; n++) minimum_spanning_tree[n] = -1;
+  	for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
   	Q -> batchInsert(N, start);
   	Q -> decreaseIf(starterIndex, -1);
   	p.increment(N);
@@ -186,12 +186,12 @@ protected:
   	lambda_births = arma::vec(reservesize);
   	lambda_deaths = arma::vec(reservesize);
 
-  	for (VIDX n = 0; n != N; n++) add();
+  	for (VIDX n = 0; n != N; ++n) add();
 
   	vector< iddist > container = vector< iddist >();
   	container.reserve(N);
   	typename vector< iddist >::iterator adder = container.end();
-  	for (VIDX n = 0; n != N; n++) {
+  	for (VIDX n = 0; n != N; ++n) {
   		container.emplace(adder++, n, Q -> keyOf(n));
   		if (n % 50 == 0 ) if (!p.increment(50)) return;
   	}
@@ -270,7 +270,7 @@ protected:
       fallenPointses[n] = set< VIDX >();
       goodChildrens[n] = set< VIDX >();
     }
-    for (VIDX n = 0; n != counter; n++) if (p.increment()) {
+    for (VIDX n = 0; n != counter; ++n) if (p.increment()) {
       condenseOne(n, minPts);
     }
     Vidxerator it2;

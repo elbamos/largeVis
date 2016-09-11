@@ -64,7 +64,7 @@ protected:
 		{
 			for (ivec::iterator it = neighbors.begin();
 		      it != newEnd;
-		      it++) {
+		      ++it) {
 				tmpStorage.clear();
 				tmpStorage.swap(treeNeighborhoods[*it]);
 				treeNeighborhoods[*it].reserve(tmpStorage.size() + indices.n_elem);

@@ -59,7 +59,7 @@ protected:
                            const vertexidxtype& i,
                            const distancetype& rho) {
   	coordinatetype* to = coordsPtr + (i * D);
-  	for (dimidxtype d = 0; d != D; d++) to[d] -= from[d] * rho;
+  	for (dimidxtype d = 0; d != D; ++d) to[d] -= from[d] * rho;
   }
 
 public:
@@ -69,39 +69,28 @@ public:
              coordinatetype * coordPtr,
              int M,
              distancetype rho,
+             vertexidxtype* ps,
              iterationtype n_samples) : D{D}, M{M}, M2(M * 2),
                                     targetPointer{targetPtr},
                                     sourcePointer{sourcePtr},
                                     coordsPtr{coordPtr},
                                     n_samples{n_samples},
                                     rho{rho},
-                                    rhoIncrement((rho - 0.0001) / n_samples) { }
+                                    rhoIncrement((rho - 0.0001) / n_samples),
+                                    ps{ps} { }
 #ifdef _OPENMP
 	~Visualizer() {
 		if (storedThreads > 0) omp_set_num_threads(storedThreads);
 	}
 #endif
 
-	void initAlias(arma::ivec& newps,
-                 const arma::vec& weights,
-                 const arma::ivec& targets,
+	void initAlias(const distancetype* posWeights,
+                 const distancetype* negWeights,
+                 const vertexidxtype& N,
+                 const edgeidxtype& E,
                  Rcpp::Nullable<Rcpp::NumericVector> seed) {
-		vertexidxtype N = newps.n_elem - 1;
-		ps = newps.memptr();
-		unique_ptr< double[] > negweights(new double[N]);
-		for (vertexidxtype n = 0; n < N; n++) negweights[n] = 0;
-		for (vertexidxtype p = 0; p < N; p++) {
-			for (edgeidxtype e = newps[p];
-        	 e != newps[p + 1];
-        	 e++) {
-				//negweights[targets[e]] += weights[e];
-				negweights[p] += weights[e];
-			}
-		}
-		double sum_weight = 0;
-		for (vertexidxtype n = 0; n < N; n++) sum_weight += negweights[n] = pow(negweights[n], 0.75);
-		negAlias.initialize(negweights.get(), N);
-		posAlias.initialize(weights.memptr(), weights.n_elem);
+		negAlias.initialize(negWeights, N);
+		posAlias.initialize(posWeights, E);
 
 		if (seed.isNotNull()) {
 #ifdef _OPENMP
@@ -125,14 +114,15 @@ public:
 
   void operator()(iterationtype startSampleIdx, int batchSize) {
   	edgeidxtype e_ij;
-  	int m, shortcircuit, example = 0;
+  	int example = 0;
   	vertexidxtype i, j, k;
-  	dimidxtype d;
-  	vertexidxtype * searchBegin, * searchEnd;
-  	coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
 
     distancetype localRho = rho;
     while (example++ != batchSize && localRho > 0) {
+    	int m, shortcircuit;
+    	vertexidxtype * searchBegin, * searchEnd;
+    	coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
+
       e_ij = posAlias();
 
       j = targetPointer[e_ij];
@@ -141,7 +131,6 @@ public:
       y_i = coordsPtr + (i * D);
       y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
-
 			updateMinus(firstholder, j, localRho);
 
       searchBegin = targetPointer + ps[i];
@@ -149,20 +138,20 @@ public:
       shortcircuit = m = 0;
       while (m != M && shortcircuit != M2) {
         k =  negAlias();
-        shortcircuit++;
+        ++shortcircuit;
         // Check that the draw isn't one of i's edges
         if (k == i ||
             k == j ||
             binary_search( searchBegin,
                            searchEnd,
                            k)) continue;
-        m++;
+        ++m;
 
         y_j = coordsPtr + (k * D);
         grad -> negativeGradient(y_i, y_j, secondholder);
 
         updateMinus(secondholder, k, localRho);
-        for (dimidxtype d = 0; d != D; d++) firstholder[d] += secondholder[d];
+        for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
       }
       updateMinus(firstholder, i, - localRho);
       localRho -= rhoIncrement;
@@ -181,7 +170,7 @@ protected:
                           const distancetype& rho) {
 		coordinatetype* moment = momentumarray + (i * D);
 		coordinatetype* to = coordsPtr + (i * D);
-		for (dimidxtype d = 0; d != D; d++) to[d] -= moment[d] = (moment[d] * momentum) + (from[d] * rho);
+		for (dimidxtype d = 0; d != D; ++d) to[d] -= moment[d] = (moment[d] * momentum) + (from[d] * rho);
 	}
 
 public:
@@ -191,13 +180,14 @@ public:
             coordinatetype * coordPtr,
             int M,
             distancetype rho,
+            vertexidxtype* ps,
             iterationtype n_samples,
             const float& momentum,
             const vertexidxtype& N ) : Visualizer(sourcePtr, targetPtr, D, coordPtr,
-            																			M, rho, n_samples) {
+            																			M, rho, ps, n_samples) {
 		this -> momentum = momentum;
 		momentumarray = new coordinatetype[D * N];
-		for (vertexidxtype i = 0; i != D*N; i++) momentumarray[i] = 0;
+		for (vertexidxtype i = 0; i != D*N; ++i) momentumarray[i] = 0;
 	}
 	~MomentumVisualizer() {
 		delete[] momentumarray;
@@ -222,6 +212,7 @@ arma::mat sgd(arma::mat coords,
 #ifdef _OPENMP
 	checkCRAN(threads);
 #endif
+	int useDegree = 0;
   Progress progress(n_samples, verbose);
 	dimidxtype D = coords.n_rows;
   if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
@@ -232,26 +223,48 @@ arma::mat sgd(arma::mat coords,
 															                coords.memptr(),
 															                M,
 															                rho,
+															                ps.memptr(),
 															                n_samples);
   else {
   	float moment = NumericVector(momentum)[0];
   	if (moment < 0) stop("Momentum cannot be negative.");
   	if (moment > 1) stop("Momentum canot be > 1.");
-  	v = new MomentumVisualizer(  sources_j.memptr(),
-                        targets_i.memptr(),
-                        coords.n_rows,
-                        coords.memptr(),
-                        M,
-                        rho,
-                        n_samples,
-                        moment,
-                        coords.n_cols);
+  	v = new MomentumVisualizer( sources_j.memptr(),
+				                        targets_i.memptr(),
+				                        coords.n_rows,
+				                        coords.memptr(),
+				                        M,
+				                        rho,
+				                        ps.memptr(),
+				                        n_samples,
+				                        moment,
+				                        coords.n_cols);
   }
-  v -> initAlias(ps, weights, targets_i, seed);
+  // Make negative weights
+
+  vertexidxtype N = coords.n_cols;
+  distancetype* negweights = new distancetype[N];
+  for (vertexidxtype n = 0; n < N; ++n) negweights[n] = 0;
+  if (useDegree) {
+  	for (edgeidxtype e = 0; e < targets_i.n_elem; ++e) negweights[targets_i[e]]++;
+  } else {
+  	for (vertexidxtype p = 0; p < N; ++p) {
+  		for (edgeidxtype e = ps[p];
+         e != ps[p + 1];
+         ++e) {
+  			//negweights[targets[e]] += weights[e];
+  			negweights[p] += weights[e];
+  		}
+  	}
+  }
+  for (vertexidxtype n = 0; n < N; ++n) negweights[n] = pow(negweights[n], 0.75);
+  v -> initAlias(weights.memptr(), negweights, N, sources_j.n_elem, seed);
+  delete[] negweights;
+
   v -> setGradient(alpha, gamma, D);
+
   const int batchSize = 8192;
   const iterationtype barrier = (n_samples * .95 < n_samples - coords.n_cols) ? n_samples * .95 : n_samples - coords.n_cols;
-
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
