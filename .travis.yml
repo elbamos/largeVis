@@ -15,17 +15,11 @@ matrix:
     dist: trusty
   - os: osx
     osx_image: xcode7.4
+    r: devel
+  - os: linux
+    dist: trusty
     r: release
     env: R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
-  - r: devel
-    os: linux
-    dist: trusty
-  - os: osx
-    osx_image: xcode7.3
-    r: release
-  - os: osx
-    osx_image: xcode8
-    r: release
 
 cache: packages
 
