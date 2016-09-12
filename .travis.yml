@@ -18,6 +18,8 @@ matrix:
     dist: trusty
     r: release
     env: R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
+  allow_failure:
+    r: devel
 
 cache: packages
 
