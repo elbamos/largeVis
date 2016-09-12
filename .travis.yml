@@ -13,23 +13,36 @@ matrix:
   - r: devel
     os: linux
     dist: trusty
+  - os: osx
+    osx_image: xcode7.4
+    r: release
+    env: R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
   - r: devel
     os: linux
     dist: trusty
+  - os: osx
+    osx_image: xcode7.3
+    r: release
+  - os: osx
+    osx_image: xcode8
+    r: release
 
 cache: packages
 
 env:
   global:
-  - OS=$(uname -s) _R_CHECK_CRAN_INCOMING_=TRUE
+  - OS=$(uname -s)
 
 cran: http://cran.rstudio.com
 
 r_packages:
-  - testthat
+  - covr
 
 r_binary_packages:
   - stringi
+  - devtools
+  - testthat
+  - ggplot2
 
 sudo: required
 
