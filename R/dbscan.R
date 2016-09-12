@@ -1,73 +1,9 @@
-#' OPTICS
-#'
-#' Experimental implementation of the OPTICS algorithm.
-#'
-#' @param data Input data, where examples are columns.
-#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}
-#' @param edges A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}.
-#' @param eps See \code{\link[dbscan]{optics}}.
-#' @param minPts See \code{\link[dbscan]{optics}}.
-#' @param eps_cl See \code{\link[dbscan]{optics}}.
-#' @param xi See \code{\link[dbscan]{optics}}.
-#' @param verbose Vebosity level.
-#'
-#' @details This is a preliminary implementation of a variant of the OPTICS algorithm that attempts
-#' to leverage the \code{largeVis} nearest-neighbor search.
-#'
-#' One of \code{neighbors} or \code{edges} must be specified. If \code{edges} is missing,
-#' \code{data} must also be given. If \code{data} is given along with either \code{edges}
-#' or \code{neighbors}, the algorithm will attempt a more thorough search.
-#'
-#' @note Support for dbscan and optics are preliminary, and not fully tested for
-#' correctness.
-#'
-#' @note This is not the original OPTICS algorithm. In particular, the neighbor-search strategy in
-#' OPTICS is not used, in favor of using a pre-calculated neighbor matrix produced incidentally by
-#' `largeVis`.
-#'
-#' @return An \code{\link[dbscan]{optics}} object.
-#' @export
-#' @importFrom dbscan optics_cut opticsXi
-optics <- function(data = NULL,
-                   neighbors = NULL,
-                   edges = NULL,
-                   eps,
-                   minPts = nrow(data) + 1,
-                   eps_cl,
-                   xi,
-                   verbose = getOption("verbose", TRUE)) {
-  if (! is.null(edges) && is.null(data))
-    ret <- optics_e(edges = edges,
-                    eps = as.double(eps), minPts = as.integer(minPts),
-                    verbose = verbose)
-  else if (! is.null(edges))
-    ret <- optics_ed(edges = edges, data = data,
-                     eps = as.double(eps), minPts = as.integer(minPts),
-                     verbose = verbose)
-  else
-    ret <- optics_nd(neighbors = neighbors, data = data,
-                     eps = as.double(eps), minPts = as.integer(minPts),
-                     verbose = verbose)
-
-  ret$minPts <- minPts
-  ret$eps <- eps
-  ret$eps_cl <- NA
-  class(ret) <- "optics"
-
-  if(!missing(eps_cl)) ret <- dbscan::optics_cut(ret, eps_cl)
-  if(!missing(xi)) ret <- dbscan::opticsXi(ret, xi)
-
-  ret
-}
-
 #' @title Local Outlier Factor Score
 #'
 #' @description Calculate the Local Outlier Factor (LOF) score for each data point given knowledge
 #' of k-Nearest Neighbors.
 #'
 #' @param edges An edge matrix of the type produced by \code{\link{buildEdgeMatrix}}.
-#'
-#' @references Based on code in the \code{\link[dbscan]{dbscan}} package.
 #'
 #' @return A vector of LOF values for each data point.
 #' @export
