@@ -10,7 +10,7 @@ template<class VIDX>
 class UF {
 private:
   VIDX reservesize; // used during initialization
-	// Used after buildHierarchy to manage condensation, stability extraction, and cluster identificaTION
+	// Used after buildHierarchy to manage condensation, stability extraction, and cluster identification
   arma::Col< VIDX > parents;
   arma::vec lambda_deaths;
   arma::vec stabilities;
@@ -51,17 +51,12 @@ protected:
   set< VIDX > roots;
 
   UF(VIDX N, bool verbose, bool pq) : N{N}, p(Progress(10 * N, verbose)) {
-	  if (pq) Q = new PairingHeap<VIDX, double>(N);
-	  else Q = new MinIndexedPQ<VIDX, double>(N);
+	  Q = new PairingHeap<VIDX, double>(N);
   	minimum_spanning_tree = unique_ptr<VIDX[]>(new VIDX[N]);
 #ifdef DEBUG
   	setupTest();
 #endif
   }
-
-//  ~UF() {
-//    delete Q;
-//  }
 
 #ifdef DEBUG
   set< VIDX > testers = set< VIDX >();
@@ -354,7 +349,6 @@ protected:
        it++) deselect(*it);
 		} else stop("Uncaught category");
   }
-
 
   void extractClusters(const VIDX& minPts) {
     survivingClusters = set< VIDX >();

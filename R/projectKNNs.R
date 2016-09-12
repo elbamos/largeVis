@@ -76,8 +76,8 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   ##############################################
   if (is.null(coords)) coords <- matrix((runif(N * dim) - 0.5) / dim * 0.0001, nrow = dim)
 
-  if (sgd_batches < 0) stop("sgd batches must be > 0")
-  if (sgd_batches < 1) {
+  if (! is.null(sgd_batches) && sgd_batches < 0) stop("sgd batches must be > 0")
+  if (! is.null(sgd_batches) && sgd_batches < 1) {
   	multiplier <- sgd_batches
   	sgd_batches <- NULL
   } else multiplier <- 1

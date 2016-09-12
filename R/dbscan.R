@@ -60,39 +60,6 @@ optics <- function(data = NULL,
   ret
 }
 
-edgeMatrixToKNNS <- function(edges) {
-  id = apply(edges,MARGIN = 1, FUN = function(x) which(x != 0))
-  dist = apply(edges, MARGIN = 1, FUN = function(x) x[x != 0])
-  for (i in 1:ncol(id)) {
-    ord <- order(dist[,i])
-    id[,i] <- id[,i][ord]
-    dist[,i] <- dist[,i][ord]
-  }
-  k = nrow(id)
-  list(dist = t(dist), id = t(id), k = k)
-}
-
-# The source code for function lof is based on code that bore this license:
-#######################################################################
-# dbscan - Density Based Clustering of Applications with Noise
-#          and Related Algorithms
-# Copyright (C) 2015 Michael Hahsler
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-
 #' @title Local Outlier Factor Score
 #'
 #' @description Calculate the Local Outlier Factor (LOF) score for each data point given knowledge
@@ -105,24 +72,30 @@ edgeMatrixToKNNS <- function(edges) {
 #' @return A vector of LOF values for each data point.
 #' @export
 lof <- function(edges) {
-  kNNlist <- edgeMatrixToKNNS(edges)
-  N <- nrow(kNNlist$id)
-  K <- kNNlist$k
 
-  # lrd <- rep(0, N)
-  lrd <- rep(0, N)
-  # for(i in 1:N) {
-  #   input <- kNNlist$dist[c(i, kNNlist$id[i, ]) ,]
-  #   lrd[i] <- 1 / (sum(apply(input, MARGIN = 1, max)) / K)
-  # }
-  for(i in 1:N) lrd[i] <- 1/(sum(apply(
-    cbind(kNNlist$dist[kNNlist$id[i,], K], kNNlist$dist[i,]),
-    1, max)) / K)
+	id <- apply(edges,MARGIN = 1, FUN = function(x) which(x != 0))
+	dist <- apply(edges, MARGIN = 1, FUN = function(x) x[x != 0])
+	for (i in 1:ncol(id)) {
+		ord <- order(dist[,i])
+		id[,i] <- id[,i][ord]
+		dist[,i] <- dist[,i][ord]
+	}
+	K <- nrow(id)
+	N <- ncol(id)
+	dist <- t(dist)
+	id <- t(id)
 
-  ret <- rep(0, N)
-  for (i in 1:N) ret[i] <- sum(lrd[kNNlist$id[i,]])/K / lrd[i]
+	lrd <- rep(0, N)
 
-  ret[is.nan(ret)] <- NA
+	for (i in 1:N) {
+		merged <- cbind(dist[id[i,], K], dist[i, ])
+		lrd[i] <- 1/(sum(apply(merged, 1, max))/ K)
+	}
+
+	ret <- rep(0, N)
+	for (i in 1:N) ret[i] <- sum(lrd[id[i,]])/K / lrd[i]
+
+	ret[is.nan(ret)] <- NA
 
   ret
 }
