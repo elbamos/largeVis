@@ -1,15 +1,9 @@
-## Resubmission
+## Changes from Prior Version
+
+* Re-implemented DBSCAN and OPTICS. These had been taken out pending determination of whether I needed to include licensing information for the package on which I'd bsaed the code. On inspection, it turned out that the code at issue was virtually a cut-and-paste from the pseudocode for the relevant algorithms found on Wikipedia. The code has been completely re-written for this version and is substantially improved.  
+
+* Added momentum to the largeVis stochastic gradient descent function.  In testing, this sped-up the very slow sgd phase of the algorithm by up to 10x without loss of fidelity. 
  
-This is a resubmission of a new release. 
-
-On the last submission: 1) A concern was raised that tests were disabled on 32-bit Windows; and 2) It was requested to add an authorship entry for the `lof` function.
-
-In this submission, I have:
-* Re-written the `lof` function to avoid any need for attribution, and removed the license header from that file.  
-* No tests are disabled on Windows 32-bit.  (Tests that require datasets that would be too large for CRAN are, however, disabled on every OS.)
-
-* NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
-
 ## Test environments
 * local OS X install, R 3.3.1
 * ubuntu 14.04 (on travis-ci)
@@ -24,11 +18,11 @@ In this submission, I have:
 
 0 errors | 0 warnings | 0 notes
 
-* This is a new release.
+* This is a minor version update.
 
 ## Reverse dependencies
 
-This is a new release, so there are no reverse dependencies.
+As of yet, none. 
 
 ---
   

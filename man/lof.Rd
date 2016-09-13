@@ -16,7 +16,4 @@ A vector of LOF values for each data point.
 Calculate the Local Outlier Factor (LOF) score for each data point given knowledge
 of k-Nearest Neighbors.
 }
-\references{
-Based on code in the \code{\link[dbscan]{dbscan}} package.
-}
 
