@@ -1,3 +1,7 @@
+### largeVis 0.1.9.1
+The OPTICS implementation has been temporarily removed. This reason is that the code was based on the code in the `dbscan` package, and the CRAN
+administrators objected to the inclusion of a separate copyright notice. OPTICS will be restored once the code is sufficiently re-written. 
+
 ### largeVis 0.1.9
 * Fixes
 		+ Fixed insidious bug that would arise if the edge matrix contained distances > 27.

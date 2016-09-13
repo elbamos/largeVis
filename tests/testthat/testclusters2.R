@@ -1,4 +1,4 @@
-context("optics")
+context("LOF")
 
 set.seed(1974)
 data(iris)
@@ -10,21 +10,8 @@ dat <- t(dat)
 K <- 20
 neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat,
-                          neighbors = neighbors,
-                          verbose = FALSE)
-test_that("optics doesn't crash on iris with neighbors and data", {
-  expect_silent(largeVis:::optics(neighbors = neighbors, data = dat, eps = 10, minPts = 10, verbose = FALSE))
-})
-
-test_that("optics doesn't crash on iris with edges", {
-  expect_silent(largeVis:::optics(edges = edges, eps = 10, minPts = 10, verbose = FALSE))
-})
-
-test_that("optics doesn't crash on iris with edges and data", {
-  expect_silent(largeVis:::optics(edges = edges, data = dat, eps = 10, minPts = 10, verbose = FALSE))
-})
-
-context("LOF")
+												 neighbors = neighbors,
+												 verbose = FALSE)
 
 test_that(paste("LOF is consistent", 20), {
 	load(system.file("extdata/truelof20.Rda", package = "largeVis"))

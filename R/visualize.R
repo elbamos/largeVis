@@ -107,7 +107,7 @@ manifoldMap <- function(x,
 #' @importFrom ggplot2 ggplot
 #' @importFrom ggplot2 geom_blank
 #' @importFrom ggplot2 annotation_raster
-#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 aes_
 #' @export
 ggManifoldMap <- function(ggObject = NULL,
                           x,

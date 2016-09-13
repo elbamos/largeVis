@@ -41,7 +41,7 @@ This is an implementation of the `largeVis` algorithm described in (https://arxi
 ```{r echo=F}
 vdatapath <- "../largeVisData/vignettedata/"
 ```
-```{r child='Examples.Rmd',}
+```{r child='../Examples.Rmd',}
 ```
 
 ## Benchmarks
