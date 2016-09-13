@@ -6,7 +6,9 @@ On the last submission: 1) A concern was raised that tests were disabled on 32-b
 
 In this submission, I have:
 * Re-written the `lof` function to avoid any need for attribution, and removed the license header from that file.  
-* No tests are disabled on Windows 32-bit.  (Tests that require datasets that would be too large for CRAN are, however, disabled on every OS.)
+* Removed the DBSCAN and OPTICS implementations, pending re-writing more of that code. 
+* Updated version to 0.1.9.1.
+* No tests are disabled on Windows 32-bit.  
 
 * NOTE:  "largeVis" is the correct name of the package and function implementing the LargeVis algorithm.
 
