@@ -103,13 +103,13 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 sources_j = js,
                 ps = wij@p,
                 weights = wij@x,
-                alpha = alpha, gamma = gamma, M = M,
-                rho = rho,
+                alpha = as.double(alpha), gamma = as.double(gamma), M = as.integer(M),
+                rho = as.double(rho),
                 n_samples = sgd_batches,
-  							momentum = momentum,
+  							momentum = as.double(momentum),
   							seed = seed,
-  							threads = threads,
-                verbose = verbose)
+  							threads = as.integer(threads),
+                verbose = as.logical(verbose))
 
   return(coords)
 }

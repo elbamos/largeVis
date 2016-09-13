@@ -9,6 +9,7 @@ public:
   virtual bool contains(const VIDX& i) const = 0;
   virtual void batchInsert(const VIDX& n, const VIDX& start) = 0;
   virtual bool decreaseIf(const VIDX& i, const D& newKey) = 0;
+  virtual void insert(VIDX& n, D &x) = 0;
   virtual D keyOf(const VIDX& i) const = 0;
   virtual VIDX pop() = 0;
 };
@@ -148,6 +149,10 @@ public:
   virtual bool contains(const VIDX& i) const {
     return ContentsArray[i];
   }
+
+	virtual void insert(VIDX& n, D &x) {
+		Insert(n, x);
+	}
 
   virtual void batchInsert(const VIDX& n, const VIDX& start) {
     for (VIDX i = 0; i != n; i++) {

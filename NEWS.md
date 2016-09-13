@@ -1,7 +1,8 @@
 ### largeVis 0.1.10
 * projectKNNs now has a momentum parameter.  This can drastically speed-up the SGD process, at the cost of additional memory.
+* OPTICS and DBSCAN are back, rewritten, and substantially improved.
 
-### ### largeVis 0.1.9
+### largeVis 0.1.9
 * Fixes
 		+ Fixed insidious bug that would arise if the edge matrix contained distances > 27.
 		+ Fixed bug in hdbscan where it would mistakenly conclude that it lacked sufficient neighbors.

@@ -1,10 +1,9 @@
-#' OPTICS
+#' optics
 #'
 #' Experimental implementation of the OPTICS algorithm.
 #'
-#' @param data Input data, where examples are columns.
-#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}
 #' @param edges A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}.
+#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}
 #' @param eps See \code{\link[dbscan]{optics}}.
 #' @param minPts See \code{\link[dbscan]{optics}}.
 #' @param eps_cl See \code{\link[dbscan]{optics}}.
@@ -14,50 +13,66 @@
 #' @details This is a preliminary implementation of a variant of the OPTICS algorithm that attempts
 #' to leverage the \code{largeVis} nearest-neighbor search.
 #'
-#' One of \code{neighbors} or \code{edges} must be specified. If \code{edges} is missing,
-#' \code{data} must also be given. If \code{data} is given along with either \code{edges}
-#' or \code{neighbors}, the algorithm will attempt a more thorough search.
 #'
 #' @note Support for dbscan and optics are preliminary, and not fully tested for
 #' correctness.
 #'
 #' @note This is not the original OPTICS algorithm. In particular, the neighbor-search strategy in
-#' OPTICS is not used, in favor of using a pre-calculated neighbor matrix produced incidentally by
+#' OPTICS is not used, in favor of using the pre-calculated neighbor matrix produced incidentally by
 #' `largeVis`.
 #'
 #' @return An \code{\link[dbscan]{optics}} object.
+#' @references  Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jörg Sander (1999). OPTICS: Ordering Points To Identify the Clustering Structure. ACM SIGMOD international conference on Management of data. ACM Press. pp. 49–60.
 #' @export
 #' @importFrom dbscan optics_cut opticsXi
-optics <- function(data = NULL,
-                   neighbors = NULL,
-                   edges = NULL,
-                   eps,
-                   minPts = nrow(data) + 1,
+optics <- function(edges,
+                   neighbors,
+                   eps = Inf,
+                   minPts = nrow(neighbors),
                    eps_cl,
                    xi,
                    verbose = getOption("verbose", TRUE)) {
-  if (! is.null(edges) && is.null(data))
-    ret <- optics_e(edges = edges,
-                    eps = as.double(eps), minPts = as.integer(minPts),
-                    verbose = verbose)
-  else if (! is.null(edges))
-    ret <- optics_ed(edges = edges, data = data,
-                     eps = as.double(eps), minPts = as.integer(minPts),
-                     verbose = verbose)
-  else
-    ret <- optics_nd(neighbors = neighbors, data = data,
-                     eps = as.double(eps), minPts = as.integer(minPts),
-                     verbose = verbose)
+	if (is.null(edges) || is.null(neighbors)) stop("Both edges and neighbors must be specified.")
+	ret <- optics_cpp(edges = edges, neighbors = neighbors, eps = as.double(eps), minPts = as.integer(minPts), verbose = as.logical(verbose))
 
   ret$minPts <- minPts
   ret$eps <- eps
   ret$eps_cl <- NA
+  ret$call <- sys.call()
   class(ret) <- "optics"
 
   if(!missing(eps_cl)) ret <- dbscan::optics_cut(ret, eps_cl)
   if(!missing(xi)) ret <- dbscan::opticsXi(ret, xi)
 
   ret
+}
+
+
+#' dbscan
+#'
+#' Experimental implementation of the DBSCAN algorithm.
+#'
+#' @param edges A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}.
+#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}
+#' @param eps See \code{\link[dbscan]{dbscan}}.
+#' @param minPts See \code{\link[dbscan]{dbscan}}.
+#' @param verbose Vebosity level.
+#'
+#' @return A \code{\linke[dbscan]{dbscan}} object.
+#' @export
+#'
+#' @references Martin Ester, Hans-Peter Kriegel, Jörg Sander, Xiaowei Xu (1996). Evangelos Simoudis, Jiawei Han, Usama M. Fayyad, eds. A density-based algorithm for discovering clusters in large spatial databases with noise. Proceedings of the Second International Conference on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226–231. ISBN 1-57735-004-9.
+dbscan <- function(edges,
+									 neighbors,
+									 eps = Inf,
+									 minPts = nrow(neighbors),
+									 verbose = getOption("verbose", TRUE)) {
+	if (is.null(edges) || is.null(neighbors)) stop("Both edges and neighbors must be provided.")
+
+	clusters <- dbscan_cpp(edges, neighbors, as.double(eps), as.integer(minPts), as.logical(verbose))
+
+	structure(list(cluster = clusters, eps = eps, minPts = minPts, call = sys.call()),
+						class = c("dbscan_fast", "dbscan"))
 }
 
 #' @title Local Outlier Factor Score
@@ -192,7 +207,7 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 		neighbors[is.na(neighbors)] <- -1
 		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
 	}
-  clustersout <- hdbscanc(edges, neighbors, K, minPts, threads, verbose)
+  clustersout <- hdbscanc(edges, neighbors, as.integer(K), as.integer(minPts), as.integer(threads), as.logical(verbose))
   clusters <- clustersout$clusters[1, ]
   clusters[clusters == -1] <- NA
   clusters = factor(clusters, exclude = NULL)
