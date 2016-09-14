@@ -4,7 +4,9 @@
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
 #include "minindexedpq.h"
+#include <queue>
 #include <Rmath.h>
+#include <progress.hpp>
 
 using namespace Rcpp;
 using namespace std;
@@ -35,14 +37,21 @@ protected:
 	Progress progress;
 
 	list< long long > regionQuery(long long& p) const {
-		list<long long> ret = list<long long>();
-		ret.push_back(p);
+		set<long long> trackSet = set<long long>();
+		trackSet.insert(p);
 		bool exceeded = false;
 		for (auto it = edges -> begin_row(p); it != edges -> end_row(p); it++) {
-			if (*it < eps) ret.push_back(it.col());
+			if (*it < eps) trackSet.insert(it.col());
 			else exceeded = true;
 		}
-		// If exceeded is false, then the minNeighborhood is bigger than we have.
+		if (! exceeded) {
+			for (auto it = edges -> begin_col(p); it != edges -> end_col(p); it++) {
+				if (*it < eps) trackSet.insert(it.row());
+				else exceeded = true;
+			}
+		}
+		if (! exceeded) Rf_warning("eps not exceeded. Cannot be certain that the full e-neighborhood has been found. Consider reducing eps or providing more neighbors.");
+		list<long long> ret = list<long long>(trackSet.begin(), trackSet.end());
 		return ret;
 	}
 
@@ -124,7 +133,6 @@ protected:
 	void update(NNlist& pNeighbors,
              PairingHeap<long long, long double>& seeds,
              long long& p) {
-
 		while(!pNeighbors.empty()) {
 			iddist o = pNeighbors.back();
 			pNeighbors.pop_back();
@@ -136,16 +144,12 @@ protected:
 			if(reachdist[o.first] == INFINITY) {
 				reachdist[o.first] = newReachabilityDistance;
 				seeds.insert(o.first, newReachabilityDistance);
-			} else  if(newReachabilityDistance < reachdist[o.first]) {
-				reachdist[o.first] = newReachabilityDistance;
-				seeds.decreaseIf(o.first, newReachabilityDistance);
-			}
+			} else
+				if (seeds.decreaseIf(o.first, newReachabilityDistance))  reachdist[o.first] = newReachabilityDistance;
 		}
 	}
 
-
 public:
-
   OPTICS( arma::sp_mat& edges,
           const arma::imat& neighbors,
           double eps,
@@ -157,30 +161,27 @@ public:
 		if (neighbors.n_rows < minPts) stop("Insufficient neighbors.");
     orderedPoints.reserve(N);
   	for (long long n = 0; n != N; n++) {
-  		long long nthNeighbor = neighbors(minPts - 1, n);
-  		coredist[n] = (edges(n, nthNeighbor) < eps) ? edges(n, nthNeighbor) : INFINITY;
+  		double nthDistance = edges(n, neighbors(minPts - 1, n));
+  		coredist[n] = (nthDistance < eps) ? nthDistance : INFINITY;
   	}
   }
 
   List run() {
+  	PairingHeap<long long, long double> seeds = PairingHeap<long long, long double>(N);
     for (long long p = 0; p < N; p++) if (progress.increment() && ! visited[p]) {
-
       NNlist pNeighbors = getNeighbors(p);
     	visited[p] = true;
 			orderedPoints.push_back(p);
 
       if (coredist[p] == INFINITY) continue; // core-dist is undefined
-			PairingHeap<long long, long double> seeds = PairingHeap<long long, long double>(N);
 			update(pNeighbors, seeds, p);
-
       while (!seeds.isEmpty()) {
       	long long q = seeds.pop();
       	NNlist qNeighbors = getNeighbors(q);
       	visited[q] = true;
       	orderedPoints.push_back(q);
-      	if (coredist[q] != INFINITY) {
-      		update(qNeighbors, seeds, q);
-      	}
+      	if (coredist[q] == INFINITY) continue;
+      	update(qNeighbors, seeds, q);
       }
     }
     List ret;

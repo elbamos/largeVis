@@ -1,8 +1,15 @@
 // [[Rcpp::plugins(openmp)]]
 // [[Rcpp::plugins(cpp11)]]
-#include "largeVis.h"
+#include <RcppArmadillo.h>
 #include "minindexedpq.h"
+#include <queue>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+#include "progress.hpp"
 
+using namespace arma;
+using namespace std;
 //#define DEBUG
 //#define DEBUG2
 
@@ -11,10 +18,10 @@ class UF {
 private:
   VIDX reservesize; // used during initialization
 	// Used after buildHierarchy to manage condensation, stability extraction, and cluster identification
-  arma::Col< VIDX > parents;
-  arma::vec lambda_deaths;
-  arma::vec stabilities;
-  arma::Col< VIDX > sizes;
+  Col< VIDX > parents;
+  vec lambda_deaths;
+  vec stabilities;
+  Col< VIDX > sizes;
   unique_ptr< set< VIDX >[] > fallenPointses;
   unique_ptr< set< VIDX >[] > goodChildrens;
   unique_ptr< bool[] > selected;
@@ -40,7 +47,7 @@ protected:
   arma::vec coreDistances;
 
   VIDX starterIndex = 0;
-  PQ<VIDX, double>* Q;
+  PairingHeap<VIDX, double>* Q;
   unique_ptr< VIDX[] >   	minimum_spanning_tree;
 
   VIDX counter = 0;

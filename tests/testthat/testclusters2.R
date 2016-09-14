@@ -3,22 +3,44 @@ context("dbscan")
 set.seed(1974)
 data(iris)
 dat <- as.matrix(iris[, 1:4])
-dat <- scale(dat)
 dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
-K <- 20
+K <- 149
 neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat,
 												 neighbors = neighbors,
 												 verbose = FALSE)
 
 test_that("dbscan doesn't crash on iris", {
-	expect_silent(dbscan(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, verbose = FALSE))
+	expect_silent(dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE))
 })
 
+test_that("dbscan matchesdbscan", {
+	load(system.file(package = "largeVis", "extdata/irisdbscan.Rda"))
+	dbclusters <- dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
+	print(str(dbclusters))
+	print(str(irisclustering))
+	expect_equal(dbclusters, irisclustering)
+})
 
 context("optics")
+
+test_that("optics doesn't crash on iris", {
+  expect_silent(optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, verbose = FALSE))
+})
+
+test_that("optics matches optics", {
+	load(system.file(package = "largeVis", "extdata/irisoptics.Rda"))
+	opclusters <- optics(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
+	print(str(opclusters))
+	print(str(irisoptics))
+	expect_equal(opclusters$order, irisoptics$order)
+	expect_equal(opclusters$reachdist, irisoptics$reachdist)
+	expect_equal(opclusters$coredist, irisoptics$coredist)
+})
+
+context("LOF")
 
 set.seed(1974)
 data(iris)
@@ -27,18 +49,11 @@ dat <- scale(dat)
 dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
-K <- 20
+K <- 80
 neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat,
-                          neighbors = neighbors,
-                          verbose = FALSE)
-
-test_that("optics doesn't crash on iris", {
-  ted <- optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, verbose = FALSE)
-})
-
-
-context("LOF")
+												 neighbors = neighbors,
+												 verbose = FALSE)
 
 test_that(paste("LOF is consistent", 20), {
 	load(system.file("extdata/truelof20.Rda", package = "largeVis"))
@@ -75,7 +90,7 @@ neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALS
 edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
 
 test_that("hdbscan doesn't crash with neighbors", {
-	expect_silent(hdbscan(edges, minPts = 10, neighbors = neighbors, K = 3, threads = 2, verbose = FALSE))
+	tst <- hdbscan(edges, minPts = 10, neighbors = neighbors, K = 3, threads = 2, verbose = FALSE)
 })
 
 test_that("hdbscan is correct", {

@@ -3,6 +3,7 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
+#include <vector>
 
 //#define DEBUG
 

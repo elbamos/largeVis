@@ -1,6 +1,11 @@
 #ifndef _LARGEVISNEIGHBORS
 #define _LARGEVISNEIGHBORS
 #include "largeVis.h"
+#include <set>
+#include <vector>
+#include <queue>
+#include "progress.hpp"
+
 
 using namespace Rcpp;
 using namespace std;

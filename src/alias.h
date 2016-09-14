@@ -1,4 +1,10 @@
 #include "largeVis.h"
+#include <memory>
+#include <random>
+#include <queue>
+#include <Rcpp.h>
+
+using namespace std;
 
 template <class T, // number of aliases
           class C, // coordinate type, used for probabilities
@@ -47,7 +53,7 @@ public:
 			probs[small.front()] = 1;
 			small.pop();
 		}
-		if (accu > 1e-5) warning("Numerical instability in alias table " + to_string(accu));
+		if (accu > 1e-5) Rcpp::warning("Numerical instability in alias table " + to_string(accu));
 	};
 
 	T search(C random, C random2) const {

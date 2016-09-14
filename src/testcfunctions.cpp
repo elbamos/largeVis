@@ -1,6 +1,7 @@
 #include <testthat.h>
 #include "largeVis.h"
 #include "alias.h"
+#include "gradients.h"
 
 // Initialize a unit test context. This is similar to how you
 // might begin an R test file with 'context()', expect the

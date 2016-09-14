@@ -3,6 +3,8 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
+#include "distance.h"
+#include <progress.hpp>
 
 distancetype relDist(const arma::vec& i, const arma::vec& j) {
   const dimidxtype D = i.n_elem;
