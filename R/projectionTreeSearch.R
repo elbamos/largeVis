@@ -47,15 +47,15 @@ randomProjectionTreeSearch.matrix <- function(x,
 
   if (distance_method == "Cosine") x <- x / rowSums(x)
 
-  knns <- searchTrees(threshold = tree_threshold,
-                      n_trees = n_trees,
-                      K = K,
-                      maxIter = max_iter,
+  knns <- searchTrees(threshold = as.integer(tree_threshold),
+                      n_trees = as.integer(n_trees),
+                      K = as.integer(K),
+                      maxIter = as.integer(max_iter),
                       data = x,
                       distMethod = distance_method,
   										seed = seed,
-  										threads = threads,
-                      verbose = verbose)
+  										threads = as.integer(threads),
+                      verbose = as.logical(verbose))
 
   if (sum(colSums(knns != -1) == 0) > 0)
     stop ("After neighbor search, no candidates for some nodes.")
@@ -82,17 +82,17 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
                                               verbose = getOption("verbose", TRUE)) {
   if (verbose) cat("Searching for neighbors.\n")
 
-  knns <- searchTreesCSparse(threshold = tree_threshold,
-                      n_trees = n_trees,
-                      K = K,
-                      maxIter = max_iter,
+  knns <- searchTreesCSparse(threshold = as.integer(tree_threshold),
+                      n_trees = as.integer(n_trees),
+                      K = as.integer(K),
+                      maxIter = as.integer(max_iter),
                       i = x@i,
                       p = x@p,
                       x = x@x,
                       distMethod = distance_method,
   										seed = seed,
-  										threads = threads,
-                      verbose = verbose)
+  										threads = as.integer(threads),
+                      verbose = as.logical(verbose))
 
   if (sum(colSums(knns != -1) == 0) > 0)
     stop ("After neighbor search, no candidates for some nodes.")
@@ -121,17 +121,17 @@ randomProjectionTreeSearch.TsparseMatrix <- function(x,
                                                      verbose = getOption("verbose", TRUE)) {
   if (verbose) cat("Searching for neighbors.\n")
 
-  knns <- searchTreesTSparse(threshold = tree_threshold,
-                             n_trees = n_trees,
-                             K = K,
-                             maxIter = max_iter,
+  knns <- searchTreesTSparse(threshold = as.integer(tree_threshold),
+                             n_trees = as.integer(n_trees),
+                             K = as.integer(K),
+                             maxIter = as.integer(max_iter),
                              i = x@i,
                              j = x@j,
                              x = x@x,
-                             distMethod = distance_method,
+                             distMethod = as.integer(distance_method),
   													 seed = seed,
-  													 threads = threads,
-                             verbose = verbose)
+  													 threads = as.integer(threads),
+                             verbose = as.logical(verbose))
 
   if (sum(colSums(knns != -1) == 0) > 0)
     stop ("After neighbor search, no candidates for some nodes.")

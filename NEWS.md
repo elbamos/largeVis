@@ -1,3 +1,8 @@
+### largeVis 0.1.10
+* projectKNNs now has a `momentum` parameter.  This can drastically speed-up the SGD process, at the cost of additional memory.
+* projectKNNs now has a `useDegree` parameter. See the projectKNNs documentation for details.
+* OPTICS and DBSCAN are back, rewritten, and substantially improved.
+
 ### largeVis 0.1.9.1
 The OPTICS implementation has been temporarily removed. This reason is that the code was based on the code in the `dbscan` package, and the CRAN
 administrators objected to the inclusion of a separate copyright notice. OPTICS will be restored once the code is sufficiently re-written. 

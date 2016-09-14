@@ -38,6 +38,20 @@ test_that("wij doesn't crash", {
 
 context("project knns")
 
+test_that("project knns doesn't crash with momentum", {
+	data (iris)
+	set.seed(1974)
+	dat <- as.matrix(iris[, 1:4])
+	dat <- scale(dat)
+	dupes <- which(duplicated(dat))
+	dat <- dat[-dupes, ]
+	dat <- t(dat)
+	neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
+	edges <- buildEdgeMatrix(dat, neighbors)
+	wij <- buildWijMatrix(edges, threads = 2)
+	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, momentum = 0.5, threads = 2))
+})
+
 test_that("project knns doesn't crash", {
 	data (iris)
 	set.seed(1974)
@@ -49,5 +63,7 @@ test_that("project knns doesn't crash", {
 	neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
 	edges <- buildEdgeMatrix(dat, neighbors)
 	wij <- buildWijMatrix(edges, threads = 2)
-	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, threads = 2))
+	coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, threads = 2)
 })
+
+

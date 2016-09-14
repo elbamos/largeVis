@@ -6,6 +6,36 @@
 
 using namespace Rcpp;
 
+// optics_cpp
+List optics_cpp(arma::sp_mat& edges, arma::imat& neighbors, double eps, int minPts, bool verbose);
+RcppExport SEXP largeVis_optics_cpp(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< arma::imat& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(optics_cpp(edges, neighbors, eps, minPts, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dbscan_cpp
+IntegerVector dbscan_cpp(arma::sp_mat& edges, arma::imat& neighbors, double eps, int minPts, bool verbose);
+RcppExport SEXP largeVis_dbscan_cpp(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< arma::imat& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(dbscan_cpp(edges, neighbors, eps, minPts, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 // searchTrees
 arma::imat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::mat& data, const std::string& distMethod, Rcpp::Nullable< Rcpp::NumericVector> seed, Rcpp::Nullable<Rcpp::NumericVector> threads, bool verbose);
 RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
@@ -129,8 +159,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // sgd
-arma::mat sgd(arma::mat coords, arma::ivec& targets_i, arma::ivec& sources_j, arma::ivec& ps, arma::vec& weights, const double gamma, const double rho, const long long n_samples, const int M, const double alpha, const Rcpp::Nullable<Rcpp::NumericVector> seed, Rcpp::Nullable<Rcpp::NumericVector> threads, const bool verbose);
-RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP targets_iSEXP, SEXP sources_jSEXP, SEXP psSEXP, SEXP weightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP n_samplesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+arma::mat sgd(arma::mat coords, arma::ivec& targets_i, arma::ivec& sources_j, arma::ivec& ps, arma::vec& weights, const double gamma, const double rho, const long long n_samples, const int M, const double alpha, const Rcpp::Nullable<Rcpp::NumericVector> momentum, const Rcpp::Nullable<Rcpp::NumericVector> seed, const Rcpp::Nullable<Rcpp::NumericVector> threads, const bool verbose);
+RcppExport SEXP largeVis_sgd(SEXP coordsSEXP, SEXP targets_iSEXP, SEXP sources_jSEXP, SEXP psSEXP, SEXP weightsSEXP, SEXP gammaSEXP, SEXP rhoSEXP, SEXP n_samplesSEXP, SEXP MSEXP, SEXP alphaSEXP, SEXP momentumSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -144,10 +174,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const long long >::type n_samples(n_samplesSEXP);
     Rcpp::traits::input_parameter< const int >::type M(MSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericVector> >::type momentum(momentumSEXP);
     Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericVector> >::type seed(seedSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericVector> >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(sgd(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(sgd(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, seed, threads, verbose));
     return rcpp_result_gen;
 END_RCPP
 }

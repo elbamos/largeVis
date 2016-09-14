@@ -1,4 +1,4 @@
-context("LOF")
+context("dbscan")
 
 set.seed(1974)
 data(iris)
@@ -13,6 +13,33 @@ edges <- buildEdgeMatrix(data = dat,
 												 neighbors = neighbors,
 												 verbose = FALSE)
 
+test_that("dbscan doesn't crash on iris", {
+	expect_silent(dbscan(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, verbose = FALSE))
+})
+
+
+context("optics")
+
+set.seed(1974)
+data(iris)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+K <- 20
+neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+edges <- buildEdgeMatrix(data = dat,
+                          neighbors = neighbors,
+                          verbose = FALSE)
+
+test_that("optics doesn't crash on iris", {
+  ted <- optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, verbose = FALSE)
+})
+
+
+context("LOF")
+
 test_that(paste("LOF is consistent", 20), {
 	load(system.file("extdata/truelof20.Rda", package = "largeVis"))
 	ourlof <- largeVis:::lof(edges)
@@ -24,7 +51,7 @@ test_that("LOF is consistent 10", {
 													 neighbors = neighbors[1:10,],
 													 verbose = FALSE)
 	load(system.file("extdata/truelof10.Rda", package = "largeVis"))
-	ourlof <- largeVis:::lof(edges)
+	ourlof <- lof(edges)
 	expect_lt(sum(truelof10 - ourlof)^2 / ncol(dat), 0.4)
 })
 
