@@ -4,7 +4,7 @@ Title: High-Quality Visualizations of Large, High-Dimensional Datasets
 Version: 0.1.10
 Author: Amos B. Elberg
 Maintainer: Amos Elberg <amos.elberg@gmail.com>
-Description: Implements the largeVis algorithm (see Tang, et al. (2016)  <https://arxiv.org/abs/1602.00370>) for visualizing very large high-dimensional datasets. Also very fast search for approximate nearest neighbors; outlier detection; and optimized implementations of the HDBSCAN and OPTICS clustering algorithms. And plotting functions for visualizing the above.
+Description: Implements the largeVis algorithm (see Tang, et al. (2016)  <https://arxiv.org/abs/1602.00370>) for visualizing very large high-dimensional datasets; very fast search for approximate nearest neighbors; outlier detection; optimized implementation of the HDBSCAN clustering algorithm; plotting functions for visualizing the above.
 License: GPL-3
 LazyData: TRUE
 RoxygenNote: 5.0.1
