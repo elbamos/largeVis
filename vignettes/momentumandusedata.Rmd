@@ -16,6 +16,7 @@ require(RColorBrewer,
         quietly = TRUE)
 require(wesanderson, 
         quietly = TRUE)
+library(magrittr)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>",
                       cache=FALSE)
@@ -61,19 +62,21 @@ During the stochastic gradient descent phase of the algorithm, every time an edg
 if (rebuild) {
 	load("../../largeVisData/mnist/test.RData")
 	load("../../largeVisData/mnist/train.RData")
-	mnist <- t(rbind(trainData, testData))
-	preVis <- largeVis(mnist, K = 100, sgd_batches = 1, seed = 1974)
+	mnist <- t(rbind(trainData, testData)) - 0.5
+	preVis <- largeVis(mnist, K = 100, tree_threshold = 200, n_trees = 100, sgd_batches = 100, verbose = TRUE)
 	set.seed(1974)
 	labels <- rbind(trainLabels, testLabels)
+	labels <- apply(labels, 1, function(x) which(x == 1))
+	labels <- labels - 1
 }
 ```
 
-```{r usedegree}
+```{r usedegree,eval=F}
 if (rebuild) {
-	noDegree <- projectKNNs(preVis$wij)
-	degree <- projectKNNs(preVis$wij, useDegree = TRUE)
+	noDegree <- projectKNNs(preVis$wij, seed = 1974, verbose = TRUE)
+	degree <- projectKNNs(preVis$wij, useDegree = TRUE, verbose = TRUE)
 	degreeCoords <- data.frame(rbind(t(noDegree), t(degree)), 
-														 label = c(labels, labels), 
+														 label = factor(c(labels, labels)), 
 														 degree = factor(rep(c("weights", "degree"), 
 														 										each = ncol(degree))))
 	save(degreeCoords, file = paste(sep = "/", 
@@ -108,11 +111,11 @@ The reason to use momentum is that it allows training to complete much more quic
 if (rebuild) {
 	starterCoords <- matrix(runif(n = 2 * ncol(mnist)) - 0.5, ncol = 2)
 	timex <- system.time(firstCoords <- data.frame(t(
-	projectKNNs(preVis$wij, coords = t(starterCoords))), lambda = 0, batches = 1, label = labels))
-	timex <- data.frame(elapsed = timex$elapsed, lambda = 0, batches = 1)
+	projectKNNs(preVis$wij, coords = t(starterCoords), verbose = TRUE)), lambda = 0, batches = 1, label = labels))
+	timex <- data.frame(elapsed = timex["elapsed"], lambda = 0, batches = 1)
 	for (batches in c(0.1, 0.2, 0.4, 0.8)) {
-		newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, sgd_batches = batches, coords = t(starterCoords)))))
-		timex <<- rbind(timex, data.frame(elapsed = newtime$elapsed, lambda = 0, batches = batches))
+		newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, verbose = TRUE, sgd_batches = batches, coords = t(starterCoords)))))
+		timex <<- rbind(timex, data.frame(elapsed = newtime["elapsed"], lambda = 0, batches = batches))
 		newCoords$lambda <- 0
 		newCoords$batches <- batches
 		newCoords$label <- labels
@@ -120,8 +123,8 @@ if (rebuild) {
 	}
 	for (lambda in c(0.2, 0.5, 0.8)) {
 			for (batches in c(0.1, 0.2, 0.4, 0.8, 1)) {
-				newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, sgd_batches = batches, momentum = lambda, coords = t(starterCoords)))))
-				timex <<- rbind(timex, data.frame(elapsed = newtime$elapsed, lambda = lambda, batches = batches))
+				newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, verbose = TRUE, sgd_batches = batches, momentum = lambda, coords = t(starterCoords)))))
+				timex <<- rbind(timex, data.frame(elapsed = newtime["elapsed"], lambda = lambda, batches = batches))
 				newCoords$lambda <- lambda
 				newCoords$batches <- batches
 				newCoords$label <- labels
