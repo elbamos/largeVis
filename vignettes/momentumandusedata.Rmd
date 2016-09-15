@@ -1,0 +1,152 @@
+---
+title: "Momentum and useDegree"
+author: "Amos Elberg"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setupvignette,eval=T,echo=F,warning=F,error=F,message=F}
+require(ggplot2, 
+        quietly = TRUE)
+require(RColorBrewer, 
+        quietly = TRUE)
+require(wesanderson, 
+        quietly = TRUE)
+knitr::opts_chunk$set(collapse = TRUE, 
+                      comment = "#>",
+                      cache=FALSE)
+colors_discrete <- function(x) 
+  rep(wes_palette("Darjeeling", n = min(x, 5)), 2)[1:x]
+colors_divergent_discrete <- function(x) 
+  grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
+colors_continuous <-  function(x) wes_palette(name = "Zissou",
+                                              n = x, 
+                                              type = "continuous")
+
+nacol <- colors_discrete(4)[4]
+theme_set(
+  theme_bw() %+replace%
+  theme(
+    legend.key.size = unit(4, "mm"), 
+    legend.title = element_text(size = rel(0.8),
+                              face = "bold"),
+    legend.margin = unit(0, "cm"),
+    legend.position = "bottom",
+    legend.key.size = unit(0.5, "lines"),
+    legend.text=element_text(size = unit(8, "points")), 
+    axis.title.y = element_text(angle = 90),
+    axis.text = element_text(size = rel(0.7)),
+    plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 
+    axis.title = element_text(size = rel(0.8),
+                              face = "bold"),
+    title = element_text(size = rel(0.9))
+  ) 
+)
+rebuild <- TRUE
+
+require(largeVis,quietly = TRUE)
+```
+
+Version 0.1.10 of `largeVis` adds two new features that were not part of the original `LargeVis` paper:  Momentum training and altering the calculation of the negative weighted samples. 
+
+## Negative Sampling Method
+
+During the stochastic gradient descent phase of the algorithm, every time an edge is sampled, \code{M} nodes that do not have edges to the current point are sampled at the same time. In the original paper, the nodes are weighted according to their degree raised to the $\frac{3}{4}$ power. In the reference implementation, however, the nodes are weighted according to $P_n(j) \propto (\sum_{i \iff j \in N_i} w_{ij})^{0.75}$. Versions of `largeVis` prior to 0.1.8 used degree, and these results may be more aesthetically pleasing to some people. Version 0.1.10 therefore allows this to be set as a parameter. The default is to use edge weights, as the reference implementation. 
+
+```{r prepmnist}
+if (rebuild) {
+	load("../../largeVisData/mnist/test.RData")
+	load("../../largeVisData/mnist/train.RData")
+	mnist <- t(rbind(trainData, testData))
+	preVis <- largeVis(mnist, K = 100, sgd_batches = 1, seed = 1974)
+	set.seed(1974)
+	labels <- rbind(trainLabels, testLabels)
+}
+```
+
+```{r usedegree}
+if (rebuild) {
+	noDegree <- projectKNNs(preVis$wij)
+	degree <- projectKNNs(preVis$wij, useDegree = TRUE)
+	degreeCoords <- data.frame(rbind(t(noDegree), t(degree)), 
+														 label = c(labels, labels), 
+														 degree = factor(rep(c("weights", "degree"), 
+														 										each = ncol(degree))))
+	save(degreeCoords, file = paste(sep = "/", 
+																	system.file(package = "largeVis", "extdata"), 
+																	"degreeCoords.Rda"))
+}
+```
+
+```{r drawdegree}
+load(system.file(package = "largeVis", "extdata/degreeCoords.Rda"))
+degreeCoords %>%
+	ggplot(aes(x = X1, y = X2, color = label)) + 
+	geom_point(size = 0.05, alpha = 0.3) + 
+	facet_grid(. ~ degree) +
+	ggtitle("Effect of useDegree")
+```
+
+
+## Momentum Training
+
+Momentum training is a technique common in deep learning for accelerating stochastic gradient descent. In each iteration, the algorithm takes into account the gradient applied on the prior iteration, applying some measure of decay.  In other words, if a parameter moved in one direction on the prior iteration, and it will move in the same direction on this iteration, move it a little further than we otherwise would.  But if the direction changed, move it a little bit less back than we otherwise would. 
+
+Without momentum, each iteration updates the low dimensional embedding according to the equation $\theta_{t + 1} = \theta_t + \rho\frac{dO}{d\theta_t}$
+
+With momentum, it is:  $\theta_{t + 1} = \theta_t + \mu_t$ where $\mu_t = \rho\frac{dO}{d\theta_t} + \lambda\mu_{t - 1}$
+
+The momentum paramter, $\lambda$, controls the rate of decay in the role of each gradient update in future updates. 
+
+The reason to use momentum is that it allows training to complete much more quickly without a noticeable loss in quality. 
+
+```{r momentum}
+if (rebuild) {
+	starterCoords <- matrix(runif(n = 2 * ncol(mnist)) - 0.5, ncol = 2)
+	timex <- system.time(firstCoords <- data.frame(t(
+	projectKNNs(preVis$wij, coords = t(starterCoords))), lambda = 0, batches = 1, label = labels))
+	timex <- data.frame(elapsed = timex$elapsed, lambda = 0, batches = 1)
+	for (batches in c(0.1, 0.2, 0.4, 0.8)) {
+		newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, sgd_batches = batches, coords = t(starterCoords)))))
+		timex <<- rbind(timex, data.frame(elapsed = newtime$elapsed, lambda = 0, batches = batches))
+		newCoords$lambda <- 0
+		newCoords$batches <- batches
+		newCoords$label <- labels
+		firstCoords <<- rbind(firstCoords, newCoords)
+	}
+	for (lambda in c(0.2, 0.5, 0.8)) {
+			for (batches in c(0.1, 0.2, 0.4, 0.8, 1)) {
+				newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, sgd_batches = batches, momentum = lambda, coords = t(starterCoords)))))
+				timex <<- rbind(timex, data.frame(elapsed = newtime$elapsed, lambda = lambda, batches = batches))
+				newCoords$lambda <- lambda
+				newCoords$batches <- batches
+				newCoords$label <- labels
+				firstCoords <<- rbind(firstCoords, newCoords)
+			}
+	}
+	momentumCoords <- firstCoords
+	save(momentumCoords, file = paste(sep = "/", system.file(package = "largeVis", "extdata"), "momentumCoords.Rda"))
+	save(timex, file = paste(sep = "/", system.file(package = "largeVis", "extdata"), "momentumTimes.Rda"))
+}
+```
+
+```{r drawmomentum}
+load(system.file(package = "largeVis", "extdata/momentumCoords.Rda"))
+momentumCoords %>%
+	ggplot(aes(x = X1, y = X2, color = label)) + 
+	geom_point(size = 0.05, alpha = 0.3) + 
+	facet_grid(batches ~ lambda) +
+	ggtitle("Effect of Momentum and Reduced Training Batches")
+```
+
+```{r drawmomentumtimes}
+load(system.file(package = "largeVis", "extdata/momentumTimes.Rda"))
+momentumCoords %>%
+	ggplot(aes(x = batches, y = elapsed, color = lambda)) + 
+	geom_point(size = 0.5, alpha = 0.7) + 
+	ggtitle("Reduction in Training Time")
+```

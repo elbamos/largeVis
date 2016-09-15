@@ -1,7 +1,5 @@
 ### largeVis 0.1.10
-* projectKNNs now has a `momentum` parameter.  This can drastically speed-up the SGD process, at the cost of additional memory.
-* projectKNNs now has a `useDegree` parameter. See the projectKNNs documentation for details.
-* OPTICS and DBSCAN are back, rewritten, and substantially improved.
+* `projectKNNs` now has features for training with momentum, and controlling the method for weighting negative samples. In some case, it is possible to run `projectKNNs` with as little as 1/10 the normal number of sgd_batches, without loss of fidelity.  Both parameters are explained in detail in the new "Momentum and useDegree" vignette.
 
 ### largeVis 0.1.9.1
 The OPTICS implementation has been temporarily removed. This reason is that the code was based on the code in the `dbscan` package, and the CRAN
