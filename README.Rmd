@@ -10,52 +10,40 @@ poses <- regexpr("(?<=\\*\\s)(\\S+)(?=\\s)", perl = TRUE, branch)
 branch <- substr(branch, attr(poses, "capture.start"), attr(poses, "capture.start") + attr(poses, "capture.length"))
 branch <- gsub("^\\s+|\\s+$", "", branch)
 ```
-[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=`r branch`)](https://travis-ci.org/elbamos/largeVis)
-[![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/`r branch`.svg)](https://codecov.io/gh/elbamos/largeVis/branch/`r branch`) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=`r branch`&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis?branch=`r branch`)
+[![Travis-CI Build Status](https://travis-ci.org/elbamos/largeVis.svg?branch=master)](https://travis-ci.org/elbamos/largeVis)
+[![Coverage Status](https://img.shields.io/codecov/c/github/elbamos/largeVis/master.svg)](https://codecov.io/gh/elbamos/largeVis/branch/master) [![https://gitter.im/elbamos/largeVis](https://badges.gitter.im/elbamos/largeVis.svg)](https://gitter.im/elbamos/largeVis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/elbamos/largeVis?branch=master&svg=true)](https://ci.appveyor.com/project/elbamos/largeVis?branch=master)
 
-This is an implementation of the `largeVis` algorithm described in (https://arxiv.org/abs/1602.00370).  It also incorporates a very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`, and for visualizing a map of the manifold like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
+This is an implementation of the `largeVis` algorithm described in (https://arxiv.org/abs/1602.00370).  It also incorporates:
+
+*	A very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`.
+* An efficient implementation of the `HDBSCAN` algorithm for unsupervised clustering, which leverages the nearest neighbor data genereated by `largeVis`. 
+* Functions for visualizing manifolds like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
 
 #### News Highlights
-* Pending submission to CRAN!
-* As of version 0.1.10, `projectKNNs` now has a `momentum` parameter. By setting this parameter between `0` and `1` and reducing the number of `sgd_batches`, excellent results can be obtained in a fraction of the training time. In my experiments, setting momenum to `0.8`, and setting `sgd_batches` to 1/10th of the default, usually works well. To facilitate this, if `sgd_batches` is
-between `0` and `1`, this is used as a multiplier to adjust the number of batches from the default. 
-* The big news in 0.1.8 and 0.1.9 was the addition of the OPTICS and especially the HDBSCAN density-based clustering algorithms. These are highly optimized implementations that leverage the nearest-neighbor data produced by `LargeVis`. 
-* The implementation has been tested (successfully) with datasets of up to 2.5 million rows, and with sparse datasets of up to 10,000 features. 
+* Version 0.1.9.1 has been accepted by CRAN. Much grattitude to Uwe Ligges and Kurt Hornik for their assistance, advice, and patience. 
+* I am working on restoring the OPTICS and DBSCAN implementations that were removed from version 0.1.9 for CRAN submission. If you would like to experiment with these, check branch `features/opticsanddbscan`. 
+* Anyone watching closely will have noticed that the git branches had become something of a mess.  I have moved to git flow in an attempt to restore some sort of sanity.  
 
-#### Notes
-* For reasons related to CRAN submission, 64-bit Armadillo objects are now turned-off by default. To enable, consider adding to `~.R/Makevars`:
+#### Building Notes
+
+* The CRAN binaries are likely to have been compiled with 32-bit ARMA objects, and without OpenMP on OS X. 
+* To get 64-bit ARMA objects, add to `~.R/Makevars`:
 ```
 R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
 ```
-* On Mac OS X, the Apple compiler does not support OpenMP.  Compiling `largeVis` with OpenMP support requires some fiddling.  Here are some instructions that may work for you:
+and recompile from source. (`devtools::install_github("elbamos/largeVis")` will work). 
+
+* Getting OpenMP support on OS X is a bit tricky. These instructions assume that your OS X installation is already setup to compile with xcode. Also, these directions are not precise, and you may need to fiddle. 
     - Use `homebrew` to install `llvm` version 3.8 or greater.
-    - Link it to `/usr/local` with `brew link --force llvm`. 
-    - Add the following line to `~.R/Makevars`:
+    - `brew link --force llvm`.   Note that this will make `clang` version 3.8 your default system compiler.  This will probably improve your development experience overall, but might conceivably cause issues with xcode. 
+    - Add the following to `~.R/Makevars`:
     ```
     SHLIB_OPENMP_CFLAGS = -fopenmp
     ```
-    - Add the following to `~/.Renviron`:
+    - If you use Rstudio (which you should), and are running OS X Yosemite or later, add the following to `~/.Renviron`:
     ```
     PATH=/usr/local/bin:${PATH}
     ```
-
-## Examples
-```{r echo=F}
-vdatapath <- "../largeVisData/vignettedata/"
-```
-```{r child='../Examples.Rmd',}
-```
-
-## Benchmarks
-
-```{r child='vignettes/benchmarks.Rmd',}
-```
-
-## Vignette
-
-```{r echo=F}
-vdatapath <- "../../largeVisData/vignettedata/"
-```
-```{r child='vignettes/largeVis.Rmd',}
-```
+		This is necessary so that R will see the `llvm` compiler from within Rstudio. 
+	- Recompile from source, as above.  
