@@ -1,7 +1,6 @@
 ### largeVis 0.1.10
-* projectKNNs now has a `momentum` parameter.  This can drastically speed-up the SGD process, at the cost of additional memory.
-* projectKNNs now has a `useDegree` parameter. See the projectKNNs documentation for details.
-* OPTICS and DBSCAN are back, rewritten, and substantially improved.
+* New utility function `sgdBatches` helps estimate training time for datasets. 
+* Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes. 
 
 ### largeVis 0.1.9.1
 The OPTICS implementation has been temporarily removed. This reason is that the code was based on the code in the `dbscan` package, and the CRAN
