@@ -2,9 +2,9 @@
 % Please edit documentation in R/dbscan.R
 \name{optics}
 \alias{optics}
-\title{OPTICS}
+\title{optics}
 \usage{
-optics(edges, neighbors, eps = Inf, minPts = nrow(data) + 1, eps_cl, xi,
+optics(edges, neighbors, eps = Inf, minPts = nrow(neighbors), eps_cl, xi,
   verbose = getOption("verbose", TRUE))
 }
 \arguments{
@@ -39,5 +39,8 @@ correctness.
 This is not the original OPTICS algorithm. In particular, the neighbor-search strategy in
 OPTICS is not used, in favor of using the pre-calculated neighbor matrix produced incidentally by
 `largeVis`.
+}
+\references{
+Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jörg Sander (1999). OPTICS: Ordering Points To Identify the Clustering Structure. ACM SIGMOD international conference on Management of data. ACM Press. pp. 49–60.
 }
 

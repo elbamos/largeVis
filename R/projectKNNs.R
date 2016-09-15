@@ -50,7 +50,16 @@
 #' @return A dense [N,D] matrix of the coordinates projecting the w_ij matrix into the lower-dimensional space.
 #' @export
 #' @importFrom stats runif
-#'
+#' @examples
+#' data(CO2)
+#' CO2$Plant <- as.integer(CO2$Plant)
+#' CO2$Type <- as.integer(CO2$Type)
+#' CO2$Treatment <- as.integer(CO2$Treatment)
+#' co <- scale(as.matrix(CO2))
+#' # Very small datasets often produce a warning regarding the alias table.  This is safely ignored.
+#' suppressWarnings(vis <- largeVis(t(co), K = 20, sdg_batches = 1))
+#' suppressWarnings(coords <- projectKNNs(vis$wij))
+#' plot(t(coords))
 projectKNNs <- function(wij, # symmetric sparse matrix
                         dim = 2, # dimension of the projection space
                         sgd_batches = NULL,
@@ -82,16 +91,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   	sgd_batches <- NULL
   } else multiplier <- 1
 
-  if (is.null(sgd_batches)) {
-    if (N < 10000) {
-      sgd_batches <- 20000 * length(wij@x)
-    } else if (N < 1000000) {
-      sgd_batches <- (N - 10000) * 9000 / (1000000 - 10000) + 1000
-      sgd_batches <- sgd_batches * 1000000
-    } else {
-      sgd_batches <- 10000 * N
-    }
-  }
+  if (is.null(sgd_batches)) sgd_batches <- sgdBatches(N, length(wij@x / 2))
   sgd_batches <- sgd_batches * multiplier
 
   #################################################
@@ -112,4 +112,29 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 verbose = as.logical(verbose))
 
   return(coords)
+}
+
+#' sgdBatches
+#'
+#' Calculate the default number of batches for a given number of vertices and edges.
+#'
+#' The formula used is the one used by the \code{LargeVis} reference implementation.  This is substantially less than the recommendation \eqn{E * 10000} in the original paper.
+#'
+#' @param N Number of vertices.
+#' @param E Number of edges.
+#'
+#' @return The recommended number of sgd batches.
+#' @export
+#'
+#' @examples
+#' # Observe that increasing K has no effect on processing time
+#' N <- 70000 # MNIST
+#' K <- 10:250
+#' plot(K, sgdBatches(rep(N, length(K)), N * K / 2))
+#'
+#' # Observe that processing time scales linarly with N
+#' N <- c(seq(from = 1, to = 10000, by = 100), seq(from = 10000, to = 10000000, by = 1000))
+#' plot(N, sgdBatches(N))
+sgdBatches <- function(N, E = 150 * N / 2) {
+	ifelse(N < 10000, 2000 * E, ifelse(N < 1000000, 1000000 * (9000 * (N - 10000) / (1000000 - 10000) + 1000), N * 10000))
 }
