@@ -1,0 +1,29 @@
+---
+title: "Clustering Features in largeVis"
+author: "Amos Elberg"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+bibliography: largevisvignettes.bib
+vignette: >
+  %\VignetteIndexEntry{lvisclusters}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+One component of the `LargeVis` algorithm and `largeVis` package, is extremely efficient estimation of approximate nearest neighbors. The `largeVis` includes implementations of three density-based clustering algorithms, `DBSCAN`, `OPTICS`, and `HDBSCAN`, that leverage the aNN data to estimate clusterings quickly. 
+
+## Overview of the Algorithms
+
+All three algorithms attempt to cluster points by linking a point to its nearest neighbors, using modified concepts of distance.  The `core distance` of a point, defined as the distance from a point to its Kth nearest neighbor, is an (inverse) measure of the density of space around a point.  (In general; there are differences in the definition of `core distance` and `reachability distance` among the algorithms.)  The `reachability distance` between two points is the greater of the distance between them and `core distances`.  When the neighbors of a point, $p$, are identified to link it with its nearest neighbors, no point $q$ can be closer to $p$ than $p$'s `core distance`. 
+
+`DBSCAN` [@Ester96adensity-based] attempts to achieve a flat clustering using a consistent density threshold, $\epsilon$.  Points with more than `minPts` neighbors in their $\epsilon$-neighborhoods are `core points`.  Where the $\epsilon$ neighborhoods of corepoints overlap, the neighborhoods are merged into a single cluster. `DBSCAN` thus takes two hyper-parameters, $\epsilon$ and `minPts`. 
+
+The objects returned by the `largeVis` `DBSCAN` implementation are compatible with the `dbscan` objects producted by package `dbscan`. [@hahsler]
+
+`OPTICS` [@Ankerst:1999:OOP:304181.304187] produces an ordering, also based on $\epsilon$ and `minPts` that is readily transformable into a clustering. Beginning with a seed point, `OPTICS` finds the point with the lowest reachability distance (up to the cutoff, $\epsilon$) to any point already in the graph, and adds it. The result is an ordering of points by `reachability distance`; or, by descending density. When there are no points with a `reachability distance` to the graph less than $\epsilon$, `OPTICS` begins again with a new seed point.  The result is a `reachability graph`, as shown below [ADD].
+
+The `optics` objects produced by `largeVis` are compatible with the ones produced by the `dbscan` package, which includes plotting functions and functions for extracting flat clusterings from `OPTICS` results in various ways.  
+
+`HDBSCAN` [@DBLP:journals/corr/RahmanLST0D16] aims to make the `DBBSCAN` and `OPTICS` approach flexible for graphs with different densities in different regions, by building a hierarchical density-bsaed clustering from which flat clusters are extracted.  `HDBSCAN` does not need the $\epsilon$ hypterparameter, which can be difficult to set.  
+
+The `largeVis` implementation of `HDBSCAN` produces flath and hierarchical clusterings simultaneously.  The hiearchical clusterings are compatible with `hclust` and other R hierarchical clustering packages and tools by means of an `as.dendrogram.hdbscan` function, which converts them to standard R dendrograms.  The package also includes a function for visualizing the clustering.  
