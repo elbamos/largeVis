@@ -16,12 +16,19 @@ test_that("dbscan doesn't crash on iris", {
 	expect_silent(dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE))
 })
 
-test_that("dbscan matchesdbscan", {
+test_that("dbscan matches iris", {
 	load(system.file(package = "largeVis", "extdata/irisdbscan.Rda"))
 	dbclusters <- dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
 	print(str(dbclusters))
 	print(str(irisclustering))
 	expect_equal(dbclusters, irisclustering)
+})
+
+test_that("dbscan matches dbscan when the neighborhoods are complete", {
+	load(system.file(package = "largeVis", "extdata/jaindata.Rda"))
+	jainclusters <- dbscan(edges = jaindata$edges, jaindata$neighbors = neighbors, eps = 2, minPts = 5, verbose = FALSE)
+	print(str(jainclusters))
+	expect_equal(jainclusters$cluster, jaindata$dbclusters)
 })
 
 context("optics")
@@ -38,6 +45,25 @@ test_that("optics matches optics", {
 	expect_equal(opclusters$order, irisoptics$order)
 	expect_equal(opclusters$reachdist, irisoptics$reachdist)
 	expect_equal(opclusters$coredist, irisoptics$coredist)
+})
+
+test_that("optics matches optics", {
+	load(system.file(package = "largeVis", "extdata/irisoptics.Rda"))
+	opclusters <- optics(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
+	print(str(opclusters))
+	print(str(irisoptics))
+	expect_equal(opclusters$order, irisoptics$order)
+	expect_equal(opclusters$reachdist, irisoptics$reachdist)
+	expect_equal(opclusters$coredist, irisoptics$coredist)
+})
+
+test_that("optics matches optics when the neighborhoods are complete", {
+	load(system.file(package = "largeVis", "extdata/jaindata.Rda"))
+	jainclusters <- optics(edges = jaindata$edges, jaindata$neighbors = neighbors, eps = 4, minPts = 5, verbose = FALSE)
+	print(str(jainclusters))
+	expect_equal(jainclusters$coredist, jaindata$optics$coredist)
+	expect_equal(jainclusters$order, jaindata$optics$order)
+	expect_equal(jainclusters$reachdist, jaindata$optics$reachdist)
 })
 
 context("LOF")
