@@ -19,7 +19,8 @@ require(wesanderson,
 library(magrittr)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>",
-                      cache=FALSE)
+                      cache=FALSE, 
+											echo=FALSE)
 colors_discrete <- function(x) 
   rep(wes_palette("Darjeeling", n = min(x, 5)), 2)[1:x]
 colors_divergent_discrete <- function(x) 
@@ -111,20 +112,21 @@ The reason to use momentum is that it allows training to complete much more quic
 if (rebuild) {
 	starterCoords <- matrix(runif(n = 2 * ncol(mnist)) - 0.5, ncol = 2)
 	timex <- system.time(firstCoords <- data.frame(t(
-	projectKNNs(preVis$wij, coords = t(starterCoords), verbose = TRUE)), lambda = 0, batches = 1, label = labels))
-	timex <- data.frame(elapsed = timex["elapsed"], lambda = 0, batches = 1)
-	for (batches in c(0.1, 0.2, 0.4, 0.8)) {
+            projectKNNs(preVis$wij, coords = t(starterCoords), verbose = TRUE)), lambda = 0, batches = 1, label = labels))
+	timex <- data.frame(elapsed = timex["elapsed"], batches = 1)
+	for (batches in c(0.1, 0.3, 0.8)) {
 		newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, verbose = TRUE, sgd_batches = batches, coords = t(starterCoords)))))
-		timex <<- rbind(timex, data.frame(elapsed = newtime["elapsed"], lambda = 0, batches = batches))
+		print(str(newCoords))
+		timex <- rbind(timex, data.frame(elapsed = newtime["elapsed"], batches = batches))
 		newCoords$lambda <- 0
 		newCoords$batches <- batches
 		newCoords$label <- labels
 		firstCoords <<- rbind(firstCoords, newCoords)
 	}
-	for (lambda in c(0.2, 0.5, 0.8)) {
-			for (batches in c(0.1, 0.2, 0.4, 0.8, 1)) {
+	for (lambda in c(0.3, 0.6, 0.9)) {
+			for (batches in c(0.1, 0.3, 0.8)) {
 				newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, verbose = TRUE, sgd_batches = batches, momentum = lambda, coords = t(starterCoords)))))
-				timex <<- rbind(timex, data.frame(elapsed = newtime["elapsed"], lambda = lambda, batches = batches))
+				timex <<- rbind(timex, data.frame(elapsed = newtime["elapsed"], batches = batches))
 				newCoords$lambda <- lambda
 				newCoords$batches <- batches
 				newCoords$label <- labels
@@ -142,14 +144,16 @@ load(system.file(package = "largeVis", "extdata/momentumCoords.Rda"))
 momentumCoords %>%
 	ggplot(aes(x = X1, y = X2, color = label)) + 
 	geom_point(size = 0.05, alpha = 0.3) + 
-	facet_grid(batches ~ lambda) +
+	facet_grid(batches ~ lambda, scales = "free") +
 	ggtitle("Effect of Momentum and Reduced Training Batches")
 ```
 
 ```{r drawmomentumtimes}
 load(system.file(package = "largeVis", "extdata/momentumTimes.Rda"))
-momentumCoords %>%
-	ggplot(aes(x = batches, y = elapsed, color = lambda)) + 
-	geom_point(size = 0.5, alpha = 0.7) + 
+timex %>%
+	ggplot(aes(x = batches, y = elapsed / 60)) + 
+	geom_point(size = 0.5, alpha = 0.7) +
+	y_scale_continuous("Elapsed Time (minutes)") +
+	x_scale_continuous("n. Batches / Default") +
 	ggtitle("Reduction in Training Time")
 ```
