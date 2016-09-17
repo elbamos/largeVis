@@ -1,3 +1,7 @@
+### largeVis 0.1.10
+* Added `as.dendrogram.hdbscan` function to make hdbscan objects compatible with other R hierarchical clustering implementations. 
+
+
 ### largeVis 0.1.9.1
 The OPTICS implementation has been temporarily removed. This reason is that the code was based on the code in the `dbscan` package, and the CRAN
 administrators objected to the inclusion of a separate copyright notice. OPTICS will be restored once the code is sufficiently re-written. 

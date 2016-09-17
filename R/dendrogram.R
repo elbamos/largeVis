@@ -1,53 +1,58 @@
 #' @title as.dendrogram.hdbscan
-#' @description Convert hdbscan object to dendrogram
+#' @description Convert hdbscan object to dendrogram.
 #' @export
+#' @examples
+#' data(iris)
+#' neighbors <- randomProjectionTreeSearch(t(iris[,1:4]), K = 20)
+#' edges <- buildEdgeMatrix(t(iris[,1:4]), neighbors)
+#' hdbscanobj <- hdbscan(edges, minPts = 10, K = 5)
+#' plot(as.dendrogram(hdbscanobj))
 as.dendrogram.hdbscan <- function(x) {
-	leaves <- list()
-	for (i in 1:length(x$hierarchy$nodemembership)) {
-		cluster <- as.character(x$hierarchy$nodemembership[i])
-		if (!is.na(cluster)) {
-			newleaf <- list(i)
-			attr(newleaf, "members") <- 1
-			attr(newleaf, "leaf") <- TRUE
-			attr(newleaf, "height") <- x$hierarchy$lambda[i]
-			class(newleaf) <- "dendrogram"
-			if (cluster %in% names(leaves)) {
-				leaves[[cluster]][[length(leaves[[cluster]]) + 1]] <- newleaf
-			} else {
-				newcluster <- list()
-				newcluster[[1]] <- newleaf
-				leaves[[cluster]] <- newcluster
-			}
-		}
+	counts <- tabulate(x$hierarchy$nodemembership)
+	C <- length(counts)
+	counts <- counts + tabulate(x$hierarchy$parent, nbins = C)
+
+	leafs <- lapply(1:length(x$hierarchy$nodemembership), FUN = function(i) structure(as.list(i),
+			leaf = TRUE,
+			members = 1L,
+			label = i,
+			cluster = x$clusters[i],
+			probability = x$probabilities[i],
+			height = x$hierarchy$lambda[i],
+			class = "dendrogram"
+		))
+
+	clusters <- vector("list", C)
+	h <- function(z) attr(z, "height")
+	m <- function(z) attr(z, "members")
+	for (i in C:1) {
+		clusters[[i]] <- structure(c(leafs[which(x$hierarchy$nodemembership == i)],
+																 clusters[which(x$hierarchy$parent == i & (1:C != i))]),
+			members = sum(unlist(vapply(leafs[which(x$hierarchy$nodemembership == i)], FUN.VALUE = 0L, FUN = m))) +
+				        sum(unlist(vapply(clusters[which(x$hierarchy$parent == i & (1:C != i))], FUN.VALUE = 0L, FUN = m))),
+			leaf = FALSE,
+			height = 1.1 * max(unlist(vapply(leafs[which(x$hierarchy$nodemembership == i)], FUN.VALUE = 0, FUN = h)),
+												 unlist(vapply(clusters[which(x$hierarchy$parent == i & (1:C != i))], FUN.VALUE = 0, FUN = h))),
+			selected = x$hierarchy$selected[i],
+			cluster = i,
+			stability = x$hierarchy$stability[i],
+			label = paste("cluster", i, "stability",x$hierarchy$stability[i], ifelse(x$hierarchy$selected[i], "selected", "")),
+			class = "dendrogram"
+		)
+		clusters[(x$hierarchy$parent == i) & (1:C != i)] <- NULL
 	}
-	roots <- list()
-	for (i in 1:length(x$hierarchy$parent)) {
-		cluster <- as.character(i)
-		members <- 0
-		for (j in leaves[[cluster]]) {
-			members <- members + attr(j, "members")
-		}
-		if (! cluster %in% names(leaves)) leaves[[cluster]] <- list()
-		attr(leaves[[cluster]], "members") <- members
-		attr(leaves[[cluster]], "height") <- x$hierarchy$stability[i]
-		attr(leaves[[cluster]], "selected") <- x$hierarchy$selected[i]
-		attr(leaves[[cluster]], "leaf") <- FALSE
-		class(leaves[[cluster]]) <- "dendrogram"
-		print(paste(i, x$hierarchy$parent[i]))
-		if (x$hierarchy$parent[i] + 1 == i) roots[[length(roots) + 1]] <- leaves[[cluster]]
-		else {
-			parent <- as.character(x$hierarchy$parent[i] + 1)
-			leaves[[parent]][[length(leaves[[parent]]) + 1]] <- leaves[[cluster]]
-			leaves[[cluster]] <- NULL
-		}
+	clusters <- clusters[! sapply(clusters, is.null)]
+	if (length(clusters) == 1) clusters[[1]]
+	else {
+		structure(clusters,
+			members = sum(unlist(vapply(clusters, FUN.VALUE = 0L, FUN = m))),
+			leaf = FALSE,
+			height = 1.1 * max(unlist(vapply(clusters, FUN.VALUE = 0, FUN = h))),
+			selected = 0,
+			cluster = 0,
+			stability = Inf,
+			label = "root",
+			class = "dendrogram"
+		)
 	}
-	if (length(roots) > 1) {
-		class(roots) <- "dendrogram"
-		members <- 0
-		for (i in roots) members <- members + attr(i, "members")
-		attr(roots, "members") <- members
-		attr(roots, "height") <- 100
-		return(roots)
-	} else {
-		return(roots[[names(roots)[1]]])}
 }
