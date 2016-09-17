@@ -33,12 +33,12 @@ nacol <- colors_discrete(4)[4]
 theme_set(
   theme_bw() %+replace%
   theme(
-    legend.key.size = unit(4, "mm"), 
+#    legend.key.size = unit(4, "mm"), 
     legend.title = element_text(size = rel(0.8),
                               face = "bold"),
     legend.margin = unit(0, "cm"),
-    legend.position = "bottom",
-    legend.key.size = unit(0.5, "lines"),
+    legend.position = "right",
+    legend.key.size = unit(2, "lines"),
     legend.text=element_text(size = unit(8, "points")), 
     axis.title.y = element_text(angle = 90),
     axis.text = element_text(size = rel(0.7)),
@@ -48,7 +48,7 @@ theme_set(
     title = element_text(size = rel(0.9))
   ) 
 )
-rebuild <- TRUE
+rebuild <- FALSE
 
 require(largeVis,quietly = TRUE)
 ```
@@ -86,12 +86,14 @@ if (rebuild) {
 }
 ```
 
-```{r drawdegree}
+```{r drawdegree,fig.width=5,fig.height=4,fig.align='center'}
 load(system.file(package = "largeVis", "extdata/degreeCoords.Rda"))
 degreeCoords %>%
 	ggplot(aes(x = X1, y = X2, color = label)) + 
 	geom_point(size = 0.05, alpha = 0.3) + 
 	facet_grid(. ~ degree) +
+	scale_x_continuous("", labels = NULL, breaks = NULL) + 
+	scale_y_continuous("", labels = NULL, breaks = NULL) +
 	ggtitle("Effect of useDegree")
 ```
 
@@ -106,15 +108,15 @@ With momentum, it is:  $\theta_{t + 1} = \theta_t + \mu_t$ where $\mu_t = \rho\f
 
 The momentum paramter, $\lambda$, controls the rate of decay in the role of each gradient update in future updates. 
 
-The reason to use momentum is that it allows training to complete much more quickly without a noticeable loss in quality. 
+Adding momentum can make it possible to reduce the number of sgd batches, in some cases substantially, while maintaining the visual quality of the result. 
 
 ```{r momentum}
 if (rebuild) {
 	starterCoords <- matrix(runif(n = 2 * ncol(mnist)) - 0.5, ncol = 2)
 	timex <- system.time(firstCoords <- data.frame(t(
-            projectKNNs(preVis$wij, coords = t(starterCoords), verbose = TRUE)), lambda = 0, batches = 1, label = labels))
+            projectKNNs(preVis$wij, coords = t(starterCoords), sgd_batches = 0.1, verbose = TRUE)), lambda = 0, batches = 0.1, label = labels))
 	timex <- data.frame(elapsed = timex["elapsed"], batches = 1)
-	for (batches in c(0.1, 0.3, 0.8)) {
+	for (batches in c(0.3, 0.8)) {
 		newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, verbose = TRUE, sgd_batches = batches, coords = t(starterCoords)))))
 		print(str(newCoords))
 		timex <- rbind(timex, data.frame(elapsed = newtime["elapsed"], batches = batches))
@@ -134,26 +136,20 @@ if (rebuild) {
 			}
 	}
 	momentumCoords <- firstCoords
+	momentumCoords$label <- factor(momentumCoords$label)
 	save(momentumCoords, file = paste(sep = "/", system.file(package = "largeVis", "extdata"), "momentumCoords.Rda"))
 	save(timex, file = paste(sep = "/", system.file(package = "largeVis", "extdata"), "momentumTimes.Rda"))
 }
 ```
 
-```{r drawmomentum}
+```{r drawmomentum,warning=FALSE,fig.width=6,fig.height=5,fig.align='center'}
 load(system.file(package = "largeVis", "extdata/momentumCoords.Rda"))
 momentumCoords %>%
 	ggplot(aes(x = X1, y = X2, color = label)) + 
 	geom_point(size = 0.05, alpha = 0.3) + 
-	facet_grid(batches ~ lambda, scales = "free") +
+	facet_grid(batches ~ lambda, scales = "free", labeller = label_bquote(cols = lambda == .(lambda), 
+																																				rows = b == .(batches))) +
+	scale_x_continuous("", limits = c(-40, 40), labels = NULL, breaks = NULL) + 
+	scale_y_continuous("", limits = c(-40, 40), labels = NULL, breaks = NULL) +
 	ggtitle("Effect of Momentum and Reduced Training Batches")
-```
-
-```{r drawmomentumtimes}
-load(system.file(package = "largeVis", "extdata/momentumTimes.Rda"))
-timex %>%
-	ggplot(aes(x = batches, y = elapsed / 60)) + 
-	geom_point(size = 0.5, alpha = 0.7) +
-	y_scale_continuous("Elapsed Time (minutes)") +
-	x_scale_continuous("n. Batches / Default") +
-	ggtitle("Reduction in Training Time")
 ```
