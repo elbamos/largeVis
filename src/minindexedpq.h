@@ -13,7 +13,7 @@ private:
   public:
     D distance;
     VIDX index;
-    typedef shared_ptr< PairNode > NodePointer;
+    typedef PairNode* NodePointer;
     NodePointer leftChild;
     NodePointer nextSibling;
     NodePointer prev;
@@ -25,7 +25,7 @@ private:
     }
   };
 
-	typedef shared_ptr< PairNode > NodePointer;
+	typedef PairNode* NodePointer;
 
 	NodePointer root;
 	VIDX MaxSize = 0;
@@ -74,7 +74,7 @@ private:
 	}
 
 	NodePointer Insert(VIDX &n, D &x) {
-		NodePointer newNode = make_shared< PairNode >(n, x);
+		NodePointer newNode = new PairNode(n, x);
 		if (root == NULL) root = newNode;
 		else compareAndLink(root, newNode);
 		PointerArray[n] = newNode;
@@ -90,6 +90,11 @@ public:
 	PairingHeap(VIDX N) : root(NULL), MaxSize{N},
 												PointerArray(vector< NodePointer >(N, nullptr)),
 												ContentsArray(vector< bool >(N, false)) {
+	}
+	~PairingHeap() {
+		for (VIDX i = 0; i != PointerArray.size(); i++) {
+			if (PointerArray[i] != NULL) delete PointerArray[i];
+		}
 	}
 
 	VIDX pop() {
@@ -141,4 +146,9 @@ public:
   D keyOf(const VIDX& i) const {
   	return PointerArray[i] -> distance;
   };
+
+  D topKey() const {
+  	if (root == NULL) return INFINITY;
+  	return root -> distance;
+  }
 };

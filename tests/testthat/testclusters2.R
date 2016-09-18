@@ -6,8 +6,8 @@ dat <- as.matrix(iris[, 1:4])
 dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
-K <- 149
-neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+K <- 148
+neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 40, n_trees = 10,  threads = 2, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat,
 												 neighbors = neighbors,
 												 verbose = FALSE)
@@ -22,7 +22,7 @@ test_that("dbscan matches iris", {
 	expect_lt(sum(dbclusters$cluster != irisclustering$cluster), 3)
 })
 
-test_that("dbscan matches dbscan when the neighborhoods are complete", {
+test_that("dbscan matches dbscan on jain when the neighborhoods are complete", {
 	load(system.file(package = "largeVis", "extdata/jaindata.Rda"))
 	jainclusters <- lv_dbscan(edges = jaindata$edges, neighbors = jaindata$neighbors, eps = 2, minPts = 5, verbose = FALSE)
 	expect_equal(jainclusters$cluster, jaindata$dbclusters)
@@ -45,11 +45,16 @@ test_that("optics matches optics core infinities", {
 })
 
 test_that("optics matches optics core dist not infinities", {
-	expect_equal(mycore[complete.cases(mycore)], refcore[complete.cases(refcore)])
+	expect_equal(mycore[! is.infinite(mycore)], refcore[! is.infinite(refcore)])
 })
 
 test_that("optics matches optics order", {
 	expect_equal(opclusters$order, irisoptics$order)
+})
+
+test_that("optics matches optics predecessors", {
+	selections <- (opclusters$predecessor != 0) & complete.cases(irisoptics$predecessor)
+	expect_equal(opclusters$predecessor[selections], irisoptics$predecessor[selections])
 })
 
 test_that("optics matches optics reachdist infinities", {
@@ -57,25 +62,32 @@ test_that("optics matches optics reachdist infinities", {
 })
 
 test_that("optics matches optics reachdist", {
-	selections <- complete.cases(opclusters$reachdist) & complete.cases(irisoptics$reachdist)
-	print(selections)
+	selections <- ! is.infinite(opclusters$reachdist) & ! is.infinite(irisoptics$reachdist)
 	expect_equal(opclusters$reachdist[selections], irisoptics$reachdist[selections])
 })
 
 load(system.file(package = "largeVis", "extdata/jaindata.Rda"))
-jainclusters <- lv_optics(edges = jaindata$edges, neighbors = jaindata$neighbors, eps = 4, minPts = 5, verbose = FALSE)
+jainclusters <- lv_optics(edges = jaindata$edges,
+													neighbors = jaindata$neighbors,
+													eps = 4,
+													minPts = 5,
+													verbose = FALSE)
 
 test_that("optics matches optics core on jain when the neighborhoods are complete", {
 	expect_equal(is.infinite(jainclusters$coredist), is.infinite(jaindata$coredist))
-	print(jainclusters$coredist)
-	selections <- complete.cases(jainclusters$coredist) & complete.cases(jaindata$optics$coredist)
-	print(selections)
+	selections <- ! is.infinite(jainclusters$coredist) & ! is.infinite(jaindata$optics$coredist)
 	expect_equal(jainclusters$coredist[selections], jaindata$optics$coredist[selections])
 })
 
 test_that("optics matches optics order on jain when the neighborhoods are complete", {
 	expect_equal(jainclusters$order, jaindata$optics$order)
 })
+
+test_that("optics matches optics predecessors", {
+	selections <- (jainclusters$predecessor != 0) & complete.cases(jaindata$optics$predecessor)
+	expect_equal(jainclusters$predecessor[selections], jaindata$optics$predecessor[selections])
+})
+
 
 test_that("optics matches optics reachdist on jain when the neighborhoods are complete", {
 	expect_equal(is.infinite(jainclusters$reachdist), is.infinite(jaindata$reachdist))
