@@ -178,3 +178,46 @@ test_that("With a bigger dataset, increasing iters improves result", {
     oldscore <- score
   }
 })
+
+context("neighbor sorting")
+set.seed(1974)
+data(iris)
+dat <- as.matrix(iris[, 1:4])
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+K <- 140
+distances <- as.matrix(dist(t(dat)))
+
+test_that("neighbors are sorted when max_iter = 1", {
+	neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 40, n_trees = 10,  threads = 2, max_iter = 1, verbose = FALSE)
+	for (p in 1:148) {
+		good <- (neighbors[, p] != -1)
+		biggers <- neighbors[good][-1]
+		smallers <- neighbors[good][-length(neighbors[good])]
+		for (q in 1:length(biggers)) expect_lte(distances[p, smallers[q]], distances[p, biggers[q]])
+	}
+})
+
+test_that("neighbors are sorted when max_iter = 0", {
+	print("testing")
+	neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 40, n_trees = 10,  threads = 2, max_iter = 0, verbose = FALSE)
+	print("testing")
+	for (p in 1:148) {
+		good <- (neighbors[, p] != -1)
+		biggers <- neighbors[good][-1]
+		smallers <- neighbors[good][-length(neighbors[good])]
+		for (q in 1:length(biggers)) expect_lte(distances[p, smallers[q]], distances[p, biggers[q]])
+	}
+})
+
+test_that("neighbors are sorted when max_iter = 2", {
+	neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 40, n_trees = 10,  threads = 2, max_iter = 1, verbose = FALSE)
+	for (p in 1:148) {
+		good <- (neighbors[, p] != -1)
+		biggers <- neighbors[good][-1]
+		smallers <- neighbors[good][-length(neighbors[good])]
+		for (q in 1:length(biggers)) expect_lte(distances[p, smallers[q]], distances[p, biggers[q]])
+	}
+})
+

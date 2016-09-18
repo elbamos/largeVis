@@ -294,10 +294,14 @@ public:
 					if (j == 0) stop("Neighbor exploration failure.");
 					while (j < K) knns(j++,i) = -1;
 				} else {
-					vertexidxtype j = K - 1;
+					Rcout << "\nkeeping sort\n";
+					vertexidxtype j = 0;
 					while (j >= thisHeap.size()) knns(j--, i) = -1;
+					distancetype lastval = INFINITY;
 					while (! thisHeap.empty()) {
 						knns(j--, i) = thisHeap.top().n;
+//						if (thisHeap.top().d > lastval) stop("Wrong order.");
+						lastval = thisHeap.top().d;
 						thisHeap.pop();
 					}
 				}
