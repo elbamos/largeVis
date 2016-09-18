@@ -1,4 +1,4 @@
-#' optics
+#' lv_optics
 #'
 #' Experimental implementation of the OPTICS algorithm.
 #'
@@ -25,7 +25,7 @@
 #' @references  Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jörg Sander (1999). OPTICS: Ordering Points To Identify the Clustering Structure. ACM SIGMOD international conference on Management of data. ACM Press. pp. 49–60.
 #' @export
 #' @importFrom dbscan optics_cut opticsXi
-optics <- function(edges,
+lv_optics <- function(edges,
 									 neighbors,
 									 eps = Inf,
 									 minPts = nrow(neighbors),

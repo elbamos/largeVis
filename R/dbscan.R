@@ -1,4 +1,4 @@
-#' dbscan
+#' lv_dbscan
 #'
 #' Experimental implementation of the DBSCAN algorithm.
 #'
@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @references Martin Ester, Hans-Peter Kriegel, Jörg Sander, Xiaowei Xu (1996). Evangelos Simoudis, Jiawei Han, Usama M. Fayyad, eds. A density-based algorithm for discovering clusters in large spatial databases with noise. Proceedings of the Second International Conference on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226–231. ISBN 1-57735-004-9.
-dbscan <- function(edges,
+lv_dbscan <- function(edges,
 									 neighbors,
 									 eps = Inf,
 									 minPts = nrow(neighbors),
