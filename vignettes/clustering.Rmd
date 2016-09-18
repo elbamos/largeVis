@@ -10,11 +10,57 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+
+```{r setup,eval=T,echo=F,warning=F,error=F,message=F}
+# Note to reader:  Please don't steal the semi-distinctive visual style I spent several minutes creating for myself.
+library(dbscan,quietly = TRUE)
+library(ggplot2, 
+        quietly = TRUE)
+library(RColorBrewer, 
+        quietly = TRUE)
+library(wesanderson, 
+        quietly = TRUE)
+library(dplyr, quietly = TRUE)
+library(magrittr, quietly = TRUE)
+knitr::opts_chunk$set(collapse = TRUE, 
+                      comment = "#>",
+                      fig.width = 7, 
+                      fig.height = 5)
+colors_discrete <- function(x) rep(wes_palette("Darjeeling", 
+                                               n = min(x, 5)), 
+                                   2)[1:x]
+colors_divergent_discrete <- function(x) 
+  grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
+colors_continuous <-  function(x) wes_palette(name = "Zissou",
+                                              n = x, 
+                                              type = "continuous")
+
+nacol <- colors_discrete(4)[4]
+theme_set(
+  theme_bw() %+replace%
+  theme(
+    legend.key.size = unit(4, "mm"), 
+    legend.title = element_text(size = rel(0.8),
+                              face = "bold"),
+    legend.margin = unit(0, "cm"),
+    legend.position = "bottom",
+    legend.key.size = unit(0.5, "lines"),
+    legend.text=element_text(size = unit(8, "points")), 
+    axis.title.y = element_text(angle = 90),
+    axis.text = element_text(size = rel(0.7)),
+    plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 
+    axis.title = element_text(size = rel(0.8),
+                              face = "bold"),
+    title = element_text(size = rel(0.9))
+  ) 
+)
+```
+
 One component of the `LargeVis` algorithm and `largeVis` package, is extremely efficient estimation of approximate nearest neighbors. The `largeVis` includes implementations of three density-based clustering algorithms, `DBSCAN`, `OPTICS`, and `HDBSCAN`, that leverage the aNN data to estimate clusterings quickly. 
 
-## Overview of the Algorithms
-
 All three algorithms attempt to cluster points by linking a point to its nearest neighbors, using modified concepts of distance.  The `core distance` of a point, defined as the distance from a point to its Kth nearest neighbor, is an (inverse) measure of the density of space around a point.  (In general; there are differences in the definition of `core distance` and `reachability distance` among the algorithms.)  The `reachability distance` between two points is the greater of the distance between them and `core distances`.  When the neighbors of a point, $p$, are identified to link it with its nearest neighbors, no point $q$ can be closer to $p$ than $p$'s `core distance`. 
+
+## DBSCAN
 
 `DBSCAN` [@Ester96adensity-based] attempts to achieve a flat clustering using a consistent density threshold, $\epsilon$.  Points with more than `minPts` neighbors in their $\epsilon$-neighborhoods are `core points`.  Where the $\epsilon$ neighborhoods of corepoints overlap, the neighborhoods are merged into a single cluster. `DBSCAN` thus takes two hyper-parameters, $\epsilon$ and `minPts`. 
 
