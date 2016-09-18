@@ -16,6 +16,7 @@ test_that("Euclidean distances are correct", {
                             verbose = FALSE)
   diffs <- as.vector(distances) - new_distances
   expect_lt(sum(diffs), 1e-10)
+  expect_equal(attr(new_distances, "method"), "euclidean")
 })
 
 test_that("Cosine distances are correct", {
@@ -36,4 +37,5 @@ test_that("Cosine distances are correct", {
                             verbose = FALSE)
   diffs <- as.vector(distances) - new_distances
   expect_lt(sum(diffs), 1e-10)
+  expect_equal(attr(new_distances, "method"), "cosine")
 })

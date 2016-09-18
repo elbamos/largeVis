@@ -1,6 +1,7 @@
 ### largeVis 0.1.10
 * New utility function `sgdBatches` helps estimate training time for datasets. 
 * Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes. 
+* `buildEdgeMatrix` and `distance` now store the `distance_method` in attribute `method` of the returned object. 
 
 ### largeVis 0.1.9.1
 The OPTICS implementation has been temporarily removed. This reason is that the code was based on the code in the `dbscan` package, and the CRAN
