@@ -203,7 +203,7 @@ public:
 	 * Re-sort by distance.
 	 */
 	arma::imat getMatrix(shared_ptr< DistanceAdder<M,V> > adder) {
-	const kidxtype K = knns.n_rows;
+		const kidxtype K = knns.n_rows;
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -211,7 +211,7 @@ public:
 			const V x_i = data.col(i);
 			MaxHeap thisHeap = MaxHeap();
 			for (imat::col_iterator it = knns.begin_col(i);
-        it != knns.end_col(i);
+        it != knns.end_col(i) && *it != -1;
         it++) {
 				adder -> add( thisHeap, x_i, *it);
 			}
@@ -227,11 +227,9 @@ public:
 
 	arma::imat exploreNeighborhood(const int maxIter,
                                 shared_ptr< DistanceAdder<M, V> > adder) {
-		Rcout << "\nexplore\n";
 		const kidxtype K = knns.n_rows;
 		imat old_knns  = imat(K,N);
 		for (int T = 0; T < maxIter; T++) if (! p.check_abort()) {
-			Rcout << "\nloop\n";
 			imat tmp = old_knns;
 			old_knns = knns;
 			knns = tmp;
@@ -289,26 +287,21 @@ public:
 				if (T != maxIter - 1) {
 					sorter.clear();
 					heapToSet(thisHeap, sorter);
-
 					set< vertexidxtype >::iterator sortIterator = sorter.begin();
 					vertexidxtype j = 0;
 					while (sortIterator != sorter.end()) knns(j++, i) = *sortIterator++;
 					if (j == 0) stop("Neighbor exploration failure.");
 					while (j < K) knns(j++,i) = -1;
 				} else {
-					vertexidxtype j = 0;
+					vertexidxtype j = K - 1;
 					while (j >= thisHeap.size()) knns(j--, i) = -1;
-					distancetype lastval = INFINITY;
 					while (! thisHeap.empty()) {
 						knns(j--, i) = thisHeap.top().n;
-//						if (thisHeap.top().d > lastval) stop("Wrong order.");
-						lastval = thisHeap.top().d;
 						thisHeap.pop();
 					}
 				}
 			}
 		}
-		Rcout << "\ndone exploring\n";
 		return knns;
 	}
 };
