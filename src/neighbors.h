@@ -23,13 +23,13 @@ class DistanceAdder {
 protected:
 	const M& data;
 	const kidxtype K;
-	virtual double distanceFunction(const V& x_i, const V& x_j) = 0;
+	virtual double distanceFunction(const V& x_i, const V& x_j) const = 0;
 	DistanceAdder(const M& data,
                const kidxtype K) : data{data}, K{K} {}
 public:
 	void add(MaxHeap& thisHeap,
           const V& x_i,
-          const vertexidxtype j) {
+          const vertexidxtype j) const {
 		const distancetype d = distanceFunction(x_i, data.col(j));
 		thisHeap.emplace(d, j);
 		if (thisHeap.size() > K) thisHeap.pop();
@@ -227,16 +227,18 @@ public:
 
 	arma::imat exploreNeighborhood(const int maxIter,
                                 shared_ptr< DistanceAdder<M, V> > adder) {
+		Rcout << "\nexplore\n";
 		const kidxtype K = knns.n_rows;
 		imat old_knns  = imat(K,N);
 		for (int T = 0; T < maxIter; T++) if (! p.check_abort()) {
+			Rcout << "\nloop\n";
 			imat tmp = old_knns;
 			old_knns = knns;
 			knns = tmp;
 			MaxHeap thisHeap = MaxHeap();
 			set< vertexidxtype > sorter = set< vertexidxtype >();
 #ifdef _OPENMP
-#pragma omp parallel for shared(old_knns) private(thisHeap, sorter)
+//#pragma omp parallel for shared(old_knns) private(thisHeap, sorter)
 #endif
 			for (vertexidxtype i = 0; i < N; i++) if (p.increment()) {
 				const V x_i = data.col(i);
@@ -294,7 +296,6 @@ public:
 					if (j == 0) stop("Neighbor exploration failure.");
 					while (j < K) knns(j++,i) = -1;
 				} else {
-					Rcout << "\nkeeping sort\n";
 					vertexidxtype j = 0;
 					while (j >= thisHeap.size()) knns(j--, i) = -1;
 					distancetype lastval = INFINITY;
@@ -307,6 +308,7 @@ public:
 				}
 			}
 		}
+		Rcout << "\ndone exploring\n";
 		return knns;
 	}
 };

@@ -10,7 +10,7 @@ using namespace arma;
 
 class EuclideanSparseAdder : public DistanceAdder<arma::sp_mat, arma::sp_mat> {
 protected:
-	virtual distancetype distanceFunction(const arma::sp_mat& x_i, const arma::sp_mat& x_j) {
+	virtual distancetype distanceFunction(const arma::sp_mat& x_i, const arma::sp_mat& x_j) const {
 		return sparseRelDist(x_i, x_j);
 	}
 public:
@@ -19,7 +19,7 @@ public:
 
 class CosineSparseAdder : public DistanceAdder<arma::sp_mat, arma::sp_mat> {
 protected:
-	virtual distancetype distanceFunction(const arma::sp_mat& x_i, const arma::sp_mat& x_j) {
+	virtual distancetype distanceFunction(const arma::sp_mat& x_i, const arma::sp_mat& x_j) const {
 		return sparseCosDist(x_i, x_j);
 	}
 public:
