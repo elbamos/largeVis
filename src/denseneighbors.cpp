@@ -10,7 +10,7 @@ using namespace arma;
 
 class EuclideanAdder : public DistanceAdder<arma::mat, arma::vec> {
 protected:
-	virtual distancetype distanceFunction(const arma::vec& x_i, const arma::vec& x_j) {
+	virtual distancetype distanceFunction(const arma::vec& x_i, const arma::vec& x_j) const {
 		return relDist(x_i, x_j);
 	}
 public:
@@ -19,7 +19,7 @@ public:
 
 class CosineAdder : public DistanceAdder<arma::mat, arma::vec> {
 protected:
-	virtual distancetype distanceFunction(const arma::vec& x_i, const arma::vec& x_j) {
+	virtual distancetype distanceFunction(const arma::vec& x_i, const arma::vec& x_j) const {
 		return cosDist(x_i, x_j);
 	}
 public:
