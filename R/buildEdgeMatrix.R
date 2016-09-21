@@ -8,7 +8,7 @@
 #' @param verbose Verbosity
 #' @param ... Additional parameters passed to \code{\link{randomProjectionTreeSearch}} if \code{neighbors} is \code{NULL}.
 #'
-#' @return A `sparseMatrix`
+#' @return A `sparseMatrix`, with the distance method stored in attribute \code{method} and additional class `edge_matrix.`
 #' @importFrom Matrix sparseMatrix
 #' @export
 buildEdgeMatrix <- function(data,
@@ -26,7 +26,35 @@ buildEdgeMatrix <- function(data,
 											j = indices$j + 1,
 											x = as.vector(distances),
 											dims = c(ncol(data), ncol(data)))
-	return(mat)
+	structure(mat,
+						method = tolower(distance_method),
+						class = c("edge_matrix", class(mat)))
+}
+
+#' as.dist.edge_matrix
+#'
+#' Convert an edge matrix to a \code{dist} object.
+#'
+#' @param x An edge matrix.
+#'
+#' @return A \code{\link[stats]{dist}} object.
+#'
+#' @note This method converts the otherwise sparse edge matrix into a dense \code{dist} object,
+#' where any distances absent from the edge matrix are represented as \code{NA} in the \code{dist} object.
+#'
+#' @export
+#' @rdname buildEdgeMatrix
+as.dist.edge_matrix <- function(x) {
+	y <- x[lower.tri(x, FALSE)]
+	z <- t(x[upper.tri(x, FALSE)])
+	y[y == 0] <- z[y == 0]
+	do <- y@x
+	structure(do,
+						class = "dist",
+						Size = ncol(x),
+						Diag = FALSE,
+						Upper = FALSE,
+						method = attr(x, "method"))
 }
 
 #' buildWijMatrix

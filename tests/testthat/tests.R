@@ -9,16 +9,31 @@ test_that("Edge Matrix doesn't crash", {
 	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
 })
 
+data (iris)
+set.seed(1974)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+
 test_that("build edge matrix works as expected", {
-	data (iris)
-	set.seed(1974)
-	dat <- as.matrix(iris[, 1:4])
-	dat <- scale(dat)
-	dupes <- which(duplicated(dat))
-	dat <- dat[-dupes, ]
-	dat <- t(dat)
 	neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
 	expect_silent(edges <- buildEdgeMatrix(dat, neighbors))
+})
+
+test_that("build edge matrix stores the distance method", {
+	neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
+	edges <- buildEdgeMatrix(dat, neighbors)
+	expect_equal(attr(edges, "method"), "euclidean")
+})
+
+test_that("build edge matrix as distance matches dist", {
+	do <- dist(t(dat))
+	neighbors <- randomProjectionTreeSearch(dat, K = 149, threads = 2)
+	edges <- buildEdgeMatrix(dat, neighbors)
+	d2 <- as.dist(edges)
+	expect_equal(do, d2)
 })
 
 context("wij")
