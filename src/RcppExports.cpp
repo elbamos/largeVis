@@ -36,6 +36,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// checkBits
+bool checkBits();
+RcppExport SEXP largeVis_checkBits() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(checkBits());
+    return rcpp_result_gen;
+END_RCPP
+}
+// checkOpenMP
+bool checkOpenMP();
+RcppExport SEXP largeVis_checkOpenMP() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(checkOpenMP());
+    return rcpp_result_gen;
+END_RCPP
+}
 // searchTrees
 arma::imat searchTrees(const int& threshold, const int& n_trees, const int& K, const int& maxIter, const arma::mat& data, const std::string& distMethod, Rcpp::Nullable< Rcpp::NumericVector> seed, Rcpp::Nullable<Rcpp::NumericVector> threads, bool verbose);
 RcppExport SEXP largeVis_searchTrees(SEXP thresholdSEXP, SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
@@ -135,26 +155,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(hdbscanc(edges, neighbors, K, minPts, threads, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
-// checkBits
-bool checkBits();
-RcppExport SEXP largeVis_checkBits() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(checkBits());
-    return rcpp_result_gen;
-END_RCPP
-}
-// checkOpenMP
-bool checkOpenMP();
-RcppExport SEXP largeVis_checkOpenMP() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(checkOpenMP());
     return rcpp_result_gen;
 END_RCPP
 }

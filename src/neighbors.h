@@ -28,13 +28,13 @@ class DistanceAdder {
 protected:
 	const M& data;
 	const kidxtype K;
-	virtual double distanceFunction(const V& x_i, const V& x_j) = 0;
+	virtual double distanceFunction(const V& x_i, const V& x_j) const = 0;
 	DistanceAdder(const M& data,
                const kidxtype K) : data{data}, K{K} {}
 public:
 	void add(MaxHeap& thisHeap,
           const V& x_i,
-          const vertexidxtype j) {
+          const vertexidxtype j) const {
 		const distancetype d = distanceFunction(x_i, data.col(j));
 		thisHeap.emplace(d, j);
 		if (thisHeap.size() > K) thisHeap.pop();
@@ -208,7 +208,7 @@ public:
 	 * Re-sort by distance.
 	 */
 	arma::imat getMatrix(shared_ptr< DistanceAdder<M,V> > adder) {
-	const kidxtype K = knns.n_rows;
+		const kidxtype K = knns.n_rows;
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -216,7 +216,7 @@ public:
 			const V x_i = data.col(i);
 			MaxHeap thisHeap = MaxHeap();
 			for (imat::col_iterator it = knns.begin_col(i);
-        it != knns.end_col(i);
+        it != knns.end_col(i) && *it != -1;
         it++) {
 				adder -> add( thisHeap, x_i, *it);
 			}
@@ -241,7 +241,7 @@ public:
 			MaxHeap thisHeap = MaxHeap();
 			set< vertexidxtype > sorter = set< vertexidxtype >();
 #ifdef _OPENMP
-#pragma omp parallel for shared(old_knns) private(thisHeap, sorter)
+//#pragma omp parallel for shared(old_knns) private(thisHeap, sorter)
 #endif
 			for (vertexidxtype i = 0; i < N; i++) if (p.increment()) {
 				const V x_i = data.col(i);
@@ -292,7 +292,6 @@ public:
 				if (T != maxIter - 1) {
 					sorter.clear();
 					heapToSet(thisHeap, sorter);
-
 					set< vertexidxtype >::iterator sortIterator = sorter.begin();
 					vertexidxtype j = 0;
 					while (sortIterator != sorter.end()) knns(j++, i) = *sortIterator++;

@@ -9,6 +9,14 @@ dbscan_cpp <- function(edges, neighbors, eps, minPts, verbose) {
     .Call('largeVis_dbscan_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, verbose)
 }
 
+checkBits <- function() {
+    .Call('largeVis_checkBits', PACKAGE = 'largeVis')
+}
+
+checkOpenMP <- function() {
+    .Call('largeVis_checkOpenMP', PACKAGE = 'largeVis')
+}
+
 searchTrees <- function(threshold, n_trees, K, maxIter, data, distMethod, seed, threads, verbose) {
     .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, data, distMethod, seed, threads, verbose)
 }
@@ -43,6 +51,8 @@ checkOpenMP <- function() {
 
 sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, seed, threads, verbose) {
     .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, seed, threads, verbose)
+sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, threads, verbose) {
+    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, seed, threads, verbose)
 }
 
 searchTreesCSparse <- function(threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, threads, verbose) {
