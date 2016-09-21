@@ -236,7 +236,7 @@ public:
 			MaxHeap thisHeap = MaxHeap();
 			set< vertexidxtype > sorter = set< vertexidxtype >();
 #ifdef _OPENMP
-//#pragma omp parallel for shared(old_knns) private(thisHeap, sorter)
+#pragma omp parallel for shared(old_knns) private(thisHeap, sorter)
 #endif
 			for (vertexidxtype i = 0; i < N; i++) if (p.increment()) {
 				const V x_i = data.col(i);
