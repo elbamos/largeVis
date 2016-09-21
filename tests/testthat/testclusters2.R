@@ -107,3 +107,20 @@ test_that("hdbscan doesn't crash on big bad edges", {
 	load(system.file("extdata/badedges.Rda", package = "largeVis"))
 	expect_silent(clustering <- hdbscan(badedges, threads = 2, verbose = FALSE))
 })
+
+context("as.dendrogram")
+
+test_that("as.dendrogram succeeds", {
+	library(clusteringdatasets)
+	data(spiral)
+	dat <- t(as.matrix(spiral[, 1:2]))
+	neighbors <- randomProjectionTreeSearch(dat, K = 20)
+	edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, threads = 2)
+	hdobj <- hdbscan(edges = edges, neighbors = neighbors, minPts = 10, K = 5, threads = 2)
+	expect_silent(dend <- as.dendrogram(hdobj))
+	expect_equal(length(dend), sum(hdobj$hierarchy$nodemembership == 1) + sum(hdobj$hierarchy$parent == 1) - 1)
+	expect_equal(sum(is.null(dend)), 0)
+	expect_equal(class(dend), "dendrogram")
+	expect_equal(nobs(dend), ncol(dat))
+	expect_equal(length(dend), 10)
+}	)

@@ -1,4 +1,5 @@
 ### largeVis 0.1.10
+* Added `as.dendrogram.hdbscan` function to make hdbscan objects compatible with other R hierarchical clustering implementations. 
 * New utility function `sgdBatches` helps estimate training time for datasets. 
 * Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes. 
 
