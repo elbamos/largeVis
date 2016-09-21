@@ -9,6 +9,8 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
 -   An efficient implementation of the `HDBSCAN` algorithm for unsupervised clustering, which leverages the nearest neighbor data genereated by `largeVis`.
 -   Functions for visualizing manifolds like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
 
+#### News Highlights
+
 -   Version 0.1.9.1 has been accepted by CRAN. Much grattitude to Uwe Ligges and Kurt Hornik for their assistance, advice, and patience.
 -   I am working on restoring the OPTICS and DBSCAN implementations that were removed from version 0.1.9 for CRAN submission. If you would like to experiment with these, check branch `features/opticsanddbscan`.
 -   Anyone watching closely will have noticed that the git branches had become something of a mess. I have moved to git flow in an attempt to restore some sort of sanity. There may still be some inconsistencies in the git over the next few days. I am working on it.
