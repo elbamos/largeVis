@@ -6,6 +6,7 @@
 
 using namespace Rcpp;
 
+<<<<<<< HEAD
 // optics_cpp
 List optics_cpp(arma::sp_mat& edges, arma::imat& neighbors, double eps, int minPts, bool verbose);
 RcppExport SEXP largeVis_optics_cpp(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
@@ -33,6 +34,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(dbscan_cpp(edges, neighbors, eps, minPts, verbose));
+=======
+// checkBits
+bool checkBits();
+RcppExport SEXP largeVis_checkBits() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(checkBits());
+    return rcpp_result_gen;
+END_RCPP
+}
+// checkOpenMP
+bool checkOpenMP();
+RcppExport SEXP largeVis_checkOpenMP() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(checkOpenMP());
+>>>>>>> 0.1.9.2
     return rcpp_result_gen;
 END_RCPP
 }
@@ -135,26 +155,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(hdbscanc(edges, neighbors, K, minPts, threads, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
-// checkBits
-bool checkBits();
-RcppExport SEXP largeVis_checkBits() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(checkBits());
-    return rcpp_result_gen;
-END_RCPP
-}
-// checkOpenMP
-bool checkOpenMP();
-RcppExport SEXP largeVis_checkOpenMP() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(checkOpenMP());
     return rcpp_result_gen;
 END_RCPP
 }

@@ -2,6 +2,9 @@
 * New utility function `sgdBatches` helps estimate training time for datasets. 
 * Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes. 
 
+### largeVis 0.1.9.2
+Hotfix for a bug in the neighbor search when max iterations was 0. 
+
 ### largeVis 0.1.9.1
 The OPTICS implementation has been temporarily removed. This reason is that the code was based on the code in the `dbscan` package, and the CRAN
 administrators objected to the inclusion of a separate copyright notice. OPTICS will be restored once the code is sufficiently re-written. 

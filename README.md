@@ -9,7 +9,11 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
 -   An efficient implementation of the `HDBSCAN` algorithm for unsupervised clustering, which leverages the nearest neighbor data genereated by `largeVis`.
 -   Functions for visualizing manifolds like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
 
+<<<<<<< HEAD
 #### News Highlights
+=======
+### News Highlights
+>>>>>>> 0.1.9.2
 
 -   Version 0.1.9.1 has been accepted by CRAN. Much grattitude to Uwe Ligges and Kurt Hornik for their assistance, advice, and patience.
 -   I am working on restoring the OPTICS and DBSCAN implementations that were removed from version 0.1.9 for CRAN submission. If you would like to experiment with these, check branch `features/opticsanddbscan`.
@@ -24,6 +28,7 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
 
     and recompile from source. (`devtools::install_github("elbamos/largeVis")` will work).
 
+<<<<<<< HEAD
 -   Getting OpenMP support on OS X is a bit tricky. These instructions assume that your OS X installation is already setup to compile with xcode. Also, these directions are not precise, and you may need to fiddle.
     -   Use `homebrew` to install `llvm` version 3.8 or greater.
     -   `brew link --force llvm`. Note that this will make `clang` version 3.8 your default system compiler. This will probably improve your development experience overall, but might conceivably cause issues with xcode.
@@ -36,4 +41,14 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
             PATH=/usr/local/bin:${PATH}
 
         This is necessary so that R will see the `llvm` compiler from within Rstudio.
+=======
+-   Getting OpenMP support on OS X is a bit tricky. What I've done, is to install `llvm` (version 3.8 or later), and then add the following to `~.R/Makevars`:
+
+        SHLIB_OPENMP_CFLAGS = -fopenmp
+        R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
+        LDFLAGS =  ""-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib"
+        CPPFLAGS =  -I/usr/local/opt/llvm/include
+        PATH = /usr/local/opt/llvm/bin:$PATH 
+
+>>>>>>> 0.1.9.2
     -   Recompile from source, as above.
