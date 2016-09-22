@@ -12,6 +12,8 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
+#define DEBUG
+
 typedef pair<long long, double> iddist;
 
 class CompareDist {
@@ -26,6 +28,8 @@ typedef std::priority_queue<iddist,
                             CompareDist> NNheap;
 typedef std::vector<iddist> NNlist;
 
+
+
 class OPTICS {
 protected:
 	arma::sp_mat* edges;
@@ -37,6 +41,20 @@ protected:
 	vector< double > reachdist, coredist;
 	vector< long long > predecessor;
 	Progress progress;
+
+#ifdef DEBUG
+set< long long > debugPts = set< long long >();
+
+void startDebug() {
+	debugPts.insert(18);
+	debugPts.insert(1);
+}
+
+bool testDebug(long long& p) {
+	if (debugPts.find(p) != debugPts.end()) return true;
+	else return false;
+}
+#endif
 
 	long double reachabilityDistance(long long& p,
                                   long long& q) const {
