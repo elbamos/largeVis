@@ -3,7 +3,7 @@
 * New utility function `sgdBatches` helps estimate training time for datasets. 
 * Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes. 
 * `buildEdgeMatrix` and `distance` now store the `distance_method` in attribute `method` of the returned object. 
-* `projectKNNs` now has features for training with momentum, and controlling the method for weighting negative samples. In some case, it is possible to run `projectKNNs` with as little as 1/10 the normal number of sgd_batches, without loss of fidelity.  Both parameters are explained in detail in the new "Momentum and useDegree" vignette.
+* `projectKNNs` now has features for training with momentum, and controlling the method for weighting negative samples. Momentum can greatly reduce the required number of sgd_batches, resulting in substantial performance increases.  The parameters are explained in the "Momentum and useDegree" vignette.
 
 ### largeVis 0.1.9.2
 Hotfix for a bug in the neighbor search when max iterations was 0. 
