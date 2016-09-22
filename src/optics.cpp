@@ -72,7 +72,7 @@ protected:
 		if (visited[q]) return;
 		double newReachabilityDistance = reachabilityDistance(p, q);
 
-		if(reachdist[q] == INFINITY) {
+		if(! seeds.contains(q)) {
 			seeds.insert(q, newReachabilityDistance);
 			predecessor[q] = p;
 		} else if (seeds.decreaseIf(q, newReachabilityDistance))  predecessor[q] = p;
@@ -94,7 +94,7 @@ public:
          	if (neighbors.n_rows < minPts) stop("Insufficient neighbors.");
          	orderedPoints.reserve(N);
          	for (long long n = 0; n != N; n++) {
-         		double nthDistance = edges(n, neighbors(minPts - 1, n));
+         		double nthDistance = edges(n, neighbors(minPts - 2, n));
          		coredist[n] = (nthDistance < eps) ? nthDistance : INFINITY;
          	}
          }
@@ -104,7 +104,6 @@ public:
 		for (long long p = 0; p < N; p++) if (progress.increment() && ! visited[p]) {
 			visited[p] = true;
 			orderedPoints.push_back(p);
-			if (p > 0) reachdist[p] = seeds.keyOf(p);
 			if (coredist[p] == INFINITY) continue; // core-dist is undefined
 			getNeighbors(p, seeds);
 			while (!seeds.isEmpty()) {
@@ -132,6 +131,5 @@ List optics_cpp(arma::sp_mat& edges,
                 int minPts,
                 bool verbose) {
 	OPTICS opt = OPTICS(edges, neighbors, eps, minPts, verbose);
-	Rcout << "\nrun\n";
 	return opt.run();
 }

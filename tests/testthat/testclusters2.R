@@ -19,14 +19,14 @@ test_that("dbscan doesn't crash on iris", {
 test_that("dbscan matches iris", {
 	load(system.file(package = "largeVis", "extdata/irisdbscan.Rda"))
 	dbclusters <- lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
-	expect_lt(sum(dbclusters$cluster != irisclustering$cluster), 3)
+	expect_lt(sum(dbclusters$cluster != irisclustering$cluster), 1)
 })
 
 test_that("dbscan matches dbscan on jain when the neighborhoods are complete", {
 	skip_on_cran()
 	skip_on_travis()
 	load(system.file(package = "largeVis", "extdata/jaindata.Rda"))
-	jainclusters <- lv_dbscan(edges = jaindata$edges, neighbors = jaindata$neighbors, eps = 2, minPts = 5, verbose = FALSE)
+	jainclusters <- lv_dbscan(edges = jaindata$edges, neighbors = jaindata$neighbors, eps = 1, minPts = 5, verbose = FALSE)
 	expect_equal(jainclusters$cluster, jaindata$dbclusters)
 })
 
@@ -40,7 +40,7 @@ load(system.file(package = "largeVis", "extdata/irisoptics.Rda"))
 opclusters <- lv_optics(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
 
 mycore <- opclusters$coredist
-refcore <- opclusters$coredist
+refcore <- irisoptics$coredist
 
 test_that("optics matches optics core infinities", {
 	expect_equal(which(is.infinite(mycore)), which(is.infinite(refcore)))

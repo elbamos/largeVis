@@ -66,7 +66,7 @@ protected:
 			if (! visited[*pprime]) {
 				visited[*pprime] = true;
 				list< long long > pprimeNeighbors = regionQuery(*pprime);
-				if (pprimeNeighbors.size() >= minPts) {
+				if (pprimeNeighbors.size() >= minPts - 1) {
 					pNeighbors.insert(pNeighbors.end(), pprimeNeighbors.begin(), pprimeNeighbors.end());
 				}
 			}
