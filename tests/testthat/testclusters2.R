@@ -96,6 +96,32 @@ test_that("optics matches optics reachdist on jain when the neighborhoods are co
 	expect_equal(jainclusters$reachdist[selections], jaindata$optics$reachdist[selections])
 })
 
+
+load(system.file("extdata/opttest.Rda", package = "largeVis"))
+
+x <- opttest$test_data
+neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 300, tree_threshold = 100, max_iter = 5, seed = 1974)
+edges <- buildEdgeMatrix(t(opttest$test_data), neighbors = neighbors, threads = 1)
+
+eps <- .1
+#eps <- .06
+eps_cl <- .1
+minPts <- 10
+res <- lv_optics(edges, neighbors, eps = eps,  minPts = minPts)
+
+test_that("optics output format is correct", {
+	expect_identical(length(res$order), nrow(x))
+	expect_identical(length(res$reachdist), nrow(x))
+	expect_identical(length(res$coredist), nrow(x))
+	expect_identical(res$eps, eps)
+	expect_identical(res$minPts, minPts)
+})
+
+test_that("optics result matches elki and dbscan", {
+	expect_equal(res$order, opttest$elki$ID)
+	expect_equal(round(res$reachdist[res$order], 3), round(opttest$elki$reachability, 3))
+})
+
 context("LOF")
 
 set.seed(1974)

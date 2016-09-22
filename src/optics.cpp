@@ -67,16 +67,20 @@ bool testDebug(long long& p) {
 		NNlist ret = NNlist(neighbors -> n_rows);
 		if (coredist[p] == INFINITY) return ret;
 		bool exceeded = false;
-		for (auto it = neighbors -> begin_col(p); it != neighbors -> end_col(p) && *it != -1; it++) {
-			if (visited[*it]) continue;
-			double d = (*edges)(p, *it);
-			if (d < eps) addNeighbor(p, *it, seeds);
+		arma::sp_colvec pEdges = edges->col(p);
+		for (auto it = neighbors -> begin_col(p);
+       	 (it != neighbors -> end_col(p)) && (*it != -1);
+       	 it++) if (! visited[*it]) {
+			long long q = *it;
+			if (pEdges[q] < eps) addNeighbor(p, q, seeds);
 			else {
 				exceeded = true;
 				break;
 			}
 		}
-		if (! exceeded) for (auto it = edges -> begin_col(p); it != edges -> end_col(p); it++) {
+		if (! exceeded) for (auto it = edges -> begin_col(p);
+                         it != edges -> end_col(p);
+                         it++) {
 			if (! visited[it.row()] && *it < eps) {
 				addNeighbor(p, it.row(), seeds);
 			}
@@ -90,7 +94,7 @@ bool testDebug(long long& p) {
 		if (visited[q]) return;
 		double newReachabilityDistance = reachabilityDistance(p, q);
 
-		if(! seeds.contains(q)) {
+		if (! seeds.contains(q)) {
 			seeds.insert(q, newReachabilityDistance);
 			predecessor[q] = p;
 		} else if (seeds.decreaseIf(q, newReachabilityDistance))  predecessor[q] = p;
@@ -110,12 +114,13 @@ public:
 								         predecessor(vector< long long >(N, NA_INTEGER)),
 								         progress(Progress(N, verbose)) {
          	if (neighbors.n_rows < minPts) stop("Insufficient neighbors.");
+         	if (minPts < 2) stop("minPts must be >= 2");
          	orderedPoints.reserve(N);
          	for (long long n = 0; n != N; n++) {
          		double nthDistance = edges(n, neighbors(minPts - 2, n));
          		coredist[n] = (nthDistance < eps) ? nthDistance : INFINITY;
          	}
-         }
+        }
 
 	List run() {
 		PairingHeap<long long, double> seeds(N);
