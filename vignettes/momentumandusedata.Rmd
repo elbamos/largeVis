@@ -1,10 +1,10 @@
 ---
 title: "Momentum and useDegree"
 author: "Amos Elberg"
-date: "`r Sys.Date()`"
+date: "Sept. 22, 2016"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Momentum and useDegree}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -23,17 +23,11 @@ knitr::opts_chunk$set(collapse = TRUE,
 											echo=FALSE)
 colors_discrete <- function(x) 
   rep(wes_palette("Darjeeling", n = min(x, 5)), 2)[1:x]
-colors_divergent_discrete <- function(x) 
-  grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
-colors_continuous <-  function(x) wes_palette(name = "Zissou",
-                                              n = x, 
-                                              type = "continuous")
 
 nacol <- colors_discrete(4)[4]
 theme_set(
   theme_bw() %+replace%
   theme(
-#    legend.key.size = unit(4, "mm"), 
     legend.title = element_text(size = rel(0.8),
                               face = "bold"),
     legend.margin = unit(0, "cm"),
@@ -72,7 +66,7 @@ if (rebuild) {
 }
 ```
 
-```{r usedegree,eval=F}
+```{r usedegree}
 if (rebuild) {
 	noDegree <- projectKNNs(preVis$wij, seed = 1974, verbose = TRUE)
 	degree <- projectKNNs(preVis$wij, useDegree = TRUE, verbose = TRUE)
