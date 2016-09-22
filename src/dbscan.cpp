@@ -8,6 +8,8 @@
 #include <Rmath.h>
 #include <progress.hpp>
 
+//#define DEBUG
+
 using namespace Rcpp;
 using namespace std;
 using namespace arma;
@@ -86,6 +88,7 @@ public:
 								         clusterAssignments(vector<int>(N, -1)),
 								         progress(Progress(N, verbose)) {
          	if (neighbors.n_rows < minPts) stop("Insufficient neighbors.");
+
          }
 
 
@@ -94,7 +97,7 @@ public:
 		for (long long p = 0; p < N; p++) if (progress.increment() && ! visited[p]) {
 			visited[p] = true;
 			list< long long > pNeighbors = regionQuery(p);
-			if (pNeighbors.size() >= minPts) {
+			if (pNeighbors.size() >= minPts - 1) {
 				++C;
 				expandCluster(p, pNeighbors, C);
 			}
