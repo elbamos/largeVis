@@ -197,15 +197,15 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 #' }
 #' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes_
 gplot <- function(x, coords, text = FALSE) {
-  dframe <- data.frame(coords)
+	if (! is.data.frame(coords)) dframe <- data.frame(coords)
   colnames(dframe) <- c("x", "y")
   dframe$cluster = x$clusters
   dframe$probabilities = x$probabilities
   dframe$probabilities[is.nan(dframe$probabilities)] <-
     x$hierarchy$lambda[is.nan(dframe$probabilities)]
   tree <- x$tree
-  tree[tree == -1] <- NA
-  xy <- data.frame(coords[tree + 1, ])
+  tree[tree == 0] <- NA
+  xy <- data.frame(coords[tree, ])
   colnames(xy) <- c("x2", "y2")
   dframe <- cbind(dframe, xy)
   dframe$lambda <- x$hierarchy$lambda / max(x$hierarchy$lambda)
@@ -214,7 +214,7 @@ gplot <- function(x, coords, text = FALSE) {
   plt <- ggplot2::ggplot(dframe,
                          ggplot2::aes_(x = quote(x), y = quote(y),
                     xend = quote(x2), yend = quote(y2), color = quote(cluster))) +
-    ggplot2::geom_point(aes_(alpha = quote(probabilities)), size = 0.7) +
+    ggplot2::geom_point(ggplot2::aes_(alpha = quote(probabilities)), size = 0.7) +
     ggplot2::geom_segment(size = 0.5, ggplot2::aes_(alpha = quote(lambda), size = quote(lambda)))
   if (text == "parent") {
     plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(parent)), size = 2.5,
