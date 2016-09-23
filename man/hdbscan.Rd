@@ -12,7 +12,7 @@ hdbscan(edges, minPts = 20, K = 5, neighbors = NULL, threads = NULL,
 
 \item{minPts}{The minimum number of points in a cluster.}
 
-\item{K}{The number of points in the core neighborhood, inclusive of \eqn{p}. (See details.)}
+\item{K}{The number of points in the core neighborhood. (See details.)}
 
 \item{neighbors}{An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}.}
 
@@ -49,7 +49,7 @@ Implemenation of the hdbscan algorithm.
 \details{
 The hyperparameter \code{K} controls the size of core neighborhoods.
 The algorithm measures the density around a point as 1 / the distance between
-that point and its \eqn{k - 1}th nearest neighbor. A low value of \code{K} is similar
+that point and its \eqn{k}th nearest neighbor. A low value of \code{K} is similar
 to clustering nearest neighbors rather than based on density. A high value of
 \code{K} may cause the algorithm to miss some (usually contrived) clustering
 patterns, such as where clusters are made up of points arranged in lines to form
@@ -59,7 +59,7 @@ If \code{neighbors} is specified, some costly sorts of neighbors in the edge
 matrix may be avoided.
 
 The function must be provided sufficient nearest-neighbor data for whatever
-is specified for \eqn{k}. If \code{K} = 5, for example, the edge matrix (and
+is specified for \eqn{k}. If \eqn{k} = 5, for example, the edge matrix (and
 neighbor matrix, if specified) must contain data on at least 5 neighbors for
 each point. This should not be problematic in typical use in connection with
 \code{\link{largeVis}}, which is ordinarily run with a far higher \eqn{k}-value

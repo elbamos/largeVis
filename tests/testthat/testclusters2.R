@@ -60,7 +60,7 @@ context("hdbscan")
 test_that("hdbscan finds 3 clusters and outliers in spiral", {
 	load(system.file("extdata/spiral.Rda", package = "largeVis"))
 	clustering <- hdbscan(spiral, K = 3, minPts = 20, threads = 1)
-	expect_equal(length(unique(clustering$clusters, 0)), 3)
+	expect_equal(length(unique(clustering$clusters)), 4)
 })
 
 set.seed(1974)
@@ -78,18 +78,14 @@ test_that("hdbscan doesn't crash with neighbors", {
 	expect_silent(hdbscan(edges, minPts = 10, neighbors = neighbors, K = 3, threads = 2, verbose = FALSE))
 })
 
-clustering <- hdbscan(edges, minPts = 10, K = 3,  threads = 2, verbose = FALSE)
 test_that("hdbscan is correct", {
-	expect_equal(length(unique(clustering$clusters, 0)), 2)
-})
-
-test_that("gplot isn't broken", {
-	expect_silent(plt <- gplot(clustering, matrix(rnorm(ncol(neighbors) * 2), ncol = 2)))
+  clustering <- hdbscan(edges, minPts = 10, K = 3,  threads = 2, verbose = FALSE)
+  expect_equal(length(unique(clustering$clusters)), 3)
 })
 
 test_that("hdbscan is less correct with neighbors", {
-	clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3,  threads = 2, verbose = FALSE)
-	expect_equal(length(unique(clustering$clusters)), 2)
+  clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3,  threads = 2, verbose = FALSE)
+  expect_equal(length(unique(clustering$clusters)), 2)
 })
 
 test_that("hdbscan doesn't crash on glass edges", {
