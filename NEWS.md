@@ -5,6 +5,11 @@
 * `buildEdgeMatrix` and `distance` now store the `distance_method` in attribute `method` of the returned object. 
 * `projectKNNs` now has features for training with momentum, and controlling the method for weighting negative samples. Momentum can greatly reduce the required number of sgd_batches, resulting in substantial performance increases.  The parameters are explained in the "Momentum and useDegree" vignette.
 
+### largeVis 0.1.9.3
+Hotfix correcting:
+	* An error in the hdbscan implementation regarding the definition of K in calculating core distances.
+	* gplot was broken.
+
 ### largeVis 0.1.9.2
 Hotfix for a bug in the neighbor search when max iterations was 0. 
 
