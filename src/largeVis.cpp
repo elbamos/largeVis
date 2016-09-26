@@ -25,7 +25,7 @@ protected:
 
   AliasTable< vertexidxtype, coordinatetype, double > negAlias;
   AliasTable< edgeidxtype, coordinatetype, double > posAlias;
-  shared_ptr< Gradient > grad;
+  Gradient* grad;
 
   vertexidxtype* ps;
 
@@ -57,6 +57,7 @@ public:
 #ifdef _OPENMP
 	~Visualizer() {
 		if (storedThreads > 0) omp_set_num_threads(storedThreads);
+		delete grad;
 	}
 #endif
 
@@ -82,16 +83,18 @@ public:
 		}
 	}
 
-  void setGradient(double alpha, double gamma, dimidxtype D) {
-  	if (alpha == 0) grad = shared_ptr< Gradient > (new ExpGradient(gamma, D));
-  	else if (alpha == 1) grad = shared_ptr< Gradient > (new AlphaOneGradient(gamma, D));
-  	else grad = shared_ptr< Gradient > (new AlphaGradient(alpha, gamma, D));
+  void setGradient(const double& alpha, const double& gamma) {
+  	if (alpha == 0) grad = new ExpGradient(gamma, D);
+  	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
+  	else grad = new AlphaGradient(alpha, gamma, D);
   }
 
-  void operator()(iterationtype startSampleIdx, int batchSize) {
+  void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
   	edgeidxtype e_ij;
-  	int example = 0;
+  	int m, example = 0;
   	vertexidxtype i, j, k;
+  	dimidxtype d;
+  	coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
 
     distancetype localRho = rho;
     while (example++ != batchSize && localRho > 0) {
@@ -109,19 +112,19 @@ public:
 			grad -> positiveGradient(y_i, y_j, firstholder);
 			updateMinus(firstholder, j, localRho);
 
-      searchBegin = targetPointer + ps[i];
-      searchEnd = targetPointer + ps[i + 1];
-      shortcircuit = m = 0;
-      while (m != M && shortcircuit != M2) {
+      for (d = 0; d != D; d++) y_j[d] -= firstholder[d] * localRho;
+			m = 0;
+      while (m != M) {
         k =  negAlias();
+<<<<<<<
         ++shortcircuit;
+=======
+
+>>>>>>>
         // Check that the draw isn't one of i's edges
         if (k == i ||
-            k == j ||
-            binary_search( searchBegin,
-                           searchEnd,
-                           k)) continue;
-        ++m;
+            k == j) continue;
+        m++;
 
         y_j = coordsPtr + (k * D);
         grad -> negativeGradient(y_i, y_j, secondholder);
@@ -129,8 +132,7 @@ public:
         updateMinus(secondholder, k, localRho);
         for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
       }
-      updateMinus(firstholder, i, - localRho);
-      localRho -= rhoIncrement;
+       for (d = 0; d != D; d++) y_i[d] += firstholder[d] * localRho;
     }
     rho -= (rhoIncrement * batchSize);
   }
@@ -199,8 +201,8 @@ arma::mat sgd(arma::mat coords,
 															                coords.memptr(),
 															                M,
 															                rho,
-															                ps.memptr(),
 															                n_samples);
+															                ps.memptr(),
   else {
   	float moment = NumericVector(momentum)[0];
   	if (moment < 0) stop("Momentum cannot be negative.");
@@ -216,18 +218,16 @@ arma::mat sgd(arma::mat coords,
 				                        moment,
 				                        coords.n_cols);
   }
-  // Make negative weights
-
   vertexidxtype N = coords.n_cols;
   distancetype* negweights = new distancetype[N];
-  for (vertexidxtype n = 0; n < N; ++n) negweights[n] = 0;
   if (useDegree) {
+  for (vertexidxtype n = 0; n < N; ++n) negweights[n] = 0;
   	for (edgeidxtype e = 0; e < targets_i.n_elem; ++e) negweights[targets_i[e]]++;
-  } else {
   	for (vertexidxtype p = 0; p < N; ++p) {
-  		for (edgeidxtype e = ps[p];
-         e != ps[p + 1];
+  } else {
          ++e) {
+         e != ps[p + 1];
+  		for (edgeidxtype e = ps[p];
   			//negweights[targets[e]] += weights[e];
   			negweights[p] += weights[e];
   		}
@@ -238,9 +238,9 @@ arma::mat sgd(arma::mat coords,
   delete[] negweights;
 
   v -> setGradient(alpha, gamma, D);
-
   const int batchSize = 8192;
-  const iterationtype barrier = (n_samples * .95 < n_samples - coords.n_cols) ? n_samples * .95 : n_samples - coords.n_cols;
+  const iterationtype barrier = (n_samples * .99 < n_samples - coords.n_cols) ? n_samples * .99 : n_samples - coords.n_cols;
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif

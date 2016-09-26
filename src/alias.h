@@ -5,8 +5,8 @@ template <class T, // number of aliases
           class D> // distance type, used to take weights on initialization
 class AliasTable {
 private:
-	unique_ptr< C[] > probs;
-	unique_ptr< T[] > aliases;
+	C* probs;
+	T* aliases;
 	uniform_real_distribution< C > rnd = uniform_real_distribution< C >();
 	mt19937_64 mt;
 	T N;
@@ -14,11 +14,15 @@ private:
 public:
 	AliasTable() {
 	}
+	~AliasTable() {
+		delete probs;
+		delete aliases;
+	}
 
-	void initialize(const D* weights, T N) {
+	void initialize(const D* weights, const T& N) {
 		this -> N = N;
-		probs = unique_ptr< C[] >( new C[N] );
-		aliases = unique_ptr< T[] >(new T[N]);
+		probs = new C[N];
+		aliases = new T[N];
 		D sm = 0;
 		for (T i = 0; i != N; i++) sm += weights[i];
 		for (T i = 0; i != N; i++) probs[i] = weights[i] * N / sm;
@@ -50,7 +54,7 @@ public:
 		if (accu > 1e-5) warning("Numerical instability in alias table " + to_string(accu));
 	};
 
-	T search(C random, C random2) const {
+	T operator()(C random, C random2) const {
 		T candidate = random * N;
 		return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
 	};
@@ -67,6 +71,6 @@ public:
 		return rnd(mt);
 	}
 	T operator()() {
-		return search(rnd(mt), rnd(mt));
+		return (*this)(rnd(mt), rnd(mt));
 	}
 };
