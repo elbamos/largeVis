@@ -25,7 +25,7 @@ public:
       	Function warning("warning");
       	warning("Insufficient neighbors, selecting furthest");
       }
-      for (int k = 0; k != K && srtr.size() > 1; k++) srtr.pop();
+      for (int k = 0; k != K - 1 && srtr.size() > 1; k++) srtr.pop();
       coreDistances[n] = max(srtr.top().second, 1e-5);
     }
   }
@@ -34,11 +34,14 @@ public:
                          const IntegerMatrix& neighbors,
                          const int K) {
   	if (neighbors.nrow() < K) stop("Specified K bigger than the number of neighbors in the adjacency matrix.");
+ 	if (K < 4) stop("K must be >= 4 when used with neighbors.");
     coreDistances = arma::vec(N);
+    IntegerVector kthNeighbors = neighbors.row(K - 1);
     for (long long n = 0; n < N; n++) if (p.increment()) {
-      coreDistances[n] = max(edges(neighbors(K, n), n), 1e-5);
-    	if (coreDistances[n] == 0) coreDistances[n] = edges(neighbors(n, K), n);
-    	if (coreDistances[n] == -1) stop("Insufficient neighbors.");
+    	long long q = kthNeighbors[n];
+    	if (q == -1 || q == NA_INTEGER) stop("Insufficient neighbors.");
+      coreDistances[n] = edges(n, q);
+    	if (coreDistances[n] == 0) coreDistances[n] = max(edges(q, n), 1e-5);
     }
   }
 
