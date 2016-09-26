@@ -25,7 +25,7 @@ protected:
 
   AliasTable< vertexidxtype, coordinatetype, double > negAlias;
   AliasTable< edgeidxtype, coordinatetype, double > posAlias;
-  shared_ptr< Gradient > grad;
+  Gradient* grad;
 
   vertexidxtype* ps;
 
@@ -48,12 +48,13 @@ public:
 #ifdef _OPENMP
 	~Visualizer() {
 		if (storedThreads > 0) omp_set_num_threads(storedThreads);
+		delete grad;
 	}
 #endif
 
-	void initAlias(arma::ivec& newps,
-                 const arma::vec& weights,
-                 const arma::ivec& targets,
+	void initAlias(ivec& newps,
+                 const vec& weights,
+                 const ivec& targets,
                  Rcpp::Nullable<Rcpp::NumericVector> seed) {
 		vertexidxtype N = newps.n_elem - 1;
 		ps = newps.memptr();
@@ -86,18 +87,17 @@ public:
 		}
 	}
 
-  void setGradient(double alpha, double gamma, dimidxtype D) {
-  	if (alpha == 0) grad = shared_ptr< Gradient > (new ExpGradient(gamma, D));
-  	else if (alpha == 1) grad = shared_ptr< Gradient > (new AlphaOneGradient(gamma, D));
-  	else grad = shared_ptr< Gradient > (new AlphaGradient(alpha, gamma, D));
+  void setGradient(const double& alpha, const double& gamma) {
+  	if (alpha == 0) grad = new ExpGradient(gamma, D);
+  	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
+  	else grad = new AlphaGradient(alpha, gamma, D);
   }
 
-  void operator()(iterationtype startSampleIdx, int batchSize) {
+  void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
   	edgeidxtype e_ij;
-  	int m, shortcircuit, example = 0;
+  	int m, example = 0;
   	vertexidxtype i, j, k;
   	dimidxtype d;
-  	vertexidxtype * searchBegin, * searchEnd;
   	coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
 
     distancetype localRho = rho;
@@ -112,19 +112,12 @@ public:
 			grad -> positiveGradient(y_i, y_j, firstholder);
 
       for (d = 0; d != D; d++) y_j[d] -= firstholder[d] * localRho;
-
-      searchBegin = targetPointer + ps[i];
-      searchEnd = targetPointer + ps[i + 1];
-      shortcircuit = m = 0;
-      while (m != M && shortcircuit != M2) {
+			m = 0;
+      while (m != M) {
         k =  negAlias();
-        shortcircuit++;
         // Check that the draw isn't one of i's edges
         if (k == i ||
-            k == j ||
-            binary_search( searchBegin,
-                           searchEnd,
-                           k)) continue;
+            k == j) continue;
         m++;
 
         y_j = coordsPtr + (k * D);
@@ -134,7 +127,6 @@ public:
         for (d = 0; d != D; d++) firstholder[d] += secondholder[d];
       }
        for (d = 0; d != D; d++) y_i[d] += firstholder[d] * localRho;
-      localRho -= rhoIncrement;
     }
     rho -= (rhoIncrement * batchSize);
   }
@@ -168,9 +160,9 @@ arma::mat sgd(arma::mat coords,
                 rho,
                 n_samples);
   v.initAlias(ps, weights, targets_i, seed);
-  v.setGradient(alpha, gamma, D);
+  v.setGradient(alpha, gamma);
   const int batchSize = 8192;
-  const iterationtype barrier = (n_samples * .95 < n_samples - coords.n_cols) ? n_samples * .95 : n_samples - coords.n_cols;
+  const iterationtype barrier = (n_samples * .99 < n_samples - coords.n_cols) ? n_samples * .99 : n_samples - coords.n_cols;
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
