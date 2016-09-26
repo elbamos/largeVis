@@ -42,14 +42,14 @@ lof <- function(edges) {
 #'
 #' @param edges An edge matrix of the type returned by \code{\link{buildEdgeMatrix}}.
 #' @param minPts The minimum number of points in a cluster.
-#' @param K The number of points in the core neighborhood. (See details.)
+#' @param K The number of points in the core neighborhood, inclusive of \eqn{p}. (See details.)
 #' @param neighbors An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}.
 #' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param verbose Verbosity.
 #'
 #' @details The hyperparameter \code{K} controls the size of core neighborhoods.
 #' The algorithm measures the density around a point as 1 / the distance between
-#' that point and its \eqn{k}th nearest neighbor. A low value of \code{K} is similar
+#' that point and its \eqn{k - 1}th nearest neighbor. A low value of \code{K} is similar
 #' to clustering nearest neighbors rather than based on density. A high value of
 #' \code{K} may cause the algorithm to miss some (usually contrived) clustering
 #' patterns, such as where clusters are made up of points arranged in lines to form
@@ -59,7 +59,7 @@ lof <- function(edges) {
 #' matrix may be avoided.
 #'
 #' The function must be provided sufficient nearest-neighbor data for whatever
-#' is specified for \eqn{k}. If \eqn{k} = 5, for example, the edge matrix (and
+#' is specified for \eqn{k}. If \code{K} = 5, for example, the edge matrix (and
 #' neighbor matrix, if specified) must contain data on at least 5 neighbors for
 #' each point. This should not be problematic in typical use in connection with
 #' \code{\link{largeVis}}, which is ordinarily run with a far higher \eqn{k}-value
@@ -128,6 +128,7 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 		neighbors[is.na(neighbors)] <- -1
 		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
 	}
+	if (K < 2) stop("K must be >= 2")
   clustersout <- hdbscanc(edges, neighbors, K, minPts, threads, verbose)
   clusters <- clustersout$clusters[1, ]
   clusters[clusters == -1] <- NA
@@ -196,15 +197,15 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 #' }
 #' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes_
 gplot <- function(x, coords, text = FALSE) {
-  dframe <- data.frame(coords)
+	if (! is.data.frame(coords)) dframe <- data.frame(coords)
   colnames(dframe) <- c("x", "y")
   dframe$cluster = x$clusters
   dframe$probabilities = x$probabilities
   dframe$probabilities[is.nan(dframe$probabilities)] <-
     x$hierarchy$lambda[is.nan(dframe$probabilities)]
   tree <- x$tree
-  tree[tree == -1] <- NA
-  xy <- data.frame(coords[tree + 1, ])
+  tree[tree == 0] <- NA
+  xy <- data.frame(coords[tree, ])
   colnames(xy) <- c("x2", "y2")
   dframe <- cbind(dframe, xy)
   dframe$lambda <- x$hierarchy$lambda / max(x$hierarchy$lambda)
@@ -213,7 +214,7 @@ gplot <- function(x, coords, text = FALSE) {
   plt <- ggplot2::ggplot(dframe,
                          ggplot2::aes_(x = quote(x), y = quote(y),
                     xend = quote(x2), yend = quote(y2), color = quote(cluster))) +
-    ggplot2::geom_point(aes_(alpha = quote(probabilities)), size = 0.7) +
+    ggplot2::geom_point(ggplot2::aes_(alpha = quote(probabilities)), size = 0.7) +
     ggplot2::geom_segment(size = 0.5, ggplot2::aes_(alpha = quote(lambda), size = quote(lambda)))
   if (text == "parent") {
     plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(parent)), size = 2.5,

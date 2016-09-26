@@ -1,3 +1,8 @@
+### largeVis 0.1.9.3
+Hotfix correcting:
+	* An error in the hdbscan implementation regarding the definition of K in calculating core distances.
+	* gplot was broken.
+
 ### largeVis 0.1.9.2
 Hotfix for a bug in the neighbor search when max iterations was 0. 
 
