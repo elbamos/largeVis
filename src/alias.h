@@ -3,7 +3,7 @@
 template <class T, // number of aliases
           class C, // coordinate type, used for probabilities
           class D> // distance type, used to take weights on initialization
-class AliasTable {
+class AliasTable final {
 private:
 	C* probs;
 	T* aliases;
@@ -54,22 +54,21 @@ public:
 		if (accu > 1e-5) warning("Numerical instability in alias table " + to_string(accu));
 	};
 
-	T operator()(C random, C random2) const {
-		T candidate = random * N;
-		return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
-	};
-
 	long initRandom(long seed) {
 		mt = mt19937_64(seed);
 		return mt();
 	}
+
 	void initRandom() {
 		random_device seed;
 		initRandom(seed());
 	}
-	C getRand() {
-		return rnd(mt);
+
+	T operator()(C random, C random2) const {
+		T candidate = random * N;
+		return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
 	}
+
 	T operator()() {
 		return (*this)(rnd(mt), rnd(mt));
 	}

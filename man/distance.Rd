@@ -32,7 +32,7 @@ distance(x, i, j, distance_method, threads = NULL, verbose)
 \item{verbose}{Verbosity.}
 }
 \value{
-A vector of the distances between the columns in `x` indexed by `i` and `j`.
+A vector of the distances between the columns in `x` indexed by `i` and `j`, with attribute \code{method} giving the \code{distance_method}.
 }
 \description{
 This function is a wrapper around a C++ function that calculates pairwise distances in a memory- and CPU-efficient manner.

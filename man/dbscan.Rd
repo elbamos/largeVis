@@ -19,7 +19,7 @@ dbscan(edges, neighbors, eps = Inf, minPts = nrow(neighbors),
 \item{verbose}{Vebosity level.}
 }
 \value{
-A \code{\linke[dbscan]{dbscan}} object.
+A \code{\link[dbscan]{dbscan}} object.
 }
 \description{
 Experimental implementation of the DBSCAN algorithm.

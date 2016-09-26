@@ -13,7 +13,6 @@ class Visualizer {
 protected:
   const dimidxtype D;
   const int M;
-  const int M2;
 
   vertexidxtype * const targetPointer;
   vertexidxtype * const sourcePointer;
@@ -21,7 +20,7 @@ protected:
   const iterationtype n_samples;
 
   distancetype rho;
-  distancetype rhoIncrement;
+  const distancetype rhoIncrement;
 
   AliasTable< vertexidxtype, coordinatetype, double > negAlias;
   AliasTable< edgeidxtype, coordinatetype, double > posAlias;
@@ -31,22 +30,15 @@ protected:
 
   int storedThreads = 0;
 
-  virtual void updateMinus(coordinatetype* from,
-                           const vertexidxtype& i,
-                           const distancetype& rho) {
-  	coordinatetype* to = coordsPtr + (i * D);
-  	for (dimidxtype d = 0; d != D; ++d) to[d] -= from[d] * rho;
-  }
-
 public:
   Visualizer(vertexidxtype * sourcePtr,
              vertexidxtype * targetPtr,
-             dimidxtype D,
+             const dimidxtype& D,
              coordinatetype * coordPtr,
-             int M,
-             distancetype rho,
+             const int& M,
+             const distancetype& rho,
              vertexidxtype* ps,
-             iterationtype n_samples) : D{D}, M{M}, M2(M * 2),
+             const iterationtype& n_samples) : D{D}, M{M},
                                     targetPointer{targetPtr},
                                     sourcePointer{sourcePtr},
                                     coordsPtr{coordPtr},
@@ -54,12 +46,12 @@ public:
                                     rho{rho},
                                     rhoIncrement((rho - 0.0001) / n_samples),
                                     ps{ps} { }
+	virtual ~Visualizer() {
 #ifdef _OPENMP
-	~Visualizer() {
 		if (storedThreads > 0) omp_set_num_threads(storedThreads);
+#endif
 		delete grad;
 	}
-#endif
 
 	void initAlias(const distancetype* posWeights,
                  const distancetype* negWeights,
@@ -89,19 +81,15 @@ public:
   	else grad = new AlphaGradient(alpha, gamma, D);
   }
 
-  void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
+  virtual void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
   	edgeidxtype e_ij;
   	int m, example = 0;
   	vertexidxtype i, j, k;
-  	dimidxtype d;
   	coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
 
-    distancetype localRho = rho;
+    const distancetype localRho = rho;
+    const distancetype negRho = - localRho;
     while (example++ != batchSize && localRho > 0) {
-    	int m, shortcircuit;
-    	vertexidxtype * searchBegin, * searchEnd;
-    	coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
-
       e_ij = posAlias();
 
       j = targetPointer[e_ij];
@@ -110,17 +98,12 @@ public:
       y_i = coordsPtr + (i * D);
       y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
-			updateMinus(firstholder, j, localRho);
+			for (dimidxtype d = 0; d != D; ++d) y_j[d] -= firstholder[d] * rho;
 
-      for (d = 0; d != D; d++) y_j[d] -= firstholder[d] * localRho;
 			m = 0;
       while (m != M) {
         k =  negAlias();
-<<<<<<<
-        ++shortcircuit;
-=======
 
->>>>>>>
         // Check that the draw isn't one of i's edges
         if (k == i ||
             k == j) continue;
@@ -129,10 +112,10 @@ public:
         y_j = coordsPtr + (k * D);
         grad -> negativeGradient(y_i, y_j, secondholder);
 
-        updateMinus(secondholder, k, localRho);
+        for (dimidxtype d = 0; d != D; ++d) y_j[d] -= secondholder[d] * rho;
         for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
       }
-       for (d = 0; d != D; d++) y_i[d] += firstholder[d] * localRho;
+      for (dimidxtype d = 0; d != D; ++d) y_i[d] -= firstholder[d] * rho;
     }
     rho -= (rhoIncrement * batchSize);
   }
@@ -140,14 +123,14 @@ public:
 
 class MomentumVisualizer : public Visualizer {
 protected:
-	float momentum;
+	const float momentum;
 	coordinatetype* momentumarray;
 
-	virtual void updateMinus(coordinatetype* from,
-                          const vertexidxtype& i,
-                          const distancetype& rho) {
+	void updateMinus(coordinatetype* from,
+                   coordinatetype* to,
+                   const vertexidxtype& i,
+                   const distancetype& rho) {
 		coordinatetype* moment = momentumarray + (i * D);
-		coordinatetype* to = coordsPtr + (i * D);
 		for (dimidxtype d = 0; d != D; ++d) to[d] -= moment[d] = (moment[d] * momentum) + (from[d] * rho);
 	}
 
@@ -162,13 +145,52 @@ public:
             iterationtype n_samples,
             const float& momentum,
             const vertexidxtype& N ) : Visualizer(sourcePtr, targetPtr, D, coordPtr,
-            																			M, rho, ps, n_samples) {
-		this -> momentum = momentum;
+            																			M, rho, ps, n_samples), momentum{momentum} {
 		momentumarray = new coordinatetype[D * N];
 		for (vertexidxtype i = 0; i != D*N; ++i) momentumarray[i] = 0;
 	}
+
 	~MomentumVisualizer() {
 		delete[] momentumarray;
+	}
+
+	virtual void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
+		edgeidxtype e_ij;
+		int m, example = 0;
+		vertexidxtype i, j, k;
+		coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
+
+		const distancetype localRho = rho;
+		const distancetype negRho = - localRho;
+		while (example++ != batchSize && localRho > 0) {
+			e_ij = posAlias();
+
+			j = targetPointer[e_ij];
+			i = sourcePointer[e_ij];
+
+			y_i = coordsPtr + (i * D);
+			y_j = coordsPtr + (j * D);
+			grad -> positiveGradient(y_i, y_j, firstholder);
+			updateMinus(firstholder, y_j, j, localRho);
+
+			m = 0;
+			while (m != M) {
+				k =  negAlias();
+
+				// Check that the draw isn't one of i's edges
+				if (k == i ||
+        k == j) continue;
+				m++;
+
+				y_j = coordsPtr + (k * D);
+				grad -> negativeGradient(y_i, y_j, secondholder);
+
+				updateMinus(secondholder, y_j, k, localRho);
+				for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
+			}
+			updateMinus(firstholder, y_i, i, negRho);
+		}
+		rho -= (rhoIncrement * batchSize);
 	}
 };
 
@@ -201,9 +223,9 @@ arma::mat sgd(arma::mat coords,
 															                coords.memptr(),
 															                M,
 															                rho,
-															                n_samples);
 															                ps.memptr(),
-  else {
+															                n_samples);
+	else {
   	float moment = NumericVector(momentum)[0];
   	if (moment < 0) stop("Momentum cannot be negative.");
   	if (moment > 1) stop("Momentum canot be > 1.");
@@ -220,15 +242,12 @@ arma::mat sgd(arma::mat coords,
   }
   vertexidxtype N = coords.n_cols;
   distancetype* negweights = new distancetype[N];
-  if (useDegree) {
   for (vertexidxtype n = 0; n < N; ++n) negweights[n] = 0;
+  if (useDegree) {
   	for (edgeidxtype e = 0; e < targets_i.n_elem; ++e) negweights[targets_i[e]]++;
-  	for (vertexidxtype p = 0; p < N; ++p) {
   } else {
-         ++e) {
-         e != ps[p + 1];
-  		for (edgeidxtype e = ps[p];
-  			//negweights[targets[e]] += weights[e];
+  	for (vertexidxtype p = 0; p < N; ++p) {
+  		for (edgeidxtype e = ps[p]; e != ps[p + 1]; ++e) {
   			negweights[p] += weights[e];
   		}
   	}
@@ -237,20 +256,24 @@ arma::mat sgd(arma::mat coords,
   v -> initAlias(weights.memptr(), negweights, N, sources_j.n_elem, seed);
   delete[] negweights;
 
-  v -> setGradient(alpha, gamma, D);
+  v -> setGradient(alpha, gamma);
+
   const int batchSize = 8192;
   const iterationtype barrier = (n_samples * .99 < n_samples - coords.n_cols) ? n_samples * .99 : n_samples - coords.n_cols;
-
+  iterationtype eIdx;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
+  for (eIdx = 0; eIdx < barrier; eIdx += batchSize) if (progress.increment(batchSize)) {
+#else
+  for (eIdx = 0; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) {
 #endif
-  for (iterationtype eIdx = 0; eIdx < barrier; eIdx += batchSize) if (progress.increment(batchSize)) {
     (*v)(eIdx, batchSize);
   }
 #ifdef _OPENMP
 #pragma omp barrier
+  for ( ; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) (*v)(eIdx, batchSize);
 #endif
-  for (iterationtype eIdx = barrier; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) (*v)(eIdx, batchSize);
+  delete v;
   return coords;
 };
 
