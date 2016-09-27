@@ -79,7 +79,7 @@ test_that("opticis iris cut to dbscan matches dbscan", {
 })
 
 test_that("optics less than or equal to optics reachdist", {
-	expect_lte(getDefects(opclusters$reachdist, irisoptics$reachdist, 1e-3), 2)
+	expect_equal(getDefects(opclusters$reachdist, irisoptics$reachdist, 1e-3), 0)
 })
 
 context("optics-jain")
@@ -92,13 +92,13 @@ jainclusters <- lv_optics(edges = jaindata$edges,
 
 test_that("optics matches optics core on jain when the neighborhoods are complete", {
 	expect_equal(is.infinite(jainclusters$coredist), is.infinite(jaindata$optics$coredist))
-	selections <- ! is.infinite(jainclusters$coredist) & ! is.infinite(jaindata$optics$coredist)
+	selections <- !is.infinite(jainclusters$coredist) & !is.infinite(jaindata$optics$coredist)
 	expect_equal(jainclusters$coredist[selections], jaindata$optics$coredist[selections])
 })
 
 test_that("optics matches dbscan on jain when the neighborhoods are complete", {
 	cl <- cutoptics(jainclusters)
-	expect_lte(sum(cl != (jaindata$dbclusters5$cluster + 1)), 2)
+	expect_equal(sum(cl != (jaindata$dbclusters5$cluster + 1)), 0)
 })
 
 test_that("optics matches optics reachdist on jain when the neighborhoods are complete", {
@@ -128,9 +128,16 @@ test_that("optics output format is correct", {
 	expect_identical(res$minPts, minPts)
 })
 
+test_that("optics coredist matches elki", {
+	expect_equal(res$coredist, opttest$elkiopt$coredist)
+})
+
+test_that("optics reachdist equal or better than elki", {
+	expect_equal(getDefects(res$reachdist, opttest$elki$reachability[opttest$elki$ID], 0.01), 0)
+})
+
 test_that("optics result matches elki after cut", {
 	optcut <- cutoptics(res)
-	refcut <- cutoptics(opttest$elki)
-	expect_lte(getDefects(res$reachdist, opttest$elki$reachability[opttest$elki$ID], 0.01), 3)
+	refcut <- cutoptics(opttest$elkiopt)
 	expect_equal(optcut, refcut)
 })

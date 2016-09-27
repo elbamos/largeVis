@@ -9,28 +9,21 @@ using namespace std;
 template<class VIDX, class D>
 class PairingHeap {
 private:
-  class PairNode {
-  public:
-    D distance;
+  struct PairNode {
+    D distance = INFINITY;
     VIDX index;
-    typedef PairNode* NodePointer;
-    NodePointer leftChild;
-    NodePointer nextSibling;
-    NodePointer prev;
-    PairNode(VIDX index, D distance) : distance{distance}, index{index} {
-    	leftChild = nextSibling = prev = NULL;
-    }
-    void reclaimMemory() {
-    	leftChild = nextSibling = prev = NULL;
-    }
+    bool present = false;
+
+    PairNode* leftChild = nullptr;
+    PairNode* nextSibling = nullptr;
+    PairNode* prev = nullptr;
   };
 
 	typedef PairNode* NodePointer;
 
 	NodePointer root;
-	VIDX MaxSize = 0;
-	vector< NodePointer > PointerArray;
-	vector< bool > ContentsArray;
+	const VIDX MaxSize;
+	vector< PairNode > PointerArray;
 
 	void compareAndLink(NodePointer &first, NodePointer second) {
 		if (second == NULL) return;
@@ -55,7 +48,7 @@ private:
 		if (firstSibling->nextSibling == NULL) {
 			return firstSibling;
 		}
-		static vector< PairingHeap<VIDX, D>::NodePointer > treeArray(5);
+		static vector< NodePointer > treeArray(5);
 		int numSiblings = 0;
 		for (; firstSibling != NULL; numSiblings++) {
 			if (numSiblings == treeArray.size()) treeArray.resize(numSiblings * 2);
@@ -74,27 +67,19 @@ private:
 	}
 
 	NodePointer Insert(VIDX &n, D &x) {
-		NodePointer newNode = new PairNode(n, x);
+		NodePointer newNode = & PointerArray[n];
+		PointerArray[n].present = true;
+		PointerArray[n].distance = x;
+		PointerArray[n].index = n;
+		PointerArray[n].leftChild = PointerArray[n].nextSibling = PointerArray[n].prev = nullptr;
 		if (root == NULL) root = newNode;
 		else compareAndLink(root, newNode);
-		PointerArray[n] = newNode;
-		ContentsArray[n] = true;
 		return newNode;
 	}
 
-  void makeEmpty() {
-  	root = NULL;
-  }
-
 public:
 	PairingHeap(VIDX N) : root(NULL), MaxSize{N},
-												PointerArray(vector< NodePointer >(N, nullptr)),
-												ContentsArray(vector< bool >(N, false)) {
-	}
-	~PairingHeap() {
-		for (VIDX i = 0; i != PointerArray.size(); i++) {
-			if (PointerArray[i] != NULL) delete PointerArray[i];
-		}
+												PointerArray(vector< PairNode >(N)) {
 	}
 
 	VIDX pop() {
@@ -102,7 +87,7 @@ public:
 		if (root->leftChild == NULL) root = NULL;
 		else root = combineSiblings(root->leftChild);
 		VIDX ret = oldRoot -> index;
-		ContentsArray[ret] = false;
+		oldRoot -> present = false;
 		return ret;
 	}
 
@@ -111,13 +96,12 @@ public:
 	}
 
 	bool contains(const VIDX& i) const {
-		return ContentsArray[i];
+		return PointerArray[i].present;
 	}
 
 	void insert(VIDX& n, D &x) {
 		Insert(n, x);
 	}
-
 
 	void batchInsert(const VIDX& n, const VIDX& start) {
 		for (VIDX i = 0; i != n; i++) {
@@ -127,7 +111,7 @@ public:
 	};
 
   bool decreaseIf(const VIDX& i, const D &newVal) {
-  	NodePointer p = PointerArray[i];
+  	NodePointer p = & PointerArray[i];
   	if (p->distance < newVal) return false;
   	p->distance = newVal;
   	if (p != root) {
@@ -144,8 +128,8 @@ public:
   }
 
   D keyOf(const VIDX& i) const {
-  	return PointerArray[i] -> distance;
-  };
+  	return PointerArray[i].distance;
+  }
 
   D topKey() const {
   	if (root == NULL) return INFINITY;
