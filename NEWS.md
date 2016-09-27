@@ -8,6 +8,9 @@
 		+	Both now require both edges and neighbors in all cases, because there is no performance advantage to this implementation unless both are provided. 
 		+ The functions are renamed lv_dbscan and lv_optics, respectively, to avoid naming conflicts with the dbscan package. 
 
+### largeVis 0.1.9.3
+Fix to hdbscan selecting wrong K, and gplot failing. 
+
 ### largeVis 0.1.9.2
 Hotfix for a bug in the neighbor search when max iterations was 0. 
 
