@@ -35,6 +35,7 @@ test_that("build edge matrix as distance matches dist", {
 	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, threads = 2)
 	edges <- buildEdgeMatrix(dat, neighbors)
 	d2 <- edgeMatrixToDist(edges)
+	print(str(d2))
 	expect_equal(do, d2)
 	expect_equal(attr(d2, "method"), "euclidean")
 })
