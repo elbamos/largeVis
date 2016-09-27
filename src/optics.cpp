@@ -12,7 +12,7 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-#define DEBUG
+//#define DEBUG
 
 typedef pair<long long, double> iddist;
 
@@ -27,8 +27,6 @@ typedef std::priority_queue<iddist,
                             vector<iddist>,
                             CompareDist> NNheap;
 typedef std::vector<iddist> NNlist;
-
-
 
 class OPTICS {
 protected:
@@ -46,8 +44,7 @@ protected:
 set< long long > debugPts = set< long long >();
 
 void startDebug() {
-	debugPts.insert(18);
-	debugPts.insert(1);
+	debugPts.insert(4);
 }
 
 bool testDebug(long long& p) {
@@ -65,7 +62,6 @@ bool testDebug(long long& p) {
 	NNlist getNeighbors(long long& p,
                       PairingHeap< long long, double >& seeds) {
 		NNlist ret = NNlist(neighbors -> n_rows);
-		if (coredist[p] == INFINITY) return ret;
 		bool exceeded = false;
 		arma::sp_colvec pEdges = edges->col(p);
 		for (auto it = neighbors -> begin_col(p);
@@ -131,9 +127,15 @@ public:
 			getNeighbors(p, seeds);
 			while (!seeds.isEmpty()) {
 				long long q = seeds.pop();
+				double key = seeds.keyOf(q);
+				if (key == seeds.topKey()) {
+					long long r = seeds.pop();
+					if (r > q) swap(q, r);
+					seeds.insert(r, key);
+				}
 				visited[q] = true;
 				orderedPoints.push_back(q);
-				reachdist[q] = seeds.keyOf(q);
+				reachdist[q] = key;
 				if (coredist[q] == INFINITY) continue;
 				getNeighbors(q, seeds);
 			}
