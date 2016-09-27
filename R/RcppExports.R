@@ -7,10 +7,13 @@ checkBits <- function() {
 
 checkOpenMP <- function() {
     .Call('largeVis_checkOpenMP', PACKAGE = 'largeVis')
+<<<<<<< HEAD
 }
 
 optics_cpp <- function(edges, neighbors, eps, minPts, verbose) {
     .Call('largeVis_optics_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, verbose)
+=======
+>>>>>>> opticsanddbscan
 }
 
 dbscan_cpp <- function(edges, neighbors, eps, minPts, verbose) {
@@ -43,6 +46,13 @@ hdbscanc <- function(edges, neighbors, K, minPts, threads, verbose) {
 
 sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, seed, threads, verbose) {
     .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, seed, threads, verbose)
+<<<<<<< HEAD
+=======
+}
+
+optics_cpp <- function(edges, neighbors, eps, minPts, verbose) {
+    .Call('largeVis_optics_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, verbose)
+>>>>>>> opticsanddbscan
 }
 
 searchTreesCSparse <- function(threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, threads, verbose) {

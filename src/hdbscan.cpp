@@ -2,6 +2,7 @@
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
+#include "largeVis.h"
 #include "pq.h"
 
 class HDBSCAN : public UF<long long> {

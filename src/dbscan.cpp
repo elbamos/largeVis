@@ -4,7 +4,11 @@
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
 #include "minindexedpq.h"
+#include <queue>
 #include <Rmath.h>
+#include <progress.hpp>
+
+//#define DEBUG
 
 using namespace Rcpp;
 using namespace std;
@@ -26,7 +30,8 @@ typedef std::vector<iddist> NNlist;
 
 class DBSCAN {
 protected:
-	arma::sp_mat* edges;
+	const arma::sp_mat* edges;
+	const arma::imat* neighbors;
 	long double eps;
 	int minPts;
 	long long N;
@@ -35,24 +40,35 @@ protected:
 	Progress progress;
 
 	list< long long > regionQuery(long long& p) const {
-		list<long long> ret = list<long long>();
-		ret.push_back(p);
+		set< long long > holder = set< long long >();
 		bool exceeded = false;
-		for (auto it = edges -> begin_row(p); it != edges -> end_row(p); it++) {
-			if (*it < eps) ret.push_back(it.col());
-			else exceeded = true;
+		for (auto it = neighbors -> begin_col(p);
+         it != neighbors -> end_col(p);
+         it ++) {
+			if (*it == -1 || (*edges)(p, *it) > eps) {
+				exceeded = true;
+				break;
+			}
+			holder.insert(*it);
 		}
-		// If exceeded is false, then the minNeighborhood is bigger than we have.
+		if (! exceeded) {
+			for (auto it = edges -> begin_col(p);
+        	 it != edges -> end_col(p);
+        	 it++) {
+				if (*it < eps) holder.insert(it.row());
+			}
+		}
+		list< long long > ret = list< long long >(holder.begin(), holder.end());
 		return ret;
 	}
 
-	void expandCluster(long long& P, list< long long >& pNeighbors, int C) {
+	void expandCluster(long long& P, list< long long >& pNeighbors, int& C) {
 		clusterAssignments[P] = C;
 		for (auto pprime = pNeighbors.begin(); pprime != pNeighbors.end(); pprime++) {
 			if (! visited[*pprime]) {
 				visited[*pprime] = true;
 				list< long long > pprimeNeighbors = regionQuery(*pprime);
-				if (pprimeNeighbors.size() >= minPts) {
+				if (pprimeNeighbors.size() >= minPts - 1) {
 					pNeighbors.insert(pNeighbors.end(), pprimeNeighbors.begin(), pprimeNeighbors.end());
 				}
 			}
@@ -62,14 +78,17 @@ protected:
 
 public:
 
-	DBSCAN( arma::sp_mat& edges,
+	DBSCAN(const arma::sp_mat& edges,
          const arma::imat& neighbors,
          double eps,
          int minPts,
-         bool verbose) : edges{&edges}, eps{eps}, minPts{minPts}, N(neighbors.n_cols), visited(vector< bool >(N, false)),
+         bool verbose) : edges{&edges}, neighbors{&neighbors},
+         								 eps{eps}, minPts{minPts}, N(neighbors.n_cols),
+         								 visited(vector< bool >(N, false)),
 								         clusterAssignments(vector<int>(N, -1)),
 								         progress(Progress(N, verbose)) {
          	if (neighbors.n_rows < minPts) stop("Insufficient neighbors.");
+
          }
 
 
@@ -78,7 +97,7 @@ public:
 		for (long long p = 0; p < N; p++) if (progress.increment() && ! visited[p]) {
 			visited[p] = true;
 			list< long long > pNeighbors = regionQuery(p);
-			if (pNeighbors.size() >= minPts) {
+			if (pNeighbors.size() >= minPts - 1) {
 				++C;
 				expandCluster(p, pNeighbors, C);
 			}
@@ -87,127 +106,12 @@ public:
 	}
 };
 
-class OPTICS {
-protected:
-	arma::sp_mat* edges;
-	long double eps;
-	long long N;
-	std::vector< bool > visited;
-	std::vector<long long> orderedPoints;
-  std::vector<long double> reachdist, coredist;
-	Progress progress;
-
-	long double reachabilityDistance(long long& p,
-                                   long long& q) const {
-		long double dist = max((*edges)(p, q), (*edges)(q, p));
-		return max(coredist[p], dist);
-	}
-
-	NNlist getNeighbors(long long& p) const {
-		NNlist ret = NNlist();
-		NNheap heap = NNheap();
-		if (coredist[p] == INFINITY) return ret;
-		bool exceeded = false;
-		for (auto it = edges -> begin_row(p); it != edges -> end_row(p); it++) {
-			if (*it < eps) heap.emplace(it.col(), *it);
-			else exceeded = true;
-		}
-		// If exceeded is false, then the minNeighborhood is bigger than we have.
-		ret.reserve(heap.size());
-		while (! heap.empty()) {
-			ret.push_back(heap.top());
-			heap.pop();
-		}
-		return ret;
-	}
-
-	void update(NNlist& pNeighbors,
-             PairingHeap<long long, long double>& seeds,
-             long long& p) {
-
-		while(!pNeighbors.empty()) {
-			iddist o = pNeighbors.back();
-			pNeighbors.pop_back();
-
-			if (visited[o.first]) continue; // already processed
-
-			long double newReachabilityDistance = reachabilityDistance(p, o.first);
-
-			if(reachdist[o.first] == INFINITY) {
-				reachdist[o.first] = newReachabilityDistance;
-				seeds.insert(o.first, newReachabilityDistance);
-			} else  if(newReachabilityDistance < reachdist[o.first]) {
-				reachdist[o.first] = newReachabilityDistance;
-				seeds.decreaseIf(o.first, newReachabilityDistance);
-			}
-		}
-	}
-
-
-public:
-
-  OPTICS( arma::sp_mat& edges,
-          const arma::imat& neighbors,
-          double eps,
-          int minPts,
-          bool verbose) : edges{&edges}, eps{eps}, N(neighbors.n_cols), visited(vector< bool >(N, false)),
-          								orderedPoints(vector<long long>()),
-          								reachdist(vector<long double>(N, INFINITY)),
-								          coredist(vector<long double>(N, INFINITY)), progress(Progress(N, verbose)) {
-		if (neighbors.n_rows < minPts) stop("Insufficient neighbors.");
-    orderedPoints.reserve(N);
-  	for (long long n = 0; n != N; n++) {
-  		long long nthNeighbor = neighbors(minPts - 1, n);
-  		coredist[n] = (edges(n, nthNeighbor) < eps) ? edges(n, nthNeighbor) : INFINITY;
-  	}
-  }
-
-  List run() {
-    for (long long p = 0; p < N; p++) if (progress.increment() && ! visited[p]) {
-
-      NNlist pNeighbors = getNeighbors(p);
-    	visited[p] = true;
-			orderedPoints.push_back(p);
-
-      if (coredist[p] == INFINITY) continue; // core-dist is undefined
-			PairingHeap<long long, long double> seeds = PairingHeap<long long, long double>(N);
-			update(pNeighbors, seeds, p);
-
-      while (!seeds.isEmpty()) {
-      	long long q = seeds.pop();
-      	NNlist qNeighbors = getNeighbors(q);
-      	visited[q] = true;
-      	orderedPoints.push_back(q);
-      	if (coredist[q] != INFINITY) {
-      		update(qNeighbors, seeds, q);
-      	}
-      }
-    }
-    List ret;
-    ret["order"] = IntegerVector(orderedPoints.begin(), orderedPoints.end()) +1;
-    ret["reachdist"] = NumericVector(reachdist.begin(), reachdist.end());
-    ret["coredist"] = NumericVector(coredist.begin(), coredist.end());
-    return ret;
-  }
-};
-
 // [[Rcpp::export]]
-List optics_cpp(arma::sp_mat& edges,
-              arma::imat& neighbors,
-                double eps,
-                int minPts,
-                bool verbose) {
-  OPTICS opt = OPTICS(edges, neighbors, eps, minPts, verbose);
-  return opt.run();
-}
-
-// [[Rcpp::export]]
-IntegerVector dbscan_cpp(arma::sp_mat& edges,
-                     arma::imat& neighbors,
-                     double eps,
-                     int minPts,
-                     bool verbose) {
+IntegerVector dbscan_cpp(const arma::sp_mat& edges,
+                         const arma::imat& neighbors,
+                         double eps,
+                         int minPts,
+                         bool verbose) {
 	DBSCAN db = DBSCAN(edges, neighbors, eps, minPts, verbose);
 	return db.run();
 }
-

@@ -3,6 +3,7 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
 #include "neighbors.h"
+#include "distance.h"
 
 using namespace Rcpp;
 using namespace std;

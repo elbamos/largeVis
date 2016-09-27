@@ -2,7 +2,7 @@
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
-#include "largeVis.h"
+#include "gradients.h"
 
 using namespace Rcpp;
 using namespace std;

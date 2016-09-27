@@ -3,7 +3,9 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
+#include "gradients.h"
 #include "alias.h"
+#include "progress.hpp"
 
 using namespace Rcpp;
 using namespace std;
