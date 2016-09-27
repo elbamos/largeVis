@@ -101,7 +101,7 @@ edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
 
 test_that("as.dendrogram succeeds on iris4", {
 	hdobj <- hdbscan(edges, neighbors, minPts = 10, K = 4, threads = 2, verbose = FALSE)
-	expect_silent(dend <- as.dendrogram(hdobj))
+	dend <- as.dendrogram(hdobj)
 	expect_equal(length(dend[[1]]), sum(hdobj$hierarchy$nodemembership == 1) + sum(hdobj$hierarchy$parent == 1) - 1)
 	expect_equal(sum(is.null(dend)), 0)
 	expect_equal(class(dend), "dendrogram")
@@ -110,7 +110,7 @@ test_that("as.dendrogram succeeds on iris4", {
 
 test_that("as.dendrogram succeeds on iris3", {
 	hdobj <- hdbscan(edges, minPts = 10, K = 3, threads = 2, verbose = FALSE)
-	expect_silent(dend <- as.dendrogram(hdobj))
+	dend <- as.dendrogram(hdobj)
 	expect_equal(length(dend), sum(hdobj$hierarchy$nodemembership == 1) + sum(hdobj$hierarchy$parent == 1) - 1)
 	expect_equal(sum(is.null(dend)), 0)
 	expect_equal(class(dend), "dendrogram")
