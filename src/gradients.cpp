@@ -13,7 +13,7 @@ using namespace arma;
 * Gradients
 */
 Gradient::Gradient(const distancetype& g,
-          const dimidxtype& d) : gamma{g}, cap(5), D{d} {};
+          				 const dimidxtype& d) : gamma{g}, cap(5), D{d} {};
 
 inline distancetype Gradient::distAndVector(const coordinatetype *x_i,
                                             const coordinatetype *x_j,
@@ -25,10 +25,6 @@ inline distancetype Gradient::distAndVector(const coordinatetype *x_i,
 		cnt += t * t;
 	}
 	return cnt;
-}
-
-Gradient::~Gradient() {
-
 }
 
 inline void Gradient::multModify(coordinatetype *col, const coordinatetype& adj) const {

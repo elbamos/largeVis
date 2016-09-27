@@ -39,9 +39,12 @@ as.dendrogram.hdbscan <- function(x) {
 			label = paste("cluster", i, "stability",x$hierarchy$stability[i], ifelse(x$hierarchy$selected[i], "selected", "")),
 			class = "dendrogram"
 		)
-		clusters[(x$hierarchy$parent == i) & (1:C != i)] <- NULL
+		clusters[(x$hierarchy$parent == i) & (1:C != i)] <- NA
 	}
+
+	clusters[which(is.na(clusters))] <- NULL
 	clusters <- clusters[! sapply(clusters, is.null)]
+
 	if (length(clusters) == 1) clusters[[1]]
 	else {
 		structure(clusters,

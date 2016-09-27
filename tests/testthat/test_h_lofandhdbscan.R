@@ -1,4 +1,4 @@
-context("dbscan")
+context("LOF")
 
 set.seed(1974)
 data(iris)
@@ -7,38 +7,15 @@ dat <- scale(dat)
 dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
-K <- 20
+K <- 80
 neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat,
 												 neighbors = neighbors,
 												 verbose = FALSE)
 
-test_that("dbscan doesn't crash on iris", {
-	expect_silent(dbscan(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, verbose = FALSE))
-})
-
-
-context("optics")
-
-set.seed(1974)
-data(iris)
-dat <- as.matrix(iris[, 1:4])
-dat <- scale(dat)
-dupes <- which(duplicated(dat))
-dat <- dat[-dupes, ]
-dat <- t(dat)
-K <- 20
-neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
-edges <- buildEdgeMatrix(data = dat,
-                          neighbors = neighbors,
-                          verbose = FALSE)
-
-
-context("LOF")
-
 test_that(paste("LOF is consistent", 20), {
 	load(system.file("extdata/truelof20.Rda", package = "largeVis"))
-	ourlof <- largeVis:::lof(edges)
+	ourlof <- lof(edges)
 	expect_lt(sum(truelof20 - ourlof)^2 / ncol(dat), 0.4)
 })
 
@@ -89,10 +66,6 @@ test_that("hdbscan is correct", {
 	expect_equal(length(unique(clustering$clusters, 0)), 3)
 })
 
-test_that("gplot isn't broken", {
-	expect_silent(plt <- gplot(clustering, matrix(rnorm(ncol(neighbors) * 2), ncol = 2)))
-})
-
 test_that("hdbscan doesn't crash on glass edges", {
 	load(system.file("extdata/glassEdges.Rda", package = "largeVis"))
 	clustering <- hdbscan(edges, threads = 2, verbose = FALSE)
@@ -115,17 +88,53 @@ test_that("hdbscan doesn't crash on big bad edges", {
 
 context("as.dendrogram")
 
-test_that("as.dendrogram succeeds", {
-	library(clusteringdatasets)
-	data(spiral)
-	dat <- t(as.matrix(spiral[, 1:2]))
-	neighbors <- randomProjectionTreeSearch(dat, K = 20)
-	edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, threads = 2)
-	hdobj <- hdbscan(edges = edges, neighbors = neighbors, minPts = 10, K = 5, threads = 2)
+set.seed(1974)
+data(iris)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+K <- 20
+neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
+
+test_that("as.dendrogram succeeds on iris4", {
+	hdobj <- hdbscan(edges, neighbors, minPts = 10, K = 4, threads = 2, verbose = FALSE)
+	expect_silent(dend <- as.dendrogram(hdobj))
+	expect_equal(length(dend[[1]]), sum(hdobj$hierarchy$nodemembership == 1) + sum(hdobj$hierarchy$parent == 1) - 1)
+	expect_equal(sum(is.null(dend)), 0)
+	expect_equal(class(dend), "dendrogram")
+	expect_equal(nobs(dend), ncol(dat))
+}	)
+
+test_that("as.dendrogram succeeds on iris3", {
+	hdobj <- hdbscan(edges, minPts = 10, K = 3, threads = 2, verbose = FALSE)
 	expect_silent(dend <- as.dendrogram(hdobj))
 	expect_equal(length(dend), sum(hdobj$hierarchy$nodemembership == 1) + sum(hdobj$hierarchy$parent == 1) - 1)
 	expect_equal(sum(is.null(dend)), 0)
 	expect_equal(class(dend), "dendrogram")
 	expect_equal(nobs(dend), ncol(dat))
-	expect_equal(length(dend), 10)
 }	)
+
+context("gplot")
+
+set.seed(1974)
+data(iris)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+K <- 20
+neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
+clustering <- hdbscan(edges, neighbors, minPts = 10, K = 4,  threads = 2, verbose = FALSE)
+
+test_that("gplot isn't broken", {
+	expect_silent(plt <- gplot(clustering, t(dat)))
+})
+
+test_that("gplot isn't broken with text", {
+	expect_silent(plt <- gplot(clustering, t(dat), text = TRUE))
+})

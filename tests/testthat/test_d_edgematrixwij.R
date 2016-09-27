@@ -28,6 +28,8 @@ test_that("build edge matrix stores the distance method", {
 	expect_equal(attr(edges, "method"), "euclidean")
 })
 
+context("dist")
+
 test_that("build edge matrix as distance matches dist", {
 	do <- dist(t(dat))
 	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, threads = 2)

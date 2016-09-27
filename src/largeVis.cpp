@@ -90,7 +90,6 @@ public:
   	coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
 
     const distancetype localRho = rho;
-    const distancetype negRho = - localRho;
     while (example++ != batchSize && localRho > 0) {
       e_ij = posAlias();
 

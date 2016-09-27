@@ -79,7 +79,7 @@ test_that("opticis iris cut to dbscan matches dbscan", {
 })
 
 test_that("optics less than or equal to optics reachdist", {
-	expect_equal(getDefects(opclusters$reachdist, irisoptics$reachdist, 1e-3), 0)
+	expect_lte(getDefects(opclusters$reachdist, irisoptics$reachdist, 1e-3), 2)
 })
 
 context("optics-jain")
@@ -98,9 +98,7 @@ test_that("optics matches optics core on jain when the neighborhoods are complet
 
 test_that("optics matches dbscan on jain when the neighborhoods are complete", {
 	cl <- cutoptics(jainclusters)
-	print(table(cl))
-	print(table(jaindata$dbclusters5$cluster))
-	expect_equal(cl, jaindata$dbclusters5$cluster + 1)
+	expect_lte(sum(cl != (jaindata$dbclusters5$cluster + 1)), 2)
 })
 
 test_that("optics matches optics reachdist on jain when the neighborhoods are complete", {
@@ -114,11 +112,10 @@ context("optics-elki")
 load(system.file("extdata/opttest.Rda", package = "largeVis"))
 
 x <- opttest$test_data
-neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 300, tree_threshold = 100, max_iter = 5, seed = 1974)
+neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399, tree_threshold = 100, max_iter = 10, seed = 1974)
 edges <- buildEdgeMatrix(t(opttest$test_data), neighbors = neighbors, threads = 1)
 
 eps <- .1
-#eps <- .06
 eps_cl <- .1
 minPts <- 10
 res <- lv_optics(edges, neighbors, eps = eps,  minPts = minPts)
@@ -134,5 +131,6 @@ test_that("optics output format is correct", {
 test_that("optics result matches elki after cut", {
 	optcut <- cutoptics(res)
 	refcut <- cutoptics(opttest$elki)
+	expect_lte(getDefects(res$reachdist, opttest$elki$reachability[opttest$elki$ID], 0.01), 3)
 	expect_equal(optcut, refcut)
 })
