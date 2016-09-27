@@ -2,14 +2,14 @@ context("Edge Matrix")
 
 test_that("Edge Matrix doesn't crash", {
 	M <- 10
-	data (quakes)
+	data(quakes)
 	dat <- t(scale(as.matrix(quakes)))
 	neighbors <- randomProjectionTreeSearch(dat,
 																						K = 20,  threads = 2, verbose = FALSE)
 	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
 })
 
-data (iris)
+data(iris)
 set.seed(1974)
 dat <- as.matrix(iris[, 1:4])
 dat <- scale(dat)
@@ -30,14 +30,31 @@ test_that("build edge matrix stores the distance method", {
 
 context("dist")
 
+data(iris)
+set.seed(1974)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+do <- dist(t(dat))
+
 test_that("build edge matrix as distance matches dist", {
-	do <- dist(t(dat))
-	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, threads = 2)
+	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, max_iter = 10, threads = 2)
 	edges <- buildEdgeMatrix(dat, neighbors)
 	d2 <- edgeMatrixToDist(edges)
-	print(str(d2))
-	expect_equal(do, d2)
+	expect_equal(as.matrix(do), as.matrix(d2))
 	expect_equal(attr(d2, "method"), "euclidean")
+	expect_equal(sum(is.na(as.matrix(d2))), 0)
+})
+
+test_that("build edge matrix as distance matches dist with nas", {
+	neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
+	edges <- buildEdgeMatrix(dat, neighbors)
+	d3 <- edgeMatrixToDist(edges)
+	todelete <- !is.na(as.matrix(d3))
+	expect_equal(as.matrix(do)[todelete], as.matrix(d3)[todelete])
+	expect_equal(attr(d3, "method"), "euclidean")
 })
 
 context("wij")

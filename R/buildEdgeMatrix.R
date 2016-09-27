@@ -40,22 +40,25 @@ buildEdgeMatrix <- function(data,
 #' @return A \code{\link[stats]{dist}} object.
 #'
 #' @note This method converts the otherwise sparse edge matrix into a dense \code{dist} object,
-#' where any distances absent from the edge matrix are represented as \code{NA} in the \code{dist} object.
+#' where any distances absent from the edge matrix are represented as \code{NA}.
 #'
 #' @export
 #' @rdname buildEdgeMatrix
+#' @importFrom Matrix triu tril t
 edgeMatrixToDist <- function(x) {
-	y <- x[lower.tri(x, FALSE)]
-	z <- x[upper.tri(x, FALSE)]
-	z <- t(z)
+	y <- Matrix::tril(x)
+	z <- Matrix::t(Matrix::triu(x))
 	zeros <- y == 0
 	y[zeros] <- z[zeros]
-	structure(y,
+	y[y == 0] <- NA
+	diag(y) <- 0
+	structure(as.dist(as.matrix(y)),
 						class = "dist",
 						Size = ncol(x),
 						Diag = FALSE,
 						Upper = FALSE,
-						method = attr(x, "method"))
+						method = attr(x, "method"),
+						call = sys.call())
 }
 
 #' buildWijMatrix
