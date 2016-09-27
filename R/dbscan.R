@@ -282,8 +282,8 @@ gplot <- function(x, coords, text = FALSE) {
   dframe$probabilities[is.nan(dframe$probabilities)] <-
     x$hierarchy$lambda[is.nan(dframe$probabilities)]
   tree <- x$tree
-  tree[tree == -1] <- NA
-  xy <- data.frame(coords[tree + 1, ])
+  tree[tree == 0] <- NA
+  xy <- data.frame(coords[tree, ])
   colnames(xy) <- c("x2", "y2")
   dframe <- cbind(dframe, xy)
   dframe$lambda <- x$hierarchy$lambda / max(x$hierarchy$lambda)

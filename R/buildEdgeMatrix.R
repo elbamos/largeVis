@@ -26,12 +26,12 @@ buildEdgeMatrix <- function(data,
 											j = indices$j + 1,
 											x = as.vector(distances),
 											dims = c(ncol(data), ncol(data)))
-	structure(mat,
-						method = tolower(distance_method),
-						class = c("edge_matrix", class(mat)))
+	structure(.Data = mat,
+						method = tolower(distance_method))
 }
 
-#' as.dist.edge_matrix
+
+#' edgeMatrixToDist
 #'
 #' Convert an edge matrix to a \code{dist} object.
 #'
@@ -44,12 +44,13 @@ buildEdgeMatrix <- function(data,
 #'
 #' @export
 #' @rdname buildEdgeMatrix
-as.dist.edge_matrix <- function(x) {
+edgeMatrixToDist <- function(x) {
 	y <- x[lower.tri(x, FALSE)]
-	z <- t(x[upper.tri(x, FALSE)])
-	y[y == 0] <- z[y == 0]
-	do <- y@x
-	structure(do,
+	z <- x[upper.tri(x, FALSE)]
+	z <- t(z)
+	zeros <- y == 0
+	y[zeros] <- z[zeros]
+	structure(y,
 						class = "dist",
 						Size = ncol(x),
 						Diag = FALSE,

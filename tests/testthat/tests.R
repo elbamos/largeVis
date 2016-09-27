@@ -30,16 +30,17 @@ test_that("build edge matrix stores the distance method", {
 
 test_that("build edge matrix as distance matches dist", {
 	do <- dist(t(dat))
-	neighbors <- randomProjectionTreeSearch(dat, K = 149, threads = 2)
+	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, threads = 2)
 	edges <- buildEdgeMatrix(dat, neighbors)
-	d2 <- as.dist(edges)
+	d2 <- edgeMatrixToDist(edges)
 	expect_equal(do, d2)
+	expect_equal(attr(d2, "method"), "euclidean")
 })
 
 context("wij")
 
 test_that("wij doesn't crash", {
-	data (iris)
+	data(iris)
 	set.seed(1974)
 	dat <- as.matrix(iris[, 1:4])
 	dat <- scale(dat)
@@ -54,7 +55,7 @@ test_that("wij doesn't crash", {
 context("project knns")
 
 test_that("project knns doesn't crash with momentum", {
-	data (iris)
+	data(iris)
 	set.seed(1974)
 	dat <- as.matrix(iris[, 1:4])
 	dat <- scale(dat)
@@ -68,7 +69,7 @@ test_that("project knns doesn't crash with momentum", {
 })
 
 test_that("project knns doesn't crash", {
-	data (iris)
+	data(iris)
 	set.seed(1974)
 	dat <- as.matrix(iris[, 1:4])
 	dat <- scale(dat)
