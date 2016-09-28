@@ -14,20 +14,6 @@ using namespace arma;
 
 //#define DEBUG
 
-typedef pair<long long, double> iddist;
-
-class CompareDist {
-public:
-  bool operator()(iddist n1, iddist n2) {
-    return n1.second > n2.second;
-  }
-};
-
-typedef std::priority_queue<iddist,
-                            vector<iddist>,
-                            CompareDist> NNheap;
-typedef std::vector<iddist> NNlist;
-
 class OPTICS {
 protected:
 	arma::sp_mat* edges;
@@ -54,14 +40,13 @@ bool testDebug(long long& p) {
 #endif
 
 	long double reachabilityDistance(long long& p,
-                                  long long& q) const {
+                                   long long& q) const {
 		double dist = max((*edges)(p, q), (*edges)(q, p));
 		return max(coredist[p], dist);
 	}
 
-	NNlist getNeighbors(long long& p,
+	void getNeighbors(long long& p,
                       PairingHeap< long long, double >& seeds) {
-		NNlist ret = NNlist(neighbors -> n_rows);
 		bool exceeded = false;
 		arma::sp_colvec pEdges = edges->col(p);
 		for (auto it = neighbors -> begin_col(p);
@@ -81,7 +66,6 @@ bool testDebug(long long& p) {
 				addNeighbor(p, it.row(), seeds);
 			}
 		}
-		return ret;
 	}
 
 	void addNeighbor(long long& p,
