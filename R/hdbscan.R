@@ -90,6 +90,7 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 		neighbors[is.na(neighbors)] <- -1
 		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
 	}
+	if (minPts < 6) stop("minPts must be >= 6")
 	clustersout <- hdbscanc(edges, neighbors, as.integer(K), as.integer(minPts), as.integer(threads), as.logical(verbose))
 	clusters <- clustersout$clusters[1, ]
 	clusters[clusters == -1] <- NA

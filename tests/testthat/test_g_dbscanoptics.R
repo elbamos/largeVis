@@ -33,7 +33,7 @@ test_that("dbscan doesn't crash on iris", {
 })
 
 test_that("dbscan matches iris", {
-	load(system.file(package = "largeVis", "extdata/irisdbscan.Rda"))
+	load(system.file(package = "largeVis", "testdata/irisdbscan.Rda"))
 	dbclusters <- lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
 	expect_lte(sum(dbclusters$cluster != irisclustering$cluster), 1)
 })
@@ -43,7 +43,7 @@ context("dbscan-jain")
 test_that("dbscan matches dbscan on jain when the neighborhoods are complete", {
 	skip_on_cran()
 	skip_on_travis()
-	load(system.file(package = "largeVis", "extdata/jaindata.Rda"))
+	load(system.file(package = "largeVis", "testdata/jaindata.Rda"))
 	jainclusters <- lv_dbscan(edges = jaindata$edges, neighbors = jaindata$neighbors, eps = 2.5, minPts = 10, verbose = FALSE)
 	expect_equal(jainclusters$cluster, jaindata$dbclusters25$cluster)
 })
@@ -54,7 +54,7 @@ test_that("optics doesn't crash on iris", {
   expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, verbose = FALSE))
 })
 
-load(system.file(package = "largeVis", "extdata/irisoptics.Rda"))
+load(system.file(package = "largeVis", "testdata/irisoptics.Rda"))
 opclusters <- lv_optics(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
 
 test_that("optics matches optics core infinities", {
@@ -62,7 +62,7 @@ test_that("optics matches optics core infinities", {
 })
 
 test_that("optics matches optics core dist not infinities", {
-	expect_equal(opclusters$coredist[! is.infinite(opclusters$coredist)], irisoptics$coredist[! is.infinite(irisoptics$coredist)])
+	expect_equal(opclusters$coredist[!is.infinite(opclusters$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
 })
 
 test_that("opticis iris cut to dbscan matches dbscan", {
@@ -73,7 +73,7 @@ test_that("opticis iris cut to dbscan matches dbscan", {
 
 context("optics-jain")
 
-load(system.file(package = "largeVis", "extdata/jaindata.Rda"))
+load(system.file(package = "largeVis", "testdata/jaindata.Rda"))
 jainclusters <- lv_optics(edges = jaindata$edges,
 													neighbors = jaindata$neighbors,
 													eps = 2.5, minPts = 5,
@@ -96,7 +96,7 @@ test_that("optics matches optics reachdist on jain when the neighborhoods are co
 
 context("optics-elki")
 
-load(system.file("extdata/opttest.Rda", package = "largeVis"))
+load(system.file("testdata/opttest.Rda", package = "largeVis"))
 
 x <- opttest$test_data
 neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399, tree_threshold = 100, max_iter = 10, seed = 1974)

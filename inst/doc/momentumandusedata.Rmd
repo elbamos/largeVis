@@ -84,13 +84,13 @@ if (rebuild) {
 														 degree = factor(rep(c("weights", "degree"), 
 														 										each = ncol(degree))))
 	save(degreeCoords, file = paste(sep = "/", 
-																	system.file(package = "largeVis", "vignettedata"), 
+																	system.file(package = "largeVis", "extdata"), 
 																	"degreeCoords.Rda"))
 }
 ```
 
 ```{r drawdegree,fig.width=5,fig.height=4,fig.align='center',fig.cap='Effect of useDegree'}
-load(system.file(package = "largeVis", "vignettedata/degreeCoords.Rda"))
+load(system.file(package = "largeVis", "extdata/degreeCoords.Rda"))
 degreeCoords %>%
 	ggplot(aes(x = X1, y = X2, color = label)) + 
 	geom_point(size = 0.05, alpha = 0.3) + 
@@ -143,13 +143,13 @@ if (rebuild) {
 	}
 	momentumCoords <- firstCoords
 	momentumCoords$label <- factor(momentumCoords$label)
-	save(momentumCoords, file = paste(sep = "/", system.file(package = "largeVis", "vignettedata"), "momentumCoords.Rda"))
-	save(timex, file = paste(sep = "/", system.file(package = "largeVis", "vignettedata"), "momentumTimes.Rda"))
+	save(momentumCoords, file = paste(sep = "/", system.file(package = "largeVis", "extdata"), "momentumCoords.Rda"))
+	save(timex, file = paste(sep = "/", system.file(package = "largeVis", "extdata"), "momentumTimes.Rda"))
 }
 ```
 
 ```{r drawmomentum,warning=FALSE,fig.width=6,fig.height=5,fig.align='center',fig.cap='Effect of Momentum'}
-load(system.file(package = "largeVis", "vignettedata/momentumCoords.Rda"))
+load(system.file(package = "largeVis", "extdata/momentumCoords.Rda"))
 momentumCoords %>%
 	ggplot(aes(x = X1, y = X2, color = label)) + 
 	geom_point(size = 0.05, alpha = 0.3) + 
