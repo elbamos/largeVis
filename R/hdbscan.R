@@ -86,12 +86,26 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 										threads = NULL,
 										verbose = getOption("verbose", TRUE)) {
 
+	if (inherits(edges, "largeVis")) {
+		if (is.null(neighbors)) neighbors <- edges$knns
+		edges <- edges$edges
+	}
+
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1
 		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
 	}
 	if (minPts < 6) stop("minPts must be >= 6")
-	clustersout <- hdbscanc(edges, neighbors, as.integer(K), as.integer(minPts), as.integer(threads), as.logical(verbose))
+	if (!is.null(threads)) threads <- as.integer(threads)
+
+
+	clustersout <- hdbscanc(edges = edges,
+													neighbors = neighbors,
+													K	= as.integer(K),
+													minPts = as.integer(minPts),
+													threads = threads,
+													verbose = as.logical(verbose))
+
 	clusters <- clustersout$clusters[1, ]
 	clusters[clusters == -1] <- NA
 	clusters = factor(clusters, exclude = NULL)

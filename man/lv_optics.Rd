@@ -5,7 +5,7 @@
 \title{lv_optics}
 \usage{
 lv_optics(edges, neighbors, eps = Inf, minPts = nrow(neighbors), eps_cl, xi,
-  verbose = getOption("verbose", TRUE))
+  useQueue = TRUE, verbose = getOption("verbose", TRUE))
 }
 \arguments{
 \item{edges}{A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}.}
@@ -19,6 +19,8 @@ lv_optics(edges, neighbors, eps = Inf, minPts = nrow(neighbors), eps_cl, xi,
 \item{eps_cl}{See \code{\link[dbscan]{optics}}.}
 
 \item{xi}{See \code{\link[dbscan]{optics}}.}
+
+\item{useQueue}{Whether to process points in order of core distznce.  (See note.)}
 
 \item{verbose}{Vebosity level.}
 }
@@ -36,11 +38,16 @@ to leverage the \code{largeVis} nearest-neighbor search.
 Support for dbscan and optics are preliminary, and not fully tested for
 correctness.
 
+the \code{useQueue} parameter controls the order in which points that have not yet been visisted are processed. If \code{FALSE},
+points are processed in order of rows. If \code{TRUE}, they are processed in ascending order of core distance. \code{FALSE} is more
+compatible with the implementations in the \code{dbscan} package and in the \code{ELKI} Java clustering package. \code{TRUE} may produce
+preferrable results.
+
 This is not the original OPTICS algorithm. In particular, the neighbor-search strategy in
 OPTICS is not used, in favor of using the pre-calculated neighbor matrix produced incidentally by
 `largeVis`.
 }
 \references{
-Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jörg Sander (1999). OPTICS: Ordering Points To Identify the Clustering Structure. ACM SIGMOD international conference on Management of data. ACM Press. pp. 49–60.
+Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jorg Sander (1999). OPTICS: Ordering Points To Identify the Clustering Structure. ACM SIGMOD international conference on Management of data. ACM Press. pp. 49–60.
 }
 

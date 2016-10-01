@@ -80,8 +80,8 @@ CO2$Type <- as.integer(CO2$Type)
 CO2$Treatment <- as.integer(CO2$Treatment)
 co <- scale(as.matrix(CO2))
 # Very small datasets often produce a warning regarding the alias table.  This is safely ignored.
-suppressWarnings(vis <- largeVis(t(co), K = 20, sdg_batches = 1))
-suppressWarnings(coords <- projectKNNs(vis$wij))
+suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1, threads = 2))
+suppressWarnings(coords <- projectKNNs(vis$wij, threads = 2))
 plot(t(coords))
 }
 

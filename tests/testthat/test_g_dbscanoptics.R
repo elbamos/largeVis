@@ -32,10 +32,17 @@ test_that("dbscan doesn't crash on iris", {
 	expect_silent(lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE))
 })
 
+load(system.file(package = "largeVis", "testdata/irisdbscan.Rda"))
+
 test_that("dbscan matches iris", {
-	load(system.file(package = "largeVis", "testdata/irisdbscan.Rda"))
 	dbclusters <- lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
 	expect_lte(sum(dbclusters$cluster != irisclustering$cluster), 1)
+})
+
+test_that("dbscan works with largeVis objects", {
+	vis <- largeVis(dat, sgd_batches = 1, threads = 2)
+	expect_silent(cl <- lv_dbscan(vis, eps = 1, minPts = 10))
+	expect_lte(sum(cl$cluster != irisclustering$cluster), 1)
 })
 
 context("dbscan-jain")
@@ -50,12 +57,24 @@ test_that("dbscan matches dbscan on jain when the neighborhoods are complete", {
 
 context("optics-iris")
 
+set.seed(1974)
+data(iris)
+dat <- as.matrix(iris[, 1:4])
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+K <- 147
+neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 80, n_trees = 10,  max_iter = 4, threads = 2, verbose = FALSE)
+edges <- buildEdgeMatrix(data = dat,
+												 neighbors = neighbors,
+												 verbose = FALSE)
+
 test_that("optics doesn't crash on iris", {
-  expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, verbose = FALSE))
+  expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = FALSE, verbose = FALSE))
 })
 
 load(system.file(package = "largeVis", "testdata/irisoptics.Rda"))
-opclusters <- lv_optics(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
+opclusters <- lv_optics(edges = edges, neighbors = neighbors, eps = 1, minPts = 10,  useQueue = FALSE, verbose = FALSE)
 
 test_that("optics matches optics core infinities", {
 	expect_equal(which(is.infinite(opclusters$coredist)), which(is.infinite(irisoptics$coredist)))
@@ -71,12 +90,18 @@ test_that("opticis iris cut to dbscan matches dbscan", {
 	expect_equal(cl, dbclusters$cluster)
 })
 
+test_that("optics works with largeVis objects", {
+	vis <- largeVis(dat, threads = 2, sgd_batches = 1)
+	expect_silent(cl <- lv_optics(vis, eps = 1, minPts = 10))
+	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
+})
+
 context("optics-jain")
 
 load(system.file(package = "largeVis", "testdata/jaindata.Rda"))
 jainclusters <- lv_optics(edges = jaindata$edges,
 													neighbors = jaindata$neighbors,
-													eps = 2.5, minPts = 5,
+													eps = 2.5, minPts = 5, useQueue = FALSE,
 													verbose = FALSE)
 
 test_that("optics matches optics core on jain when the neighborhoods are complete", {
@@ -105,7 +130,7 @@ edges <- buildEdgeMatrix(t(opttest$test_data), neighbors = neighbors, threads = 
 eps <- .1
 eps_cl <- .1
 minPts <- 10
-res <- lv_optics(edges, neighbors, eps = eps,  minPts = minPts)
+res <- lv_optics(edges, neighbors, eps = eps, useQueue = FALSE,  minPts = minPts)
 
 test_that("optics output format is correct", {
 	expect_identical(length(res$order), nrow(x))

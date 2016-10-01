@@ -1,5 +1,3 @@
-
-
 #' Project a distance matrix into a lower-dimensional space.
 #'
 #' Takes as input a sparse matrix of the edge weights connecting each node to its nearest neighbors, and outputs
@@ -57,8 +55,8 @@
 #' CO2$Treatment <- as.integer(CO2$Treatment)
 #' co <- scale(as.matrix(CO2))
 #' # Very small datasets often produce a warning regarding the alias table.  This is safely ignored.
-#' suppressWarnings(vis <- largeVis(t(co), K = 20, sdg_batches = 1))
-#' suppressWarnings(coords <- projectKNNs(vis$wij))
+#' suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1, threads = 2))
+#' suppressWarnings(coords <- projectKNNs(vis$wij, threads = 2))
 #' plot(t(coords))
 projectKNNs <- function(wij, # symmetric sparse matrix
                         dim = 2, # dimension of the projection space
@@ -94,6 +92,9 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   if (is.null(sgd_batches)) sgd_batches <- sgdBatches(N, length(wij@x / 2))
   sgd_batches <- sgd_batches * multiplier
 
+  if (!is.null(threads)) threads <- as.integer(threads)
+  if (!is.null(momentum)) momentum <- as.double(momentum)
+
   #################################################
   # SGD
   #################################################
@@ -106,9 +107,9 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 alpha = as.double(alpha), gamma = as.double(gamma), M = as.integer(M),
                 rho = as.double(rho),
                 n_samples = sgd_batches,
-  							momentum = as.double(momentum),
+  							momentum = momentum,
   							seed = seed,
-  							threads = as.integer(threads),
+  							threads = threads,
                 verbose = as.logical(verbose))
 
   return(coords)

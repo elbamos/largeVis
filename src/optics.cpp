@@ -23,6 +23,7 @@ protected:
 	vector< bool > visited;
 	vector< long long > orderedPoints;
 	vector< double > reachdist, coredist;
+	priority_queue< std::pair<double, long> > seedQueue;
 	vector< long long > predecessor;
 	Progress progress;
 
@@ -102,28 +103,53 @@ public:
          	}
         }
 
-	List run() {
-		PairingHeap<long long, double> seeds(N);
-		for (long long p = 0; p < N; p++) if (progress.increment() && ! visited[p]) {
-			visited[p] = true;
-			orderedPoints.push_back(p);
-			if (coredist[p] == INFINITY) continue; // core-dist is undefined
-			getNeighbors(p, seeds);
-			while (!seeds.isEmpty()) {
-				long long q = seeds.pop();
-				double key = seeds.keyOf(q);
-				if (key == seeds.topKey()) {
-					long long r = seeds.pop();
-					if (r > q) swap(q, r);
-					seeds.insert(r, key);
-				}
-				visited[q] = true;
-				orderedPoints.push_back(q);
-				reachdist[q] = key;
-				if (coredist[q] == INFINITY) continue;
-				getNeighbors(q, seeds);
-			}
+	void queue() {
+		for (long long n = 0; n != N; n++) {
+			seedQueue.emplace(coredist[n], n);
 		}
+	}
+
+	void runOne(long long &p, PairingHeap<long long, double> &seeds) {
+		visited[p] = true;
+		orderedPoints.push_back(p);
+		if (coredist[p] == INFINITY) return; // core-dist is undefined
+		getNeighbors(p, seeds);
+		while (!seeds.isEmpty()) {
+			long long q = seeds.pop();
+			double key = seeds.keyOf(q);
+			if (key == seeds.topKey()) {
+				long long r = seeds.pop();
+				if (r > q) swap(q, r);
+				seeds.insert(r, key);
+			}
+			visited[q] = true;
+			orderedPoints.push_back(q);
+			reachdist[q] = key;
+			if (coredist[q] == INFINITY) continue;
+			getNeighbors(q, seeds);
+		}
+	}
+
+	void runAll() {
+		PairingHeap<long long, double> seeds(N);
+		for (long long p = 0; p != N && progress.increment(); p++) {
+			if (! visited[p]) runOne(p, seeds);
+		}
+	}
+
+	void runQueue() {
+		PairingHeap<long long, double> seeds(N);
+		while (! seedQueue.empty() && progress.increment()) {
+			long long p = seedQueue.top().second;
+			seedQueue.pop();
+			if (visited[p]) continue;
+			runOne(p, seeds);
+		}
+	}
+
+	List run() {
+		if (seedQueue.empty()) runAll();
+		else runQueue();
 		List ret;
 		ret["order"] = IntegerVector(orderedPoints.begin(), orderedPoints.end()) +1;
 		ret["reachdist"] = NumericVector(reachdist.begin(), reachdist.end());
@@ -138,7 +164,9 @@ List optics_cpp(arma::sp_mat& edges,
                 arma::imat& neighbors,
                 double eps,
                 int minPts,
+                bool useQueue,
                 bool verbose) {
 	OPTICS opt = OPTICS(edges, neighbors, eps, minPts, verbose);
+	if (useQueue) opt.queue();
 	return opt.run();
 }

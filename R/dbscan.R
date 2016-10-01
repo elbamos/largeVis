@@ -2,7 +2,8 @@
 #'
 #' Experimental implementation of the DBSCAN algorithm.
 #'
-#' @param edges A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}.
+#' @param edges A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}. Alternatively, a \code{largeVis} object,
+#' in which case \code{edges} and \code{neighbors} will be taken from the \code{edges} and \code{knns} parameters, respectively.
 #' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}
 #' @param eps See \code{\link[dbscan]{dbscan}}.
 #' @param minPts See \code{\link[dbscan]{dbscan}}.
@@ -11,12 +12,20 @@
 #' @return A \code{\link[dbscan]{dbscan}} object.
 #' @export
 #'
-#' @references Martin Ester, Hans-Peter Kriegel, Jörg Sander, Xiaowei Xu (1996). Evangelos Simoudis, Jiawei Han, Usama M. Fayyad, eds. A density-based algorithm for discovering clusters in large spatial databases with noise. Proceedings of the Second International Conference on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226–231. ISBN 1-57735-004-9.
+#' @references Martin Ester, Hans-Peter Kriegel, Jorg Sander, Xiaowei Xu (1996). Evangelos Simoudis, Jiawei Han, Usama M. Fayyad, eds. A density-based algorithm for discovering clusters in large spatial databases with noise. Proceedings of the Second International Conference on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226–231. ISBN 1-57735-004-9.
 lv_dbscan <- function(edges,
 									 neighbors,
 									 eps = Inf,
-									 minPts = nrow(neighbors),
+									 minPts = nrow(neighbors - 1),
 									 verbose = getOption("verbose", TRUE)) {
+	if (inherits(edges, "largeVis")) {
+		if (missing(neighbors)) neighbors <- edges$knns
+		edges <- edges$edges
+	}
+	if (!is.null(neighbors)) {
+		neighbors[is.na(neighbors)] <- -1
+		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
+	}
 	if (is.null(edges) || is.null(neighbors)) stop("Both edges and neighbors must be provided.")
 
 	clusters <- dbscan_cpp(edges, neighbors, as.double(eps), as.integer(minPts), as.logical(verbose))
@@ -54,7 +63,7 @@ lof <- function(edges) {
 
 	for (i in 1:N) {
 		merged <- cbind(dist[id[i,], K], dist[i, ])
-		lrd[i] <- 1/(sum(apply(merged, 1, max))/ K)
+		lrd[i] <- 1/(sum(apply(merged, 1, max))/K)
 	}
 
 	ret <- rep(0, N)

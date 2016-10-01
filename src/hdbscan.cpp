@@ -27,15 +27,15 @@ public:
       	warning("Insufficient neighbors, selecting furthest");
       }
       for (int k = 0; k != K - 1 && srtr.size() > 1; k++) srtr.pop();
-      coreDistances[n] = max(srtr.top().second, 1e-5);
+      coreDistances[n] = max(srtr.top().first, 1e-5);
     }
   }
 
   void makeCoreDistances(const arma::sp_mat& edges,
                          const IntegerMatrix& neighbors,
-                         const int K) {
+                         const int& K) {
   	if (neighbors.nrow() < K) stop("Specified K bigger than the number of neighbors in the adjacency matrix.");
- 	if (K < 4) stop("K must be >= 4 when used with neighbors.");
+ 		//if (K < 4) stop("K must be >= 4 when used with neighbors.");
     coreDistances = arma::vec(N);
     IntegerVector kthNeighbors = neighbors.row(K - 1);
     for (long long n = 0; n < N; n++) if (p.increment()) {
@@ -54,7 +54,7 @@ public:
 		UF<long long>::primsAlgorithm(edges, neighbors, 0);
 	}
 
-  arma::mat process(const int& minPts) {
+  mat process(const int& minPts) {
   	buildHierarchy(); // 2 N
     condense(minPts); // 2 N
     determineStability(minPts); // N
@@ -62,7 +62,7 @@ public:
     return getClusters();
   }
 
-  Rcpp::List reportHierarchy() {
+  List reportHierarchy() {
     long long survivingClusterCnt = survivingClusters.size();
     IntegerVector parent = IntegerVector(survivingClusterCnt);
     IntegerVector nodeMembership = IntegerVector(N);
@@ -92,12 +92,12 @@ public:
     // FIXME - need to adjust this to be lambda_p not birth
     for (long long n = 0; n != N; n++) lambdas[n] = lambda_births[n];
 
-    return Rcpp::List::create(Rcpp::Named("nodemembership") = nodeMembership,
-                              Rcpp::Named("lambda") = lambdas,
-                              Rcpp::Named("parent") = parent,
-                              Rcpp::Named("stability") = stabilities,
-                              Rcpp::Named("selected") = selected,
-                              Rcpp::Named("coredistances") = coreDistances);
+    return List::create(Named("nodemembership") = nodeMembership,
+                        Named("lambda") = lambdas,
+                        Named("parent") = parent,
+                        Named("stability") = stabilities,
+                        Named("selected") = selected,
+                        Named("coredistances") = coreDistances);
   }
 
 	long long* getMinimumSpanningTree() {
@@ -124,14 +124,14 @@ List hdbscanc(const arma::sp_mat& edges,
     object.makeCoreDistances(edges, K);
   	object.primsAlgorithm(edges);
   }
-  arma::mat clusters = object.process(minPts);
-  arma::ivec tree = arma::ivec(edges.n_cols);
+  mat clusters = object.process(minPts);
+  ivec tree = arma::ivec(edges.n_cols);
   long long* mst = object.getMinimumSpanningTree();
   for (int n = 0; n != edges.n_cols; n++) {
     tree[n] = mst[n];
   }
-  Rcpp::List hierarchy = object.reportHierarchy();
-  return Rcpp::List::create(Rcpp::Named("clusters") = clusters,
-                            Rcpp::Named("tree") = tree,
-                            Rcpp::Named("hierarchy") = hierarchy);
+  List hierarchy = object.reportHierarchy();
+  return List::create(Named("clusters") = clusters,
+                      Named("tree") = tree,
+                      Named("hierarchy") = hierarchy);
 }

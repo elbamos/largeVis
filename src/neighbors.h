@@ -11,15 +11,7 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-struct HeapObject {
-	distancetype d;
-	vertexidxtype n;
-	HeapObject(distancetype d, vertexidxtype n) : d(d), n(n) {}
-	bool operator<(const struct HeapObject& other) const {
-		return d < other.d;
-	}
-};
-typedef priority_queue<HeapObject> MaxHeap;
+typedef priority_queue< std::pair<distancetype, vertexidxtype> > MaxHeap;
 typedef vector< imat::col_iterator > PositionVector;
 typedef vector< vertexidxtype > Neighborhood;
 
@@ -32,6 +24,7 @@ protected:
 	DistanceAdder(const M& data,
                const kidxtype K) : data{data}, K{K} {}
 public:
+	virtual ~DistanceAdder() {}
 	void add(MaxHeap& thisHeap,
           const V& x_i,
           const vertexidxtype j) const {
@@ -47,8 +40,8 @@ protected:
 	const M& data;
 	const vertexidxtype N;
 	Progress& p;
-	unique_ptr< Neighborhood[] > treeNeighborhoods;
-	unique_ptr< set< vertexidxtype >[] > treeHolder;
+	Neighborhood* treeNeighborhoods;
+	set< vertexidxtype >* treeHolder;
 	imat knns;
 
 	int threshold = 0;
@@ -132,13 +125,17 @@ protected:
 	inline void heapToSet(MaxHeap& thisHeap,
                        set< vertexidxtype >& theSet) const {
 		while (! thisHeap.empty()) {
-			theSet.emplace(thisHeap.top().n);
+			theSet.emplace(thisHeap.top().second);
 			thisHeap.pop();
 		}
 	}
 
 public:
 	AnnoySearch(const M& data, Progress& p) : data{data}, N(data.n_cols), p{p} { }
+	~AnnoySearch() {
+		delete[] treeNeighborhoods;
+		delete[] treeHolder;
+	}
 
 	void setSeed(Rcpp::Nullable< Rcpp::NumericVector > seed) {
 		long innerSeed;
@@ -157,7 +154,7 @@ public:
 
 	void trees(const int n_trees, const int newThreshold) {
 		threshold = newThreshold;
-		treeNeighborhoods = unique_ptr< Neighborhood[] >(new Neighborhood[N]);
+		treeNeighborhoods = new Neighborhood[N];
 		for (vertexidxtype i = 0; i < N; i++) {
 			treeNeighborhoods[i].push_back(i);
 		}
@@ -174,14 +171,14 @@ public:
 	}
 
 	void reduce(const kidxtype K,
-             shared_ptr< DistanceAdder<M, V> >  adder) {
-		treeHolder = unique_ptr< set<vertexidxtype>[] >(new set< vertexidxtype >[N]);
+             DistanceAdder<M, V>  *adder) {
+		treeHolder = new set< vertexidxtype >[N];
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
 		for (vertexidxtype i = 0; i < N; i++) if (p.increment()) {
 			const V x_i = data.col(i);
-			MaxHeap thisHeap = MaxHeap();
+			MaxHeap thisHeap;
 			vector< vertexidxtype > neighborhood = treeNeighborhoods[i];
 			for (vector< vertexidxtype >::iterator j = neighborhood.begin();
         j != neighborhood.end();
@@ -207,7 +204,7 @@ public:
 	/*
 	 * Re-sort by distance.
 	 */
-	arma::imat getMatrix(shared_ptr< DistanceAdder<M,V> > adder) {
+	arma::imat getMatrix(DistanceAdder<M,V> *adder) {
 		const kidxtype K = knns.n_rows;
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -223,7 +220,7 @@ public:
 			vertexidxtype j = K - 1;
 			while (j >= thisHeap.size()) knns(j--, i) = -1;
 			while (! thisHeap.empty()) {
-				knns(j--, i) = thisHeap.top().n;
+				knns(j--, i) = thisHeap.top().second;
 				thisHeap.pop();
 			}
 		}
@@ -231,15 +228,15 @@ public:
 	}
 
 	arma::imat exploreNeighborhood(const int maxIter,
-                                shared_ptr< DistanceAdder<M, V> > adder) {
+                                DistanceAdder<M, V>* adder) {
 		const kidxtype K = knns.n_rows;
 		imat old_knns  = imat(K,N);
 		for (int T = 0; T < maxIter; T++) if (! p.check_abort()) {
 			imat tmp = old_knns;
 			old_knns = knns;
 			knns = tmp;
-			MaxHeap thisHeap = MaxHeap();
-			set< vertexidxtype > sorter = set< vertexidxtype >();
+			MaxHeap thisHeap;
+			set< vertexidxtype > sorter;
 #ifdef _OPENMP
 #pragma omp parallel for shared(old_knns) private(thisHeap, sorter)
 #endif
@@ -283,7 +280,7 @@ public:
           lastOne = *whch;
           advance(whch, 1);
 
-          adder ->add( thisHeap, x_i, lastOne);
+          adder -> add( thisHeap, x_i, lastOne);
 				}
 				/*
 				 * Before the last iteration, we keep the matrix sorted by vertexid, which makes the merge above
@@ -301,7 +298,7 @@ public:
 					vertexidxtype j = K - 1;
 					while (j >= thisHeap.size()) knns(j--, i) = -1;
 					while (! thisHeap.empty()) {
-						knns(j--, i) = thisHeap.top().n;
+						knns(j--, i) = thisHeap.top().second;
 						thisHeap.pop();
 					}
 				}

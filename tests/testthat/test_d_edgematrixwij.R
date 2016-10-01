@@ -42,7 +42,7 @@ do <- dist(t(dat))
 test_that("build edge matrix as distance matches dist", {
 	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, max_iter = 10, threads = 2)
 	edges <- buildEdgeMatrix(dat, neighbors)
-	d2 <- edgeMatrixToDist(edges)
+	d2 <- as_dist_edgematrix(edges)
 	expect_equal(as.matrix(do), as.matrix(d2))
 	expect_equal(attr(d2, "method"), "euclidean")
 	expect_equal(sum(is.na(as.matrix(d2))), 0)
@@ -51,7 +51,7 @@ test_that("build edge matrix as distance matches dist", {
 test_that("build edge matrix as distance matches dist with nas", {
 	neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
 	edges <- buildEdgeMatrix(dat, neighbors)
-	d3 <- edgeMatrixToDist(edges)
+	d3 <- as_dist_edgematrix(edges)
 	todelete <- !is.na(as.matrix(d3))
 	expect_equal(as.matrix(do)[todelete], as.matrix(d3)[todelete])
 	expect_equal(attr(d3, "method"), "euclidean")
@@ -107,6 +107,7 @@ context("sgd batches")
 test_that("sgd batches is linear with E", {
 	expect_equal(sgdBatches(1e6, 10), sgdBatches(1e6, 1e4))
 })
+
 test_that("sgd batches has a small bump", {
 	expect_lt(sgdBatches(5000), sgdBatches(10001))
 	expect_lt(sgdBatches(9999) / 1.5, sgdBatches(10001))

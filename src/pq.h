@@ -8,6 +8,7 @@
 #endif
 #include "progress.hpp"
 
+using namespace Rcpp;
 using namespace arma;
 using namespace std;
 //#define DEBUG
@@ -27,17 +28,7 @@ private:
   unique_ptr< bool[] > selected;
 
 protected:
-  typedef pair<VIDX, double> iddist;
-  class CompareDist {
-	public:
-  	bool operator()(const iddist& n1, const iddist& n2) const {
-  		return n1.second > n2.second;
-  	}
-  };
-
-  typedef priority_queue<iddist,
-                              vector< iddist >,
-                              CompareDist> DistanceSorter;
+  typedef priority_queue< pair<double, VIDX> > DistanceSorter;
   typedef typename set<VIDX>::iterator Vidxerator;
 
   VIDX N;
@@ -47,7 +38,7 @@ protected:
   arma::vec coreDistances;
 
   VIDX starterIndex = 0;
-  PairingHeap<VIDX, double>* Q;
+  PairingHeap<VIDX, double> Q;
   unique_ptr< VIDX[] >   	minimum_spanning_tree;
 
   VIDX counter = 0;
@@ -57,8 +48,8 @@ protected:
   // Used after condensation to speed-up remaining phases
   set< VIDX > roots;
 
-  UF(VIDX N, bool verbose, bool pq) : N{N}, p(Progress(10 * N, verbose)) {
-	  Q = new PairingHeap<VIDX, double>(N);
+  UF(VIDX N, bool verbose, bool pq) : N{N}, p(Progress(10 * N, verbose)),
+  	Q(PairingHeap<VIDX, double>(N)) {
   	minimum_spanning_tree = unique_ptr<VIDX[]>(new VIDX[N]);
 #ifdef DEBUG
   	setupTest();
@@ -98,20 +89,21 @@ protected:
   }
 
   void updateVWD(VIDX v, VIDX w, double d) {
-  	if (Q -> contains(w) || w == starterIndex ) if (Q -> decreaseIf(w, getMRD(v, w, d))) minimum_spanning_tree[w] = v;
+  	if (Q.contains(w)) if (Q.decreaseIf(w, getMRD(v, w, d))) minimum_spanning_tree[w] = v;
+    //  || w == starterIndex
   }
 
   void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
   	starterIndex = start;
   	for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
-  	Q -> batchInsert(N, start);
-  	Q -> decreaseIf(starterIndex, -1);
+  	Q.batchInsert(N, start);
+  	Q.decreaseIf(starterIndex, -1);
   	p.increment(N);
   	VIDX v;
-  	while (! Q -> isEmpty()) {
-  		v = Q -> pop();
+  	while (! Q.isEmpty()) {
+  		v = Q.pop();
   		if (! p.increment()) break;
-	  	if (Q -> keyOf(v) == INFINITY || Q -> keyOf(v) == -1) starterIndex = v;
+	  	if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
 		  for (auto it = edges.begin_row(v);
          it != edges.end_row(v);
          it++) {
@@ -128,20 +120,21 @@ protected:
   void primsAlgorithm(const arma::sp_mat& edges, const IntegerMatrix& neighbors, VIDX start) {
   	starterIndex = start;
   	for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
-  	Q -> batchInsert(N, start);
-  	Q -> decreaseIf(starterIndex, -1);
+  	Q.batchInsert(N, start);
+  	Q.decreaseIf(starterIndex, -1);
   	p.increment(N);
   	VIDX v;
-  	while (! Q -> isEmpty()) {
-  		v = Q -> pop();
+  	while (! Q.isEmpty()) {
+  		if (Q.size() < 0) stop("bad");
+  		v = Q.pop();
   		if (! p.increment()) break;
-  		if (Q -> keyOf(v) == INFINITY || Q -> keyOf(v) == -1) starterIndex = v;
+  		if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
   		IntegerVector vNeighbors = neighbors.column(v);
   		for (auto it = vNeighbors.begin();
          	 it != vNeighbors.end() && *it != -1;
          	 it++) {
-  			updateVWD(v, *it, max(edges(v, *it), edges(*it, v)));
-  			}
+  			updateVWD(v, *it, edges(v, *it));
+			}
   	}
   }
 
@@ -190,18 +183,17 @@ protected:
 
   	for (VIDX n = 0; n != N; ++n) add();
 
-  	vector< iddist > container = vector< iddist >();
+  	vector< pair<double, VIDX> > container = vector< pair<double, VIDX> >();
   	container.reserve(N);
-  	typename vector< iddist >::iterator adder = container.end();
+  	auto adder = container.end();
   	for (VIDX n = 0; n != N; ++n) {
-  		container.emplace(adder++, n, Q -> keyOf(n));
+  		container.emplace(adder++, Q.keyOf(n), n);
   		if (n % 50 == 0 ) if (!p.increment(50)) return;
   	}
-  	DistanceSorter srtr = DistanceSorter(CompareDist(), container);
-  	while (! srtr.empty() && p.increment()) {
-  		const iddist ijd = srtr.top();
-  		srtr.pop();
-  		agglomerate(ijd.first, minimum_spanning_tree[ijd.first], ijd.second);
+  	sort(container.begin(), container.end());
+  	for (auto it = container.begin(); it != container.end(); it++) {
+  		VIDX n = it -> second;
+  		agglomerate(n, minimum_spanning_tree[n], it -> first);
   	}
   }
 
@@ -341,20 +333,26 @@ protected:
       extractClusters(*it, minPts);
       childStabilities += stabilities[*it];
     }
+    // Cluster has too few points but isn't a root - this should never happen
+    // because if it has too few it should be consolidated upwards.
+    if (sizes[p] < minPts && parents[p] != p) {
+    	stop("child with too few points");
+    }
+    // If children are superior, don't select, and we're done.
     if (childStabilities > stabilities[p]) { // Children are superior
     		selected[p] = false;
     		stabilities[p] = childStabilities;
-	  } else if (sizes[p] < minPts) {
-    	if (parents[p] != p) stop("child with too few points");
-			selected[p] = false;
-		} else if (parents[p] == p && roots.size() == 1) {
-			selected[p] = false;
-    } else if (sizes[p] >= minPts && stabilities[p] > childStabilities) {
-			selected[p] = true;
-    	for (Vidxerator it = goodChildrens[p].begin();
-       it != goodChildrens[p].end();
-       it++) deselect(*it);
-		} else stop("Uncaught category");
+    		return;
+	  }
+    // Cluster is selectable, but apply logic to prevent sole root from ever being a cluster.
+    if (parents[p] == p && roots.size() == 1) {
+    	selected[p] = false;
+    	return;
+    }
+    selected[p] = true;
+  	for (Vidxerator it = goodChildrens[p].begin();
+     it != goodChildrens[p].end();
+     it++) deselect(*it);
   }
 
   void extractClusters(const VIDX& minPts) {

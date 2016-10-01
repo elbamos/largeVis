@@ -31,7 +31,7 @@ buildEdgeMatrix <- function(data,
 }
 
 
-#' edgeMatrixToDist
+#' as_dist_edgematrix
 #'
 #' Convert an edge matrix to a \code{dist} object.
 #'
@@ -44,15 +44,16 @@ buildEdgeMatrix <- function(data,
 #'
 #' @export
 #' @rdname buildEdgeMatrix
-#' @importFrom Matrix triu tril t
-edgeMatrixToDist <- function(x) {
+#' @importFrom Matrix triu tril t as.matrix diag
+#' @importFrom stats as.dist
+as_dist_edgematrix <- function(x) {
 	y <- Matrix::tril(x)
 	z <- Matrix::t(Matrix::triu(x))
 	zeros <- y == 0
 	y[zeros] <- z[zeros]
 	y[y == 0] <- NA
-	diag(y) <- 0
-	structure(as.dist(as.matrix(y)),
+	Matrix::diag(y) <- 0
+	structure(stats::as.dist(Matrix::as.matrix(y)),
 						class = "dist",
 						Size = ncol(x),
 						Diag = FALSE,

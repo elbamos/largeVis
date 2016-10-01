@@ -14,29 +14,15 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-typedef pair<long long, double> iddist;
-
-class CompareDist {
-public:
-  bool operator()(iddist n1, iddist n2) {
-    return n1.second > n2.second;
-  }
-};
-
-typedef std::priority_queue<iddist,
-                            vector<iddist>,
-                            CompareDist> NNheap;
-typedef std::vector<iddist> NNlist;
-
 class DBSCAN {
 protected:
-	const arma::sp_mat* edges;
-	const arma::imat* neighbors;
+	const sp_mat* edges;
+	const imat* neighbors;
 	long double eps;
 	int minPts;
 	long long N;
-	std::vector< bool > visited;
-	std::vector< int > clusterAssignments;
+	vector< bool > visited;
+	vector< int > clusterAssignments;
 	Progress progress;
 
 	list< long long > regionQuery(long long& p) const {
@@ -78,8 +64,8 @@ protected:
 
 public:
 
-	DBSCAN(const arma::sp_mat& edges,
-         const arma::imat& neighbors,
+	DBSCAN(const sp_mat& edges,
+         const imat& neighbors,
          double eps,
          int minPts,
          bool verbose) : edges{&edges}, neighbors{&neighbors},
@@ -89,7 +75,7 @@ public:
 								         progress(Progress(N, verbose)) {
          	if (neighbors.n_rows < minPts) stop("Insufficient neighbors.");
 
-         }
+       }
 
 
 	IntegerVector run() {

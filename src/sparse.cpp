@@ -9,27 +9,27 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-class EuclideanSparseAdder : public DistanceAdder<arma::sp_mat, arma::sp_mat> {
+class EuclideanSparseAdder : public DistanceAdder<SpMat<double>, SpMat<double>> {
 protected:
-	virtual distancetype distanceFunction(const arma::sp_mat& x_i, const arma::sp_mat& x_j) const {
+	virtual distancetype distanceFunction(const SpMat<double> &x_i, const SpMat<double> &x_j) const {
 		return sparseRelDist(x_i, x_j);
 	}
 public:
-	EuclideanSparseAdder(const arma::sp_mat& data, const kidxtype K) : DistanceAdder(data, K) {}
+	EuclideanSparseAdder(const SpMat<double>& data, const kidxtype K) : DistanceAdder(data, K) {}
 };
 
-class CosineSparseAdder : public DistanceAdder<arma::sp_mat, arma::sp_mat> {
+class CosineSparseAdder : public DistanceAdder<SpMat<double>, SpMat<double>> {
 protected:
-	virtual distancetype distanceFunction(const arma::sp_mat& x_i, const arma::sp_mat& x_j) const {
+	virtual distancetype distanceFunction(const SpMat<double>& x_i, const SpMat<double>& x_j) const {
 		return sparseCosDist(x_i, x_j);
 	}
 public:
-	CosineSparseAdder(const arma::sp_mat& data, const kidxtype K) : DistanceAdder(data, K) {}
+	CosineSparseAdder(const SpMat<double>& data, const kidxtype K) : DistanceAdder(data, K) {}
 };
 
-class SparseAnnoySearch : public AnnoySearch<arma::sp_mat, arma::sp_mat> {
+class SparseAnnoySearch : public AnnoySearch<sp_mat, sp_mat> {
 protected:
-	virtual arma::vec hyperplane(const arma::ivec& indices) {
+	virtual vec hyperplane(const ivec& indices) {
 		const vertexidxtype I = indices.n_elem;
 		vec direction = vec(indices.size());
 		{
@@ -58,7 +58,7 @@ protected:
 		return direction;
 	}
 public:
-	SparseAnnoySearch(const arma::sp_mat& data, Progress& p) : AnnoySearch(data, p) {}
+	SparseAnnoySearch(const sp_mat& data, Progress& p) : AnnoySearch(data, p) {}
 };
 
 arma::imat searchTreesSparse(const int& threshold,
@@ -71,9 +71,9 @@ arma::imat searchTreesSparse(const int& threshold,
                             bool verbose) {
 	const vertexidxtype N = data.n_cols;
 
-	shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >  adder;
-	if (distMethod.compare(string("Cosine")) == 0) adder = shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new CosineSparseAdder(data, K));
-	else adder = shared_ptr< DistanceAdder<arma::sp_mat, arma::sp_mat> >(new EuclideanSparseAdder(data, K));
+	DistanceAdder<SpMat<double>, SpMat<double>>*  adder;
+	if (distMethod.compare(string("Cosine")) == 0) adder = new CosineSparseAdder(data, K);
+	else adder = new EuclideanSparseAdder(data, K);
 
 	Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
 
@@ -89,7 +89,9 @@ arma::imat searchTreesSparse(const int& threshold,
 	annoy.trees(n_trees, threshold);
 	annoy.reduce(K, adder);
 	annoy.convertToMatrix(K);
-	return (maxIter == 0) ? annoy.getMatrix(adder) : annoy.exploreNeighborhood(maxIter, adder);
+	imat ret = (maxIter == 0) ? annoy.getMatrix(adder) : annoy.exploreNeighborhood(maxIter, adder);
+	delete adder;
+	return ret;
 }
 
 // [[Rcpp::export]]

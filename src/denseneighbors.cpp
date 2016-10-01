@@ -9,27 +9,27 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-class EuclideanAdder : public DistanceAdder<arma::mat, arma::vec> {
+class EuclideanAdder : public DistanceAdder<arma::Mat<double>, arma::Col<double>> {
 protected:
-	virtual distancetype distanceFunction(const arma::vec& x_i, const arma::vec& x_j) const {
+	virtual distancetype distanceFunction(const arma::Col<double>& x_i, const arma::Col<double>& x_j) const {
 		return relDist(x_i, x_j);
 	}
 public:
-	EuclideanAdder(const arma::mat& data, const kidxtype K) : DistanceAdder(data, K) {}
+	EuclideanAdder(const arma::Mat<double>& data, const kidxtype K) : DistanceAdder(data, K) {}
 };
 
-class CosineAdder : public DistanceAdder<arma::mat, arma::vec> {
+class CosineAdder : public DistanceAdder<arma::Mat<double>, arma::Col<double>> {
 protected:
-	virtual distancetype distanceFunction(const arma::vec& x_i, const arma::vec& x_j) const {
+	virtual distancetype distanceFunction(const arma::Col<double>& x_i, const arma::Col<double>& x_j) const {
 		return cosDist(x_i, x_j);
 	}
 public:
-	CosineAdder(const arma::mat& data, const kidxtype K) : DistanceAdder(data, K) {}
+	CosineAdder(const arma::Mat<double>& data, const kidxtype K) : DistanceAdder(data, K) {}
 };
 
 class DenseAnnoySearch : public AnnoySearch<arma::mat, arma::vec> {
 protected:
-	virtual arma::vec hyperplane(const arma::ivec& indices) {
+	virtual vec hyperplane(const arma::ivec& indices) {
 		vec direction = vec(indices.size());
 		vertexidxtype x1idx, x2idx;
 		vec v;
@@ -70,9 +70,9 @@ arma::imat searchTrees(const int& threshold,
 	checkCRAN(threads);
 #endif
   const vertexidxtype N = data.n_cols;
-	shared_ptr< DistanceAdder<arma::mat, arma::vec> > adder;
-	if (distMethod.compare(string("Cosine")) == 0) adder = shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new CosineAdder(data, K));
-	else adder = shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new EuclideanAdder(data, K));
+	DistanceAdder<arma::mat, arma::Col<double>>* adder;
+	if (distMethod.compare(string("Cosine")) == 0) adder = new CosineAdder(data, K);
+	else adder = new EuclideanAdder(data, K);
 
   Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
 
@@ -84,5 +84,7 @@ arma::imat searchTrees(const int& threshold,
 	annoy.trees(n_trees, threshold);
 	annoy.reduce(K, adder);
 	annoy.convertToMatrix(K);
-	return (maxIter == 0) ? annoy.getMatrix(adder) : annoy.exploreNeighborhood(maxIter, adder);
+	imat ret = (maxIter == 0) ? annoy.getMatrix(adder) : annoy.exploreNeighborhood(maxIter, adder);
+	delete adder;
+	return ret;
 }
