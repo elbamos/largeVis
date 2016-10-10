@@ -2,7 +2,7 @@
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
-#include "largeVis.h"
+#include <RcppArmadillo.h>
 #include "minindexedpq.h"
 #include <queue>
 #include <Rmath.h>
@@ -16,40 +16,29 @@ using namespace arma;
 
 class OPTICS {
 protected:
-	arma::sp_mat* edges;
-	arma::imat* neighbors;
+	const sp_mat* edges;
+	const imat* neighbors;
 	const double eps;
 	const long long N;
-	vector< bool > visited;
+
+	bool* visited;
 	vector< long long > orderedPoints;
 	vector< double > reachdist, coredist;
-	priority_queue< std::pair<double, long> > seedQueue;
+	priority_queue< pair<double, long> > seedQueue;
 	vector< long long > predecessor;
+
 	Progress progress;
 
-#ifdef DEBUG
-set< long long > debugPts = set< long long >();
-
-void startDebug() {
-	debugPts.insert(4);
-}
-
-bool testDebug(long long& p) {
-	if (debugPts.find(p) != debugPts.end()) return true;
-	else return false;
-}
-#endif
-
-	long double reachabilityDistance(long long& p,
-                                   long long& q) const {
+	const long double reachabilityDistance(const long long& p,
+                                  			 const long long& q) const {
 		double dist = max((*edges)(p, q), (*edges)(q, p));
 		return max(coredist[p], dist);
 	}
 
-	void getNeighbors(long long& p,
-                      PairingHeap< long long, double >& seeds) {
+	void getNeighbors(const long long& p,
+                    PairingHeap< long long, double >& seeds) {
 		bool exceeded = false;
-		arma::sp_colvec pEdges = edges->col(p);
+		const sp_colvec pEdges = edges->col(p);
 		for (auto it = neighbors -> begin_col(p);
        	 (it != neighbors -> end_col(p)) && (*it != -1);
        	 it++) if (! visited[*it]) {
@@ -69,11 +58,11 @@ bool testDebug(long long& p) {
 		}
 	}
 
-	void addNeighbor(long long& p,
-                   long long q,
+	void addNeighbor(const long long& p,
+                   const long long& q,
                    PairingHeap< long long, double>& seeds) {
 		if (visited[q]) return;
-		double newReachabilityDistance = reachabilityDistance(p, q);
+		const double newReachabilityDistance = reachabilityDistance(p, q);
 
 		if (! seeds.contains(q)) {
 			seeds.insert(q, newReachabilityDistance);
@@ -82,13 +71,13 @@ bool testDebug(long long& p) {
 	}
 
 public:
-	OPTICS(arma::sp_mat& edges,
-         arma::imat& neighbors,
-         double eps,
-         int minPts,
-         bool verbose) : edges{&edges}, neighbors{&neighbors},
+	OPTICS(const sp_mat& edges,
+         const imat& neighbors,
+         const double& eps,
+         const unsigned int& minPts,
+         const bool& verbose) : edges{&edges}, neighbors{&neighbors},
          								 eps{eps}, N(neighbors.n_cols),
-         								 visited(vector< bool >(N, false)),
+         								 visited(new bool[N]),
 								         orderedPoints(vector<long long>()),
 								         reachdist(vector< double >(N, INFINITY)),
 								         coredist(vector< double >(N)),
@@ -99,9 +88,14 @@ public:
          	orderedPoints.reserve(N);
          	for (long long n = 0; n != N; n++) {
          		double nthDistance = edges(n, neighbors(minPts - 2, n));
+         		visited[n] = FALSE;
          		coredist[n] = (nthDistance < eps) ? nthDistance : INFINITY;
          	}
         }
+
+	~OPTICS() {
+		delete[] visited;
+	}
 
 	void queue() {
 		for (long long n = 0; n != N; n++) {
@@ -109,7 +103,7 @@ public:
 		}
 	}
 
-	void runOne(long long &p, PairingHeap<long long, double> &seeds) {
+	inline void runOne(const long long &p, PairingHeap<long long, double> &seeds) {
 		visited[p] = true;
 		orderedPoints.push_back(p);
 		if (coredist[p] == INFINITY) return; // core-dist is undefined
@@ -140,7 +134,7 @@ public:
 	void runQueue() {
 		PairingHeap<long long, double> seeds(N);
 		while (! seedQueue.empty() && progress.increment()) {
-			long long p = seedQueue.top().second;
+			const long long p = seedQueue.top().second;
 			seedQueue.pop();
 			if (visited[p]) continue;
 			runOne(p, seeds);
@@ -160,12 +154,12 @@ public:
 };
 
 // [[Rcpp::export]]
-List optics_cpp(arma::sp_mat& edges,
-                arma::imat& neighbors,
-                double eps,
-                int minPts,
-                bool useQueue,
-                bool verbose) {
+List optics_cpp(const arma::sp_mat& edges,
+                const arma::imat& neighbors,
+                const double& eps,
+                const int& minPts,
+                const bool& useQueue,
+                const bool& verbose) {
 	OPTICS opt = OPTICS(edges, neighbors, eps, minPts, verbose);
 	if (useQueue) opt.queue();
 	return opt.run();

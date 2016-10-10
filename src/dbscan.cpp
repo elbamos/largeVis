@@ -2,8 +2,7 @@
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
-#include "largeVis.h"
-#include "minindexedpq.h"
+#include <RcppArmadillo.h>
 #include <queue>
 #include <Rmath.h>
 #include <progress.hpp>
@@ -18,9 +17,9 @@ class DBSCAN {
 protected:
 	const sp_mat* edges;
 	const imat* neighbors;
-	long double eps;
-	int minPts;
-	long long N;
+	const long double eps;
+	const unsigned int minPts;
+	const long long N;
 	vector< bool > visited;
 	vector< int > clusterAssignments;
 	Progress progress;
@@ -66,8 +65,8 @@ public:
 
 	DBSCAN(const sp_mat& edges,
          const imat& neighbors,
-         double eps,
-         int minPts,
+         const double& eps,
+         const unsigned int& minPts,
          bool verbose) : edges{&edges}, neighbors{&neighbors},
          								 eps{eps}, minPts{minPts}, N(neighbors.n_cols),
          								 visited(vector< bool >(N, false)),

@@ -2,10 +2,11 @@
 #'
 #' Implemenation of the hdbscan algorithm.
 #'
-#' @param edges An edge matrix of the type returned by \code{\link{buildEdgeMatrix}}.
+#' @param edges An edge matrix of the type returned by \code{\link{buildEdgeMatrix}} or, alternatively, a \code{largeVis} object.
+#' @param neighbors An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}. Must be specified unless
+#' \code{edges} is a \code{largeVis} object.
 #' @param minPts The minimum number of points in a cluster.
 #' @param K The number of points in the core neighborhood. (See details.)
-#' @param neighbors An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}.
 #' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param verbose Verbosity.
 #'
@@ -16,9 +17,6 @@
 #' \code{K} may cause the algorithm to miss some (usually contrived) clustering
 #' patterns, such as where clusters are made up of points arranged in lines to form
 #' shapes.
-#'
-#' If \code{neighbors} is specified, some costly sorts of neighbors in the edge
-#' matrix may be avoided.
 #'
 #' The function must be provided sufficient nearest-neighbor data for whatever
 #' is specified for \eqn{k}. If \eqn{k} = 5, for example, the edge matrix (and
@@ -82,7 +80,7 @@
 #' }
 #' @export
 #' @importFrom stats aggregate
-hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
+hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 										threads = NULL,
 										verbose = getOption("verbose", TRUE)) {
 
@@ -95,7 +93,9 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 		neighbors[is.na(neighbors)] <- -1
 		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
 	}
+	if (is.null(neighbors) || is.null(edges)) stop("Neighbors must be specified unless a largeVis object is given.")
 	if (minPts < 6) stop("minPts must be >= 6")
+
 	if (!is.null(threads)) threads <- as.integer(threads)
 
 
@@ -122,9 +122,8 @@ hdbscan <- function(edges, minPts = 20, K = 5, neighbors = NULL,
 	hierarchy <- clustersout$hierarchy
 	hierarchy$nodemembership <- hierarchy$nodemembership + 1
 	hierarchy$parent <- hierarchy$parent + 1
-	hierarchy$coredistances <- hierarchy$coredistances[, 1]
-
-	tree <- clustersout$tree[, 1] + 1
+	hierarchy$coredistances <- hierarchy$coredistances
+	tree <- clustersout$tree + 1
 	tree[tree == 0] <- NA
 
 	ret <- list(

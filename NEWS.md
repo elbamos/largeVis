@@ -9,6 +9,7 @@
 	+ `largeVis` now has an additional parameter, `save_edges`, to control whether the edge matrix is preserved. This is to simplify using the
 clustering functions. 
 	+ `hdbscan`, `lv_dbscan` and `lv_optics` now all accept a `largeVis` object as the first parameter.
+	+ Both edges and neighbors (or a largeVis object) must be specified for `hdbscan`. 
 	+	Added `hdbscanToDendrogram` function to make hdbscan objects compatible with other R hierarchical clustering implementations. 
 * New utility function `sgdBatches` helps estimate training time for datasets. 
 * Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes. 

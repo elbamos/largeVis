@@ -1,4 +1,3 @@
-// [[Rcpp::plugins(openmp)]]
 // [[Rcpp::plugins(cpp11)]]
 #include <vector>
 #include <memory>
@@ -6,24 +5,24 @@
 
 using namespace std;
 
-template<class VIDX, class D>
+template<class V, class D>
 class PairingHeap {
 private:
   struct PairNode {
     D distance = INFINITY;
-    VIDX index;
+    V index;
     bool present = false;
 
     PairNode* leftChild = nullptr;
     PairNode* nextSibling = nullptr;
     PairNode* prev = nullptr;
   };
-	VIDX sz = 0;
+	V sz = 0;
 
 	typedef PairNode* NodePointer;
 
-	NodePointer root;
-	const VIDX MaxSize;
+	NodePointer root = NULL;
+	const V MaxSize;
 	vector< PairNode > PointerArray;
 
 	void compareAndLink(NodePointer &first, NodePointer second) {
@@ -68,33 +67,33 @@ private:
 	}
 
 public:
-	PairingHeap(VIDX N) : root(NULL), MaxSize{N},
+	PairingHeap(const V &N) : root(NULL), MaxSize{N},
 												PointerArray(vector< PairNode >(N)) {
 	}
 
-	VIDX pop() {
+	const V pop() {
 		NodePointer oldRoot = root;
 		if (root->leftChild == NULL) root = NULL;
 		else root = combineSiblings(root->leftChild);
-		VIDX ret = oldRoot -> index;
+		V ret = oldRoot -> index;
 		oldRoot -> present = false;
 		sz--;
 		return ret;
 	}
 
-	VIDX size() const {
+	const V size() const {
 		return sz;
 	}
 
-	bool isEmpty() const {
+	const bool isEmpty() const {
 		return root == NULL;
 	}
 
-	bool contains(const VIDX& i) const {
+	const bool contains(const V& i) const {
 		return PointerArray[i].present;
 	}
 
-	void insert(VIDX &n, D &x) {
+	void insert(const V &n, const D &x) {
 		PointerArray[n].present = true;
 		PointerArray[n].distance = x;
 		PointerArray[n].index = n;
@@ -104,30 +103,28 @@ public:
 		sz++;
 	}
 
-	void batchInsert(const VIDX& n, const VIDX& start) {
-		for (VIDX i = 0; i != n; i++) {
+	void batchInsert(const V& n, const V& start) {
+		for (V i = 0; i != n; i++) {
 			D key = (start == i) ? -1 : INFINITY;
 			insert(i, key);
 		}
 	};
 
-	bool decreaseIf(const VIDX& i, const D &newVal) {
-		if (PointerArray[i].distance < newVal) return false;
+	bool decreaseIf(const V& i, const D &newDistance) {
+		const D dist = PointerArray[i].distance;
+		if (dist < newDistance) return false;
 		NodePointer p = & PointerArray[i];
-		p->distance = newVal;
+		p->distance = newDistance;
 		if (p == root) return true;
-		if (p->nextSibling != NULL)
-			p->nextSibling->prev = p->prev;
-		if (p->prev->leftChild == p)
-			p->prev->leftChild = p->nextSibling;
-		else
-			p->prev->nextSibling = p->nextSibling;
+		if (p->nextSibling != NULL)  p->nextSibling->prev = p->prev;
+		if (p->prev->leftChild == p) p->prev->leftChild = p->nextSibling;
+		else 												 p->prev->nextSibling = p->nextSibling;
 		p->nextSibling = NULL;
 		compareAndLink(root, p);
 		return true;
 	}
 
-  D keyOf(const VIDX& i) const {
+  D keyOf(const V& i) const {
   	return PointerArray[i].distance;
   }
 

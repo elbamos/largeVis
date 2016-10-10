@@ -19,27 +19,21 @@ class UF {
 private:
   VIDX reservesize; // used during initialization
 	// Used after buildHierarchy to manage condensation, stability extraction, and cluster identification
-  Col< VIDX > parents;
-  vec lambda_deaths;
-  vec stabilities;
-  Col< VIDX > sizes;
-  unique_ptr< set< VIDX >[] > fallenPointses;
-  unique_ptr< set< VIDX >[] > goodChildrens;
-  unique_ptr< bool[] > selected;
+  VIDX* parents;
+  double* lambda_deaths;
+  double* stabilities;
+  VIDX* sizes;
+  set< VIDX >* fallenPointses;
+  set< VIDX >* goodChildrens;
+  bool* selected;
 
 protected:
-  typedef priority_queue< pair<double, VIDX> > DistanceSorter;
-  typedef typename set<VIDX>::iterator Vidxerator;
-
   VIDX N;
   Progress p;
-  arma::vec lambda_births;
-
-  arma::vec coreDistances;
+  double* lambda_births;
 
   VIDX starterIndex = 0;
   PairingHeap<VIDX, double> Q;
-  unique_ptr< VIDX[] >   	minimum_spanning_tree;
 
   VIDX counter = 0;
 
@@ -50,92 +44,19 @@ protected:
 
   UF(VIDX N, bool verbose, bool pq) : N{N}, p(Progress(10 * N, verbose)),
   	Q(PairingHeap<VIDX, double>(N)) {
-  	minimum_spanning_tree = unique_ptr<VIDX[]>(new VIDX[N]);
 #ifdef DEBUG
   	setupTest();
 #endif
   }
-
-#ifdef DEBUG
-  set< VIDX > testers = set< VIDX >();
-  void setupTest() {
-    testers.insert(1);
-  	testers.insert(2);
-  	testers.insert(3);
-  	testers.insert(107);
-  	testers.insert(108);
-  	testers.insert(208);
-  	testers.insert(209);
-  	testers.insert(210);
-  }
-  bool trace(const VIDX p) const {
-    bool ret = testers.find(p) != testers.end();
-    if (ret) {
-      Rcout << "\ntrace " << p << ": ";
-      VIDX lastp = p;
-      while (lastp != parents[lastp]) {
-        Rcout << lastp << " ";
-        lastp = parents[lastp];
-      }
-    }
-    return ret;
-  }
-#endif
-
-  inline double getMRD(const VIDX i, const VIDX j, const double dist) const {
-  	double d = max(coreDistances[i], coreDistances[j]);
-  	d = max(d, dist);
-  	return d;
-  }
-
-  void updateVWD(VIDX v, VIDX w, double d) {
-  	if (Q.contains(w)) if (Q.decreaseIf(w, getMRD(v, w, d))) minimum_spanning_tree[w] = v;
-    //  || w == starterIndex
-  }
-
-  void primsAlgorithm(const arma::sp_mat& edges, VIDX start) {
-  	starterIndex = start;
-  	for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
-  	Q.batchInsert(N, start);
-  	Q.decreaseIf(starterIndex, -1);
-  	p.increment(N);
-  	VIDX v;
-  	while (! Q.isEmpty()) {
-  		v = Q.pop();
-  		if (! p.increment()) break;
-	  	if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
-		  for (auto it = edges.begin_row(v);
-         it != edges.end_row(v);
-         it++) {
-		  	updateVWD(v, it.col(), *it);
-		  }
-		  for (auto it = edges.begin_col(v);
-         it != edges.end_col(v);
-         it++) {
-		  	updateVWD(v, it.row(), *it);
-		  }
-  	}
-  }
-
-  void primsAlgorithm(const arma::sp_mat& edges, const IntegerMatrix& neighbors, VIDX start) {
-  	starterIndex = start;
-  	for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
-  	Q.batchInsert(N, start);
-  	Q.decreaseIf(starterIndex, -1);
-  	p.increment(N);
-  	VIDX v;
-  	while (! Q.isEmpty()) {
-  		if (Q.size() < 0) stop("bad");
-  		v = Q.pop();
-  		if (! p.increment()) break;
-  		if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
-  		IntegerVector vNeighbors = neighbors.column(v);
-  		for (auto it = vNeighbors.begin();
-         	 it != vNeighbors.end() && *it != -1;
-         	 it++) {
-  			updateVWD(v, *it, edges(v, *it));
-			}
-  	}
+  virtual ~UF() {
+  	delete[] fallenPointses;
+  	delete[] goodChildrens;
+  	delete[] selected;
+  	delete[] parents;
+  	delete[] sizes;
+  	delete[] lambda_births;
+  	delete[] lambda_deaths;
+  	delete[] stabilities;
   }
 
   /*
@@ -157,7 +78,7 @@ protected:
 	/*
 	 * The union part of union-find
 	 */
-  void agglomerate(const VIDX& a, const VIDX& b, const double& d) {
+  virtual void agglomerate(const VIDX& a, const VIDX& b, const double& d) {
     if (b == -1 || d == INFINITY) {
       lambda_births[a] = (lambda_births[a] > 0) ? lambda_births[a] : -1;
       return;
@@ -174,23 +95,15 @@ protected:
     lambda_births[n_a] = lambda_births[n_b] = lambda_deaths[parent] = 1 / d;
   }
 
-  void buildHierarchy() {
+  void buildHierarchy(const vector<pair<double, VIDX>>& container, const VIDX* minimum_spanning_tree) {
   	reservesize = 2 * N + 1;
-  	parents = arma::Col< VIDX >(reservesize);
-  	sizes = arma::Col< VIDX >(reservesize);
-  	lambda_births = arma::vec(reservesize);
-  	lambda_deaths = arma::vec(reservesize);
+  	parents = new VIDX[reservesize];
+  	sizes = new VIDX[reservesize];
+  	lambda_births = new double[reservesize];
+  	lambda_deaths = new double[reservesize];
 
   	for (VIDX n = 0; n != N; ++n) add();
 
-  	vector< pair<double, VIDX> > container = vector< pair<double, VIDX> >();
-  	container.reserve(N);
-  	auto adder = container.end();
-  	for (VIDX n = 0; n != N; ++n) {
-  		container.emplace(adder++, Q.keyOf(n), n);
-  		if (n % 50 == 0 ) if (!p.increment(50)) return;
-  	}
-  	sort(container.begin(), container.end());
   	for (auto it = container.begin(); it != container.end(); it++) {
   		VIDX n = it -> second;
   		agglomerate(n, minimum_spanning_tree[n], it -> first);
@@ -209,13 +122,13 @@ protected:
   void condenseUp(const VIDX& p, const VIDX& mergeTarget) {
     if (p == mergeTarget) return;
     sizes[p] = -1;
-    for (Vidxerator it = fallenPointses[p].begin();
+    for (auto it = fallenPointses[p].begin();
          it != fallenPointses[p].end();
          it++) {
       parents[*it] = mergeTarget;
       fallenPointses[mergeTarget].insert(*it);
     }
-    for (Vidxerator it = goodChildrens[p].begin();
+    for (auto it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) {
       goodChildrens[mergeTarget].insert(*it);
@@ -247,15 +160,15 @@ protected:
       goodChildrens[p].erase(goodChildrens[p].find(onlychild));
       condenseUp(onlychild, p);
     }
-    for (Vidxerator it = goodChildrens[p].begin();
+    for (auto it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) condenseTwo(*it);
   }
 
   void condense(const int& minPts) {
     roots = set< VIDX >();
-    goodChildrens = unique_ptr< set< VIDX >[] >(new set< VIDX >[2 * N + 1]);
-    fallenPointses = unique_ptr< set< VIDX >[] >(new set< VIDX >[2 * N + 1]);
+    goodChildrens = new set< VIDX >[2 * N + 1];
+    fallenPointses = new set< VIDX >[2 * N + 1];
     for (VIDX n = 0; n != N; n++) {
       fallenPointses[n] = set< VIDX >();
       fallenPointses[n].insert(n);
@@ -267,8 +180,7 @@ protected:
     for (VIDX n = 0; n != counter; ++n) if (p.increment()) {
       condenseOne(n, minPts);
     }
-    Vidxerator it2;
-    for (it2 = roots.begin();
+    for (auto it2 = roots.begin();
          it2 != roots.end();
          it2++) {
     	if (p.increment(sizes[*it2])) condenseTwo(*it2);
@@ -290,13 +202,13 @@ protected:
     double stability = 0;
     double lambda_birth = lambda_births[p];
 
-    for (Vidxerator it = fallenPointses[p].begin();
+    for (auto it = fallenPointses[p].begin();
          it != fallenPointses[p].end();
          it++) {
       stability += lambda_births[*it] - lambda_birth;
     }
     VIDX descendantCount = 0;
-    for (Vidxerator it = goodChildrens[p].begin();
+    for (auto it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) {
       descendantCount += sizes[*it];
@@ -307,10 +219,9 @@ protected:
   }
 
   void determineStability(int minPts) {
-    stabilities = arma::vec(counter);
-    selected = unique_ptr< bool[] >(new bool[counter]);
-    Vidxerator it;
-    for (it = roots.begin();
+    stabilities = new double[counter];
+    selected = new bool[counter];
+    for (auto it = roots.begin();
          it != roots.end();
          it++) {
     	if (p.increment(sizes[*it])) determineStability(*it, minPts);
@@ -319,7 +230,7 @@ protected:
 
   void deselect(const VIDX& p) {
     selected[p] = false;
-    for (Vidxerator it = goodChildrens[p].begin();
+    for (auto it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) deselect(*it);
   }
@@ -327,7 +238,7 @@ protected:
   void extractClusters(const VIDX& p, const int& minPts) {
     survivingClusters.insert(p);
     double childStabilities = 0;
-    for (Vidxerator it = goodChildrens[p].begin();
+    for (auto it = goodChildrens[p].begin();
          it != goodChildrens[p].end();
          it++) {
       extractClusters(*it, minPts);
@@ -350,24 +261,22 @@ protected:
     	return;
     }
     selected[p] = true;
-  	for (Vidxerator it = goodChildrens[p].begin();
+  	for (auto it = goodChildrens[p].begin();
      it != goodChildrens[p].end();
      it++) deselect(*it);
   }
 
   void extractClusters(const VIDX& minPts) {
     survivingClusters = set< VIDX >();
-  	Vidxerator it;
-    for (it = roots.begin();
+    for (auto it = roots.begin();
          it != roots.end();
          it++) {
     	if (p.increment(sizes[*it])) 	extractClusters(*it, minPts);
     }
   }
 
-  int clusterCount = 1;
-
-  void getClusters(arma::mat& ret, const VIDX& n, const int& cluster, const double& cluster_death) {
+  void getClusters(double* ret, const VIDX& n, const int& cluster, const double& cluster_death) const {
+  	static int clusterCount = 1;
   	int thisCluster = cluster;
     double thisDeath = cluster_death;
     if (selected[n]) {
@@ -377,26 +286,24 @@ protected:
       thisCluster = clusterCount++;
       thisDeath = lambda_deaths[n];
     }
-    for (Vidxerator it = fallenPointses[n].begin();
+    for (auto it = fallenPointses[n].begin();
          it != fallenPointses[n].end();
          it++) {
-      ret(0, *it) = thisCluster;
-      ret(1, *it) = min(lambda_births[n], thisDeath) - lambda_births[*it];
+      ret[*it * 2] = thisCluster;
+      ret[(*it * 2) + 1] = min(lambda_births[n], thisDeath) - lambda_births[*it];
     }
-    for (Vidxerator it = goodChildrens[n].begin();
+    for (auto it = goodChildrens[n].begin();
          it != goodChildrens[n].end();
          it++) getClusters(ret, *it, thisCluster, thisDeath);
   }
 
-  arma::mat getClusters() {
-    arma::mat ret = arma::mat(2, N, fill::zeros);
-  	Vidxerator it;
-    for (it = roots.begin();
+  double* getClusters(double* clusters) const {
+    for (auto it = roots.begin();
          it != roots.end();
          it++) {
-      getClusters(ret, *it, -1, lambda_deaths[*it]);
+      getClusters(clusters, *it, -1, lambda_deaths[*it]);
     }
-    return ret;
+    return clusters;
   }
 
   VIDX reportClusterCnt = 0;
@@ -405,40 +312,95 @@ protected:
    * Fetch the hierarchy.
    *
    */
-  void reportAHierarchy(VIDX last, VIDX oldidx,
-                       IntegerVector& newparent,
-                       IntegerVector& nodeMembership,
-                       NumericVector& newstabilities,
-                       IntegerVector& newselected,
-                       int level,
-                       int childNum) {
-#ifdef DEBUG
-    Rcout << "\n";
-    for (int i = 0; i < level; i++) Rcout << " |";
-    if (level != 0 && childNum == 0) Rcout << "\\_";
-    else if (level != 0) Rcout << "+-";
-    Rcout << oldidx;
-    if (level == 0) Rcout << "\t";
-    Rcout << "\tstability: " << stabilities[oldidx] <<
-      "  selected: " << selected[oldidx] << "  fallen: " <<
-        fallenPointses[oldidx].size() << " sz: " << sizes[oldidx];
-    Rcout << " lambda " << lambda_births[oldidx] << "/" << lambda_deaths[oldidx];
-#endif
+  void reportAHierarchy(const VIDX& last,
+                        const VIDX& oldidx,
+                       vector<int>& newparent,
+                       vector<int>& nodeMembership,
+                       vector<double>& newstabilities,
+                       vector<int>& newselected,
+                       const int& level,
+                       const int& childNum) {
     VIDX newidx = reportClusterCnt++;
     if (last == oldidx) newparent[newidx] = newidx;
     else newparent[newidx] = last;
 
-    for (Vidxerator it = fallenPointses[oldidx].begin();
+    for (auto it = fallenPointses[oldidx].begin();
          it != fallenPointses[oldidx].end();
          it++) nodeMembership[*it] = newidx;
     newstabilities[newidx] = stabilities[oldidx];
     newselected[newidx] = selected[oldidx];
     int child = 0;
-    for (Vidxerator it = goodChildrens[oldidx].begin();
+    for (auto it = goodChildrens[oldidx].begin();
          it != goodChildrens[oldidx].end();
          it++) {
       reportAHierarchy(newidx, *it, newparent, nodeMembership,
                        newstabilities, newselected, level + 1, child++);
     }
   }
+};
+
+template<class VIDX, class D>
+class PrimsAlgorithm {
+private:
+	const VIDX N;
+	PairingHeap<VIDX, D> Q;
+	VIDX starterIndex = 0;
+	VIDX* minimum_spanning_tree;
+	const D* coreDistances;
+
+	void updateVWD(const VIDX& v, const VIDX& w, const double& d) {
+		if (!Q.contains(w)) return;
+		double dist = max(coreDistances[v], coreDistances[w]);
+		dist = max(d, dist);
+		if (Q.decreaseIf(w, dist)) minimum_spanning_tree[w] = v;
+		//  || w == starterIndex
+	}
+
+public:
+	PrimsAlgorithm(const VIDX& N,
+                 const D* coreDistances) : N{N}, Q(PairingHeap<VIDX,D>(N)), coreDistances{coreDistances} {
+		minimum_spanning_tree = new VIDX[N];
+	}
+
+	~PrimsAlgorithm() {
+		delete[] minimum_spanning_tree;
+	}
+
+	VIDX* run(const sp_mat& edges, const IntegerMatrix& neighbors,
+           Progress& p, const VIDX& start) {
+		starterIndex = start;
+		for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
+		Q.batchInsert(N, start);
+		Q.decreaseIf(starterIndex, -1);
+		p.increment(N);
+		VIDX v;
+		while (! Q.isEmpty()) {
+			if (Q.size() < 0) stop("bad");
+			v = Q.pop();
+			if (! p.increment()) break;
+			if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
+			IntegerVector vNeighbors = neighbors.column(v);
+			for (auto it = vNeighbors.begin();
+        it != vNeighbors.end() && *it != -1;
+        it++) {
+				updateVWD(v, *it, edges(v, *it));
+			}
+			for (auto it = edges.begin_col(v);
+        it != edges.end_col(v);
+        it++) {
+				updateVWD(v, it.row(), *it);
+			}
+		}
+		return minimum_spanning_tree;
+	}
+
+	vector< pair<D, VIDX> > getMergeSequence() const {
+		vector< pair<D, VIDX> > container = vector< pair<D, VIDX> >(N);
+		for (VIDX n = 0; n != N; ++n) {
+			container[n].second = n;
+			container[n].first = Q.keyOf(n);
+		}
+		sort(container.begin(), container.end());
+		return container;
+	}
 };

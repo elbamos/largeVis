@@ -128,17 +128,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // hdbscanc
-List hdbscanc(const arma::sp_mat& edges, Rcpp::Nullable< Rcpp::IntegerMatrix > neighbors, const int K, const int minPts, Rcpp::Nullable<Rcpp::NumericVector> threads, const bool verbose);
+List hdbscanc(const arma::sp_mat& edges, const IntegerMatrix& neighbors, const int& K, const int& minPts, Rcpp::Nullable<Rcpp::NumericVector> threads, const bool& verbose);
 RcppExport SEXP largeVis_hdbscanc(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP KSEXP, SEXP minPtsSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::sp_mat& >::type edges(edgesSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::IntegerMatrix > >::type neighbors(neighborsSEXP);
-    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
-    Rcpp::traits::input_parameter< const int >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int& >::type minPts(minPtsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type threads(threadsSEXP);
-    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(hdbscanc(edges, neighbors, K, minPts, threads, verbose));
     return rcpp_result_gen;
 END_RCPP
@@ -168,17 +168,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // optics_cpp
-List optics_cpp(arma::sp_mat& edges, arma::imat& neighbors, double eps, int minPts, bool useQueue, bool verbose);
+List optics_cpp(const arma::sp_mat& edges, const arma::imat& neighbors, const double& eps, const int& minPts, const bool& useQueue, const bool& verbose);
 RcppExport SEXP largeVis_optics_cpp(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP useQueueSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::sp_mat& >::type edges(edgesSEXP);
-    Rcpp::traits::input_parameter< arma::imat& >::type neighbors(neighborsSEXP);
-    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
-    Rcpp::traits::input_parameter< int >::type minPts(minPtsSEXP);
-    Rcpp::traits::input_parameter< bool >::type useQueue(useQueueSEXP);
-    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< const arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< const arma::imat& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< const double& >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< const int& >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type useQueue(useQueueSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(optics_cpp(edges, neighbors, eps, minPts, useQueue, verbose));
     return rcpp_result_gen;
 END_RCPP
