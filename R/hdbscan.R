@@ -64,18 +64,22 @@
 #' @examples
 #' \dontrun{
 #' library(largeVis)
-#' library(clusteringdatasets)
 #' data(spiral)
 #' dat <- as.matrix(spiral[, 1:2])
 #' neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
 #'                                        max_iter = 5)
 #' edges <- buildEdgeMatrix(t(dat), neighbors)
-#' clusters <- hdbscan(edges, verbose = FALSE)
+#' clusters <- hdbscan(edges, neighbors = neighbors, verbose = FALSE)
 #'
+#' # Calling largeVis while setting sgd_batches to 1 is
+#' # the simplest way to generate the data structures neeeded for hdbscan
+#' spiralVis <- largeVis(t(dat), K = 10, tree_threshold = 100, max_iter = 5, sgd_batches = 1)
+#' clusters <- hdbscan(spiralVis, verbose = FALSE)
+#'
+#' # The gplot function helps to visualize the clustering
 #' largeHighDimensionalDataset <- matrix(rnorm(50000), ncol = 50)
 #' vis <- largeVis(largeHighDimensionalDataset)
-#' edges <- buildEdgeMatrix(largeHighDimensionalDataset, vis$knns)
-#' clustering <- hdbscan(edges)
+#' clustering <- hdbscan(vis)
 #' gplot(clustering, t(vis$coords))
 #' }
 #' @export
@@ -164,13 +168,11 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' @examples
 #' \dontrun{
 #' library(largeVis)
-#' library(clusteringdatasets)
 #' data(Aggregation)
 #' dat <- as.matrix(Aggregation[, 1:2])
-#' neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
-#'                                        max_iter = 5)
-#' edges <- buildEdgeMatrix(t(dat), neighbors)
-#' clusters <- hdbscan(edges, verbose = FALSE)
+#' aggregateVis <- largeVis(dat, K = 10, tree_threshold = 100,
+#'                          max_iter = 5, sgd_batches = 1)
+#' clusters <- hdbscan(aggregateVis, verbose = FALSE)
 #' gplot(clusters, dat)
 #' }
 #' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes_

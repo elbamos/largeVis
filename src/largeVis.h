@@ -18,10 +18,10 @@ typedef double coordinatetype;
 
 typedef sword vertexidxtype;
 typedef sword edgeidxtype;
-typedef sword iterationtype;
+typedef uword iterationtype;
 
-typedef int dimidxtype;
-typedef int kidxtype;
+typedef unsigned int dimidxtype;
+typedef unsigned int kidxtype;
 
 #ifdef _OPENMP
 void checkCRAN(Rcpp::Nullable<Rcpp::NumericVector> threads);

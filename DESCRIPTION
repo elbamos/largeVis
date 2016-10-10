@@ -24,8 +24,7 @@ Suggests:
     wesanderson,
     RColorBrewer,
     dplyr,
-    magrittr,
-    clusteringdatasets
+    magrittr
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes

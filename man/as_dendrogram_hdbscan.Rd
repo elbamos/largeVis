@@ -35,9 +35,8 @@ nodes. Whether a node was selected as as cluster is an attribute of each node.
 }
 \examples{
 data(iris)
-neighbors <- randomProjectionTreeSearch(t(iris[,1:4]), K = 20)
-edges <- buildEdgeMatrix(t(iris[,1:4]), neighbors)
-hdbscanobj <- hdbscan(edges, minPts = 10, K = 5)
+vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1)
+hdbscanobj <- hdbscan(vis, minPts = 10, K = 5)
 plot(as_dendrogram_hdbscan(hdbscanobj))
 }
 

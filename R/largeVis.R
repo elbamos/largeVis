@@ -23,7 +23,7 @@
 #'    \item{'knns'}{If \code{save_neighbors=TRUE}, An [N,K] 0-indexed integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
 #'    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s. Note that this matrix is not identical to the output
 #'    from \code{\link{randomProjectionTreeSearch}}: missing neighbors are \code{NA}'s rather than \code{-1}'s, and the matrix is transposed.}
-#'    \item{'edges'}(\code{save_edges=TRUE}, a [N,N] sparse matrix of distances between nearest neighbors.)
+#'    \item{'edges'}{If \code{save_edges=TRUE}, a [N,N] sparse matrix of distances between nearest neighbors.}
 #'    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
 #'    \item{'call'}{The call.}
 #'    \item{'coords'}{A [D,N] matrix of the embedding of the dataset in the low-dimensional space.}

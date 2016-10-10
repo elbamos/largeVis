@@ -69,7 +69,7 @@ protected:
 				ivec::iterator newIt = neighbors.begin();
 				vector< vertexidxtype >::iterator oldIt = tmpStorage.begin();
 				vector< vertexidxtype >::iterator oldEnd = tmpStorage.end();
-				vertexidxtype last;
+				vertexidxtype last = -1;
 				vertexidxtype best = -1;
 				while (oldIt != oldEnd || newIt != newEnd) {
 					if (oldIt == oldEnd) best = *newIt++;

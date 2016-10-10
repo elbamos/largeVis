@@ -4,17 +4,18 @@
 \alias{hdbscan}
 \title{hdbscan}
 \usage{
-hdbscan(edges, minPts = 20, K = 5, neighbors = NULL, threads = NULL,
+hdbscan(edges, neighbors = NULL, minPts = 20, K = 5, threads = NULL,
   verbose = getOption("verbose", TRUE))
 }
 \arguments{
-\item{edges}{An edge matrix of the type returned by \code{\link{buildEdgeMatrix}}.}
+\item{edges}{An edge matrix of the type returned by \code{\link{buildEdgeMatrix}} or, alternatively, a \code{largeVis} object.}
+
+\item{neighbors}{An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}. Must be specified unless
+\code{edges} is a \code{largeVis} object.}
 
 \item{minPts}{The minimum number of points in a cluster.}
 
 \item{K}{The number of points in the core neighborhood. (See details.)}
-
-\item{neighbors}{An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}.}
 
 \item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
 
@@ -55,9 +56,6 @@ to clustering nearest neighbors rather than based on density. A high value of
 patterns, such as where clusters are made up of points arranged in lines to form
 shapes.
 
-If \code{neighbors} is specified, some costly sorts of neighbors in the edge
-matrix may be avoided.
-
 The function must be provided sufficient nearest-neighbor data for whatever
 is specified for \eqn{k}. If \eqn{k} = 5, for example, the edge matrix (and
 neighbor matrix, if specified) must contain data on at least 5 neighbors for
@@ -82,18 +80,22 @@ will hopefully provide some measure of outlier factor.
 \examples{
 \dontrun{
 library(largeVis)
-library(clusteringdatasets)
 data(spiral)
 dat <- as.matrix(spiral[, 1:2])
 neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
                                        max_iter = 5)
 edges <- buildEdgeMatrix(t(dat), neighbors)
-clusters <- hdbscan(edges, verbose = FALSE)
+clusters <- hdbscan(edges, neighbors = neighbors, verbose = FALSE)
 
+# Calling largeVis while setting sgd_batches to 1 is
+# the simplest way to generate the data structures neeeded for hdbscan
+spiralVis <- largeVis(t(dat), K = 10, tree_threshold = 100, max_iter = 5, sgd_batches = 1)
+clusters <- hdbscan(spiralVis, verbose = FALSE)
+
+# The gplot function helps to visualize the clustering
 largeHighDimensionalDataset <- matrix(rnorm(50000), ncol = 50)
 vis <- largeVis(largeHighDimensionalDataset)
-edges <- buildEdgeMatrix(largeHighDimensionalDataset, vis$knns)
-clustering <- hdbscan(edges)
+clustering <- hdbscan(vis)
 gplot(clustering, t(vis$coords))
 }
 }

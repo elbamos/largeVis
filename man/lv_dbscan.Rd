@@ -4,11 +4,12 @@
 \alias{lv_dbscan}
 \title{lv_dbscan}
 \usage{
-lv_dbscan(edges, neighbors, eps = Inf, minPts = nrow(neighbors),
+lv_dbscan(edges, neighbors, eps = Inf, minPts = nrow(neighbors - 1),
   verbose = getOption("verbose", TRUE))
 }
 \arguments{
-\item{edges}{A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}.}
+\item{edges}{A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}. Alternatively, a \code{largeVis} object,
+in which case \code{edges} and \code{neighbors} will be taken from the \code{edges} and \code{knns} parameters, respectively.}
 
 \item{neighbors}{An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}}
 

@@ -49,7 +49,7 @@ private:
 			return firstSibling;
 		}
 		static vector< NodePointer > treeArray(5);
-		int numSiblings = 0;
+		unsigned int numSiblings = 0;
 		for (; firstSibling != NULL; numSiblings++) {
 			if (numSiblings == treeArray.size()) treeArray.resize(numSiblings * 2);
 			treeArray[numSiblings] = firstSibling;
@@ -58,7 +58,7 @@ private:
 		}
 		if (numSiblings == treeArray.size()) treeArray.resize(numSiblings + 1);
 		treeArray[numSiblings] = NULL;
-		int i = 0;
+		unsigned int i = 0;
 		for (; i + 1 < numSiblings; i += 2) compareAndLink(treeArray[i], treeArray[i + 1]);
 		int j = i - 2;
 		if (j == numSiblings - 3) compareAndLink (treeArray[j], treeArray[j + 2]);

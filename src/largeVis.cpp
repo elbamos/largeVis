@@ -178,9 +178,7 @@ public:
 			while (m != M) {
 				k =  negAlias();
 
-				// Check that the draw isn't one of i's edges
-				if (k == i ||
-        k == j) continue;
+				if (k == i || k == j) continue;
 				m++;
 
 				y_j = coordsPtr + (k * D);
@@ -196,7 +194,7 @@ public:
 };
 
 // [[Rcpp::export]]
-arma::mat sgd(arma::mat coords,
+arma::mat sgd(arma::mat& coords,
               arma::ivec& targets_i, // vary randomly
               arma::ivec& sources_j, // ordered
               arma::ivec& ps, // N+1 length vector of indices to start of each row j in vector is
@@ -242,6 +240,7 @@ arma::mat sgd(arma::mat coords,
 				                        coords.n_cols);
   }
   vertexidxtype N = coords.n_cols;
+	// Calculate weights for negative sampling and initialize alias algorithm
   distancetype* negweights = new distancetype[N];
   for (vertexidxtype n = 0; n < N; ++n) negweights[n] = 0;
   if (useDegree) {

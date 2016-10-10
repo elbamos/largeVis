@@ -85,10 +85,8 @@ public:
   }
 
   void searchReverse(vertexidxtype id) {
-  	vertexidxtype y;
   	edgeidxtype p, q;
     for (p = head[id]; p >= 0; p = next[p]) {
-      y = edge_to[p];
       for (q = head[id]; q >= 0; q = next[q]) {
         if (edge_to[q] == id) break;
       }

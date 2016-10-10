@@ -36,13 +36,11 @@ be labelled with the node index number or cluster index number, respectively.
 \examples{
 \dontrun{
 library(largeVis)
-library(clusteringdatasets)
 data(Aggregation)
 dat <- as.matrix(Aggregation[, 1:2])
-neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
-                                       max_iter = 5)
-edges <- buildEdgeMatrix(t(dat), neighbors)
-clusters <- hdbscan(edges, verbose = FALSE)
+aggregateVis <- largeVis(dat, K = 10, tree_threshold = 100,
+                         max_iter = 5, sgd_batches = 1)
+clusters <- hdbscan(aggregateVis, verbose = FALSE)
 gplot(clusters, dat)
 }
 }

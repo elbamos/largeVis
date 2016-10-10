@@ -1,5 +1,6 @@
 // [[Rcpp::plugins(openmp)]]
 // [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
 #include "minindexedpq.h"
 #include <queue>
@@ -314,12 +315,12 @@ protected:
    */
   void reportAHierarchy(const VIDX& last,
                         const VIDX& oldidx,
-                       vector<int>& newparent,
-                       vector<int>& nodeMembership,
-                       vector<double>& newstabilities,
-                       vector<int>& newselected,
-                       const int& level,
-                       const int& childNum) {
+                        vector<int>& newparent,
+                        vector<int>& nodeMembership,
+                        vector<double>& newstabilities,
+                        vector<int>& newselected,
+                        const int& level,
+                        const int& childNum) {
     VIDX newidx = reportClusterCnt++;
     if (last == oldidx) newparent[newidx] = newidx;
     else newparent[newidx] = last;
