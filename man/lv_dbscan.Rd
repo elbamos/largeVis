@@ -23,7 +23,11 @@ in which case \code{edges} and \code{neighbors} will be taken from the \code{edg
 A \code{\link[dbscan]{dbscan}} object.
 }
 \description{
-Experimental implementation of the DBSCAN algorithm.
+Implementation of the DBSCAN algorithm using largeVis datastructures.
+}
+\details{
+The DBSCAN algorithm attempts to find clusters of a minimum density given by \code{eps}. This
+implementation leverages the nearest neighbor data assembled by largeVis.
 }
 \references{
 Martin Ester, Hans-Peter Kriegel, Jorg Sander, Xiaowei Xu (1996). Evangelos Simoudis, Jiawei Han, Usama M. Fayyad, eds. A density-based algorithm for discovering clusters in large spatial databases with noise. Proceedings of the Second International Conference on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226–231. ISBN 1-57735-004-9.

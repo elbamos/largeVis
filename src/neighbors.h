@@ -50,9 +50,9 @@ protected:
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
 
-	virtual arma::vec hyperplane(const arma::ivec& indices) = 0;
+	virtual vec hyperplane(const ivec& indices) = 0;
 
-	void addNeighbors(const arma::ivec& indices) {
+	void addNeighbors(const ivec& indices) {
 		ivec neighbors = ivec(indices);
 		Neighborhood tmpStorage = Neighborhood();
 		ivec::iterator newEnd = neighbors.end();
@@ -66,9 +66,9 @@ protected:
 				tmpStorage.clear();
 				tmpStorage.swap(treeNeighborhoods[*it]);
 				treeNeighborhoods[*it].reserve(tmpStorage.size() + indices.n_elem);
-				ivec::iterator newIt = neighbors.begin();
-				vector< vertexidxtype >::iterator oldIt = tmpStorage.begin();
-				vector< vertexidxtype >::iterator oldEnd = tmpStorage.end();
+				auto newIt = neighbors.begin();
+				auto oldIt = tmpStorage.begin();
+				auto oldEnd = tmpStorage.end();
 				vertexidxtype last = -1;
 				vertexidxtype best = -1;
 				while (oldIt != oldEnd || newIt != newEnd) {
@@ -83,7 +83,7 @@ protected:
 		}
 	}
 
-	void recurse(const arma::ivec& indices) {
+	void recurse(const ivec& indices) {
 		const vertexidxtype I = indices.n_elem;
 		if (p.check_abort()) return;
 		if (I < 2) stop("Tree split failure.");
@@ -114,8 +114,8 @@ protected:
 	inline void copyHeapToMatrix(set< vertexidxtype >& tree,
                               const kidxtype K,
                               const vertexidxtype i) {
-		set< vertexidxtype >::iterator sortIterator = tree.begin();
-		set< vertexidxtype >::iterator end = tree.end();
+		auto sortIterator = tree.begin();
+		auto end = tree.end();
 		vertexidxtype j = 0;
 		while (sortIterator != end) knns(j++, i) = *sortIterator++;
 		if (j == 0) stop("Tree failure.");
@@ -142,7 +142,7 @@ public:
 		delete[] treeHolder;
 	}
 
-	void setSeed(Rcpp::Nullable< Rcpp::NumericVector > seed) {
+	void setSeed(Rcpp::Nullable< NumericVector > seed) {
 		long innerSeed;
 		if (seed.isNotNull()) {
 #ifdef _OPENMP
@@ -157,7 +157,7 @@ public:
 		mt = mt19937_64(innerSeed);
 	}
 
-	void trees(const int n_trees, const int newThreshold) {
+	void trees(const int& n_trees, const int& newThreshold) {
 		threshold = newThreshold;
 		for (vertexidxtype i = 0; i < N; i++) {
 			treeNeighborhoods[i].push_back(i);
@@ -174,7 +174,7 @@ public:
 #endif
 	}
 
-	void reduce(const kidxtype K,
+	void reduce(const kidxtype& K,
              DistanceAdder<M, V>  *adder) {
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -183,7 +183,7 @@ public:
 			const V x_i = data.col(i);
 			MaxHeap thisHeap;
 			vector< vertexidxtype > neighborhood = treeNeighborhoods[i];
-			for (vector< vertexidxtype >::iterator j = neighborhood.begin();
+			for (auto j = neighborhood.begin();
         j != neighborhood.end();
         ++j)
 				adder -> add(thisHeap, x_i, *j);
@@ -193,7 +193,7 @@ public:
 		}
 	}
 
-	void convertToMatrix(const kidxtype K) {
+	void convertToMatrix(const kidxtype& K) {
 		knns = imat(K,N);
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -207,7 +207,7 @@ public:
 	/*
 	 * Re-sort by distance.
 	 */
-	arma::imat getMatrix(DistanceAdder<M,V> *adder) {
+	imat getMatrix(DistanceAdder<M,V> *adder) {
 		const kidxtype K = knns.n_rows;
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -215,7 +215,7 @@ public:
 		for (vertexidxtype i = 0; i < N; i++) if (p.increment()) {
 			const V x_i = data.col(i);
 			MaxHeap thisHeap = MaxHeap();
-			for (imat::col_iterator it = knns.begin_col(i);
+			for (auto it = knns.begin_col(i);
         it != knns.end_col(i) && *it != -1;
         it++) {
 				adder -> add( thisHeap, x_i, *it);
@@ -230,7 +230,7 @@ public:
 		return knns;
 	}
 
-	arma::imat exploreNeighborhood(const int maxIter,
+	imat exploreNeighborhood(const int& maxIter,
                                 DistanceAdder<M, V>* adder) {
 		const kidxtype K = knns.n_rows;
 		imat old_knns  = imat(K,N);
@@ -261,16 +261,14 @@ public:
 
 				vertexidxtype lastOne = N + 1;
 				// This is a K + 1 vector merge sort running in O(K * N)
-				PositionVector::iterator theEnd = positions.end();
+				auto theEnd = positions.end();
 				while (true) {
 					imat::col_iterator whch = 0;
 
-					for (pair< PositionVector::iterator,
-          PositionVector::iterator > it(positions.begin(),
-                                        ends.begin());
-          it.first != theEnd;
-          it.first++, it.second++) while (*it.first != *it.second) { // For each neighborhood, keep going until
-          	// we find a non-dupe or get to the end
+					for (pair< PositionVector::iterator, PositionVector::iterator > it(positions.begin(), ends.begin());
+          		it.first != theEnd;
+          		it.first++, it.second++) while (*it.first != *it.second) { // For each neighborhood, keep going until
+          																															 // we find a non-dupe or get to the end
 
           	if (**it.first == -1) advance(*it.first, distance(*it.first, *it.second));
           	else if (**it.first == i || **it.first == lastOne) advance(*it.first, 1);
@@ -292,7 +290,7 @@ public:
 				if (T != maxIter - 1) {
 					sorter.clear();
 					heapToSet(thisHeap, sorter);
-					set< vertexidxtype >::iterator sortIterator = sorter.begin();
+					auto sortIterator = sorter.begin();
 					vertexidxtype j = 0;
 					while (sortIterator != sorter.end()) knns(j++, i) = *sortIterator++;
 					if (j == 0) stop("Neighbor exploration failure.");

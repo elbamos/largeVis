@@ -1,6 +1,6 @@
 #' lv_dbscan
 #'
-#' Experimental implementation of the DBSCAN algorithm.
+#' Implementation of the DBSCAN algorithm using largeVis datastructures.
 #'
 #' @param edges A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}. Alternatively, a \code{largeVis} object,
 #' in which case \code{edges} and \code{neighbors} will be taken from the \code{edges} and \code{knns} parameters, respectively.
@@ -8,6 +8,9 @@
 #' @param eps See \code{\link[dbscan]{dbscan}}.
 #' @param minPts See \code{\link[dbscan]{dbscan}}.
 #' @param verbose Vebosity level.
+#'
+#' @details The DBSCAN algorithm attempts to find clusters of a minimum density given by \code{eps}. This
+#' implementation leverages the nearest neighbor data assembled by largeVis.
 #'
 #' @return A \code{\link[dbscan]{dbscan}} object.
 #' @export

@@ -61,13 +61,13 @@ public:
 	SparseAnnoySearch(const sp_mat& data, Progress& p) : AnnoySearch(data, p) {}
 };
 
-arma::imat searchTreesSparse(const int& threshold,
+imat searchTreesSparse(const int& threshold,
                             const int& n_trees,
                             const kidxtype& K,
                             const int& maxIter,
                             const sp_mat& data,
                             const string& distMethod,
-                            Rcpp::Nullable< Rcpp::NumericVector> seed,
+                            Rcpp::Nullable< NumericVector> seed,
                             bool verbose) {
 	const vertexidxtype N = data.n_cols;
 
@@ -123,8 +123,8 @@ arma::imat searchTreesTSparse(const int& threshold,
                              const arma::uvec& j,
                              const arma::vec& x,
                              const std::string& distMethod,
-                             Rcpp::Nullable< Rcpp::NumericVector> seed,
-                             Rcpp::Nullable< Rcpp::NumericVector> threads,
+                             Rcpp::Nullable< NumericVector> seed,
+                             Rcpp::Nullable< NumericVector> threads,
                              bool verbose) {
 #ifdef _OPENMP
 	checkCRAN(threads);
