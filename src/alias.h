@@ -18,17 +18,20 @@ private:
 	T N;
 
 public:
-	AliasTable() {
-	}
-	~AliasTable() {
-		delete probs;
-		delete aliases;
-	}
-
-	void initialize(const D* weights, const T& N) {
-		this -> N = N;
+	explicit AliasTable(const T& N) : N{N} {
 		probs = new C[N];
 		aliases = new T[N];
+	}
+	AliasTable(const AliasTable& other) {
+		probs = other.probs;
+		aliases = other.aliases;
+	}
+	~AliasTable() {
+		delete[] probs;
+		delete[] aliases;
+	}
+
+	void initialize(const D* weights) {
 		D sm = 0;
 		for (T i = 0; i != N; i++) sm += weights[i];
 		for (T i = 0; i != N; i++) probs[i] = weights[i] * N / sm;
@@ -37,7 +40,7 @@ public:
 		for (T i = 0; i < N; i++) ((probs[i] < 1) ?
                                small :
                                large).push(i);
-		while (! large.empty() & ! small.empty()) {
+		while (! large.empty() && ! small.empty()) {
 			T big = large.front();
 			large.pop();
 			T little = small.front();

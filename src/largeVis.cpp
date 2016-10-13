@@ -14,7 +14,7 @@ using namespace arma;
 class Visualizer {
 protected:
   const dimidxtype D;
-  const int M;
+  const unsigned int M;
 
   vertexidxtype * const targetPointer;
   vertexidxtype * const sourcePointer;
@@ -24,30 +24,41 @@ protected:
   distancetype rho;
   const distancetype rhoIncrement;
 
-  AliasTable< vertexidxtype, coordinatetype, double > negAlias;
-  AliasTable< edgeidxtype, coordinatetype, double > posAlias;
-  Gradient* grad;
-
   vertexidxtype* ps;
 
-  int storedThreads = 0;
+  AliasTable< vertexidxtype, coordinatetype, double > negAlias;
+  AliasTable< edgeidxtype, coordinatetype, double > posAlias;
+  const Gradient* grad;
+
+  unsigned int storedThreads = 0;
 
 public:
   Visualizer(vertexidxtype * sourcePtr,
              vertexidxtype * targetPtr,
              const dimidxtype& D,
              coordinatetype * coordPtr,
-             const int& M,
+             const unsigned int& M,
              const distancetype& rho,
              vertexidxtype* ps,
-             const iterationtype& n_samples) : D{D}, M{M},
+             const iterationtype& n_samples,
+             const vertexidxtype& N,
+             const edgeidxtype& E,
+             const double& alpha,
+             const double& gamma) : D{D}, M{M},
                                     targetPointer{targetPtr},
                                     sourcePointer{sourcePtr},
                                     coordsPtr{coordPtr},
                                     n_samples{n_samples},
                                     rho{rho},
                                     rhoIncrement((rho - 0.0001) / n_samples),
-                                    ps{ps} { }
+                                    ps{ps},
+                                    negAlias(AliasTable< vertexidxtype, coordinatetype, double>(N)),
+                                    posAlias(AliasTable< edgeidxtype, coordinatetype, double>(E)){
+  	if (alpha == 0) grad = new ExpGradient(gamma, D);
+  	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
+  	else grad = new AlphaGradient(alpha, gamma, D);
+  }
+
 	virtual ~Visualizer() {
 #ifdef _OPENMP
 		if (storedThreads > 0) omp_set_num_threads(storedThreads);
@@ -57,11 +68,9 @@ public:
 
 	void initAlias(const distancetype* posWeights,
                  const distancetype* negWeights,
-                 const vertexidxtype& N,
-                 const edgeidxtype& E,
                  Rcpp::Nullable<Rcpp::NumericVector> seed) {
-		negAlias.initialize(negWeights, N);
-		posAlias.initialize(posWeights, E);
+		negAlias.initialize(negWeights);
+		posAlias.initialize(posWeights);
 
 		if (seed.isNotNull()) {
 #ifdef _OPENMP
@@ -77,17 +86,11 @@ public:
 		}
 	}
 
-  void setGradient(const double& alpha, const double& gamma) {
-  	if (alpha == 0) grad = new ExpGradient(gamma, D);
-  	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
-  	else grad = new AlphaGradient(alpha, gamma, D);
-  }
-
   virtual void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
   	edgeidxtype e_ij;
-  	int m, example = 0;
+  	unsigned int example = 0;
   	vertexidxtype i, j, k;
-  	coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
+  	coordinatetype firstholder[10], secondholder[10];
 
     const distancetype localRho = rho;
     while (example++ != batchSize && localRho > 0) {
@@ -96,12 +99,12 @@ public:
       j = targetPointer[e_ij];
       i = sourcePointer[e_ij];
 
-      y_i = coordsPtr + (i * D);
-      y_j = coordsPtr + (j * D);
+      coordinatetype* y_i = coordsPtr + (i * D);
+      coordinatetype* y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
 			for (dimidxtype d = 0; d != D; ++d) y_j[d] -= firstholder[d] * rho;
 
-			m = 0;
+			unsigned int m = 0;
       while (m != M) {
         k =  negAlias();
 
@@ -138,15 +141,18 @@ protected:
 public:
 	MomentumVisualizer(vertexidxtype * sourcePtr,
             vertexidxtype * targetPtr,
-            dimidxtype D,
+            const dimidxtype& D,
             coordinatetype * coordPtr,
-            int M,
-            distancetype rho,
+            const unsigned int& M,
+            const distancetype& rho,
             vertexidxtype* ps,
-            iterationtype n_samples,
+            const iterationtype& n_samples,
             const float& momentum,
-            const vertexidxtype& N ) : Visualizer(sourcePtr, targetPtr, D, coordPtr,
-            																			M, rho, ps, n_samples), momentum{momentum} {
+            const vertexidxtype& N,
+            const edgeidxtype& E,
+            const double& alpha,
+            const double& gamma) : Visualizer(sourcePtr, targetPtr, D, coordPtr,
+            																			M, rho, ps, n_samples, N, E, alpha, gamma), momentum{momentum} {
 		momentumarray = new coordinatetype[D * N];
 		for (vertexidxtype i = 0; i != D*N; ++i) momentumarray[i] = 0;
 	}
@@ -157,9 +163,9 @@ public:
 
 	virtual void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
 		edgeidxtype e_ij;
-		int m, example = 0;
+		unsigned int example = 0;
 		vertexidxtype i, j, k;
-		coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
+		coordinatetype firstholder[10], secondholder[10];
 
 		const distancetype localRho = rho;
 		const distancetype negRho = - localRho;
@@ -169,12 +175,12 @@ public:
 			j = targetPointer[e_ij];
 			i = sourcePointer[e_ij];
 
-			y_i = coordsPtr + (i * D);
-			y_j = coordsPtr + (j * D);
+			coordinatetype* y_i = coordsPtr + (i * D);
+			coordinatetype* y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
 			updateMinus(firstholder, y_j, j, localRho);
 
-			m = 0;
+			unsigned int m = 0;
 			while (m != M) {
 				k =  negAlias();
 
@@ -223,7 +229,11 @@ arma::mat sgd(arma::mat& coords,
 															                M,
 															                rho,
 															                ps.memptr(),
-															                n_samples);
+															                n_samples,
+															                coords.n_cols,
+															                sources_j.n_elem,
+															                alpha,
+															                gamma);
 	else {
   	float moment = NumericVector(momentum)[0];
   	if (moment < 0) stop("Momentum cannot be negative.");
@@ -237,7 +247,10 @@ arma::mat sgd(arma::mat& coords,
 				                        ps.memptr(),
 				                        n_samples,
 				                        moment,
-				                        coords.n_cols);
+				                        coords.n_cols,
+				                        sources_j.n_elem,
+				                        alpha,
+				                        gamma);
   }
   vertexidxtype N = coords.n_cols;
 	// Calculate weights for negative sampling and initialize alias algorithm
@@ -253,10 +266,8 @@ arma::mat sgd(arma::mat& coords,
   	}
   }
   for (vertexidxtype n = 0; n < N; ++n) negweights[n] = pow(negweights[n], 0.75);
-  v -> initAlias(weights.memptr(), negweights, N, sources_j.n_elem, seed);
+  v -> initAlias(weights.memptr(), negweights, seed);
   delete[] negweights;
-
-  v -> setGradient(alpha, gamma);
 
   const int batchSize = 8192;
   const iterationtype barrier = (n_samples * .99 < n_samples - coords.n_cols) ? n_samples * .99 : n_samples - coords.n_cols;

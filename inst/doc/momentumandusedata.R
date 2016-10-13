@@ -55,32 +55,37 @@ if (rebuild) {
 														 label = factor(c(labels, labels)), 
 														 degree = factor(rep(c("weights", "degree"), 
 														 										each = ncol(degree))))
-	save(degreeCoords, file = paste(sep = "/", 
-																	system.file(package = "largeVis", "extdata"), 
-																	"degreeCoords.Rda"))
 }
 
-## ----drawdegree,fig.width=5,fig.height=4,fig.align='center',fig.cap='Effect of useDegree'----
-load(system.file(package = "largeVis", "extdata/degreeCoords.Rda"))
-degreeCoords %>%
-	ggplot(aes(x = X1, y = X2, color = label)) + 
-	geom_point(size = 0.05, alpha = 0.3) + 
-	facet_grid(. ~ degree) +
-	scale_x_continuous("", labels = NULL, breaks = NULL) + 
-	scale_y_continuous("", labels = NULL, breaks = NULL) +
-	guides(color = FALSE) +
-	ggtitle("Effect of useDegree")
+## ----drawdegree----------------------------------------------------------
+if (rebuild) {
+	degreeplot <- degreeCoords %>%
+		ggplot(aes(x = X1, y = X2, color = label)) + 
+		geom_point(size = 0.02, alpha = 0.1) + 
+		facet_grid(. ~ degree) +
+		scale_x_continuous("", labels = NULL, breaks = NULL) + 
+		scale_y_continuous("", labels = NULL, breaks = NULL) +
+		guides(color = FALSE) +
+		ggtitle("Effect of useDegree")
+	ggsave(degreeplot, 
+			 filename = system.file(package = "largeVis", "vignettedata/degreeplot.png"),
+			 width = 5, height = 4)
+}
+
+## ----drawdegreeimage,fig.width=4,fig.height=2.5--------------------------
+library(png)
+library(grid)
+img <- readPNG(system.file(package = "largeVis", "vignettedata/degreeplot.png"))
+grid.raster(img)
 
 ## ----momentum------------------------------------------------------------
 if (rebuild) {
 	starterCoords <- matrix(runif(n = 2 * ncol(mnist)) - 0.5, ncol = 2)
-	timex <- system.time(firstCoords <- data.frame(t(
-            projectKNNs(preVis$wij, coords = t(starterCoords), sgd_batches = 0.1, verbose = TRUE)), lambda = 0, batches = 0.1, label = labels))
-	timex <- data.frame(elapsed = timex["elapsed"], batches = 1)
+	firstCoords <- data.frame(
+		t(projectKNNs(preVis$wij, coords = t(starterCoords), sgd_batches = 0.1, verbose = TRUE)), 
+    lambda = 0, batches = 0.1, label = labels)
 	for (batches in c(0.3, 0.8)) {
-		newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, verbose = TRUE, sgd_batches = batches, coords = t(starterCoords)))))
-		print(str(newCoords))
-		timex <- rbind(timex, data.frame(elapsed = newtime["elapsed"], batches = batches))
+		newCoords <- data.frame(t(projectKNNs(preVis$wij, verbose = TRUE, sgd_batches = batches, coords = t(starterCoords))))
 		newCoords$lambda <- 0
 		newCoords$batches <- batches
 		newCoords$label <- labels
@@ -89,7 +94,6 @@ if (rebuild) {
 	for (lambda in c(0.4, 0.9)) {
 			for (batches in c(0.1, 0.3, 0.5)) {
 				newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, verbose = TRUE, sgd_batches = batches, momentum = lambda, coords = t(starterCoords)))))
-				timex <<- rbind(timex, data.frame(elapsed = newtime["elapsed"], batches = batches))
 				newCoords$lambda <- lambda
 				newCoords$batches <- batches
 				newCoords$label <- labels
@@ -98,29 +102,33 @@ if (rebuild) {
 	}
 	momentumCoords <- firstCoords
 	momentumCoords$label <- factor(momentumCoords$label)
-	save(momentumCoords, file = paste(sep = "/", system.file(package = "largeVis", "extdata"), "momentumCoords.Rda"))
-	save(timex, file = paste(sep = "/", system.file(package = "largeVis", "extdata"), "momentumTimes.Rda"))
 }
 
-## ----drawmomentum,warning=FALSE,fig.width=6,fig.height=5,fig.align='center',fig.cap='Effect of Momentum'----
-load(system.file(package = "largeVis", "extdata/momentumCoords.Rda"))
-momentumCoords %>%
-	ggplot(aes(x = X1, y = X2, color = label)) + 
-	geom_point(size = 0.05, alpha = 0.3) + 
-	facet_grid(batches ~ lambda, scales = "free", labeller = label_bquote(cols = lambda == .(lambda), 
-																																				rows = b == .(batches))) +
-	scale_x_continuous("", limits = c(-40, 40), labels = NULL, breaks = NULL) + 
-	scale_y_continuous("", limits = c(-40, 40), labels = NULL, breaks = NULL) +
-	guides(color = FALSE) +
-	ggtitle("Effect of Momentum and Reduced Training Batches")
+## ----drawmomentum,warning=FALSE------------------------------------------
+if (rebuild) {
+	momentumPlot <- momentumCoords %>%
+		ggplot(aes(x = X1, y = X2, color = label)) + 
+		geom_point(size = 0.01, alpha = 0.1) + 
+		facet_grid(batches ~ lambda, scales = "free", labeller = label_bquote(cols = lambda == .(lambda), 
+																																					rows = b == .(batches))) +
+		scale_x_continuous("", limits = c(-40, 40), labels = NULL, breaks = NULL) + 
+		scale_y_continuous("", limits = c(-40, 40), labels = NULL, breaks = NULL) +
+		guides(color = FALSE) +
+		ggtitle("Effect of Momentum and Reduced Training Batches")
+	ggsave(momentumPlot, 
+				 filename = system.file(package = "largeVis", "vignettedata/momentumplot.png"),
+				 width = 6, height = 4)
+}
 
-## ----dbscan--------------------------------------------------------------
-library(clusteringdatasets)
-data(spiral)
-dat <- spiral[, 1:2]
+## ----drawmomentumimage,fig.width=4,fig.height=3--------------------------
+img <- readPNG(system.file(package = "largeVis", "vignettedata/momentumplot.png"))
+grid.raster(img)
+
+## ----dbscan,fig.width=6,fig.height=6-------------------------------------
+load(system.file(package = "largeVis", "vignettedata/spiral.Rda"))
+dat <- spiral
 neighbors <- randomProjectionTreeSearch(t(dat), K = 20)
 edges <- buildEdgeMatrix(t(dat), neighbors = neighbors)
-par(mfrow = c(3, 3), mar = c(0.1, 0.1, 0.1, 0.1))
 set <- rbind(Map(f = function(y) {
 	rbind(Map(f = function(x) {
 		clust = lv_dbscan(edges = edges, neighbors = neighbors, eps = x, minPts = y)$cluster
@@ -129,11 +137,11 @@ set <- rbind(Map(f = function(y) {
 }, c(5, 10, 20)))
 set <- lapply(set, FUN = bind_rows)
 set <- bind_rows(set)
-set$x <- rep(dat$x, 9)
-set$y <- rep(dat$y, 9)
+set$x <- rep(dat[, 1], 9)
+set$y <- rep(dat[, 2], 9)
 set$cluster <- factor(set$cluster)
-set$eps <- factor(paste("epsilon == ", set$eps, sep = ""))
-set$minPts <- factor(paste("minPts == ", set$minPts, sep = ""))
+set$eps <- ordered(set$eps, labels = paste("epsilon == ", c(1, 3, 5), sep = ""))
+set$minPts <- ordered(set$minPts, labels = paste("minPts == ", c(5, 10, 20), sep = ""))
 ggplot(data = set, aes(x = x, y = y, color = cluster)) +
 	geom_point(size = 0.5, alpha = 0.7) +
 	facet_grid(minPts ~ eps, labeller = label_parsed) + 
@@ -142,21 +150,31 @@ ggplot(data = set, aes(x = x, y = y, color = cluster)) +
 	guides(color = FALSE) +
 	ggtitle("Effect of eps and minPts on DBSCAN results")
 
-## ----optics,fig.width=5--------------------------------------------------
+## ----optics,fig.width=5,message=FALSE,warning=FALSE----------------------
 library(dbscan, quietly = TRUE)
-optClust <- lv_optics(edges = edges, neighbors = neighbors, eps = 5, minPts = 5)
-par(mfrow = c(1, 1))
-plot(optClust)
+optClust <- lv_optics(edges = edges, neighbors = neighbors, eps = 5, useQueue = FALSE, minPts = 5)
+optClust2 <- lv_optics(edges = edges, neighbors = neighbors, eps = 5, useQueue = TRUE, minPts = 5)
+data.frame(
+	o = c(optClust$order, optClust2$order), 
+	d = c(optClust$reachdist, optClust2$reachdist), 
+	useQueue = rep(c("No Queue", "Use Queue"), each = length(optClust$order))
+) %>%
+	ggplot(aes(x = o, y = d)) + 
+		geom_point(stat = 'identity', size = 0.1) + 
+		geom_bar(stat = 'identity', alpha = 0.3) +
+		facet_grid(useQueue ~ .) +
+		scale_x_continuous("Order") + 
+		scale_y_continuous("Reachability Distance")
 
-## ----opticsvsdbscan------------------------------------------------------
+## ----opticsvsdbscan,fig.width=2,fig.width=6------------------------------
 suppressWarnings(opticsPoints <-	bind_rows(Map(f = function(x) {
 		clust = thiscut <- optics_cut(optClust, x)$cluster
 		data.frame(cluster = clust, eps = x)
 	}, c(1, 3, 5))))
 opticsPoints$cluster <- factor(opticsPoints$cluster)
-opticsPoints$x <- rep(dat$x, 3)
-opticsPoints$y <- rep(dat$y, 3)
-opticsPoints$eps <- factor(paste("epsilon ==" , opticsPoints$eps, sep=""))
+opticsPoints$x <- rep(dat[, 1], 3)
+opticsPoints$y <- rep(dat[, 2], 3)
+opticsPoints$eps <- factor(paste("epsilon ==" , opticsPoints$eps, sep = ""))
 
 ggplot(data = opticsPoints, aes(x = x, y = y, color = cluster)) +
 	geom_point(size = 0.5, alpha = 0.7) +
@@ -172,11 +190,11 @@ suppressWarnings(set <- rbind(Map(f = function(y) {
 		hdclust <- hdbscan(edges = edges, neighbors = neighbors, K = y, minPts = x, threads = 1)$cluster
 		data.frame(cluster = hdclust, K = x, minPts = y)
 	}, c(6, 10, 20)))
-}, c(4, 6, 8))))
+}, c(2, 6, 12))))
 set <- lapply(set, FUN = bind_rows)
 set <- bind_rows(set)
-set$x <- rep(dat$x, 9)
-set$y <- rep(dat$y, 9)
+set$x <- rep(dat[, 1], 9)
+set$y <- rep(dat[, 2], 9)
 set$cluster <- factor(set$cluster)
 set$K <- factor(paste("K=", set$K))
 set$minPts <- factor(paste("minPts=", set$minPts))

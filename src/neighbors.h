@@ -131,7 +131,12 @@ protected:
 	}
 
 public:
-	AnnoySearch(const M& data, Progress& p) : data{data}, N(data.n_cols), p{p} { }
+	AnnoySearch(const M& data, Progress& p) : data{data}, N(data.n_cols), p{p} {
+		treeNeighborhoods = new Neighborhood[N];
+		treeHolder = new set< vertexidxtype >[N];
+	}
+	AnnoySearch(const AnnoySearch& other) : AnnoySearch(other.data, other.p) {}
+
 	~AnnoySearch() {
 		delete[] treeNeighborhoods;
 		delete[] treeHolder;
@@ -154,7 +159,6 @@ public:
 
 	void trees(const int n_trees, const int newThreshold) {
 		threshold = newThreshold;
-		treeNeighborhoods = new Neighborhood[N];
 		for (vertexidxtype i = 0; i < N; i++) {
 			treeNeighborhoods[i].push_back(i);
 		}
@@ -172,7 +176,6 @@ public:
 
 	void reduce(const kidxtype K,
              DistanceAdder<M, V>  *adder) {
-		treeHolder = new set< vertexidxtype >[N];
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -182,7 +185,7 @@ public:
 			vector< vertexidxtype > neighborhood = treeNeighborhoods[i];
 			for (vector< vertexidxtype >::iterator j = neighborhood.begin();
         j != neighborhood.end();
-        j++)
+        ++j)
 				adder -> add(thisHeap, x_i, *j);
 			treeNeighborhoods[i].clear();
 			treeHolder[i] = set< vertexidxtype >();

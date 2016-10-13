@@ -40,7 +40,7 @@ rebuild <- FALSE
 require(largeVis,quietly = TRUE)
 
 ## ----reload,eval=!rebuild------------------------------------------------
-load(system.file(package = "largeVis", "extdata/vignettedata.Rda"))
+load(system.file(package = "largeVis", "vignettedata/vignettedata.Rda"))
 
 ## ----drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis',cache=FALSE----
 if (! exists("agcoords") && rebuild) {

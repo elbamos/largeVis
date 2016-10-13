@@ -54,13 +54,13 @@ public:
 	}
 
   void similarityOne(vertexidxtype id) {
-    double beta, lo_beta, hi_beta, sum_weight, H, tmp;
+    double beta, lo_beta, hi_beta, sum_weight, tmp;
   	vertexidxtype p;
     beta = 1;
     lo_beta = hi_beta = -1;
 
     for (int iter = 0; iter < 200; ++iter) {
-      H = sum_weight = 0;
+      double H = sum_weight = 0;
       for (p = head[id]; p >= 0; p = next[p]) {
         sum_weight += tmp = exp(-beta * edge_weight[p]);
         H += beta * (edge_weight[p] * tmp);

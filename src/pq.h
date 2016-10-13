@@ -363,6 +363,8 @@ public:
 		minimum_spanning_tree = new VIDX[N];
 	}
 
+	PrimsAlgorithm(const PrimsAlgorithm& p) : PrimsAlgorithm(p.N, p.coreDistances) {};
+
 	~PrimsAlgorithm() {
 		delete[] minimum_spanning_tree;
 	}
@@ -374,10 +376,9 @@ public:
 		Q.batchInsert(N, start);
 		Q.decreaseIf(starterIndex, -1);
 		p.increment(N);
-		VIDX v;
 		while (! Q.isEmpty()) {
 			if (Q.size() < 0) stop("bad");
-			v = Q.pop();
+			VIDX v = Q.pop();
 			if (! p.increment()) break;
 			if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
 			IntegerVector vNeighbors = neighbors.column(v);

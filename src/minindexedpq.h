@@ -67,7 +67,7 @@ private:
 	}
 
 public:
-	PairingHeap(const V &N) : root(NULL), MaxSize{N},
+	explicit PairingHeap(const V &N) : root(NULL), MaxSize{N},
 												PointerArray(vector< PairNode >(N)) {
 	}
 

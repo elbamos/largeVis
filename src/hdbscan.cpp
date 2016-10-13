@@ -12,6 +12,7 @@ private:
 public:
   HDBSCAN(const int& N,
           const bool& verbose) : UF(N, verbose, true) {
+  	coreDistances = new double[N];
   }
 	virtual ~HDBSCAN() {
 		delete[] coreDistances;
@@ -22,7 +23,6 @@ public:
                          const int& K) {
   	if (neighbors.nrow() < K) stop("Specified K bigger than the number of neighbors in the adjacency matrix.");
  		//if (K < 4) stop("K must be >= 4 when used with neighbors.");
-    coreDistances = new double[N];
     IntegerVector kthNeighbors = neighbors.row(K - 1);
     for (long long n = 0; n < N; n++) if (p.increment()) {
     	long long q = kthNeighbors[n];
@@ -66,7 +66,7 @@ public:
 #endif
     for (it = roots.begin();
          it != roots.end();
-         it++)
+         ++it)
 #ifdef _OPENMP
 #pragma omp task
 #endif
