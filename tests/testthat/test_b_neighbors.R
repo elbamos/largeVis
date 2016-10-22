@@ -12,50 +12,18 @@ test_that("Trees does not error", {
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 10,
-																												tree_threshold = 20,
-																												max_iter = 0, threads = 2,
+																												tree_threshold = 30,
+																												max_iter = 0, threads = 1,
 																												verbose = FALSE))
 
 })
 
-test_that("Trees does not error if neighbors are explored once", {
-	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
-																												K = 5,
-																												n_trees = 50,
-																												tree_threshold = 20,
-																												max_iter = 1, threads = 2,
-																												verbose = FALSE))
-
-})
-
-test_that("Trees does not error if neighbors are explored more than once", {
-	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
-																												K = 5,
-																												n_trees = 50,
-																												tree_threshold = 20,
-																												max_iter = 2, threads = 2,
-																												verbose = FALSE))
-})
-
-test_that("Can determine iris neighbors", {
-	neighbors <- randomProjectionTreeSearch(dat,
-																					K = 5,
-																					n_trees = 20,
-																					tree_threshold = 30,
-																					max_iter = 10, threads = 2,
-																					verbose = FALSE)
-	expect_equal(nrow(neighbors), 5)
-	expect_equal(ncol(neighbors), ncol(dat))
-	expect_lt(sum(neighbors == -1), 20)
-	expect_equal(sum(neighbors[, 1:40] > 50), 0)
-})
+M <- 5
+d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
+bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
+bests <- bests[-1,] - 1
 
 test_that("max threshold is sufficient to find all neighbors", {
-	M <- 5
-	d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
-	bests <- apply(d_matrix, MARGIN=1, FUN = function(x) order(x)[1:(M + 1)])
-	bests <- bests[-1,] - 1
-
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
 																					n_trees = 1,
@@ -67,12 +35,35 @@ test_that("max threshold is sufficient to find all neighbors", {
 	expect_gte(score, M * ncol(dat) - 1) # Two neighbors are equidistanct
 })
 
-test_that("exploring after max threshold does not reduce accuracy", {
-	M <- 5
-	d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
-	bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
-	bests <- bests[-1, ] - 1
+test_that("Trees does not error if neighbors are explored once", {
+	neighbors <- randomProjectionTreeSearch(dat,
+																												K = 5,
+																												n_trees = 50,
+																												tree_threshold = 20,
+																												max_iter = 1, threads = 2,
+																												verbose = FALSE)
+})
 
+test_that("Trees does not error if neighbors are explored more than once", {
+	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
+																												K = 5,
+																												n_trees = 50,
+																												tree_threshold = 20,
+																												max_iter = 2, threads = 2,
+																												verbose = FALSE))
+})
+
+test_that("exploring once after max threshold does not reduce accuracy", {
+	neighbors <- randomProjectionTreeSearch(dat,
+																					K = M,
+																					n_trees = 1,
+																					tree_threshold = ncol(dat),
+																					max_iter = 0, threads = 2,
+																					verbose = FALSE)
+	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
+	score <- sum(as.numeric(scores))
+	expect_gte(score, (M * ncol(dat)) - 1)
+	oldscore <- score
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
 																					n_trees = 1,
@@ -81,26 +72,51 @@ test_that("exploring after max threshold does not reduce accuracy", {
 																					verbose = FALSE)
 	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
 	score <- sum(as.numeric(scores))
-	expect_gte(score, (M * ncol(dat)) - 1)
-	oldscore <- score
+	expect_gte(score, oldscore)
+})
 
+
+test_that("exploring more than once after max threshold does not reduce accuracy", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
 																					n_trees = 1,
 																					tree_threshold = ncol(dat),
-																					max_iter = 5, threads = 2,
+																					max_iter = 0, threads = 2,
+																					verbose = FALSE)
+	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
+	score <- sum(as.numeric(scores))
+	expect_gte(score, (M * ncol(dat)) - 1)
+	oldscore <- score
+	neighbors <- randomProjectionTreeSearch(dat,
+																					K = M,
+																					n_trees = 1,
+																					tree_threshold = ncol(dat),
+																					max_iter = 2, threads = 2,
 																					verbose = FALSE)
 	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
 	score <- sum(as.numeric(scores))
 	expect_gte(score, oldscore)
 })
 
-test_that("Can determine iris neighbors accurately, Euclidean", {
-	M <- 5
-	d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
-	bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
-	bests <- bests[-1, ] - 1
 
+test_that("Can determine iris neighbors", {
+	neighbors <- randomProjectionTreeSearch(dat,
+																					K = 5,
+																					n_trees = 20,
+																					tree_threshold = 30,
+																					max_iter = 10,
+																					threads = 2,
+																					verbose = FALSE)
+	expect_equal(nrow(neighbors), 5)
+	expect_equal(ncol(neighbors), ncol(dat))
+	expect_lt(sum(neighbors == -1), 20)
+	expect_equal(sum(neighbors[, 1:40] > 50), 0)
+	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[,x] %in% bests[,x]))
+	score <- sum(as.numeric(scores))
+	expect_gte(score, M * ncol(dat) - 1) # Two neighbors are equidistanct
+})
+
+test_that("Can determine iris neighbors accurately, Euclidean", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
 																					n_trees = 20,

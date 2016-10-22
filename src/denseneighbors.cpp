@@ -46,7 +46,7 @@ protected:
 			v =  d / as_scalar(norm(d, 2)); // unit vector
 		} while (x1idx == x2idx);
 
-		for (vertexidxtype i = 0; i < indices.n_elem; i++) {
+		for (vertexidxtype i = 0; i != indices.n_elem; i++) {
 			const vec X = data.col(indices[i]);
 			direction[i] = dot((X - m), v);
 		}
@@ -83,8 +83,7 @@ arma::imat searchTrees(const int& threshold,
 	annoy.setSeed(seed);
 	annoy.trees(n_trees, threshold);
 	annoy.reduce(K, adder);
-	annoy.convertToMatrix(K);
-	imat ret = (maxIter == 0) ? annoy.getMatrix(adder) : annoy.exploreNeighborhood(maxIter, adder);
+	imat ret = annoy.exploreNeighborhood(maxIter, adder);
 	delete adder;
 	return ret;
 }
