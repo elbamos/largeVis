@@ -22,10 +22,6 @@ public:
 		probs = new C[N];
 		aliases = new T[N];
 	}
-	AliasTable(const AliasTable& other) {
-		probs = other.probs;
-		aliases = other.aliases;
-	}
 	~AliasTable() {
 		delete[] probs;
 		delete[] aliases;

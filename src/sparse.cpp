@@ -88,8 +88,7 @@ imat searchTreesSparse(const int& threshold,
 	annoy.setSeed(seed);
 	annoy.trees(n_trees, threshold);
 	annoy.reduce(K, adder);
-	annoy.convertToMatrix(K);
-	imat ret = (maxIter == 0) ? annoy.getMatrix(adder) : annoy.exploreNeighborhood(maxIter, adder);
+	imat ret = annoy.exploreNeighborhood(maxIter, adder);
 	delete adder;
 	return ret;
 }

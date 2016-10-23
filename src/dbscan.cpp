@@ -3,7 +3,6 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
 #include <RcppArmadillo.h>
-#include <queue>
 #include <Rmath.h>
 #include <progress.hpp>
 

@@ -1,8 +1,8 @@
 ### largeVis 0.1.10
 * `projectKNNs`
+	+ 20% baseline performance improvement.
 	+ Momentum training can make the sgd phase substantially faster.  See the vignette for details. 
 	+ The `useDegree` parameter allows the user to select the negative weighting method. 
-	+ Performance should be ~20% better in general.
 * Clustering
 	+	OPTICS and DBSCAN are back, rewritten, and substantially improved. Both edges and neighbors are now required.
 	+ The functions are renamed `lv_dbscan` and `lv_optics`, respectively, to avoid naming conflicts with the dbscan package. 
@@ -15,6 +15,9 @@ clustering functions.
 * Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes. 
 * `buildEdgeMatrix` and `distance` now store the `distance_method` in attribute `method` of the returned object. 
 * Third vignette covers momentum, the `useDegree` parameter, and clustering. 
+* `randomProjectionTreeSearch`
+	+ Baseline performance improved
+	+ Substantial performance improvements in neighborhood search
 
 ### largeVis 0.1.9.3
 Fix to hdbscan selecting wrong K, and gplot failing. 

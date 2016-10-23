@@ -3,7 +3,6 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
 #include "minindexedpq.h"
-#include <queue>
 #ifdef _OPENMP
 #include <omp.h>
 #endif

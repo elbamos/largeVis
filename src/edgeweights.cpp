@@ -168,7 +168,5 @@ arma::sp_mat referenceWij(const arma::ivec& i,
   Rcout << "Ran, getting WIJ\n";
 #endif
   sp_mat wij = ref.getWIJ();
-  wij = wij.t();
-  wij = wij.t();
   return wij;
 }

@@ -24,6 +24,7 @@ Suggests:
     wesanderson,
     RColorBrewer,
     dplyr,
+    png,
     magrittr
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues

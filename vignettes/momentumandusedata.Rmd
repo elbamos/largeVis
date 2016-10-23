@@ -18,6 +18,8 @@ require(RColorBrewer,
 require(wesanderson, 
         quietly = TRUE)
 library(dplyr)
+library(png)
+library(grid)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>",
                       cache = FALSE, 
@@ -103,8 +105,6 @@ if (rebuild) {
 ```
 
 ```{r drawdegreeimage,fig.width=4,fig.height=2.5} 
-library(png)
-library(grid)
 img <- readPNG(system.file(package = "largeVis", "vignettedata/degreeplot.png"))
 grid.raster(img)
 ```
