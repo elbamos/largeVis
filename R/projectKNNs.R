@@ -108,6 +108,7 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 rho = as.double(rho),
                 n_samples = sgd_batches,
   							momentum = momentum,
+  							useDegree = as.logical(useDegree),
   							seed = seed,
   							threads = threads,
                 verbose = as.logical(verbose))

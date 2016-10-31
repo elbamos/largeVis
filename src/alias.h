@@ -22,9 +22,18 @@ public:
 		probs = new C[N];
 		aliases = new T[N];
 	}
+	AliasTable() : AliasTable(0) {}
+
 	~AliasTable() {
 		delete[] probs;
 		delete[] aliases;
+	}
+
+	void initialize(const D* weights, const T& newSize) {
+		N = newSize;
+		probs = new C[N];
+		aliases = new T[N];
+		initialize(weights);
 	}
 
 	void initialize(const D* weights) {

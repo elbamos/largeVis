@@ -37,8 +37,8 @@ hdbscanc <- function(edges, neighbors, K, minPts, threads, verbose) {
     .Call('largeVis_hdbscanc', PACKAGE = 'largeVis', edges, neighbors, K, minPts, threads, verbose)
 }
 
-sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, seed, threads, verbose) {
-    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, seed, threads, verbose)
+sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, threads, verbose) {
+    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, threads, verbose)
 }
 
 optics_cpp <- function(edges, neighbors, eps, minPts, useQueue, verbose) {

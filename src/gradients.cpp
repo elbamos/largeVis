@@ -2,18 +2,18 @@
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
+#include "largeVis.h"
 #include "gradients.h"
 
 using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-
 /*
 * Gradients
 */
 Gradient::Gradient(const distancetype& g,
-          				 const dimidxtype& d) : gamma{g}, cap(5), D{d} {};
+                   const dimidxtype& d) : gamma{g}, cap(5), D{d} {};
 
 inline distancetype Gradient::distAndVector(const coordinatetype *x_i,
                                             const coordinatetype *x_j,
@@ -38,19 +38,18 @@ inline coordinatetype Gradient::clamp(const coordinatetype& val) const {
 }
 
 void Gradient::positiveGradient(const coordinatetype* i,
-                             		const coordinatetype* j,
-                             		coordinatetype* holder) const {
+                                const coordinatetype* j,
+                                coordinatetype* holder) const {
 	const double dist_squared = distAndVector(i, j, holder);
 	_positiveGradient(dist_squared, holder);
 };
 
 void Gradient::negativeGradient(const coordinatetype* i,
-                             		const coordinatetype* k,
-                             		coordinatetype* holder) const {
+                                const coordinatetype* k,
+                                coordinatetype* holder) const {
 	const double dist_squared = distAndVector(i, k, holder) ;
 	_negativeGradient(dist_squared, holder);
 }
-
 
 void AlphaGradient::_positiveGradient(const double& dist_squared,
                                       coordinatetype* holder) const {
@@ -65,14 +64,14 @@ void AlphaGradient::_negativeGradient(const double& dist_squared,
 };
 
 AlphaGradient::AlphaGradient(const distancetype& a,
-             const distancetype& g,
-             const dimidxtype& D) : Gradient(g, D),
-             alpha{a},
-             twoalpha(alpha * -2),
-             alphagamma(alpha * gamma * 2) { } ;
+                             const distancetype& g,
+                             const dimidxtype& D) : Gradient(g, D),
+                             alpha{a},
+                             twoalpha(alpha * -2),
+                             alphagamma(alpha * gamma * 2) { } ;
 
 AlphaOneGradient::AlphaOneGradient(const distancetype& g,
-                									 const dimidxtype& d) : AlphaGradient(1, g, d) {
+                                   const dimidxtype& d) : AlphaGradient(1, g, d) {
 }
 void AlphaOneGradient::_positiveGradient(const distancetype& dist_squared,
                                          coordinatetype* holder) const {
@@ -87,7 +86,7 @@ void AlphaOneGradient::_negativeGradient(const distancetype& dist_squared,
 
 ExpGradient::ExpGradient(const distancetype& g,
                          const dimidxtype& d) : Gradient(g, d), gammagamma(gamma * gamma) {
-		cap = gamma;
+	cap = gamma;
 };
 void ExpGradient::_positiveGradient(const distancetype& dist_squared,
                                     coordinatetype* holder) const {
