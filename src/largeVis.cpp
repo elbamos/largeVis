@@ -28,8 +28,6 @@ protected:
 
 	distancetype rho;
 	const distancetype rhoIncrement;
-	const vertexidxtype N;
-	const edgeidxtype E;
 
 	AliasTable< vertexidxtype, coordinatetype, double > negAlias;
 	AliasTable< edgeidxtype, coordinatetype, double > posAlias;
@@ -54,7 +52,8 @@ public:
 	            coordsPtr{coordPtr},
 	            rho{rho},
 	            rhoIncrement((rho - 0.0001) / n_samples),
-	            N{N}, E{E} {
+	            negAlias(AliasTable< vertexidxtype, coordinatetype, double >(N)),
+	            posAlias(AliasTable< edgeidxtype, coordinatetype, double >(E)){
     	if (alpha == 0) grad = new ExpGradient(gamma, D);
     	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
     	else grad = new AlphaGradient(alpha, gamma, D);
@@ -69,8 +68,8 @@ public:
 	void initAlias(const distancetype* posWeights,
                  const distancetype* negWeights,
                 Rcpp::Nullable<Rcpp::NumericVector> seed) {
-		negAlias.initialize(negWeights, N);
-		posAlias.initialize(posWeights, E);
+		negAlias.initialize(negWeights);
+		posAlias.initialize(posWeights);
 
 		if (seed.isNotNull()) {
 #ifdef _OPENMP

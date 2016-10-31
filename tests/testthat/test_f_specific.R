@@ -1,6 +1,6 @@
 context("specific issue tests")
 
-test_that("dim064 issue is resolved", {
+test_that("dim064 issue is resolved (large numbers of duplicate points)", {
 	load(system.file("testdata/badmat.Rda", package = "largeVis"))
 	badmat <- badmat
 	expect_silent(neighbors <- randomProjectionTreeSearch(x = badmat, K = 50, threads = 2))

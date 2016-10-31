@@ -54,7 +54,7 @@ test_that("largeVis continues to work as it scales up", {
 	expect_false(any(is.na(visObject$coords)))
 	expect_false(any(is.nan(visObject$coords)))
 	expect_false(any(is.infinite(visObject$coords)))
-	for (i in c(10000, 100000, 1000000, 20000 * length(visObject$wij@x))) {
+	for (i in c(10000, 20000 * length(visObject$wij@x))) {
 		coords <- projectKNNs(visObject$wij, sgd_batches = i,  threads = 2,
 													verbose = FALSE)
 		expect_false(any(is.na(coords)))
