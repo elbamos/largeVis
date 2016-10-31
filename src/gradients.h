@@ -16,6 +16,7 @@ protected:
 	inline coordinatetype clamp(const coordinatetype& val) const;
 
 public:
+	virtual ~Gradient();
 	virtual void positiveGradient(const coordinatetype* i,
                                const coordinatetype* j,
                                coordinatetype* holder) const;

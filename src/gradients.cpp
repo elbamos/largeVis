@@ -5,10 +5,6 @@
 #include "largeVis.h"
 #include "gradients.h"
 
-using namespace Rcpp;
-using namespace std;
-using namespace arma;
-
 /*
 * Gradients
 */
@@ -26,6 +22,8 @@ inline distancetype Gradient::distAndVector(const coordinatetype *x_i,
 	}
 	return cnt;
 }
+
+Gradient::~Gradient() {}
 
 inline void Gradient::multModify(coordinatetype *col, const coordinatetype& adj) const {
 	for (dimidxtype i = 0; i != D; i++) col[i] = clamp(col[i] * adj);

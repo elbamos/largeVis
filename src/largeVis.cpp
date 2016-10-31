@@ -12,6 +12,12 @@ using namespace std;
 using namespace arma;
 
 class Visualizer {
+private:
+	inline void updateMinus(const coordinatetype* from,
+                          coordinatetype* to,
+                          const distancetype& rho) {
+		for (dimidxtype d = 0; d != D; ++d) to[d] -= from[d] * rho;
+	}
 protected:
 	const dimidxtype D;
 	const unsigned int M;
@@ -19,25 +25,17 @@ protected:
 	vertexidxtype * const targetPointer;
 	vertexidxtype * const sourcePointer;
 	coordinatetype * const coordsPtr;
-	const iterationtype n_samples;
 
 	distancetype rho;
 	const distancetype rhoIncrement;
+	const vertexidxtype N;
+	const edgeidxtype E;
 
 	AliasTable< vertexidxtype, coordinatetype, double > negAlias;
 	AliasTable< edgeidxtype, coordinatetype, double > posAlias;
 	Gradient* grad;
 
-	vertexidxtype* ps;
-
 	unsigned int storedThreads = 0;
-
-	virtual void updateMinus(coordinatetype* from,
-                          const vertexidxtype& i,
-                          const distancetype& rho) {
-		coordinatetype* to = coordsPtr + (i * D);
-		for (dimidxtype d = 0; d != D; ++d) to[d] -= from[d] * rho;
-	}
 
 public:
 	Visualizer(vertexidxtype * sourcePtr,
@@ -46,7 +44,6 @@ public:
             coordinatetype * coordPtr,
             const unsigned int& M,
             const distancetype& rho,
-            vertexidxtype* ps,
             const iterationtype& n_samples,
             const vertexidxtype& N,
             const edgeidxtype& E,
@@ -55,10 +52,9 @@ public:
 	            targetPointer{targetPtr},
 	            sourcePointer{sourcePtr},
 	            coordsPtr{coordPtr},
-	            n_samples{n_samples},
 	            rho{rho},
 	            rhoIncrement((rho - 0.0001) / n_samples),
-	            ps{ps} {
+	            N{N}, E{E} {
     	if (alpha == 0) grad = new ExpGradient(gamma, D);
     	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
     	else grad = new AlphaGradient(alpha, gamma, D);
@@ -71,9 +67,7 @@ public:
 	}
 
 	void initAlias(const distancetype* posWeights,
-                const distancetype* negWeights,
-                const vertexidxtype& N,
-                const edgeidxtype& E,
+                 const distancetype* negWeights,
                 Rcpp::Nullable<Rcpp::NumericVector> seed) {
 		negAlias.initialize(negWeights, N);
 		posAlias.initialize(posWeights, E);
@@ -94,55 +88,54 @@ public:
 
 	void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
 		edgeidxtype e_ij;
-		int m, example = 0;
-		vertexidxtype i, j, k;
+		int example = 0;
 		coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
 
-		distancetype localRho = rho;
-		while (example++ != batchSize && localRho > 0) {
+		const distancetype localRho = rho;
+		if (localRho < 0) return;
+		while (example++ != batchSize) {
 			e_ij = posAlias();
 
-			j = targetPointer[e_ij];
-			i = sourcePointer[e_ij];
+			const vertexidxtype j = targetPointer[e_ij];
+			const vertexidxtype i = sourcePointer[e_ij];
 
 			y_i = coordsPtr + (i * D);
 			y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
-			updateMinus(firstholder, j, localRho);
+			updateMinus(firstholder, y_j, localRho);
 
-			m = 0;
+			unsigned int m = 0;
 			while (m != M) {
-				k =  negAlias();
+				const vertexidxtype k =  negAlias();
 
 				// Check that the draw isn't one of i's edges
-				if (k == i ||
-        k == j) continue;
+				if (k == i || k == j) continue;
 				m++;
 
 				y_j = coordsPtr + (k * D);
 				grad -> negativeGradient(y_i, y_j, secondholder);
 
-				updateMinus(secondholder, k, localRho);
+				updateMinus(secondholder, y_j, localRho);
 				for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
 			}
-			updateMinus(firstholder, i, - localRho);
+			updateMinus(firstholder, y_i, - localRho);
 		}
 		rho -= (rhoIncrement * batchSize);
 	}
 };
 
 class MomentumVisualizer : public Visualizer {
+private:
+	inline void updateMinus(const coordinatetype* from,
+                          const vertexidxtype& i,
+                          coordinatetype* to,
+                          const distancetype& rho) {
+		coordinatetype* moment = momentumarray + (i * D);
+		for (dimidxtype d = 0; d != D; ++d) to[d] -= moment[d] = (moment[d] * momentum) + (from[d] * rho);
+	}
 protected:
 	float momentum;
 	coordinatetype* momentumarray;
-
-	virtual void updateMinus(coordinatetype* from,
-                          const vertexidxtype& i,
-                          const distancetype& rho) {
-		coordinatetype* moment = momentumarray + (i * D);
-		coordinatetype* to = coordsPtr + (i * D);
-		for (dimidxtype d = 0; d != D; ++d) to[d] -= moment[d] = (moment[d] * momentum) + (from[d] * rho);
-	}
 
 public:
 	MomentumVisualizer(vertexidxtype * sourcePtr,
@@ -151,20 +144,55 @@ public:
                     coordinatetype * coordPtr,
                     const unsigned int& M,
                     distancetype rho,
-                    vertexidxtype* ps,
                     const iterationtype& n_samples,
                     const float& momentum,
                     const vertexidxtype& N,
                     const edgeidxtype& E,
                     const double& alpha,
                     const double& gamma) : Visualizer(sourcePtr, targetPtr, D, coordPtr,
-																					M, rho, ps, n_samples, N, E, alpha, gamma) {
+																					M, rho, n_samples, N, E, alpha, gamma) {
 		this -> momentum = momentum;
 		momentumarray = new coordinatetype[D * N];
 		for (vertexidxtype i = 0; i != D*N; ++i) momentumarray[i] = 0;
 	}
 	~MomentumVisualizer() {
 		delete[] momentumarray;
+	}
+	void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
+		edgeidxtype e_ij;
+		int example = 0;
+		coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
+
+		const distancetype localRho = rho;
+		if (localRho < 0) return;
+		while (example++ != batchSize) {
+			e_ij = posAlias();
+
+			const vertexidxtype j = targetPointer[e_ij];
+			const vertexidxtype i = sourcePointer[e_ij];
+
+			y_i = coordsPtr + (i * D);
+			y_j = coordsPtr + (j * D);
+			grad -> positiveGradient(y_i, y_j, firstholder);
+			updateMinus(firstholder, j, y_j, localRho);
+
+			unsigned int m = 0;
+			while (m != M) {
+				const vertexidxtype k =  negAlias();
+
+				// Check that the draw isn't one of i's edges
+				if (k == i || k == j) continue;
+				m++;
+
+				y_j = coordsPtr + (k * D);
+				grad -> negativeGradient(y_i, y_j, secondholder);
+
+				updateMinus(secondholder, k, y_j, localRho);
+				for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
+			}
+			updateMinus(firstholder, i, y_i, - localRho);
+		}
+		rho -= (rhoIncrement * batchSize);
 	}
 };
 
@@ -197,7 +225,6 @@ arma::mat sgd(arma::mat& coords,
      coords.memptr(),
      M,
      rho,
-     ps.memptr(),
      n_samples,
      coords.n_cols,
      targets_i.n_elem,
@@ -213,7 +240,6 @@ arma::mat sgd(arma::mat& coords,
                               coords.memptr(),
                               M,
                               rho,
-                              ps.memptr(),
                               n_samples,
                               moment,
                               coords.n_cols,
@@ -235,7 +261,7 @@ arma::mat sgd(arma::mat& coords,
 		}
 	}
 	for (vertexidxtype n = 0; n < N; ++n) negweights[n] = pow(negweights[n], 0.75);
-	v -> initAlias(weights.memptr(), negweights, N, sources_j.n_elem, seed);
+	v -> initAlias(weights.memptr(), negweights, seed);
 	delete[] negweights;
 
 	const int batchSize = 8192;
