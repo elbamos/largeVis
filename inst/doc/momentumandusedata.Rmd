@@ -18,6 +18,8 @@ require(RColorBrewer,
 require(wesanderson, 
         quietly = TRUE)
 library(dplyr)
+library(png)
+library(grid)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>",
                       cache = FALSE, 
@@ -103,8 +105,6 @@ if (rebuild) {
 ```
 
 ```{r drawdegreeimage,fig.width=4,fig.height=2.5} 
-library(png)
-library(grid)
 img <- readPNG(system.file(package = "largeVis", "vignettedata/degreeplot.png"))
 grid.raster(img)
 ```
@@ -268,13 +268,13 @@ The `dbscan` package has other functions for cutting and visualizing `OPTICS` cl
 
 ### HDBSCAN
 
-`HDBSCAN` [@DBLP:journals/corr/RahmanLST0D16] aims to make the `DBBSCAN` and `OPTICS` approach flexible for graphs with different densities in different regions, by building a hierarchical density-bsaed clustering from which flat clusters are extracted.  `HDBSCAN` does not need the $\epsilon$ hypterparameter, which can be difficult to set. Rather, `HDBSCAN`, in effect, determines different values for $\epsilon$ for different parts of the dataset, based on density. 
+`HDBSCAN` [@Campello2013] aims to make the `DBBSCAN` and `OPTICS` approach flexible for graphs with different densities in different regions, by building a hierarchical density-bsaed clustering from which flat clusters are extracted.  `HDBSCAN` does not need the $\epsilon$ hypterparameter, which can be difficult to set. Rather, `HDBSCAN`, in effect, determines different values for $\epsilon$ for different parts of the dataset, based on density. 
 
 ```{r hdbscan}
 suppressWarnings(set <- rbind(Map(f = function(y) {
 	rbind(Map(f = function(x) {
 		hdclust <- hdbscan(edges = edges, neighbors = neighbors, K = y, minPts = x, threads = 1)$cluster
-		data.frame(cluster = hdclust, K = x, minPts = y)
+		data.frame(cluster = as.numeric(hdclust), K = x, minPts = y)
 	}, c(6, 10, 20)))
 }, c(2, 6, 12))))
 set <- lapply(set, FUN = bind_rows)
@@ -291,7 +291,7 @@ ggplot(data = set, aes(x = x, y = y, color = cluster)) +
 	scale_x_continuous("", breaks = NULL) +
 	scale_y_continuous("", breaks = NULL) +
 	guides(color = FALSE) +
-	ggtitle("HDBSCAN Is Robust To Hyperparameter Changes")
+	ggtitle("HDBSCAN Is Robust\nTo Hyperparameter Changes")
 ```
 
 The `largeVis` implementation of `HDBSCAN` produces flat and hierarchical clusterings simultaneously.  The hiearchical clusterings are compatible with `hclust` and other R hierarchical clustering packages and tools by means of an `as.dendrogram.hdbscan` function, which converts them to standard R dendrograms.  The package also includes a function for visualizing the clustering.  

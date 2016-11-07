@@ -113,8 +113,8 @@ bench %>%
              x = precision , 
              color = max_iters, 
              group = max_iters)) + 
-#  geom_path(size = 0.5, alpha =0.8, arrow = arrow(length = unit(0.05, "inches"))) +
-  geom_point(size = 1, alpha = 0.8, shape = 16) +
+  geom_point(size = 0.2, alpha =0.8) +
+  geom_line(size = 0.2, alpha = 0.8) +
   facet_grid(K + machine ~ facet, scales = 'free') +
   scale_y_log10(name = "Speed, log (nodes / second)") + 
   scale_x_continuous("Precision", 

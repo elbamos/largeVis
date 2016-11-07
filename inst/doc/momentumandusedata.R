@@ -6,6 +6,8 @@ require(RColorBrewer,
 require(wesanderson, 
         quietly = TRUE)
 library(dplyr)
+library(png)
+library(grid)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>",
                       cache = FALSE, 
@@ -73,8 +75,6 @@ if (rebuild) {
 }
 
 ## ----drawdegreeimage,fig.width=4,fig.height=2.5--------------------------
-library(png)
-library(grid)
 img <- readPNG(system.file(package = "largeVis", "vignettedata/degreeplot.png"))
 grid.raster(img)
 
@@ -188,7 +188,7 @@ ggplot(data = opticsPoints, aes(x = x, y = y, color = cluster)) +
 suppressWarnings(set <- rbind(Map(f = function(y) {
 	rbind(Map(f = function(x) {
 		hdclust <- hdbscan(edges = edges, neighbors = neighbors, K = y, minPts = x, threads = 1)$cluster
-		data.frame(cluster = hdclust, K = x, minPts = y)
+		data.frame(cluster = as.numeric(hdclust), K = x, minPts = y)
 	}, c(6, 10, 20)))
 }, c(2, 6, 12))))
 set <- lapply(set, FUN = bind_rows)
@@ -205,5 +205,5 @@ ggplot(data = set, aes(x = x, y = y, color = cluster)) +
 	scale_x_continuous("", breaks = NULL) +
 	scale_y_continuous("", breaks = NULL) +
 	guides(color = FALSE) +
-	ggtitle("HDBSCAN Is Robust To Hyperparameter Changes")
+	ggtitle("HDBSCAN Is Robust\nTo Hyperparameter Changes")
 

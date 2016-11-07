@@ -54,6 +54,10 @@ theme_set(
 )
 ```
 
+## Note:
+
+This vignette benchmarks the performance of version 0.1.9 of the `largeVis` package.  The benchmarks have not been recalculated for version 0.1.10.  In testing, 0.1.10 is slightly (5-10%) faster in the Annoy phase, and significantly (30%) faster in the neighborhood iteration phase. 
+
 ## Overview
 
 Besides manifold visualization, `largeVis` also includes an extremely efficient approximate nearest-neighbor search that runs in $O(n)$ time. 
@@ -180,8 +184,8 @@ bench %>%
              x = precision , 
              color = max_iters, 
              group = max_iters)) + 
-#  geom_path(size = 0.5, alpha =0.8, arrow = arrow(length = unit(0.05, "inches"))) +
-  geom_point(size = 1, alpha = 0.8, shape = 16) +
+  geom_point(size = 0.2, alpha =0.8) +
+  geom_line(size = 0.2, alpha = 0.8) +
   facet_grid(K + machine ~ facet, scales = 'free') +
   scale_y_log10(name = "Speed, log (nodes / second)") + 
   scale_x_continuous("Precision", 
@@ -194,5 +198,7 @@ bench %>%
          atop(italic("(n = 10000; Upper Right is Better)")))))
 ```
 
-A single iteration clearly has substantial impact on accuracy. The marginal benefit of additional iterations declines, but adding a second iteration is a more efficient way to improve accuracy than increasing tth.  This is consistent with the recommendation of the paper authors.
+Each line shows the precision-performance tradeoff that can be obtained by varying the number of trees and threshold while holding the number of iterations constant. As the chart shows, neighborhood exploration iterations move the precision-performance frontier outward. The marginal benefit of additional iterations declines as iterations are added.  
+
+This is consistent with the conclusions of the original paper authors. 
 
