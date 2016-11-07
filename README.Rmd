@@ -36,9 +36,28 @@ library(ggplot2)
 data(Aggregation)
 vis <- largeVis(t(as.matrix(Aggregation[, 1:2])), sgd_batches = 1)
 clusters <- hdbscan(vis, K = 2)
+
+theme_set(
+  theme_bw() %+replace%
+  theme(
+    legend.title = element_text(size = rel(0.8),
+                              face = "bold"),
+    legend.margin = unit(0, "cm"),
+    legend.position = "right",
+    legend.key.size = unit(2, "lines"),
+    legend.text = element_text(size = unit(8, "points")), 
+    axis.title.y = element_text(angle = 90),
+    axis.text = element_text(size = rel(0.7)),
+    plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 
+    axis.title = element_text(size = rel(0.8),
+                              face = "bold"),
+    title = element_text(size = rel(0.9))
+  ) 
+)
+
 show(gplot(clusters, Aggregation[, 1:2]) +
-		 	scale_x_continuous("") +
-		 	scale_y_continuous(""))
+		 	scale_x_continuous("", labels = NULL) +
+		 	scale_y_continuous("", labels = NULL))
 ```
 
 ### Visualize Embeddings

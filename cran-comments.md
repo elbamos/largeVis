@@ -1,12 +1,6 @@
 ## Submission
 
-This is the first submission of a minor version update to the package.  Changes in this update include:
-* Fixes for bugs that emerged after 0.1.9.1 was accepted.
-* Performance improvements.
-* The addition of momentum to the stochastic gradient descent routine.
-* Reimplementation of the dbscan and optics algorithms.
-* Addition of a number of helper functions intended for compatibility with other R packages. E.g., there is now an `as.dendrogram` function for `hdbscan` objects; edge matrices can be converted to `dist` objects; etc. 
-* An additional vignette covering momentum. 
+This is the first submission of a minor version update to the package.  
 
 ## Test environments
 * local OS X install, R 3.3.1
@@ -18,6 +12,8 @@ This is the first submission of a minor version update to the package.  Changes 
 ## R CMD check results
 
 0 errors | 0 warnings | 1 note
+
+* The Note concerns the installation size, which I've been able to reduce since the prior version.
 
 ## Reverse dependencies
 
