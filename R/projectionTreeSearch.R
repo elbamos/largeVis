@@ -52,9 +52,9 @@ randomProjectionTreeSearch.matrix <- function(x,
                       K = as.integer(K),
                       maxIter = as.integer(max_iter),
                       data = x,
-                      distMethod = distance_method,
+                      distMethod = as.character(distance_method),
   										seed = seed,
-  										threads = as.integer(threads),
+  										threads = threads,
                       verbose = as.logical(verbose))
 
   if (sum(colSums(knns != -1) == 0) > 0)
@@ -89,9 +89,9 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
                       i = x@i,
                       p = x@p,
                       x = x@x,
-                      distMethod = distance_method,
+                      distMethod = as.character(distance_method),
   										seed = seed,
-  										threads = as.integer(threads),
+  										threads = threads,
                       verbose = as.logical(verbose))
 
   if (sum(colSums(knns != -1) == 0) > 0)
@@ -128,9 +128,9 @@ randomProjectionTreeSearch.TsparseMatrix <- function(x,
                              i = x@i,
                              j = x@j,
                              x = x@x,
-                             distMethod = as.integer(distance_method),
+                             distMethod = as.character(distance_method),
   													 seed = seed,
-  													 threads = as.integer(threads),
+  													 threads = threads,
                              verbose = as.logical(verbose))
 
   if (sum(colSums(knns != -1) == 0) > 0)

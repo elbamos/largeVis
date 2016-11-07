@@ -88,7 +88,7 @@ public:
 	void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
 		edgeidxtype e_ij;
 		int example = 0;
-		coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
+		coordinatetype firstholder[10], secondholder[10];
 
 		const distancetype localRho = rho;
 		if (localRho < 0) return;
@@ -98,8 +98,8 @@ public:
 			const vertexidxtype j = targetPointer[e_ij];
 			const vertexidxtype i = sourcePointer[e_ij];
 
-			y_i = coordsPtr + (i * D);
-			y_j = coordsPtr + (j * D);
+			coordinatetype* y_i = coordsPtr + (i * D);
+			coordinatetype* y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
 			updateMinus(firstholder, y_j, localRho);
 

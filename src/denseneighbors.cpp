@@ -9,31 +9,12 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-class EuclideanAdder : public DistanceAdder<Mat<double>, Col<double>> {
-protected:
-	virtual distancetype distanceFunction(const Col<double>& x_i, const Col<double>& x_j) const {
-		return relDist(x_i, x_j);
-	}
-public:
-	EuclideanAdder(const Mat<double>& data, const kidxtype& K) : DistanceAdder(data, K) {}
-};
-
-class CosineAdder : public DistanceAdder<Mat<double>, Col<double>> {
-protected:
-	virtual distancetype distanceFunction(const Col<double>& x_i, const Col<double>& x_j) const {
-		return cosDist(x_i, x_j);
-	}
-public:
-	CosineAdder(const Mat<double>& data, const kidxtype& K) : DistanceAdder(data, K) {}
-};
-
-class DenseAnnoySearch : public AnnoySearch<mat, vec> {
+class DenseAnnoySearch : public AnnoySearch<arma::Mat<double>, arma::Col<double>> {
 protected:
 	virtual vec hyperplane(const ivec& indices) {
 		vec direction = vec(indices.size());
 		vertexidxtype x1idx, x2idx;
-		vec v;
-		vec m;
+		vec v, m;
 		do {
 			x1idx = indices[sample(indices.n_elem)];
 			x2idx = indices[sample(indices.n_elem)];
@@ -53,8 +34,27 @@ protected:
 		return direction;
 	}
 public:
-	DenseAnnoySearch(const mat& data, Progress& p) : AnnoySearch(data, p) {}
+	DenseAnnoySearch(const mat& data, const kidxtype& K, Progress& p) : AnnoySearch(data, K, p) {}
 };
+
+class DenseEuclidean : public DenseAnnoySearch {
+protected:
+	virtual distancetype distanceFunction(const Col<double>& x_i, const Col<double>& x_j) const {
+		return relDist(x_i, x_j);
+	}
+public:
+	DenseEuclidean(const Mat<double>& data, const kidxtype& K, Progress& p) : DenseAnnoySearch(data, K, p) {}
+};
+
+class DenseCosine : public DenseAnnoySearch {
+protected:
+	virtual distancetype distanceFunction(const Col<double>& x_i, const Col<double>& x_j) const {
+		return cosDist(x_i, x_j);
+	}
+public:
+	DenseCosine(const Mat<double>& data, const kidxtype& K, Progress& p) : DenseAnnoySearch(data, K, p) {}
+};
+
 
 // [[Rcpp::export]]
 arma::imat searchTrees(const int& threshold,
@@ -70,20 +70,25 @@ arma::imat searchTrees(const int& threshold,
 	checkCRAN(threads);
 #endif
   const vertexidxtype N = data.n_cols;
-	DistanceAdder<mat, Col<double>>* adder;
-	if (distMethod.compare(string("Cosine")) == 0) adder = new CosineAdder(data, K);
-	else adder = new EuclideanAdder(data, K);
 
   Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
 
 	mat dataMat;
 	if (distMethod.compare(string("Cosine")) == 0) dataMat = normalise(data, 2, 0);
 	else dataMat = data;
-	DenseAnnoySearch annoy = DenseAnnoySearch(dataMat, p);
-	annoy.setSeed(seed);
-	annoy.trees(n_trees, threshold);
-	annoy.reduce(K, adder);
-	imat ret = annoy.exploreNeighborhood(maxIter, adder);
-	delete adder;
+
+	DenseAnnoySearch* annoy;
+	if (distMethod.compare(string("Cosine")) == 0) {
+		annoy = new DenseCosine(dataMat, K, p);
+	} else {
+		annoy = new DenseEuclidean(dataMat, K, p);
+	}
+
+	annoy->setSeed(seed);
+	annoy->trees(n_trees, threshold);
+	annoy->reduce();
+	annoy->exploreNeighborhood(maxIter);
+	imat ret = annoy->sortAndReturn();
+	delete annoy;
 	return ret;
 }
