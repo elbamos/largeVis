@@ -40,14 +40,14 @@ private:
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
 
-	void reduceOne(const vertexidxtype& i,
+	inline void reduceOne(const vertexidxtype& i,
                  vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
 
-	void reduceThread(const vertexidxtype& loopstart, const vertexidxtype& end);
+	inline void reduceThread(const vertexidxtype& loopstart, const vertexidxtype& end);
 
-	void exploreThread(const imat& old_knns, const vertexidxtype& loopstart, const vertexidxtype& end);
+	inline void exploreThread(const imat& old_knns, const vertexidxtype& loopstart, const vertexidxtype& end);
 
-	void exploreOne(const vertexidxtype& i, const imat& old_knns,
+	inline void exploreOne(const vertexidxtype& i, const imat& old_knns,
                   vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
                   MinIndexedPQ& positionHeap,
                   vector< Position >& positionVector);

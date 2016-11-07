@@ -46,7 +46,7 @@ void AnnoySearch<M, V>::addToNeighborhood(const V& x_i,
 		const distancetype d = distanceFunction(x_i, data.col(j));
 		neighborhood.emplace_back(d, j);
 		push_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<distancetype, vertexidxtype>>());
-		if (neighborhood.size() > K + 1) {
+		if (neighborhood.size() > K) {
 			pop_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<distancetype, vertexidxtype>>());
 			neighborhood.pop_back();
 		}
@@ -65,20 +65,19 @@ template<class M, class V>
 {
 	static vector< vertexidxtype > tmpStorage;
 	const auto indPtr = indices.memptr();
-	auto end = indices.n_elem;
-	for (vertexidxtype it = 0; it != end; ++it) {
+	auto end = indPtr + indices.n_elem;
+	for (auto it = indPtr; it != end; ++it) {
+		vertexidxtype cur = *it;
 		tmpStorage.clear();
-		Neighborhood& neighborhood = treeNeighborhoods[indPtr[it]];
+		Neighborhood& neighborhood = treeNeighborhoods[cur];
 		tmpStorage.swap(neighborhood);
-		neighborhood.reserve(neighborhood.size() + end);
-		//				set_union(indices.begin(), indices.end(),
-		//              	  tmpStorage.begin(), tmpStorage.end(),
-		//              	  back_inserter(neighborhood));
-		vertexidxtype it2 = 0;
+		neighborhood.reserve(neighborhood.size() + indices.n_elem);
+
+		auto it2 = indPtr;
 		auto tmp = tmpStorage.begin();
 		auto tmpe = tmpStorage.end();
 		while (it2 != end && tmp != tmpe) {
-			vertexidxtype newone = indPtr[it2];
+			vertexidxtype newone = *it2;
 			if (newone < *tmp) ++it2;
 			else if (*tmp < newone) {
 				newone = *tmp;
@@ -86,9 +85,9 @@ template<class M, class V>
 			} else {
 				++tmp; ++it2;
 			}
-			neighborhood.emplace_back(newone);
+			if (newone != cur) neighborhood.emplace_back(newone);
 		}
-		while (it2 < end) neighborhood.emplace_back(indPtr[it2++]);
+		for ( ; it2 != end; ++it2) if (*it2 != cur) neighborhood.emplace_back(*it2);
 		while (tmp < tmpe) {
 			neighborhood.emplace_back(*tmp);
 			++tmp;
@@ -159,52 +158,38 @@ void AnnoySearch<M, V>::trees(const int& n_trees, const int& newThreshold) {
 }
 
 template<class M, class V>
-void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
+inline void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
                                   vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood) {
 	const V x_i = data.col(i);
 	newNeighborhood.clear();
 	Neighborhood& neighborhood = treeNeighborhoods[i];
 
 	/*
-	* Sort by distance the first K + 1 items, inclusive of the identity item,
-	* by first assembling into a heap. using compGreater transforms it from
-	* a max heap to a min heap. Can then take advantage of the sort_heap function.
-	* The result is a vector sorted from max to min. This is cheaper than a simple sort
-	* because we can limit the size of the heap to K + 1.
+	* Sort by distance the first K items, by first assembling into a heap. using compGreater
+	* transforms it from a max heap to a min heap.
 	*/
 	for (auto j = neighborhood.begin(); j != neighborhood.end(); ++j) {
 		addToNeighborhood(x_i, *j, newNeighborhood);
 	}
 	sort_heap(newNeighborhood.begin(), newNeighborhood.end(), std::less<std::pair<distancetype, vertexidxtype>>());
 
-/*  Make sure the identity element is the first element */
-if (newNeighborhood[0].second != i) {
-	auto pred = [&i](const std::pair<distancetype, vertexidxtype>& testMe) {
-		return i == testMe.second;
-	};
-	auto identityElement = find_if(newNeighborhood.begin(), newNeighborhood.end(), pred);
-	// We don't need to swap because we're going to discard the first element anyway.
-	*identityElement = newNeighborhood.front();
-}
-
 	/*
-	 * Drop the first (identity) element, and copy the remainder (max K elements) into a column
+	 * Copy the remainder (max K elements) into a column
 	 * of the matrix. Sort those K by vertex index. Pad the column with -1's, if necessary.
 	 */
 	auto continueWriting = knns.begin_col(i);
 	auto otherEnd = knns.end_col(i);
 
-	for (auto it = newNeighborhood.begin() + 1; it != newNeighborhood.end(); ++it, ++continueWriting) *continueWriting = it->second;
+	for (auto it = newNeighborhood.begin(); it != newNeighborhood.end(); ++it, ++continueWriting) *continueWriting = it->second;
 	sort(knns.begin_col(i), continueWriting);
 	for (; continueWriting != otherEnd; ++continueWriting) *continueWriting = -1;
 
-	treeNeighborhoods[i].clear();
-	treeNeighborhoods[i].shrink_to_fit();
+	treeNeighborhoods[i].resize(0);
 }
 
 
 template<class M, class V>
-void AnnoySearch<M, V>::reduceThread(const vertexidxtype& loopstart,
+inline void AnnoySearch<M, V>::reduceThread(const vertexidxtype& loopstart,
                                      const vertexidxtype& end) {
 	vector< std::pair<distancetype, vertexidxtype> > newNeighborhood;
 	newNeighborhood.reserve(K * threshold);
@@ -239,7 +224,7 @@ void AnnoySearch<M, V>::reduce() {
 }
 
 template<class M, class V>
-void AnnoySearch<M, V>::exploreThread(const imat& old_knns,
+inline void AnnoySearch<M, V>::exploreThread(const imat& old_knns,
                                       const vertexidxtype& loopstart,
                                       const vertexidxtype& end) {
 	/*
@@ -247,7 +232,7 @@ void AnnoySearch<M, V>::exploreThread(const imat& old_knns,
 	 * to the target point.
 	 */
 	vector< std::pair<distancetype, vertexidxtype> > nodeHeap;
-	nodeHeap.reserve(K + 1);
+	nodeHeap.reserve(K);
 	MinIndexedPQ positionHeap(K + 1);
 	vector< Position > positionVector;
 	positionVector.reserve(K + 1);
@@ -258,7 +243,7 @@ void AnnoySearch<M, V>::exploreThread(const imat& old_knns,
 }
 
 template<class M, class V>
-void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
+inline void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 									                const imat& old_knns,
 									                vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
 									                MinIndexedPQ& positionHeap,
