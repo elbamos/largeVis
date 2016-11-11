@@ -52,19 +52,19 @@ private:
                   MinIndexedPQ& positionHeap,
                   vector< Position >& positionVector);
 
-	void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
-	void sortCopyThread(const vertexidxtype& start, const vertexidxtype& end);
+	inline void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
+	inline void sortCopyThread(const vertexidxtype& start, const vertexidxtype& end);
 
-	void add(vector< std::pair<distancetype, vertexidxtype> >& heap,
+	inline void add(vector< std::pair<distancetype, vertexidxtype> >& heap,
           const V& x_i, const vertexidxtype& j) const;
 
-	void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap,
+	inline void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap,
               const V& x_i, const vertexidxtype& j) const;
 
-	void addToNeighborhood(const V& x_i, const vertexidxtype& j,
+	inline void addToNeighborhood(const V& x_i, const vertexidxtype& j,
                          vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const;
 
-	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector);
+	inline void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
 	void recurse(const ivec& indices);
 	inline void addNeighbors(const ivec& indices);
 
@@ -78,7 +78,7 @@ protected:
 	virtual double distanceFunction(const V& x_i, const V& x_j) const = 0;
 	virtual vec hyperplane(const ivec& indices) = 0;
 
-	inline long sample(long i) {
+	inline long sample(const long& i) {
 		return (long) (rnd(mt) * (i - 1));
 	}
 

@@ -9,7 +9,7 @@
 #endif
 
 template<class M, class V>
-void AnnoySearch<M, V>::advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) {
+void AnnoySearch<M, V>::advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const {
 	dimidxtype whichColumn = positionHeap.minIndex();
 	Position& iterators = positionVector[whichColumn];
 	vertexidxtype adv = iterators.advance();
@@ -111,7 +111,7 @@ void AnnoySearch<M, V>::recurse(const ivec& indices) {
 		return;
 	}
 
-	vec direction = hyperplane(indices);
+	const vec direction = hyperplane(indices);
 	const distancetype middle = median(direction);
 	const uvec left = find(direction > middle);
 	const uvec right = find(direction <= middle);
