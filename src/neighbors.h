@@ -34,7 +34,7 @@ public:
 template<class M, class V>
 class AnnoySearch {
 private:
-	Neighborhood* treeNeighborhoods;
+	Neighborhood* treeNeighborhoods = nullptr;
 	imat knns;
 	int storedThreads = 0;
 	uniform_real_distribution<double> rnd;
@@ -65,8 +65,9 @@ private:
                          vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const;
 
 	inline void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
-	void recurse(const ivec& indices);
-	inline void addNeighbors(const ivec& indices);
+	void recurse(const ivec& indices, Neighborhood* localNeighborhood);
+	inline void addNeighbors(const ivec& indices, Neighborhood* localNeighborhood) const;
+	inline void mergeNeighbors(Neighborhood* localNeighborhood);
 
 protected:
 	const M& data;

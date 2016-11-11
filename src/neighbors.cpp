@@ -58,55 +58,86 @@ void AnnoySearch<M, V>::addToNeighborhood(const V& x_i,
  * The neighborhood is maintained in vertex-index order.
  */
 template<class M, class V>
-	inline void AnnoySearch<M, V>::addNeighbors(const ivec& indices) {
+inline void AnnoySearch<M, V>::mergeNeighbors(Neighborhood* localNeighborhood) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
 {
-	static vector< vertexidxtype > tmpStorage;
-	const auto indPtr = indices.memptr();
-	auto end = indPtr + indices.n_elem;
-	for (auto it = indPtr; it != end; ++it) {
-		vertexidxtype cur = *it;
-		tmpStorage.clear();
-		Neighborhood& neighborhood = treeNeighborhoods[cur];
-		tmpStorage.swap(neighborhood);
-		neighborhood.reserve(neighborhood.size() + indices.n_elem);
+	if (treeNeighborhoods == nullptr) treeNeighborhoods = localNeighborhood;
+	else {
+		Neighborhood tmpStorage;
+		tmpStorage.reserve(treeNeighborhoods[0].size());
+		for (vertexidxtype it = 0; it != N; ++it) {
+			const Neighborhood& curFrom = localNeighborhood[it];
+			Neighborhood& neighborhood = treeNeighborhoods[it];
 
-		auto it2 = indPtr;
-		auto tmp = tmpStorage.begin();
-		auto tmpe = tmpStorage.end();
-		while (it2 != end && tmp != tmpe) {
-			vertexidxtype newone = *it2;
-			if (newone < *tmp) ++it2;
-			else if (*tmp < newone) {
-				newone = *tmp;
-				++tmp;
-			} else {
-				++tmp; ++it2;
+			tmpStorage.clear();
+
+			tmpStorage.swap(neighborhood);
+			neighborhood.reserve(tmpStorage.size() + curFrom.size());
+
+			auto it2 = curFrom.begin();
+		  auto tmp = tmpStorage.begin();
+			const auto tmpe = tmpStorage.end();
+			const auto end = curFrom.end();
+			while (it2 != end && tmp != tmpe) {
+				vertexidxtype newone = *it2;
+				if (newone < *tmp) ++it2;
+				else if (*tmp < newone) {
+					newone = *tmp;
+					++tmp;
+				} else {
+					++tmp; ++it2;
+				}
+				neighborhood.emplace_back(newone);
 			}
-			if (newone != cur) neighborhood.emplace_back(newone);
+			for ( ; it2 != end; ++it2) neighborhood.emplace_back(*it2);
+			while (tmp < tmpe) {
+				neighborhood.emplace_back(*tmp);
+				++tmp;
+			}
+			//        treeNeighborhoods[indPtr[it]] = neighborhood;
 		}
-		for ( ; it2 != end; ++it2) if (*it2 != cur) neighborhood.emplace_back(*it2);
-		while (tmp < tmpe) {
-			neighborhood.emplace_back(*tmp);
-			++tmp;
-		}
-		//        treeNeighborhoods[indPtr[it]] = neighborhood;
 	}
 }
+}
+
+
+/*
+ * During the annoy-tree phase, used to copy the elements of a leaf
+ * into the neighborhood for each point in the leaf.
+ * The neighborhood is maintained in vertex-index order.
+ */
+template<class M, class V>
+inline void AnnoySearch<M, V>::addNeighbors(const ivec& indices, Neighborhood* localNeighborhood) const {
+	const auto indicesEnd = indices.end();
+	for (auto it = indices.begin(); it != indices.end(); ++it) {
+		const vertexidxtype cur = *it;
+		Neighborhood& target = localNeighborhood[cur];
+		const Neighborhood& already = treeNeighborhoods[cur];
+
+		auto alreadyPtr = already.begin();
+		const auto alreadyEnd = already.end();
+
+		for (auto indicesPtr = indices.begin(); indicesPtr != indicesEnd; ++indicesPtr) {
+			const vertexidxtype nxt = *indicesPtr;
+			if (nxt == cur) continue;
+			while (alreadyPtr != alreadyEnd && *alreadyPtr < nxt) ++alreadyPtr;
+			if (alreadyPtr == alreadyEnd || *alreadyPtr != nxt) target.emplace_back(nxt);
+		}
 	}
+}
 
 	/*
 	* The key function of the annoy-trees phase.
 	*/
 template<class M, class V>
-void AnnoySearch<M, V>::recurse(const ivec& indices) {
+void AnnoySearch<M, V>::recurse(const ivec& indices, Neighborhood* localNeighborhood) {
 	const vertexidxtype I = indices.n_elem;
 	if (p.check_abort()) return;
 	if (I < 2) stop("Tree split failure.");
 	if (I <= threshold) {
-		addNeighbors(indices);
+		addNeighbors(indices, localNeighborhood);
 		p.increment(I);
 		return;
 	}
@@ -117,11 +148,11 @@ void AnnoySearch<M, V>::recurse(const ivec& indices) {
 	const uvec right = find(direction <= middle);
 
 	if (left.n_elem >= 2 && right.n_elem >= 2) {
-		recurse(indices(left));
-		recurse(indices(right));
+		recurse(indices(left), localNeighborhood);
+		recurse(indices(right), localNeighborhood);
 	} else { // Handles the rare case where the split fails because of equidistant points
-		recurse(indices.subvec(0, I / 2));
-		recurse(indices.subvec(I / 2, I - 1));
+		recurse(indices.subvec(0, I / 2), localNeighborhood);
+		recurse(indices.subvec(I / 2, I - 1), localNeighborhood);
 	}
 };
 
@@ -150,7 +181,10 @@ void AnnoySearch<M, V>::trees(const int& n_trees, const int& newThreshold) {
 #pragma omp parallel for
 #endif
 	for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
-		recurse(indices);
+		Neighborhood* local = new Neighborhood[N];
+		recurse(indices, local);
+		mergeNeighbors(local);
+		if (local != treeNeighborhoods) delete[] local;
 	}
 #ifdef _OPENMP
 	if (storedThreads > 0) omp_set_num_threads(storedThreads);
