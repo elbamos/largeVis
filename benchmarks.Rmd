@@ -50,7 +50,7 @@ theme_set(
 
 ## Note:
 
-This vignette benchmarks the performance of version 0.1.9 of the `largeVis` package.  The benchmarks have not been recalculated for version 0.1.10.  In testing, 0.1.10 is slightly (5-10%) faster in the Annoy phase, and significantly (30%) faster in the neighborhood iteration phase. 
+This was formerly a vignette benchmarking the performance of version 0.1.9 of the `largeVis` package.  I have removed it as a vignette because of the overhead required to recalculate the benchmarks each time the code is refactored. Version 0.1.10 tested to be slightly (5-10%) faster in the Annoy phase, and significantly (30%) faster in the neighborhood iteration phase, than the benchmarks shown below would indicate. 
 
 ## Overview
 

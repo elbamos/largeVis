@@ -65,9 +65,9 @@ private:
                          vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const;
 
 	inline void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
-	void recurse(const ivec& indices, Neighborhood* localNeighborhood);
-	inline void addNeighbors(const ivec& indices, Neighborhood* localNeighborhood) const;
-	inline void mergeNeighbors(Neighborhood* localNeighborhood);
+	void recurse(const ivec& indices, vector<vertexidxtype>& localNeighborhood, Neighborhood& neighborindices);
+	inline void addNeighbors(const ivec& indices, vector<vertexidxtype>& localNeighborhood, Neighborhood& neighborindices) const;
+	inline void mergeNeighbors(const vector<vertexidxtype>& localNeighborhood, const Neighborhood& neighborindices);
 
 protected:
 	const M& data;
@@ -86,6 +86,7 @@ protected:
 public:
 	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : data{data}, K{K}, N(data.n_cols), p{p} {
 		treeNeighborhoods = new Neighborhood[N];
+		for (vertexidxtype i = 0; i != N; ++i) treeNeighborhoods[i] = Neighborhood();
 	}
 
 	AnnoySearch(const AnnoySearch& other) : AnnoySearch(other.data, other.K, other.p) {}
