@@ -120,11 +120,11 @@ if (rebuild) {
 				 width = 6, height = 4)
 }
 
-## ----drawmomentumimage,fig.width=6,fig.height=4----------------------------------------------------------------------------------
+## ----drawmomentumimage,fig.width=6,fig.height=4--------------------------
 img <- readPNG(system.file(package = "largeVis", "vignettedata/momentumplot.png"))
 grid.raster(img)
 
-## ----dbscan,fig.width=6,fig.height=6---------------------------------------------------------------------------------------------
+## ----dbscan,fig.width=6,fig.height=6-------------------------------------
 load(system.file(package = "largeVis", "vignettedata/spiral.Rda"))
 dat <- spiral
 neighbors <- randomProjectionTreeSearch(t(dat), K = 20)
@@ -150,7 +150,7 @@ ggplot(data = set, aes(x = x, y = y, color = cluster)) +
 	guides(color = FALSE) +
 	ggtitle("Effect of eps and minPts on DBSCAN results")
 
-## ----optics,fig.width=5,message=FALSE,warning=FALSE------------------------------------------------------------------------------
+## ----optics,fig.width=5,message=FALSE,warning=FALSE----------------------
 library(dbscan, quietly = TRUE)
 optClust <- lv_optics(edges = edges, neighbors = neighbors, eps = 5, useQueue = FALSE, minPts = 5)
 optClust2 <- lv_optics(edges = edges, neighbors = neighbors, eps = 5, useQueue = TRUE, minPts = 5)
@@ -166,7 +166,7 @@ data.frame(
 		scale_x_continuous("Order") + 
 		scale_y_continuous("Reachability Distance")
 
-## ----opticsvsdbscan,fig.width=2,fig.width=6--------------------------------------------------------------------------------------
+## ----opticsvsdbscan,fig.width=2,fig.width=6------------------------------
 suppressWarnings(opticsPoints <-	bind_rows(Map(f = function(x) {
 		clust = thiscut <- optics_cut(optClust, x)$cluster
 		data.frame(cluster = clust, eps = x)
@@ -184,7 +184,7 @@ ggplot(data = opticsPoints, aes(x = x, y = y, color = cluster)) +
 	guides(color = FALSE) +
 	ggtitle("OPTICS Clusters With EPS Cuts")
 
-## ----hdbscan,fig.width=6,fig.height=6--------------------------------------------------------------------------------------------
+## ----hdbscan,fig.width=6,fig.height=6------------------------------------
 suppressWarnings(set <- rbind(Map(f = function(y) {
 	rbind(Map(f = function(x) {
 		hdclust <- hdbscan(edges = edges, neighbors = neighbors, K = y, minPts = x, threads = 1)$cluster

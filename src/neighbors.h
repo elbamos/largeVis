@@ -34,40 +34,31 @@ public:
 template<class M, class V>
 class AnnoySearch {
 private:
-	Neighborhood* treeNeighborhoods = nullptr;
+	Neighborhood* treeNeighborhoods;
 	imat knns;
 	int storedThreads = 0;
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
 
-	inline void reduceOne(const vertexidxtype& i,
-                 vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
+	void recurse(const ivec& indices, list< ivec >& localNeighborhood);
+	inline void mergeNeighbors(const list< ivec >& neighbors);
 
+	inline void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
 	inline void reduceThread(const vertexidxtype& loopstart, const vertexidxtype& end);
 
 	inline void exploreThread(const imat& old_knns, const vertexidxtype& loopstart, const vertexidxtype& end);
-
 	inline void exploreOne(const vertexidxtype& i, const imat& old_knns,
                   vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
-                  MinIndexedPQ& positionHeap,
-                  vector< Position >& positionVector);
+                  MinIndexedPQ& positionHeap, vector< Position >& positionVector);
+	inline void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
 
 	inline void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
 	inline void sortCopyThread(const vertexidxtype& start, const vertexidxtype& end);
 
-	inline void add(vector< std::pair<distancetype, vertexidxtype> >& heap,
-          const V& x_i, const vertexidxtype& j) const;
-
-	inline void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap,
-              const V& x_i, const vertexidxtype& j) const;
-
+	inline void add(vector< std::pair<distancetype, vertexidxtype> >& heap,     const V& x_i, const vertexidxtype& j) const;
+	inline void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap, const V& x_i, const vertexidxtype& j) const;
 	inline void addToNeighborhood(const V& x_i, const vertexidxtype& j,
                          vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const;
-
-	inline void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
-	void recurse(const ivec& indices, vector<vertexidxtype>& localNeighborhood, Neighborhood& neighborindices);
-	inline void addNeighbors(const ivec& indices, vector<vertexidxtype>& localNeighborhood, Neighborhood& neighborindices) const;
-	inline void mergeNeighbors(const vector<vertexidxtype>& localNeighborhood, const Neighborhood& neighborindices);
 
 protected:
 	const M& data;
@@ -97,7 +88,7 @@ public:
 
 	void setSeed(Rcpp::Nullable< NumericVector >& seed);
 
-	void trees(const int& n_trees, const int& newThreshold);
+	void trees(const unsigned int& n_trees, const unsigned int& newThreshold);
 	void reduce();
 	void exploreNeighborhood(const unsigned int& maxIter);
 	imat sortAndReturn();

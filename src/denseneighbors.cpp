@@ -17,7 +17,7 @@ protected:
 
 		const vertexidxtype idx1 = sample(I);
 		vertexidxtype idx2 = sample(I - 1);
-		idx2 = (idx2 >= idx1) ? (++idx2) % I : idx2;
+		idx2 = (idx2 >= idx1) ? (idx2 + 1) % I : idx2;
 
 		const vec x2 = data.col(indices[idx1]);
 		const vec x1 = data.col(indices[idx2]);

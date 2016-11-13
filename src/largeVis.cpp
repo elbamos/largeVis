@@ -85,9 +85,9 @@ public:
 		}
 	}
 
-	void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
+	void operator()(const iterationtype& startSampleIdx, const unsigned int& batchSize) {
 		edgeidxtype e_ij;
-		int example = 0;
+		unsigned int example = 0;
 		coordinatetype firstholder[10], secondholder[10];
 
 		const distancetype localRho = rho;
@@ -125,10 +125,8 @@ public:
 
 class MomentumVisualizer : public Visualizer {
 private:
-	inline void updateMinus(const coordinatetype* from,
-                          const vertexidxtype& i,
-                          coordinatetype* to,
-                          const distancetype& rho) {
+	inline void updateMinus(const coordinatetype* from, const vertexidxtype& i,
+                          coordinatetype* to, const distancetype& rho) {
 		coordinatetype* moment = momentumarray + (i * D);
 		for (dimidxtype d = 0; d != D; ++d) to[d] -= moment[d] = (moment[d] * momentum) + (from[d] * rho);
 	}
@@ -157,9 +155,9 @@ public:
 	~MomentumVisualizer() {
 		delete[] momentumarray;
 	}
-	void operator()(const iterationtype& startSampleIdx, const int& batchSize) {
+	void operator()(const iterationtype& startSampleIdx, const unsigned int& batchSize) {
 		edgeidxtype e_ij;
-		int example = 0;
+		unsigned int example = 0;
 		coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
 
 		const distancetype localRho = rho;
@@ -263,7 +261,7 @@ arma::mat sgd(arma::mat& coords,
 	v -> initAlias(weights.memptr(), negweights, seed);
 	delete[] negweights;
 
-	const int batchSize = 8192;
+	const unsigned int batchSize = 8192;
 	const iterationtype barrier = (n_samples * .99 < n_samples - coords.n_cols) ? n_samples * .99 : n_samples - coords.n_cols;
 
 #ifdef _OPENMP

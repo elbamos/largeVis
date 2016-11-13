@@ -40,6 +40,7 @@ r_binary_packages:
   - png
   - Rcpp
   - RcppArmadillo
+  - RcppProgress
   - dplyr
   - dbscan
 

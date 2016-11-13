@@ -45,6 +45,7 @@
 #' plot(t(visObject$coords))
 #'
 #' # mnist
+#' # Note: The MNIST dataset may be obtained using the deepnet package.
 #' load("./mnist.Rda")
 #' dat <- mnist$images
 #' dim(dat) <- c(42000, 28 * 28)

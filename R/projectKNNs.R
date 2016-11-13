@@ -49,6 +49,7 @@
 #' @export
 #' @importFrom stats runif
 #' @examples
+#' \dontrun{
 #' data(CO2)
 #' CO2$Plant <- as.integer(CO2$Plant)
 #' CO2$Type <- as.integer(CO2$Type)
@@ -58,6 +59,7 @@
 #' suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1, threads = 2))
 #' suppressWarnings(coords <- projectKNNs(vis$wij, threads = 2))
 #' plot(t(coords))
+#' }
 projectKNNs <- function(wij, # symmetric sparse matrix
                         dim = 2, # dimension of the projection space
                         sgd_batches = NULL,

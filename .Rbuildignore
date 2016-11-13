@@ -4,6 +4,9 @@
 ^README\.Rmd$
 ^README\.md$
 ^README_files$
+^benchmarks\.Rmd$
+^benchmarks\.md$
+^benchmarks_files$
 ^revdep$
 ^.*\.RData
 ^ljc\.Rda

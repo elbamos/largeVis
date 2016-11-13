@@ -20,13 +20,12 @@ nacol <- colors_discrete(4)[4]
 theme_set(
   theme_bw() %+replace%
   theme(
-    legend.key.size = unit(4, "mm"), 
     legend.title = element_text(size = rel(0.8),
                               face = "bold"),
     legend.margin = unit(0, "cm"),
     legend.position = "bottom",
     legend.key.size = unit(0.5, "lines"),
-    legend.text=element_text(size = unit(8, "points")), 
+    legend.text = element_text(size = unit(8, "points")), 
     axis.title.y = element_text(angle = 90),
     axis.text = element_text(size = rel(0.7)),
     plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 

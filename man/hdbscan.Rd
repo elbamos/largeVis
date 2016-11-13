@@ -80,6 +80,7 @@ will hopefully provide some measure of outlier factor.
 \examples{
 \dontrun{
 library(largeVis)
+# The spiral dataset can be downloaded from https://github.com/elbamos/clusteringdatasets
 data(spiral)
 dat <- as.matrix(spiral[, 1:2])
 neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,

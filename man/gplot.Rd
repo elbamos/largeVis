@@ -36,6 +36,7 @@ be labelled with the node index number or cluster index number, respectively.
 \examples{
 \dontrun{
 library(largeVis)
+# The aggregation dataset can be downloaded from https://github.com/elbamos/clusteringdatasets
 data(Aggregation)
 dat <- as.matrix(Aggregation[, 1:2])
 aggregateVis <- largeVis(dat, K = 10, tree_threshold = 100,

@@ -68,6 +68,7 @@ visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000)
 plot(t(visObject$coords))
 
 # mnist
+# Note: The MNIST dataset may be obtained using the deepnet package.
 load("./mnist.Rda")
 dat <- mnist$images
 dim(dat) <- c(42000, 28 * 28)

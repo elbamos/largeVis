@@ -5,7 +5,7 @@ largeVis
 
 This is an implementation of the `largeVis` algorithm described in (<https://arxiv.org/abs/1602.00370>). It also incorporates:
 
--   A very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`.
+-   A very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`. See the [Benchmarks](./benchmarks.md) file for performance details.
 -   Efficient implementations of the clustering algorithms:
     -   `HDBSCAN`
     -   `OPTICS`

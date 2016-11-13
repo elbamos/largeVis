@@ -64,6 +64,7 @@
 #' @examples
 #' \dontrun{
 #' library(largeVis)
+#' # The spiral dataset can be downloaded from https://github.com/elbamos/clusteringdatasets
 #' data(spiral)
 #' dat <- as.matrix(spiral[, 1:2])
 #' neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
@@ -168,6 +169,7 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' @examples
 #' \dontrun{
 #' library(largeVis)
+#' # The aggregation dataset can be downloaded from https://github.com/elbamos/clusteringdatasets
 #' data(Aggregation)
 #' dat <- as.matrix(Aggregation[, 1:2])
 #' aggregateVis <- largeVis(dat, K = 10, tree_threshold = 100,
