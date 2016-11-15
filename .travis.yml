@@ -37,6 +37,12 @@ r_binary_packages:
   - devtools
   - testthat
   - ggplot2
+  - png
+  - Rcpp
+  - RcppArmadillo
+  - RcppProgress
+  - dplyr
+  - dbscan
 
 sudo: required
 
@@ -55,6 +61,6 @@ addons:
       - gcc-4.9
       - g++-4.9
       - gfortran-4.9
-      
+
 after_success:
   - Rscript -e 'covr::codecov(Sys.getenv("TRAVIS_BRANCH"))'

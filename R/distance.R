@@ -11,7 +11,7 @@
 #' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param verbose Verbosity.
 #'
-#' @return A vector of the distances between the columns in `x` indexed by `i` and `j`.
+#' @return A vector of the distances between the columns in `x` indexed by `i` and `j`, with attribute \code{method} giving the \code{distance_method}.
 #' @family lowmem
 #' @export
 distance <- function(x,
@@ -29,12 +29,14 @@ distance.matrix <- function(x,
                      distance_method = "Euclidean",
 										 threads = NULL,
                      verbose = getOption("verbose", TRUE)) {
-  return (fastDistance(i,
+  ret = fastDistance(i,
                        j,
                        x,
                        distance_method,
   										 threads,
-                       verbose))
+                       verbose)
+  attr(ret, "method") <- tolower(distance_method)
+  ret
 }
 
 #' @export
@@ -45,14 +47,16 @@ distance.CsparseMatrix <- function(x,
                                    distance_method = "Euclidean",
 																	 threads = NULL,
                                    verbose = getOption("verbose", TRUE)) {
-  return(fastCDistance(i,
+  ret <- fastCDistance(i,
                        j,
                        x@i,
                        x@p,
                        x@x,
                        distance_method,
   										 threads,
-                       verbose))
+                       verbose)
+  attr(ret, "method") <- tolower(distance_method)
+  ret
 }
 
 #' @export
@@ -64,14 +68,16 @@ distance.TsparseMatrix <- function(
                                   distance_method="Euclidean",
                                   threads = NULL,
                                   verbose = getOption("verbose", TRUE)) {
-  return(fastSDistance(i,
+  ret <- fastSDistance(i,
                        j,
                        x@i,
                        x@j,
                        x@p,
                        distance_method,
   										 threads,
-                       verbose))
+                       verbose)
+  attr(ret, "method") <- tolower(distance_method)
+  ret
 }
 
 #' A utility function to convert a k-NN graph to a pair of 0-indexed vectors of indices.

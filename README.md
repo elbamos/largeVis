@@ -5,15 +5,31 @@ largeVis
 
 This is an implementation of the `largeVis` algorithm described in (<https://arxiv.org/abs/1602.00370>). It also incorporates:
 
--   A very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`.
--   An efficient implementation of the `HDBSCAN` algorithm for unsupervised clustering, which leverages the nearest neighbor data genereated by `largeVis`.
+-   A very fast algorithm for estimating k-nearest neighbors, implemented in C++ with `Rcpp` and `OpenMP`. See the [Benchmarks](./benchmarks.md) file for performance details.
+-   Efficient implementations of the clustering algorithms:
+    -   `HDBSCAN`
+    -   `OPTICS`
+    -   `DBSCAN`
 -   Functions for visualizing manifolds like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
 
 ### News Highlights
 
+-   Version 0.1.10 re-adds clustering, and also adds momentum training to largeVis, as well as a host of other features and improvements.
 -   Version 0.1.9.1 has been accepted by CRAN. Much grattitude to Uwe Ligges and Kurt Hornik for their assistance, advice, and patience.
--   I am working on restoring the OPTICS and DBSCAN implementations that were removed from version 0.1.9 for CRAN submission. If you would like to experiment with these, check branch `features/opticsanddbscan`.
--   Anyone watching closely will have noticed that the git branches had become something of a mess. I have moved to git flow in an attempt to restore some sort of sanity. There may still be some inconsistencies in the git over the next few days. I am working on it.
+
+### Some Examples
+
+![MNIST](./README_files/figure-markdown_github/drawmnist-1.png)
+
+![Wiki Words](./README_files/figure-markdown_github/drawwikiwords-1.png)
+
+### Clustering With HDBSCAN
+
+![](README_files/figure-markdown_github/clustering-1.png)
+
+### Visualize Embeddings
+
+![Visualize Embeddings](./README_files/figure-markdown_github/faceImages-1.png)
 
 #### Building Notes
 
@@ -32,4 +48,4 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
         CPPFLAGS =  -I/usr/local/opt/llvm/include
         PATH = /usr/local/opt/llvm/bin:$PATH 
 
-    -   Recompile from source, as above.
+-   Recompile from source, as above.

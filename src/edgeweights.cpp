@@ -3,6 +3,7 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
+#include <vector>
 
 //#define DEBUG
 
@@ -53,13 +54,13 @@ public:
 	}
 
   void similarityOne(vertexidxtype id) {
-    double beta, lo_beta, hi_beta, sum_weight, H, tmp;
+    double beta, lo_beta, hi_beta, sum_weight, tmp;
   	vertexidxtype p;
     beta = 1;
     lo_beta = hi_beta = -1;
 
     for (int iter = 0; iter < 200; ++iter) {
-      H = sum_weight = 0;
+      double H = sum_weight = 0;
       for (p = head[id]; p >= 0; p = next[p]) {
         sum_weight += tmp = exp(-beta * edge_weight[p]);
         H += beta * (edge_weight[p] * tmp);
@@ -84,10 +85,8 @@ public:
   }
 
   void searchReverse(vertexidxtype id) {
-  	vertexidxtype y;
   	edgeidxtype p, q;
     for (p = head[id]; p >= 0; p = next[p]) {
-      y = edge_to[p];
       for (q = head[id]; q >= 0; q = next[q]) {
         if (edge_to[q] == id) break;
       }
@@ -169,7 +168,5 @@ arma::sp_mat referenceWij(const arma::ivec& i,
   Rcout << "Ran, getting WIJ\n";
 #endif
   sp_mat wij = ref.getWIJ();
-  wij = wij.t();
-  wij = wij.t();
   return wij;
 }

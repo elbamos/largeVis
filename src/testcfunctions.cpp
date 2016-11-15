@@ -1,6 +1,7 @@
 #include <testthat.h>
 #include "largeVis.h"
 #include "alias.h"
+#include "gradients.h"
 
 // Initialize a unit test context. This is similar to how you
 // might begin an R test file with 'context()', expect the
@@ -8,10 +9,10 @@
 context("alias tests") {
 
   test_that("alias int succeeds") {
-  	AliasTable<int, double, double> testAlias = AliasTable<int, double, double>();
+  	AliasTable<int, double, double> testAlias = AliasTable<int, double, double>(100);
   	double weights[100];
   	for (int i = 0; i != 100; i++) weights[i] = i;
-  	testAlias.initialize(weights, 100);
+  	testAlias.initialize(weights);
   	testAlias.initRandom(1024);
   	expect_true(testAlias() == 71);
   	expect_true(testAlias() == 74);
@@ -20,10 +21,10 @@ context("alias tests") {
   }
 
   test_that("alias long succeeds") {
-  	AliasTable<long, double, double> testAlias = AliasTable<long, double, double>();
+  	AliasTable<long, double, double> testAlias = AliasTable<long, double, double>(100);
   	double weights[100];
   	for (int i = 0; i != 100; i++) weights[i] = i;
-    testAlias.initialize(weights, 100);
+    testAlias.initialize(weights);
     testAlias.initRandom(1024);
     expect_true(testAlias() == 71);
     expect_true(testAlias() == 74);
@@ -32,10 +33,10 @@ context("alias tests") {
   }
 
 	test_that("alias long long succeeds") {
-		AliasTable<long long, double, double> testAlias = AliasTable<long long, double, double>();
+		AliasTable<long long, double, double> testAlias = AliasTable<long long, double, double>(100);
 		double weights[100];
 		for (int i = 0; i != 100; i++) weights[i] = i;
-		testAlias.initialize(weights, 100);
+		testAlias.initialize(weights);
 		testAlias.initRandom(1024);
 		expect_true(testAlias() == 71);
 		expect_true(testAlias() == 74);
@@ -44,10 +45,10 @@ context("alias tests") {
 }
 
 	test_that("alias vertexidxtype succeeds") {
-		AliasTable<vertexidxtype, double, double> testAlias = AliasTable<vertexidxtype, double, double>();
+		AliasTable<vertexidxtype, double, double> testAlias = AliasTable<vertexidxtype, double, double>(100);
 		double weights[100];
 		for (int i = 0; i != 100; i++) weights[i] = i;
-		testAlias.initialize(weights, 100);
+		testAlias.initialize(weights);
 		testAlias.initRandom(1024);
 		expect_true(testAlias() == 71);
 		expect_true(testAlias() == 74);
@@ -56,10 +57,10 @@ context("alias tests") {
 	}
 
 	test_that("alias edgeidxtype succeeds") {
-		AliasTable<edgeidxtype, double, double> testAlias = AliasTable<edgeidxtype, double, double>();
+		AliasTable<edgeidxtype, double, double> testAlias = AliasTable<edgeidxtype, double, double>(100);
 		double weights[100];
 		for (int i = 0; i != 100; i++) weights[i] = i;
-		testAlias.initialize(weights, 100);
+		testAlias.initialize(weights);
 		testAlias.initRandom(1024);
 		expect_true(testAlias() == 71);
 		expect_true(testAlias() == 74);

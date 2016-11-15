@@ -8,7 +8,7 @@
 #' @param verbose Verbosity
 #' @param ... Additional parameters passed to \code{\link{randomProjectionTreeSearch}} if \code{neighbors} is \code{NULL}.
 #'
-#' @return A `sparseMatrix`
+#' @return A `sparseMatrix`, with the distance method stored in attribute \code{method} and additional class `edge_matrix.`
 #' @importFrom Matrix sparseMatrix
 #' @export
 buildEdgeMatrix <- function(data,
@@ -26,7 +26,40 @@ buildEdgeMatrix <- function(data,
 											j = indices$j + 1,
 											x = as.vector(distances),
 											dims = c(ncol(data), ncol(data)))
-	return(mat)
+	structure(.Data = mat,
+						method = tolower(distance_method))
+}
+
+
+#' as_dist_edgematrix
+#'
+#' Convert an edge matrix to a \code{dist} object.
+#'
+#' @param x An edge matrix.
+#'
+#' @return A \code{\link[stats]{dist}} object.
+#'
+#' @note This method converts the otherwise sparse edge matrix into a dense \code{dist} object,
+#' where any distances absent from the edge matrix are represented as \code{NA}.
+#'
+#' @export
+#' @rdname buildEdgeMatrix
+#' @importFrom Matrix triu tril t as.matrix diag
+#' @importFrom stats as.dist
+as_dist_edgematrix <- function(x) {
+	y <- Matrix::tril(x)
+	z <- Matrix::t(Matrix::triu(x))
+	zeros <- y == 0
+	y[zeros] <- z[zeros]
+	y[y == 0] <- NA
+	Matrix::diag(y) <- 0
+	structure(stats::as.dist(Matrix::as.matrix(y)),
+						class = "dist",
+						Size = ncol(x),
+						Diag = FALSE,
+						Upper = FALSE,
+						method = attr(x, "method"),
+						call = sys.call())
 }
 
 #' buildWijMatrix
@@ -52,13 +85,13 @@ buildWijMatrix <- function(x,
 buildWijMatrix.TsparseMatrix <- function(x,
 																				 threads = NULL,
 																	 perplexity = 50) {
-	wij <- referenceWij(x@j, x@i, x@x^2, threads, perplexity);
+	wij <- referenceWij(x@j, x@i, x@x^2, as.integer(threads), perplexity);
 	return(wij)
 }
 #' @export
 #' @rdname buildWijMatrix
 buildWijMatrix.CsparseMatrix <- function(x, threads = NULL, perplexity = 50) {
 	is <- rep(0:(ncol(x) - 1), diff(x@p))
-  wij <- referenceWij(is, x@i, x@x^2, threads, perplexity)
+  wij <- referenceWij(is, x@i, x@x^2, as.integer(threads), perplexity)
   return(wij)
 }

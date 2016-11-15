@@ -2,40 +2,27 @@
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
+#include "largeVis.h"
 #include "pq.h"
 
 class HDBSCAN : public UF<long long> {
+private:
+	double* coreDistances;
+
 public:
-
-  HDBSCAN(const int N,
-          bool verbose) : UF(N, verbose, true) {
+  HDBSCAN(const int& N,
+          const bool& verbose) : UF(N, verbose, true) {
+  	coreDistances = new double[N];
   }
+	virtual ~HDBSCAN() {
+		delete[] coreDistances;
+	}
 
-  void makeCoreDistances(const arma::sp_mat& edges, const int K) {
-    coreDistances = arma::vec(N);
-    for (long long n = 0; n < N; n++) if (p.increment()) {
-    	DistanceSorter srtr = DistanceSorter();
-      for (auto it = edges.begin_row(n);
-           it != edges.end_row(n);
-           it++) srtr.emplace(it.col(), *it);
-      if (srtr.size() < K) for (auto it = edges.begin_col(n);
-          it != edges.end_col(n);
-          it++) srtr.emplace(it.row(), *it);
-      if (srtr.size() < K) {
-      	Function warning("warning");
-      	warning("Insufficient neighbors, selecting furthest");
-      }
-      for (int k = 0; k != K - 1 && srtr.size() > 1; k++) srtr.pop();
-      coreDistances[n] = max(srtr.top().second, 1e-5);
-    }
-  }
-
-  void makeCoreDistances(const arma::sp_mat& edges,
+  void makeCoreDistances(const sp_mat& edges,
                          const IntegerMatrix& neighbors,
-                         const int K) {
+                         const int& K) {
   	if (neighbors.nrow() < K) stop("Specified K bigger than the number of neighbors in the adjacency matrix.");
- 	if (K < 4) stop("K must be >= 4 when used with neighbors.");
-    coreDistances = arma::vec(N);
+ 		//if (K < 4) stop("K must be >= 4 when used with neighbors.");
     IntegerVector kthNeighbors = neighbors.row(K - 1);
     for (long long n = 0; n < N; n++) if (p.increment()) {
     	long long q = kthNeighbors[n];
@@ -45,28 +32,31 @@ public:
     }
   }
 
-	void primsAlgorithm(const sp_mat& edges) {
-		UF<long long>::primsAlgorithm(edges, 0);
-	}
+  IntegerVector build( const unsigned int& K,
+				               const sp_mat& edges,
+				               const IntegerMatrix& neighbors) {
+  	makeCoreDistances(edges, neighbors, K);
+  	PrimsAlgorithm<long long, double> prim = PrimsAlgorithm<long long, double>(N, coreDistances);
+  	const long long* minimum_spanning_tree = prim.run(edges, neighbors, p, 0);
+  	vector< pair<double, long long> > mergeSequence = prim.getMergeSequence();
+  	buildHierarchy(mergeSequence, minimum_spanning_tree); // 2 N
+  	vector<long long> treevector(minimum_spanning_tree, minimum_spanning_tree + N);
+  	return IntegerVector(treevector.begin(), treevector.end());
+  }
 
-	void primsAlgorithm(const sp_mat& edges, const IntegerMatrix& neighbors) {
-		UF<long long>::primsAlgorithm(edges, neighbors, 0);
-	}
-
-  arma::mat process(const int& minPts) {
-  	buildHierarchy(); // 2 N
+	void condenseAndExtract(const unsigned int& minPts, double* clusters) {
     condense(minPts); // 2 N
     determineStability(minPts); // N
     extractClusters(minPts); // N
-    return getClusters();
+    getClusters(clusters);
   }
 
   Rcpp::List reportHierarchy() {
     long long survivingClusterCnt = survivingClusters.size();
-    IntegerVector parent = IntegerVector(survivingClusterCnt);
-    IntegerVector nodeMembership = IntegerVector(N);
-    NumericVector stabilities = NumericVector(survivingClusterCnt);
-    IntegerVector selected = IntegerVector(survivingClusterCnt);
+    vector<int> parent(survivingClusterCnt);
+    vector<int> nodeMembership(N);
+    vector<double> stabilities(survivingClusterCnt);
+    vector<int> selected(survivingClusterCnt);
     set< long long >::iterator it;
 #ifdef _OPENMP
 #pragma omp parallel
@@ -76,7 +66,7 @@ public:
 #endif
     for (it = roots.begin();
          it != roots.end();
-         it++)
+         ++it)
 #ifdef _OPENMP
 #pragma omp task
 #endif
@@ -91,46 +81,32 @@ public:
     // FIXME - need to adjust this to be lambda_p not birth
     for (long long n = 0; n != N; n++) lambdas[n] = lambda_births[n];
 
-    return Rcpp::List::create(Rcpp::Named("nodemembership") = nodeMembership,
-                              Rcpp::Named("lambda") = lambdas,
-                              Rcpp::Named("parent") = parent,
-                              Rcpp::Named("stability") = stabilities,
-                              Rcpp::Named("selected") = selected,
-                              Rcpp::Named("coredistances") = coreDistances);
+    return List::create(Named("nodemembership") = IntegerVector(nodeMembership.begin(), nodeMembership.end()),
+                        Named("lambda") = lambdas,
+                        Named("parent") = IntegerVector(parent.begin(), parent.end()),
+                        Named("stability") = NumericVector(stabilities.begin(), stabilities.end()),
+                        Named("selected") = IntegerVector(selected.begin(), selected.end()),
+                        Named("coredistances") = wrap(vector<double>(coreDistances, coreDistances + N)));
   }
-
-	long long* getMinimumSpanningTree() {
-		return minimum_spanning_tree.get();
-	}
 };
 
 // [[Rcpp::export]]
 List hdbscanc(const arma::sp_mat& edges,
-              Rcpp::Nullable< Rcpp::IntegerMatrix > neighbors,
-              const int K,
-              const int minPts,
+              const IntegerMatrix& neighbors,
+              const int& K,
+              const int& minPts,
               Rcpp::Nullable<Rcpp::NumericVector> threads,
-              const bool verbose) {
+              const bool& verbose) {
 #ifdef _OPENMP
 	checkCRAN(threads);
 #endif
   HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
-  if (neighbors.isNotNull()) { // 1 N
-    IntegerMatrix neigh = IntegerMatrix(neighbors);
-    object.makeCoreDistances(edges, neigh, K);
-    object.primsAlgorithm(edges, neigh); // 1 N
-  } else {
-    object.makeCoreDistances(edges, K);
-  	object.primsAlgorithm(edges);
-  }
-  arma::mat clusters = object.process(minPts);
-  arma::ivec tree = arma::ivec(edges.n_cols);
-  long long* mst = object.getMinimumSpanningTree();
-  for (int n = 0; n != edges.n_cols; n++) {
-    tree[n] = mst[n];
-  }
-  Rcpp::List hierarchy = object.reportHierarchy();
-  return Rcpp::List::create(Rcpp::Named("clusters") = clusters,
-                            Rcpp::Named("tree") = tree,
-                            Rcpp::Named("hierarchy") = hierarchy);
+ // 1 N
+  IntegerVector tree = object.build(K, edges, neighbors);
+  NumericMatrix clusters = NumericMatrix(2, edges.n_cols);
+  object.condenseAndExtract(minPts, REAL(clusters));
+  List hierarchy = object.reportHierarchy();
+  return List::create(Named("clusters") = clusters,
+                      Named("tree") = IntegerVector(tree),
+                      Named("hierarchy") = hierarchy);
 }

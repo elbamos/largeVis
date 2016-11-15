@@ -1,7 +1,23 @@
-### largeVis 0.1.9.3
-Hotfix correcting:
-	* An error in the hdbscan implementation regarding the definition of K in calculating core distances.
-	* gplot was broken.
+### largeVis 0.1.10
+* This is a significant update. Major changes are:
+	+ 20% performance improvements in `projectKNNs`
+	+ The nearest neighbor search now runs substantially faster because of more efficient use of threads.
+	+ `projectKNNs` now supports training with momentum, which offers an additional 20-50% performance improvement. See the vignette for details. 
+	+	OPTICS and DBSCAN are back, rewritten, and substantially improved.
+*	Other changes:
+	* `projectKNNs`
+		+ The `useDegree` parameter allows the user to select the negative weighting method. 
+	* Clustering
+		* `largeVis` now has an additional parameter, `save_edges`, to control whether the edge matrix is preserved. This is to simplify using the
+clustering functions. 
+		* `hdbscan`, `lv_dbscan` and `lv_optics` now all accept a `largeVis` object as the first parameter.
+		* Both edges and neighbors (or a largeVis object) must be specified for `hdbscan`. 
+		*	Added `hdbscanToDendrogram` function to make hdbscan objects compatible with other R hierarchical clustering implementations.
+* New utility function `sgdBatches` helps estimate training time for datasets. 
+* Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes. 
+* `buildEdgeMatrix` and `distance` now store the `distance_method` in attribute `method` of the returned object. 
+* The benchmarks vignette has been replaced with a benchmarks readme - the reason is the overhead and expense of repeatedly recalculating the benchmarks on AWS.
+* Third vignette covers momentum, the `useDegree` parameter, and clustering. 
 
 ### largeVis 0.1.9.3
 Fix to hdbscan selecting wrong K, and gplot failing. 

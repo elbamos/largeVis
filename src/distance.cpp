@@ -3,6 +3,8 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
+#include "distance.h"
+#include <progress.hpp>
 
 distancetype relDist(const arma::vec& i, const arma::vec& j) {
   const dimidxtype D = i.n_elem;
@@ -66,11 +68,11 @@ arma::vec fastDistance(const IntegerVector is,
   return xs;
 };
 
-arma::vec fastSparseDistance(const arma::ivec& is,
-                             const arma::ivec& js,
-                             const sp_mat& data,
-                             const std::string& distMethod,
-                             bool verbose) {
+vec fastSparseDistance(const ivec& is,
+                       const ivec& js,
+                       const sp_mat& data,
+                       const std::string& distMethod,
+                       bool verbose) {
 
   Progress p(is.size(), verbose);
   vec xs = vec(is.size());

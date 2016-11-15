@@ -3,57 +3,57 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
 #include "neighbors.h"
+#include "distance.h"
 
 using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-class EuclideanAdder : public DistanceAdder<arma::mat, arma::vec> {
+class DenseAnnoySearch : public AnnoySearch<arma::Mat<double>, arma::Col<double>> {
 protected:
-	virtual distancetype distanceFunction(const arma::vec& x_i, const arma::vec& x_j) const {
-		return relDist(x_i, x_j);
-	}
-public:
-	EuclideanAdder(const arma::mat& data, const kidxtype K) : DistanceAdder(data, K) {}
-};
+	virtual vec hyperplane(const ivec& indices) {
+		const vertexidxtype I = indices.n_elem;
+		vec direction = vec(I);
 
-class CosineAdder : public DistanceAdder<arma::mat, arma::vec> {
-protected:
-	virtual distancetype distanceFunction(const arma::vec& x_i, const arma::vec& x_j) const {
-		return cosDist(x_i, x_j);
-	}
-public:
-	CosineAdder(const arma::mat& data, const kidxtype K) : DistanceAdder(data, K) {}
-};
+		const vertexidxtype idx1 = sample(I);
+		vertexidxtype idx2 = sample(I - 1);
+		idx2 = (idx2 >= idx1) ? (idx2 + 1) % I : idx2;
 
-class DenseAnnoySearch : public AnnoySearch<arma::mat, arma::vec> {
-protected:
-	virtual arma::vec hyperplane(const arma::ivec& indices) {
-		vec direction = vec(indices.size());
-		vertexidxtype x1idx, x2idx;
-		vec v;
-		vec m;
-		do {
-			x1idx = indices[sample(indices.n_elem)];
-			x2idx = indices[sample(indices.n_elem)];
-			if (x1idx == x2idx) x2idx = indices[sample(indices.n_elem)];
-			const vec x2 = data.col(x2idx);
-			const vec x1 = data.col(x1idx);
+		const vec x2 = data.col(indices[idx1]);
+		const vec x1 = data.col(indices[idx2]);
 			// Get hyperplane
-			m =  (x1 + x2) / 2; // Base point of hyperplane
-			const vec d = x1 - x2;
-			v =  d / as_scalar(norm(d, 2)); // unit vector
-		} while (x1idx == x2idx);
+		const vec m =  (x1 + x2) / 2; // Base point of hyperplane
+		const vec d = x1 - x2;
+		const vec v =  d / as_scalar(norm(d, 2)); // unit vector
 
-		for (vertexidxtype i = 0; i < indices.n_elem; i++) {
+		for (vertexidxtype i = 0; i != I; i++) {
 			const vec X = data.col(indices[i]);
 			direction[i] = dot((X - m), v);
 		}
 		return direction;
 	}
 public:
-	DenseAnnoySearch(const arma::mat& data, Progress& p) : AnnoySearch(data, p) {}
+	DenseAnnoySearch(const mat& data, const kidxtype& K, Progress& p) : AnnoySearch(data, K, p) {}
 };
+
+class DenseEuclidean : public DenseAnnoySearch {
+protected:
+	virtual distancetype distanceFunction(const Col<double>& x_i, const Col<double>& x_j) const {
+		return relDist(x_i, x_j);
+	}
+public:
+	DenseEuclidean(const Mat<double>& data, const kidxtype& K, Progress& p) : DenseAnnoySearch(data, K, p) {}
+};
+
+class DenseCosine : public DenseAnnoySearch {
+protected:
+	virtual distancetype distanceFunction(const Col<double>& x_i, const Col<double>& x_j) const {
+		return cosDist(x_i, x_j);
+	}
+public:
+	DenseCosine(const Mat<double>& data, const kidxtype& K, Progress& p) : DenseAnnoySearch(data, K, p) {}
+};
+
 
 // [[Rcpp::export]]
 arma::imat searchTrees(const int& threshold,
@@ -62,26 +62,32 @@ arma::imat searchTrees(const int& threshold,
                        const int& maxIter,
                        const arma::mat& data,
                        const std::string& distMethod,
-                       Rcpp::Nullable< Rcpp::NumericVector> seed,
-                       Rcpp::Nullable<Rcpp::NumericVector> threads,
+                       Rcpp::Nullable< NumericVector > seed,
+                       Rcpp::Nullable< NumericVector > threads,
                        bool verbose) {
 #ifdef _OPENMP
 	checkCRAN(threads);
 #endif
   const vertexidxtype N = data.n_cols;
-	shared_ptr< DistanceAdder<arma::mat, arma::vec> > adder;
-	if (distMethod.compare(string("Cosine")) == 0) adder = shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new CosineAdder(data, K));
-	else adder = shared_ptr< DistanceAdder<arma::mat, arma::vec> >(new EuclideanAdder(data, K));
 
   Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
 
 	mat dataMat;
 	if (distMethod.compare(string("Cosine")) == 0) dataMat = normalise(data, 2, 0);
 	else dataMat = data;
-	DenseAnnoySearch annoy = DenseAnnoySearch(dataMat, p);
-	annoy.setSeed(seed);
-	annoy.trees(n_trees, threshold);
-	annoy.reduce(K, adder);
-	annoy.convertToMatrix(K);
-	return (maxIter == 0) ? annoy.getMatrix(adder) : annoy.exploreNeighborhood(maxIter, adder);
+
+	DenseAnnoySearch* annoy;
+	if (distMethod.compare(string("Cosine")) == 0) {
+		annoy = new DenseCosine(dataMat, K, p);
+	} else {
+		annoy = new DenseEuclidean(dataMat, K, p);
+	}
+
+	annoy->setSeed(seed);
+	annoy->trees(n_trees, threshold);
+	annoy->reduce();
+	annoy->exploreNeighborhood(maxIter);
+	imat ret = annoy->sortAndReturn();
+	delete annoy;
+	return ret;
 }

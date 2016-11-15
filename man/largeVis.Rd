@@ -6,8 +6,8 @@
 \usage{
 largeVis(x, dim = 2, K = 50, n_trees = 50, tree_threshold = max(10,
   ncol(x)), max_iter = 1, distance_method = "Euclidean",
-  perplexity = max(50, K/3), save_neighbors = TRUE, threads = NULL,
-  verbose = getOption("verbose", TRUE), ...)
+  perplexity = max(50, K/3), save_neighbors = TRUE, save_edges = TRUE,
+  threads = NULL, verbose = getOption("verbose", TRUE), ...)
 }
 \arguments{
 \item{x}{A matrix, where the features are rows and the examples are columns.}
@@ -30,6 +30,8 @@ in the input set.}
 
 \item{save_neighbors}{Whether to include in the output the adjacency matrix of nearest neighbors.}
 
+\item{save_edges}{Whether to include in the output the distance matrix of nearest neighbors.}
+
 \item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).  It is unlikely that
 this parameter should ever need to be adjusted.  It is only available to make it possible to abide by the CRAN limitation that no package
 use more than two cores.}
@@ -41,9 +43,10 @@ use more than two cores.}
 \value{
 A `largeVis` object with the following slots:
  \describe{
-   \item{'knns'}{An [N,K] 0-indexed integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
+   \item{'knns'}{If \code{save_neighbors=TRUE}, An [N,K] 0-indexed integer matrix, which is an adjacency list of each vertex' identified nearest neighbors.
    If the algorithm failed to find \code{K} neighbors, the matrix is padded with \code{NA}'s. Note that this matrix is not identical to the output
    from \code{\link{randomProjectionTreeSearch}}: missing neighbors are \code{NA}'s rather than \code{-1}'s, and the matrix is transposed.}
+   \item{'edges'}{If \code{save_edges=TRUE}, a [N,N] sparse matrix of distances between nearest neighbors.}
    \item{'wij'}{A sparse [N,N] matrix where each cell represents \eqn{w_{ij}}.}
    \item{'call'}{The call.}
    \item{'coords'}{A [D,N] matrix of the embedding of the dataset in the low-dimensional space.}
@@ -65,6 +68,7 @@ visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000)
 plot(t(visObject$coords))
 
 # mnist
+# Note: The MNIST dataset may be obtained using the deepnet package.
 load("./mnist.Rda")
 dat <- mnist$images
 dim(dat) <- c(42000, 28 * 28)
