@@ -44,6 +44,8 @@ r_binary_packages:
   - dplyr
   - dbscan
   - knitr
+  - wesanderson
+  - rmarkdown
 
 sudo: required
 
