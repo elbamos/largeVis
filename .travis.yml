@@ -43,6 +43,7 @@ r_binary_packages:
   - RcppProgress
   - dplyr
   - dbscan
+  - knitr
 
 sudo: required
 

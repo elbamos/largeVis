@@ -20,13 +20,14 @@
 #' }
 #' @export
 #' @examples
+#' \dontrun{
 #' data(iris)
 #' vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1)
 #' hdbscanobj <- hdbscan(vis, minPts = 10, K = 5)
 #' plot(as_dendrogram_hdbscan(hdbscanobj))
+#' }
 as_dendrogram_hdbscan <- function(object) {
 	C <- length(object$hierarchy$parent)
-	counts <- tabulate(object$hierarchy$nodemembership, nbins = C) + tabulate(object$hierarchy$parent, nbins = C)
 
 	leafs <- lapply(1:length(object$hierarchy$nodemembership), FUN = function(i)
 		structure(as.list(i),

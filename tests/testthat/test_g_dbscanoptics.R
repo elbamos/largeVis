@@ -121,31 +121,25 @@ test_that("optics matches optics reachdist on jain when the neighborhoods are co
 
 context("optics-elki")
 
-load(system.file("testdata/opttest.Rda", package = "largeVis"))
-
-x <- opttest$test_data
-neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399, tree_threshold = 100, max_iter = 10, seed = 1974)
-edges <- buildEdgeMatrix(t(opttest$test_data), neighbors = neighbors, threads = 1)
-
-eps <- .1
-eps_cl <- .1
-minPts <- 10
-res <- lv_optics(edges, neighbors, eps = eps, useQueue = FALSE,  minPts = minPts)
-
 test_that("optics output format is correct", {
+	skip_on_cran()
+	skip_on_travis()
+	load(system.file("testdata/opttest.Rda", package = "largeVis"))
+
+	x <- opttest$test_data
+	neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399, tree_threshold = 100, max_iter = 10, seed = 1974)
+	edges <- buildEdgeMatrix(t(opttest$test_data), neighbors = neighbors, threads = 1)
+
+	eps <- .1
+	eps_cl <- .1
+	minPts <- 10
+	res <- lv_optics(edges, neighbors, eps = eps, useQueue = FALSE,  minPts = minPts)
 	expect_identical(length(res$order), nrow(x))
 	expect_identical(length(res$reachdist), nrow(x))
 	expect_identical(length(res$coredist), nrow(x))
 	expect_identical(res$eps, eps)
 	expect_identical(res$minPts, minPts)
-})
-
-test_that("optics coredist matches elki", {
 	expect_equal(res$coredist, opttest$elkiopt$coredist)
-})
-
-
-test_that("optics result matches elki after cut", {
 	optcut <- cutoptics(res)
 	refcut <- cutoptics(opttest$elkiopt)
 	expect_equal(optcut, refcut)

@@ -124,9 +124,11 @@ edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
 clustering <- hdbscan(edges, neighbors, minPts = 10, K = 4,  threads = 2, verbose = FALSE)
 
 test_that("gplot isn't broken", {
+	skip_on_cran()
 	expect_silent(plt <- gplot(clustering, t(dat)))
 })
 
 test_that("gplot isn't broken with text", {
+	skip_on_cran()
 	expect_silent(plt <- gplot(clustering, t(dat), text = TRUE))
 })

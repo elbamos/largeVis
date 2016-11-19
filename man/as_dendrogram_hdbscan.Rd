@@ -34,9 +34,11 @@ under A but not B or C would not be assigned to any cluster. This function retur
 nodes. Whether a node was selected as as cluster is an attribute of each node.
 }
 \examples{
+\dontrun{
 data(iris)
 vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1)
 hdbscanobj <- hdbscan(vis, minPts = 10, K = 5)
 plot(as_dendrogram_hdbscan(hdbscanobj))
+}
 }
 

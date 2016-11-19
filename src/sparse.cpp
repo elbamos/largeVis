@@ -25,7 +25,7 @@ protected:
 			// Get hyperplane
 			m =  (x1 + x2) / 2; // Base point of hyperplane
 			const sp_mat d = x1 - x2;
-			const distancetype dn = as_scalar(norm(d, 2));
+			const distancetype dn = as_scalar(norm(d, 2)) + 1e-5;
 			v =  d / dn; // unit vector
 		} while (x1idx == x2idx);
 

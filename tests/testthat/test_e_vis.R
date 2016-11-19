@@ -49,6 +49,8 @@ test_that("largeVis works with cosine", {
 })
 
 test_that("largeVis continues to work as it scales up", {
+	skip_on_cran()
+	skip_on_travis()
 	visObject <- largeVis(dat, max_iter = 20, sgd_batches = 1000,  threads = 2,
 												K = 10,  gamma = 0.5, verbose = FALSE)
 	expect_false(any(is.na(visObject$coords)))
