@@ -31,7 +31,6 @@ edges <- buildEdgeMatrix(data = dat,
 												 verbose = FALSE)
 
 test_that("dbscan doesn't crash on iris", {
-	skip_on_travis()
 	expect_silent(lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE))
 })
 
@@ -43,7 +42,6 @@ test_that("dbscan matches iris", {
 })
 
 test_that("dbscan works with largeVis objects", {
-	skip_on_travis()
 	vis <- largeVis(dat, sgd_batches = 1, threads = 2)
 	expect_silent(cl <- lv_dbscan(vis, eps = 1, minPts = 10))
 	expect_lte(sum(cl$cluster != irisclustering$cluster), 1)
@@ -52,8 +50,6 @@ test_that("dbscan works with largeVis objects", {
 context("dbscan-jain")
 
 test_that("dbscan matches dbscan on jain when the neighborhoods are complete", {
-	skip_on_cran()
-	skip_on_travis()
 	load(system.file(package = "largeVis", "testdata/jaindata.Rda"))
 	jainclusters <- lv_dbscan(edges = jaindata$edges, neighbors = jaindata$neighbors, eps = 2.5, minPts = 10, verbose = FALSE)
 	expect_equal(jainclusters$cluster, jaindata$dbclusters25$cluster)
@@ -74,8 +70,6 @@ edges <- buildEdgeMatrix(data = dat,
 												 verbose = FALSE)
 
 test_that("optics doesn't crash on iris", {
-	skip_on_travis()
-
   expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = FALSE, verbose = FALSE))
 })
 
@@ -130,8 +124,6 @@ test_that("optics matches optics reachdist on jain when the neighborhoods are co
 context("optics-elki")
 
 test_that("optics output format is correct", {
-	skip_on_cran()
-	skip_on_travis()
 	load(system.file("testdata/opttest.Rda", package = "largeVis"))
 
 	x <- opttest$test_data

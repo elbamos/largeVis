@@ -9,7 +9,6 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 
 test_that("Trees does not error", {
-	skip_on_travis()
 
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
@@ -51,7 +50,6 @@ bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
 bests <- bests[-1,] - 1
 
 test_that("max threshold is sufficient to find all neighbors", {
-	skip_on_travis()
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
 																					n_trees = 1,
@@ -96,7 +94,6 @@ test_that("exploration is not negative", {
 })
 
 test_that("Can determine iris neighbors with iterations 1 thread", {
-	skip_on_travis()
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = 5,
 																					n_trees = 20,
@@ -115,7 +112,6 @@ test_that("Can determine iris neighbors with iterations 1 thread", {
 })
 
 test_that("Can determine iris neighbors with iterations 2 threads", {
-	skip_on_travis()
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = 5,
 																					n_trees = 20,
@@ -135,7 +131,6 @@ test_that("Can determine iris neighbors with iterations 2 threads", {
 })
 
 test_that("Can determine iris neighbors accurately, Euclidean", {
-	skip_on_travis()
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
 																					n_trees = 20,
@@ -147,7 +142,6 @@ test_that("Can determine iris neighbors accurately, Euclidean", {
 })
 
 test_that("With a bigger dataset, performance is as expected", {
-	skip_on_travis()
 	M <- 10
 	data(quakes)
 	dat <- as.matrix(quakes)

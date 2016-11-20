@@ -7,7 +7,6 @@ index_matrix <- matrix(c(rep(0:9, each = 10), rep(0:9, 10)),
 test_matrix <- t(test_matrix)
 
 test_that("Euclidean distances are correct", {
-	skip_on_travis()
   distances <- as.matrix(dist(test_matrix, method = "euclidean"))
   new_distances <- distance(as.vector(index_matrix[, 2]),
                             as.vector(index_matrix[, 1]),
@@ -21,7 +20,6 @@ test_that("Euclidean distances are correct", {
 })
 
 test_that("Cosine distances are correct", {
-	skip_on_travis()
   set.seed(1974)
   cos.sim <- function(x, i, j) {
     A <- x[, i]
