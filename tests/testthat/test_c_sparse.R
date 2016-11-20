@@ -11,20 +11,20 @@ neighbors <- randomProjectionTreeSearch(dat,
 																				n_trees = 10,
 																				tree_threshold = 20,
 																				max_iter = 10,
-																				verbose = FALSE)
+																				verbose = FALSE,
+																				threads = 1)
 
-test_that("buildEdgeMatrix are the same, Euclidean", {
+test_that("buildEdgeMatrix are the same", {
+	skip_on_travis()
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
   edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE)
   score <- sum(edges1@x - edges2@x)
-  expect_lt(score, 1)
-})
+  expect_lt(score, 1, label = "Euclidean")
 
-test_that("buildEdgeMatrix are the same, Cosine", {
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
 	edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
 	score <- sum(edges1@x - edges2@x)
-	expect_lt(score, 1)
+	expect_lt(score, 1, label = "Cosine")
 })
 
 M <- 5
@@ -34,6 +34,7 @@ mat <- Matrix::sparseMatrix(i = rep(1:nrow(dat), ncol(dat)),
 d = as.matrix(dist(t(as.matrix(mat)), method = "euclidean"))
 
 test_that("sparseDistances", {
+	skip_on_travis()
   index_matrix <- matrix(c(
     rep(0:(ncol(dat) - 1), ncol(dat)),
     rep(0:(ncol(dat) - 1), each = ncol(dat))
@@ -48,6 +49,7 @@ test_that("sparseDistances", {
 })
 
 test_that("Can determine sparse iris neighbors accurately", {
+	skip_on_travis()
   bests <- apply(d, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1,] - 1
   neighbors <- randomProjectionTreeSearch(mat,

@@ -23,7 +23,9 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 147
-neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 80, n_trees = 10,  max_iter = 4, threads = 2, verbose = FALSE)
+neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 80,
+																				n_trees = 10,  max_iter = 4,
+																				threads = 2, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat,
 												 neighbors = neighbors,
 												 verbose = FALSE)
@@ -133,7 +135,8 @@ test_that("optics output format is correct", {
 	load(system.file("testdata/opttest.Rda", package = "largeVis"))
 
 	x <- opttest$test_data
-	neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399, tree_threshold = 100, max_iter = 10, seed = 1974)
+	neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399,,
+																					threads = 1, tree_threshold = 100, max_iter = 10, seed = 1974)
 	edges <- buildEdgeMatrix(t(opttest$test_data), neighbors = neighbors, threads = 1)
 
 	eps <- .1

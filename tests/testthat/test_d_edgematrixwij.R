@@ -5,7 +5,12 @@ test_that("Edge Matrix doesn't crash", {
 	data(quakes)
 	dat <- t(scale(as.matrix(quakes)))
 	neighbors <- randomProjectionTreeSearch(dat,
-																						K = 20,  threads = 2, verbose = FALSE)
+																					K = 20,
+																					tree_threshold = 30,
+																					max_iter = 1,
+																					n_trees = 10,
+																					threads = 2,
+																					verbose = FALSE)
 	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
 })
 

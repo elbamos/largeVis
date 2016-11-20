@@ -5,7 +5,8 @@ test_that("sparse division by zero is resolved", {
 	skip_on_travis()
 	load(system.file("testdata/zerotest.rda", package = "largeVis"))
 	dat <- Matrix::Matrix(zerotest, sparse = TRUE)
-	expect_silent(ted <- randomProjectionTreeSearch(dat, K = 50, max_iter = 1, n_trees = 10))
+	expect_silent(ted <- randomProjectionTreeSearch(dat, K = 50, max_iter = 1,,
+																									threads = 1, n_trees = 10))
 })
 
 test_that("dim064 issue is resolved (large numbers of duplicate points)", {
