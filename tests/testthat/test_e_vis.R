@@ -8,6 +8,7 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 
 test_that("largeVis works", {
+	skip_on_travis()
 	visObject <- largeVis(dat, max_iter = 20, n_trees = 100,
 												tree_threshold = 50, sgd_batches = 1000,  threads = 2,
 												K = 20,  verbose = FALSE)
@@ -17,6 +18,7 @@ test_that("largeVis works", {
 })
 
 test_that("largeVis does not NaN on iris", {
+	skip_on_travis()
 	visObject <- largeVis(dat, max_iter = 20,
 												coords = matrix(rnorm(ncol(dat) * 2), nrow = 2),  threads = 2,
 												K = 20,  verbose = FALSE,
@@ -27,6 +29,8 @@ test_that("largeVis does not NaN on iris", {
 })
 
 test_that("largeVis works when alpha == 0", {
+	skip_on_travis()
+
 	visObject <- largeVis(dat,
 												max_iter = 20,
 												sgd_batches = 10000,  threads = 2,
@@ -39,6 +43,8 @@ test_that("largeVis works when alpha == 0", {
 })
 
 test_that("largeVis works with cosine", {
+	skip_on_travis()
+
 	visObject <- largeVis(dat, max_iter = 20,
 												sgd_batches = 1000,  threads = 2,
 												K = 10, verbose = FALSE,

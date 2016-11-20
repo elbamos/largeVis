@@ -29,6 +29,7 @@ edges <- buildEdgeMatrix(data = dat,
 												 verbose = FALSE)
 
 test_that("dbscan doesn't crash on iris", {
+	skip_on_travis()
 	expect_silent(lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE))
 })
 
@@ -40,6 +41,7 @@ test_that("dbscan matches iris", {
 })
 
 test_that("dbscan works with largeVis objects", {
+	skip_on_travis()
 	vis <- largeVis(dat, sgd_batches = 1, threads = 2)
 	expect_silent(cl <- lv_dbscan(vis, eps = 1, minPts = 10))
 	expect_lte(sum(cl$cluster != irisclustering$cluster), 1)
@@ -70,6 +72,8 @@ edges <- buildEdgeMatrix(data = dat,
 												 verbose = FALSE)
 
 test_that("optics doesn't crash on iris", {
+	skip_on_travis()
+
   expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = FALSE, verbose = FALSE))
 })
 
@@ -91,6 +95,8 @@ test_that("opticis iris cut to dbscan matches dbscan", {
 })
 
 test_that("optics works with largeVis objects", {
+	skip_on_travis()
+
 	vis <- largeVis(dat, threads = 2, sgd_batches = 1)
 	expect_silent(cl <- lv_optics(vis, eps = 1, minPts = 10))
 	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
