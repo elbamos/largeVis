@@ -3,7 +3,7 @@ context("distance")
 set.seed(1974)
 test_matrix <- matrix(rnorm(100), nrow = 10)
 index_matrix <- matrix(c(rep(0:9, each = 10), rep(0:9, 10)),
-                       ncol = 2, byrow = FALSE)
+											 ncol = 2, byrow = FALSE)
 test_matrix <- t(test_matrix)
 
 test_that("Euclidean distances are correct", {

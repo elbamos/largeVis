@@ -27,6 +27,7 @@ test_that("largeVis does not NaN on iris", {
 })
 
 test_that("largeVis works when alpha == 0", {
+
 	visObject <- largeVis(dat,
 												max_iter = 20,
 												sgd_batches = 10000,  threads = 2,
@@ -39,6 +40,7 @@ test_that("largeVis works when alpha == 0", {
 })
 
 test_that("largeVis works with cosine", {
+
 	visObject <- largeVis(dat, max_iter = 20,
 												sgd_batches = 1000,  threads = 2,
 												K = 10, verbose = FALSE,
@@ -49,6 +51,7 @@ test_that("largeVis works with cosine", {
 })
 
 test_that("largeVis continues to work as it scales up", {
+	skip_on_cran()
 	visObject <- largeVis(dat, max_iter = 20, sgd_batches = 1000,  threads = 2,
 												K = 10,  gamma = 0.5, verbose = FALSE)
 	expect_false(any(is.na(visObject$coords)))

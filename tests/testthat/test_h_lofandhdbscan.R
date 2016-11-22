@@ -9,12 +9,13 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 80
 neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
-edges <- buildEdgeMatrix(data = dat,
-												 neighbors = neighbors,
-												 verbose = FALSE)
+
 
 test_that(paste("LOF is consistent", 20), {
 	load(system.file("testdata/truelof20.Rda", package = "largeVis"))
+	edges <- buildEdgeMatrix(data = dat,
+													 neighbors = neighbors,
+													 verbose = FALSE)
 	ourlof <- lof(edges)
 	expect_lt(sum(truelof20 - ourlof)^2 / ncol(dat), 0.4)
 })
@@ -37,6 +38,7 @@ test_that("hdbscan finds 3 clusters and outliers in spiral", {
 })
 
 test_that("hdbscan finds 3 clusters and outliers in spiral with a large Vis object", {
+	skip_on_travis()
 	load(system.file("testdata/spiral.Rda", package = "largeVis"))
 	clustering <- hdbscan(spiral, K = 3, minPts = 20, threads = 1)
 	expect_equal(length(unique(clustering$clusters)), 3)
@@ -52,19 +54,15 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 20
 neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
-edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
 
-test_that("hdbscan doesn't crash without 3 neighbors", {
-	expect_silent(hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, threads = 2, verbose = FALSE))
-})
-
-clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3,  threads = 2, verbose = FALSE)
-
-test_that("hdbscan is correct", {
+test_that("hdbscan doesn't crash without 3 neighbors and is correct", {
+	edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
+	expect_silent(clustering <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, threads = 2, verbose = FALSE))
 	expect_equal(length(unique(clustering$clusters, 0)), 3)
 })
 
 test_that("hdbscan doesn't crash on glass edges", {
+	skip_on_travis()
 	load(system.file("testdata/glassEdges.Rda", package = "largeVis"))
 	clustering <- hdbscan(glassEdges, threads = 2, verbose = FALSE)
 	expect_equal(length(unique(clustering$clusters)), 3)
@@ -91,6 +89,7 @@ neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALS
 edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
 
 test_that("as.dendrogram succeeds on iris4", {
+
 	hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 4, threads = 2, verbose = FALSE)
 	dend <- as_dendrogram_hdbscan(hdobj)
 	expect_true(length(dend[[1]]) == sum(hdobj$hierarchy$nodemembership == 1) + sum(hdobj$hierarchy$parent == 1) - 1 |
@@ -101,6 +100,7 @@ test_that("as.dendrogram succeeds on iris4", {
 }	)
 
 test_that("as.dendrogram succeeds on iris3", {
+
 	hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, threads = 2, verbose = FALSE)
 	dend <- as_dendrogram_hdbscan(hdobj)
 	expect_equal(length(dend), sum(hdobj$hierarchy$nodemembership == 1) + sum(hdobj$hierarchy$parent == 1) - 1)
@@ -121,12 +121,9 @@ dat <- t(dat)
 K <- 20
 neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
-clustering <- hdbscan(edges, neighbors, minPts = 10, K = 4,  threads = 2, verbose = FALSE)
 
 test_that("gplot isn't broken", {
+	clustering <- hdbscan(edges, neighbors, minPts = 10, K = 4,  threads = 2, verbose = FALSE)
 	expect_silent(plt <- gplot(clustering, t(dat)))
-})
-
-test_that("gplot isn't broken with text", {
 	expect_silent(plt <- gplot(clustering, t(dat), text = TRUE))
 })

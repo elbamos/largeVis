@@ -1,3 +1,6 @@
+### largeVis 0.1.10.1
+* Fix for issue reported by @Dalar where sparse neighbor search could fail with division by zero error
+
 ### largeVis 0.1.10
 * This is a significant update. Major changes are:
 	+ 20% performance improvements in `projectKNNs`

@@ -11,20 +11,19 @@ neighbors <- randomProjectionTreeSearch(dat,
 																				n_trees = 10,
 																				tree_threshold = 20,
 																				max_iter = 10,
-																				verbose = FALSE)
+																				verbose = FALSE,
+																				threads = 1)
 
-test_that("buildEdgeMatrix are the same, Euclidean", {
+test_that("buildEdgeMatrix are the same", {
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
   edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE)
   score <- sum(edges1@x - edges2@x)
-  expect_lt(score, 1)
-})
+  expect_lt(score, 1, label = "Euclidean")
 
-test_that("buildEdgeMatrix are the same, Cosine", {
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
 	edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
 	score <- sum(edges1@x - edges2@x)
-	expect_lt(score, 1)
+	expect_lt(score, 1, label = "Cosine")
 })
 
 M <- 5

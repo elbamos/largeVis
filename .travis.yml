@@ -31,6 +31,9 @@ cran: http://cran.rstudio.com
 
 r_packages:
   - covr
+  - wesanderson
+  - RColorBrewer
+  - magrittr
 
 r_binary_packages:
   - stringi
@@ -43,6 +46,8 @@ r_binary_packages:
   - RcppProgress
   - dplyr
   - dbscan
+  - knitr
+  - rmarkdown
 
 sudo: required
 
