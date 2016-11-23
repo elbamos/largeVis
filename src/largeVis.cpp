@@ -228,25 +228,23 @@ arma::mat sgd(arma::mat& coords,
 	const vertexidxtype N = coords.n_cols;
 	const edgeidxtype E = targets_i.n_elem;
 
-	if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
 	Visualizer* v;
-	if (momentum.isNull()) v = new Visualizer(  sources_j.memptr(),
-     targets_i.memptr(),
-     coords.memptr(),
-     D, N, E,
-     rho, n_samples,
-     M, alpha, gamma);
+	if (momentum.isNull()) v = new Visualizer(
+			sources_j.memptr(), targets_i.memptr(), coords.memptr(),
+     	D, N, E,
+     	rho, n_samples,
+     	M, alpha, gamma);
 	else {
 		float moment = NumericVector(momentum)[0];
 		if (moment < 0) stop("Momentum cannot be negative.");
 		if (moment > 1) stop("Momentum canot be > 1.");
-		v = new MomentumVisualizer(sources_j.memptr(),
-                             targets_i.memptr(),
-                             coords.memptr(),
-                             D, N, E,
-                             rho, n_samples, moment,
-                             M, alpha, gamma);
+		v = new MomentumVisualizer(
+			 sources_j.memptr(), targets_i.memptr(), coords.memptr(),
+	     D, N, E,
+	     rho, n_samples, moment,
+	     M, alpha, gamma);
 	}
+
 	distancetype* negweights = new distancetype[N];
 	for (vertexidxtype n = 0; n < N; ++n) negweights[n] = 0;
 	if (useDegree) {
@@ -261,6 +259,7 @@ arma::mat sgd(arma::mat& coords,
 	for (vertexidxtype n = 0; n < N; ++n) negweights[n] = pow(negweights[n], 0.75);
 	v -> initAlias(weights.memptr(), negweights, seed);
 	delete[] negweights;
+
 	const unsigned int batchSize = 8192;
 	const iterationtype barrier = (n_samples * .99 < n_samples - coords.n_cols) ? n_samples * .99 : n_samples - coords.n_cols;
 #ifdef _OPENMP

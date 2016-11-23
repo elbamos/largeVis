@@ -1,6 +1,9 @@
 ## Submission 
  
-This is a fix to an issue that appeared in 0.1.10 after submission. In particular, if largeVis was compiled to use 32-bit Armadillo words, with certain compilers including the most recent Apple compiler, the parameter specifying the number of training batches was not being passed from R to C++ properly. This caused the tests to time-out and checks to fail on those systems. (At the same time, this release fixes a reported bug where the neighbor search could fail with sparse matrices under certain conditions.)
+This is a resubmisison. The earlier submission produced "* checking files in 'vignettes' ... WARNING 
+Files in the 'vignettes' directory newer than same file in 'inst/doc': 'momentumandusedata.Rmd' "
+
+This should be fixed now.
  
 ## Test environments 
 * local OS X install, R 3.3.1 
