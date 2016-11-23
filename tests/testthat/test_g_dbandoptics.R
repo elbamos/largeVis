@@ -70,7 +70,7 @@ edges <- buildEdgeMatrix(data = dat,
 												 verbose = FALSE)
 
 test_that("optics doesn't crash on iris", {
-  expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = FALSE, verbose = FALSE))
+	expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = FALSE, verbose = FALSE))
 })
 
 load(system.file(package = "largeVis", "testdata/irisoptics.Rda"))

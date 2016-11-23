@@ -1,7 +1,8 @@
 #include "neighbors.h"
 
 template<class M, class V>
-void AnnoySearch<M, V>::advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const {
+void AnnoySearch<M, V>::advanceHeap(MinIndexedPQ& positionHeap,
+                                    vector< Position>& positionVector) const {
 	dimidxtype whichColumn = positionHeap.minIndex();
 	Position& iterators = positionVector[whichColumn];
 	vertexidxtype adv = iterators.advance();
@@ -10,15 +11,8 @@ void AnnoySearch<M, V>::advanceHeap(MinIndexedPQ& positionHeap, vector< Position
 }
 
 template<class M, class V>
-void AnnoySearch<M, V>::add(vector< std::pair<distancetype, vertexidxtype> >& heap,
-									          const V& x_i, const vertexidxtype& j) const {
-		const distancetype d = distanceFunction(x_i, data.col(j));
-		heap.emplace_back(d, j);
-	}
-
-template<class M, class V>
 void AnnoySearch<M, V>::addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap,
-              const V& x_i, const vertexidxtype& j) const {
+              									const V& x_i, const vertexidxtype& j) const {
 		const distancetype d = distanceFunction(x_i, data.col(j));
 		heap.emplace_back(d, j);
 		push_heap(heap.begin(), heap.end(), std::less<std::pair<distancetype, vertexidxtype>>());
@@ -81,8 +75,11 @@ inline void AnnoySearch<M, V>::mergeNeighbors(const list< ivec >& localNeighborh
 		  	}
 		  	neighborhood.emplace_back(newone);
 		  }
-		  for ( ; neighboriterator != tmpe; ++neighboriterator) neighborhood.emplace_back(*neighboriterator);
-		  for ( ; it3 != indicesEnd; ++it3) if (*it3 != cur) neighborhood.emplace_back(*it3);
+		  auto back = std::back_inserter(neighborhood);
+		  copy(neighboriterator, tmpe, back);
+		  copy_if(it3, indicesEnd, back, [&cur](const vertexidxtype& tst) {return tst != cur;});
+//		  for ( ; neighboriterator != tmpe; ++neighboriterator) neighborhood.emplace_back(*neighboriterator);
+//		  for ( ; it3 != indicesEnd; ++it3) if (*it3 != cur) neighborhood.emplace_back(*it3);
 	  }
 	}
 }
@@ -178,7 +175,6 @@ inline void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
 
 	treeNeighborhoods[i].resize(0);
 }
-
 
 template<class M, class V>
 inline void AnnoySearch<M, V>::reduceThread(const vertexidxtype& loopstart,
@@ -347,7 +343,8 @@ void AnnoySearch<M,V>::sortCopyOne(vector< std::pair<distancetype, vertexidxtype
 	* Its cheaper to not maintain a heap and instead just sort because we'll never have more entries than we need.
 	*/
 	for (auto it = knns.begin_col(i); it != knns.end_col(i) && *it != -1; ++it) {
-		add(holder, x_i, *it);
+		const distancetype d = distanceFunction(x_i, data.col(*it));
+		holder.emplace_back(d, *it);
 	}
 	sort(holder.begin(), holder.end());
 	auto copyContinuation = knns.begin_col(i);

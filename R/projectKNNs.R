@@ -85,14 +85,12 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   ##############################################
   if (is.null(coords)) coords <- matrix((runif(N * dim) - 0.5) / dim * 0.0001, nrow = dim)
 
-  if (! is.null(sgd_batches) && sgd_batches < 0) stop("sgd batches must be > 0")
-  if (! is.null(sgd_batches) && sgd_batches < 1) {
-  	multiplier <- sgd_batches
-  	sgd_batches <- NULL
-  } else multiplier <- 1
-
-  if (is.null(sgd_batches)) sgd_batches <- sgdBatches(N, length(wij@x / 2))
-  sgd_batches <- sgd_batches * multiplier
+  if (is.null(sgd_batches)) {
+  	sgd_batches <- sgdBatches(N, length(wij@x / 2))
+  } else if (sgd_batches < 0) stop("sgd batches must be > 0")
+  else if (sgd_batches < 1) {
+  	sgd_batches = sgd_batches * sgdBatches(N, length(wij@x / 2))
+  }
 
   if (!is.null(threads)) threads <- as.integer(threads)
   if (!is.null(momentum)) momentum <- as.double(momentum)
@@ -106,7 +104,9 @@ projectKNNs <- function(wij, # symmetric sparse matrix
                 sources_j = js,
                 ps = wij@p,
                 weights = wij@x,
-                alpha = as.double(alpha), gamma = as.double(gamma), M = as.integer(M),
+                alpha = as.double(alpha),
+  							gamma = as.double(gamma),
+  							M = as.integer(M),
                 rho = as.double(rho),
                 n_samples = sgd_batches,
   							momentum = momentum,
