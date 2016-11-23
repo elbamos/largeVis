@@ -72,15 +72,13 @@ arma::imat searchTrees(const int& threshold,
 
   Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
 
-	mat dataMat;
-	if (distMethod.compare(string("Cosine")) == 0) dataMat = normalise(data, 2, 0);
-	else dataMat = data;
+  const mat dataMat = (distMethod.compare(string("Cosine")) == 0) ? normalise(data) : mat();
 
 	DenseAnnoySearch* annoy;
 	if (distMethod.compare(string("Cosine")) == 0) {
 		annoy = new DenseCosine(dataMat, K, p);
 	} else {
-		annoy = new DenseEuclidean(dataMat, K, p);
+		annoy = new DenseEuclidean(data, K, p);
 	}
 
 	annoy->setSeed(seed);
