@@ -1,15 +1,12 @@
 ## Submission 
  
-This is a resubmisison. The earlier submission produced "* checking files in 'vignettes' ... WARNING 
-Files in the 'vignettes' directory newer than same file in 'inst/doc': 'momentumandusedata.Rmd' "
-
-This should be fixed now.
+This is a resubmisison. The last submission was slightly larger than the 5MB limit on tar file sizes.  This submission eliminates a large data file that was used to test the clustering algorithms. 
  
 ## Test environments 
-* local OS X install, R 3.3.1 
-* OS X (with Valgrind), R 3.3.1 
-* ubuntu 12.04 (on travis-ci), R 3.3.1 
-* ubuntu 14.04 (on travis-ci), R 3.3.1 and R-devel 
+* local OS X install, R 3.3.2 
+* OS X (with Valgrind), R 3.3.2 
+* ubuntu 12.04 (on travis-ci), R 3.3.2 
+* ubuntu 14.04 (on travis-ci), R 3.3.2 and R-devel 
 * Solaris 11 x86 (via Virtual Box), R 3.3.1 
 * OS X (on travis-ci), R-devel 
 * win-builder (devel and release) 

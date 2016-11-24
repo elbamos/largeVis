@@ -47,14 +47,6 @@ test_that("dbscan works with largeVis objects", {
 	expect_lte(sum(cl$cluster != irisclustering$cluster), 1)
 })
 
-context("dbscan-jain")
-
-test_that("dbscan matches dbscan on jain when the neighborhoods are complete", {
-	load(system.file(package = "largeVis", "testdata/jaindata.Rda"))
-	jainclusters <- lv_dbscan(edges = jaindata$edges, neighbors = jaindata$neighbors, eps = 2.5, minPts = 10, verbose = FALSE)
-	expect_equal(jainclusters$cluster, jaindata$dbclusters25$cluster)
-})
-
 context("optics-iris")
 
 set.seed(1974)
@@ -96,29 +88,6 @@ test_that("optics works with largeVis objects", {
 	vis <- largeVis(dat, threads = 2, sgd_batches = 1)
 	expect_silent(cl <- lv_optics(vis, eps = 1, minPts = 10))
 	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
-})
-
-context("optics-jain")
-
-load(system.file(package = "largeVis", "testdata/jaindata.Rda"))
-jainclusters <- lv_optics(edges = jaindata$edges,
-													neighbors = jaindata$neighbors,
-													eps = 2.5, minPts = 5, useQueue = FALSE,
-													verbose = FALSE)
-
-test_that("optics matches optics core on jain when the neighborhoods are complete", {
-	expect_equal(is.infinite(jainclusters$coredist), is.infinite(jaindata$optics$coredist))
-	selections <- !is.infinite(jainclusters$coredist) & !is.infinite(jaindata$optics$coredist)
-	expect_equal(jainclusters$coredist[selections], jaindata$optics$coredist[selections])
-})
-
-test_that("optics matches dbscan on jain when the neighborhoods are complete", {
-	cl <- cutoptics(jainclusters)
-	expect_lte(sum(cl != (jaindata$dbclusters5$cluster + 1)), 2)
-})
-
-test_that("optics matches optics reachdist on jain when the neighborhoods are complete", {
-	expect_equal(is.infinite(jainclusters$reachdist), is.infinite(jaindata$optics$reachdist))
 })
 
 context("optics-elki")
