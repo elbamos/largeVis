@@ -7,7 +7,7 @@ This should be fixed now.
  
 ## Test environments 
 * local OS X install, R 3.3.1 
-*  OS X (with Valgrind), R 3.3.1 
+* OS X (with Valgrind), R 3.3.1 
 * ubuntu 12.04 (on travis-ci), R 3.3.1 
 * ubuntu 14.04 (on travis-ci), R 3.3.1 and R-devel 
 * Solaris 11 x86 (via Virtual Box), R 3.3.1 
