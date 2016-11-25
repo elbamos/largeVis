@@ -13,8 +13,8 @@ using namespace arma;
 
 class Visualizer {
 private:
-	inline void updateMinus(const coordinatetype* from,
-                          coordinatetype* to,
+	inline void updateMinus(const coordinatetype * const from,
+                          coordinatetype * const to,
                           const distancetype& rho) {
 		for (dimidxtype d = 0; d != D; ++d) to[d] -= from[d] * rho;
 	}
@@ -26,8 +26,8 @@ protected:
 	vertexidxtype * const sourcePointer;
 	coordinatetype * const coordsPtr;
 
-	distancetype rho;
-	const distancetype rhoIncrement;
+	double rho;
+	const double rhoIncrement;
 
 	AliasTable< vertexidxtype, coordinatetype, double > negAlias;
 	AliasTable< edgeidxtype, coordinatetype, double > posAlias;
@@ -44,7 +44,7 @@ public:
             const vertexidxtype& N,
             const edgeidxtype& E,
 
-            distancetype rho,
+            double rho,
             const iterationtype& n_samples,
 
             const unsigned int& M,
@@ -88,24 +88,20 @@ public:
 		}
 	}
 
-	void operator()(const iterationtype& startSampleIdx, const unsigned int& batchSize) {
-		edgeidxtype e_ij;
-		unsigned int example = 0;
-		coordinatetype *firstholder = new coordinatetype[D * 2];
-		coordinatetype *secondholder = firstholder + D;
+	virtual void innerLoop(const double& rho,
+                        const unsigned int& batchSize,
+                        coordinatetype * const firstholder) {
+		coordinatetype * const secondholder = firstholder + D;
+		for (unsigned int example = 0; example != batchSize; ++example) {
 
-		const distancetype localRho = rho;
-		if (localRho < 0) return;
-		while (example++ != batchSize) {
-			e_ij = posAlias();
-
+			const edgeidxtype e_ij = posAlias();
 			const vertexidxtype j = targetPointer[e_ij];
 			const vertexidxtype i = sourcePointer[e_ij];
 
-			coordinatetype* y_i = coordsPtr + (i * D);
-			coordinatetype* y_j = coordsPtr + (j * D);
+			coordinatetype * const y_i = coordsPtr + (i * D);
+			coordinatetype * y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
-			updateMinus(firstholder, y_j, localRho);
+			updateMinus(firstholder, y_j, rho);
 
 			unsigned int m = 0;
 			while (m != M) {
@@ -118,13 +114,26 @@ public:
 				y_j = coordsPtr + (k * D);
 				grad -> negativeGradient(y_i, y_j, secondholder);
 
-				updateMinus(secondholder, y_j, localRho);
+				updateMinus(secondholder, y_j, rho);
 				for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
 			}
-			updateMinus(firstholder, y_i, - localRho);
+			updateMinus(firstholder, y_i, - rho);
 		}
-		rho -= (rhoIncrement * batchSize);
-		delete[] firstholder;
+	}
+
+	void thread(Progress& progress, const unsigned int& batchSize) {
+		coordinatetype * const holder = new coordinatetype[D * 2];
+
+		while (rho >= 0) {
+			const distancetype localRho = rho;
+			innerLoop(rho, batchSize, holder);
+#ifdef _OPENMP
+#pragma omp atomic
+#endif
+			rho -= (rhoIncrement * batchSize);
+			if (!progress.increment(batchSize)) break;
+		}
+		delete[] holder;
 	}
 };
 
@@ -148,7 +157,7 @@ public:
                     const vertexidxtype& N,
                     const edgeidxtype& E,
 
-                    distancetype rho,
+                    double rho,
                     const iterationtype& n_samples,
                     const float& momentum,
 
@@ -163,25 +172,19 @@ public:
 	~MomentumVisualizer() {
 		delete[] momentumarray;
 	}
-	void operator()(const iterationtype& startSampleIdx, const unsigned int& batchSize) {
-		edgeidxtype e_ij;
-		unsigned int example = 0;
-		coordinatetype *firstholder = new coordinatetype[D * 2];
-		coordinatetype *secondholder = firstholder + D;
-		coordinatetype * y_i, * y_j;
 
-		const distancetype localRho = rho;
-		if (localRho < 0) return;
-		while (example++ != batchSize) {
-			e_ij = posAlias();
-
+	virtual void innerLoop(const double& rho, const unsigned int& batchSize,
+												 coordinatetype * const firstholder) {
+		coordinatetype * const secondholder = firstholder + D;
+		for (unsigned int example = 0; example != batchSize; ++example) {
+			const edgeidxtype e_ij = posAlias();
 			const vertexidxtype j = targetPointer[e_ij];
 			const vertexidxtype i = sourcePointer[e_ij];
 
-			y_i = coordsPtr + (i * D);
-			y_j = coordsPtr + (j * D);
+			coordinatetype* y_i = coordsPtr + (i * D);
+			coordinatetype* y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
-			updateMinus(firstholder, j, y_j, localRho);
+			updateMinus(firstholder, j, y_j, rho);
 
 			unsigned int m = 0;
 			while (m != M) {
@@ -194,13 +197,11 @@ public:
 				y_j = coordsPtr + (k * D);
 				grad -> negativeGradient(y_i, y_j, secondholder);
 
-				updateMinus(secondholder, k, y_j, localRho);
+				updateMinus(secondholder, k, y_j, rho);
 				for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
 			}
-			updateMinus(firstholder, i, y_i, - localRho);
+			updateMinus(firstholder, i, y_i, - rho);
 		}
-		rho -= (rhoIncrement * batchSize);
-		delete[] firstholder;
 	}
 };
 
@@ -261,17 +262,20 @@ arma::mat sgd(arma::mat& coords,
 	delete[] negweights;
 
 	const unsigned int batchSize = 8192;
-	const iterationtype barrier = (n_samples * .99 < n_samples - coords.n_cols) ? n_samples * .99 : n_samples - coords.n_cols;
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+	const unsigned int dynamo = omp_get_dynamic();
+	omp_set_dynamic(0);
+	const unsigned int ts = omp_get_max_threads() * 64;
+#pragma omp parallel for
+#else
+	const unsigned int ts = 16;
 #endif
-	for (iterationtype eIdx = 0; eIdx < barrier; eIdx += batchSize) if (progress.increment(batchSize)) {
-		(*v)(eIdx, batchSize);
+	for (unsigned int t = 0; t < ts; ++t) {
+		v->thread(progress, batchSize);
 	}
 #ifdef _OPENMP
-#pragma omp barrier
+	omp_set_dynamic(dynamo);
 #endif
-	for (iterationtype eIdx = barrier; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) (*v)(eIdx, batchSize);
 	delete v;
 	return coords;
-};
+}
