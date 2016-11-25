@@ -36,15 +36,18 @@ protected:
 	unsigned int storedThreads = 0;
 
 public:
-	Visualizer(vertexidxtype * sourcePtr,
-            vertexidxtype * targetPtr,
+	Visualizer(vertexidxtype *sourcePtr,
+            vertexidxtype *targetPtr,
+            coordinatetype *coordPtr,
+
             const dimidxtype& D,
-            coordinatetype * coordPtr,
-            const unsigned int& M,
-            const distancetype& rho,
-            const iterationtype& n_samples,
             const vertexidxtype& N,
             const edgeidxtype& E,
+
+            distancetype rho,
+            const iterationtype& n_samples,
+
+            const unsigned int& M,
             const double& alpha,
             const double& gamma) : D{D}, M{M},
 	            targetPointer{targetPtr},
@@ -88,7 +91,8 @@ public:
 	void operator()(const iterationtype& startSampleIdx, const unsigned int& batchSize) {
 		edgeidxtype e_ij;
 		unsigned int example = 0;
-		coordinatetype firstholder[10], secondholder[10];
+		coordinatetype *firstholder = new coordinatetype[D * 2];
+		coordinatetype *secondholder = firstholder + D;
 
 		const distancetype localRho = rho;
 		if (localRho < 0) return;
@@ -120,6 +124,7 @@ public:
 			updateMinus(firstholder, y_i, - localRho);
 		}
 		rho -= (rhoIncrement * batchSize);
+		delete[] firstholder;
 	}
 };
 
@@ -135,19 +140,22 @@ protected:
 	coordinatetype* momentumarray;
 
 public:
-	MomentumVisualizer(vertexidxtype * sourcePtr,
-                    vertexidxtype * targetPtr,
+	MomentumVisualizer(vertexidxtype *sourcePtr,
+                    vertexidxtype *targetPtr,
+                    coordinatetype *coordPtr,
+
                     const dimidxtype& D,
-                    coordinatetype * coordPtr,
-                    const unsigned int& M,
+                    const vertexidxtype& N,
+                    const edgeidxtype& E,
+
                     distancetype rho,
                     const iterationtype& n_samples,
                     const float& momentum,
-                    const vertexidxtype& N,
-                    const edgeidxtype& E,
+
+                    const unsigned int& M,
                     const double& alpha,
-                    const double& gamma) : Visualizer(sourcePtr, targetPtr, D, coordPtr,
-																					M, rho, n_samples, N, E, alpha, gamma) {
+                    const double& gamma) : Visualizer(sourcePtr, targetPtr, coordPtr, D,
+                    																	N, E, rho, n_samples, M, alpha, gamma) {
 		this -> momentum = momentum;
 		momentumarray = new coordinatetype[D * N];
 		for (vertexidxtype i = 0; i != D*N; ++i) momentumarray[i] = 0;
@@ -158,7 +166,9 @@ public:
 	void operator()(const iterationtype& startSampleIdx, const unsigned int& batchSize) {
 		edgeidxtype e_ij;
 		unsigned int example = 0;
-		coordinatetype firstholder[10], secondholder[10], * y_i, * y_j;
+		coordinatetype *firstholder = new coordinatetype[D * 2];
+		coordinatetype *secondholder = firstholder + D;
+		coordinatetype * y_i, * y_j;
 
 		const distancetype localRho = rho;
 		if (localRho < 0) return;
@@ -190,6 +200,7 @@ public:
 			updateMinus(firstholder, i, y_i, - localRho);
 		}
 		rho -= (rhoIncrement * batchSize);
+		delete[] firstholder;
 	}
 };
 
@@ -201,7 +212,7 @@ arma::mat sgd(arma::mat& coords,
               arma::vec& weights, // w{ij}
               const double& gamma,
               const double& rho,
-              const long long& n_samples,
+              const arma::uword& n_samples,
               const int& M,
               const double& alpha,
               const Rcpp::Nullable<Rcpp::NumericVector> momentum,
@@ -213,38 +224,27 @@ arma::mat sgd(arma::mat& coords,
 	checkCRAN(threads);
 #endif
 	Progress progress(n_samples, verbose);
-	dimidxtype D = coords.n_rows;
-	if (D > 10) stop("Limit of 10 dimensions for low-dimensional space.");
+	const dimidxtype D = coords.n_rows;
+	const vertexidxtype N = coords.n_cols;
+	const edgeidxtype E = targets_i.n_elem;
+
 	Visualizer* v;
-	if (momentum.isNull()) v = new Visualizer(  sources_j.memptr(),
-     targets_i.memptr(),
-     coords.n_rows,
-     coords.memptr(),
-     M,
-     rho,
-     n_samples,
-     coords.n_cols,
-     targets_i.n_elem,
-     alpha,
-     gamma);
+	if (momentum.isNull()) v = new Visualizer(
+			sources_j.memptr(), targets_i.memptr(), coords.memptr(),
+     	D, N, E,
+     	rho, n_samples,
+     	M, alpha, gamma);
 	else {
 		float moment = NumericVector(momentum)[0];
 		if (moment < 0) stop("Momentum cannot be negative.");
 		if (moment > 1) stop("Momentum canot be > 1.");
-		v = new MomentumVisualizer( sources_j.memptr(),
-                              targets_i.memptr(),
-                              coords.n_rows,
-                              coords.memptr(),
-                              M,
-                              rho,
-                              n_samples,
-                              moment,
-                              coords.n_cols,
-                              targets_i.n_elem,
-                              alpha,
-                              gamma);
+		v = new MomentumVisualizer(
+			 sources_j.memptr(), targets_i.memptr(), coords.memptr(),
+	     D, N, E,
+	     rho, n_samples, moment,
+	     M, alpha, gamma);
 	}
-	vertexidxtype N = coords.n_cols;
+
 	distancetype* negweights = new distancetype[N];
 	for (vertexidxtype n = 0; n < N; ++n) negweights[n] = 0;
 	if (useDegree) {
@@ -252,7 +252,6 @@ arma::mat sgd(arma::mat& coords,
 	} else {
 		for (vertexidxtype p = 0; p < N; ++p) {
 			for (edgeidxtype e = ps[p]; e != ps[p + 1]; ++e) {
-				//negweights[targets[e]] += weights[e];
 				negweights[p] += weights[e];
 			}
 		}
@@ -263,7 +262,6 @@ arma::mat sgd(arma::mat& coords,
 
 	const unsigned int batchSize = 8192;
 	const iterationtype barrier = (n_samples * .99 < n_samples - coords.n_cols) ? n_samples * .99 : n_samples - coords.n_cols;
-
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif

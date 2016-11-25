@@ -1,12 +1,5 @@
 context("specific issue tests")
 
-test_that("sparse division by zero is resolved", {
-	load(system.file("testdata/zerotest.rda", package = "largeVis"))
-	dat <- Matrix::Matrix(zerotest, sparse = TRUE)
-	expect_silent(ted <- randomProjectionTreeSearch(dat, K = 50, max_iter = 1,,
-																									threads = 1, n_trees = 10))
-})
-
 test_that("dim064 issue is resolved (large numbers of duplicate points)", {
 	load(system.file("testdata/badmat.Rda", package = "largeVis"))
 	badmat <- badmat
@@ -16,7 +9,7 @@ test_that("dim064 issue is resolved (large numbers of duplicate points)", {
 })
 
 test_that("dim512 issue (excessive distances in the edge matrix)", {
-  load(system.file("testdata/dim512.Rda", package = "largeVis"))
+	load(system.file("testdata/dim512.Rda", package = "largeVis"))
 	dim512 <- dim512
 	dat <- t(scale(as.matrix(dim512)))
 	expect_warning(vis <- largeVis(dat, K = 100, threads = 2, sgd_batches = 1000))
@@ -33,4 +26,12 @@ test_that("neighbors does not fail with 0 max iters when the neighborhood is com
 	distances <- as.matrix(dist(t(dat)))
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 40,
 																												n_trees = 10,  threads = 2, max_iter = 0, verbose = FALSE))
+})
+
+test_that("sparse division by zero is resolved", {
+	skip("big test")
+	load(system.file("testdata/zerotest.rda", package = "largeVis"))
+	dat <- Matrix::Matrix(zerotest, sparse = TRUE)
+	expect_silent(ted <- randomProjectionTreeSearch(dat, K = 50, max_iter = 1,,
+																									threads = 1, n_trees = 10))
 })

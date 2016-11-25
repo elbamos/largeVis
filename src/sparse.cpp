@@ -14,24 +14,21 @@ protected:
 	virtual vec hyperplane(const ivec& indices) {
 		const vertexidxtype I = indices.n_elem;
 		vec direction = vec(I);
-		vertexidxtype x1idx, x2idx;
-		sp_mat v, m;
-		do {
-			x1idx = indices[sample(I)];
-			x2idx = indices[sample(I)];
-			if (x1idx == x2idx) x2idx = indices[sample(I)];
-			const sp_mat x2 = data.col(x2idx);
-			const sp_mat x1 = data.col(x1idx);
-			// Get hyperplane
-			m =  (x1 + x2) / 2; // Base point of hyperplane
-			const sp_mat d = x1 - x2;
-			const distancetype dn = as_scalar(norm(d, 2)) + 1e-5;
-			v =  d / dn; // unit vector
-		} while (x1idx == x2idx);
+		const vertexidxtype x1idx  = sample(I);
+		vertexidxtype x2idx = sample(I - 1);
+		x2idx = (x2idx >= x1idx) ? (x2idx + 1) % I : x2idx;
 
-		for (vertexidxtype i = 0; i < indices.size(); i++) {
-			const vertexidxtype I = indices[i];
-			const sp_mat X = data.col(I);
+		const sp_mat x2 = data.col(indices[x1idx]);
+		const sp_mat x1 = data.col(indices[x2idx]);
+
+		const sp_mat m =  (x1 + x2) / 2;
+		const sp_mat d = x1 - x2;
+		const distancetype dn = as_scalar(norm(d, 2)) + 1e-5;
+		const sp_mat v =  d / dn; // unit vector
+
+		for (vertexidxtype i = 0; i < I; i++) {
+			const vertexidxtype I2 = indices[i];
+			const sp_mat X = data.col(I2);
 			direction[i] = dot((X - m), v);
 		}
 		return direction;
@@ -73,6 +70,7 @@ imat searchTreesSparse(const int& threshold,
 	Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
 
 	sp_mat dataMat;
+
 	if (distMethod.compare(string("Cosine")) == 0) {
 		dataMat = sp_mat(data);
 		for (vertexidxtype d = 0; d < dataMat.n_cols; d++) dataMat.col(d) /= norm(dataMat.col(d));

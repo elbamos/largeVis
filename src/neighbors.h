@@ -55,7 +55,6 @@ private:
 	inline void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
 	inline void sortCopyThread(const vertexidxtype& start, const vertexidxtype& end);
 
-	inline void add(vector< std::pair<distancetype, vertexidxtype> >& heap,     const V& x_i, const vertexidxtype& j) const;
 	inline void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap, const V& x_i, const vertexidxtype& j) const;
 	inline void addToNeighborhood(const V& x_i, const vertexidxtype& j,
                          vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const;
