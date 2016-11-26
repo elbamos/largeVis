@@ -121,7 +121,7 @@ public:
 		}
 	}
 
-	void thread(Progress& progress, const unsigned int& batchSize) {
+	void thread(Progress& progress, const uword& batchSize) {
 		coordinatetype * const holder = new coordinatetype[D * 2];
 
 		while (rho >= 0) {
@@ -261,7 +261,7 @@ arma::mat sgd(arma::mat& coords,
 	v -> initAlias(weights.memptr(), negweights, seed);
 	delete[] negweights;
 
-	const unsigned int batchSize = 8192;
+	const uword batchSize = 8192;
 #ifdef _OPENMP
 	const unsigned int dynamo = omp_get_dynamic();
 	omp_set_dynamic(0);

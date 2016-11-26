@@ -78,8 +78,6 @@ inline void AnnoySearch<M, V>::mergeNeighbors(const list< ivec >& localNeighborh
 		  auto back = std::back_inserter(neighborhood);
 		  copy(neighboriterator, tmpe, back);
 		  copy_if(it3, indicesEnd, back, [&cur](const vertexidxtype& tst) {return tst != cur;});
-//		  for ( ; neighboriterator != tmpe; ++neighboriterator) neighborhood.emplace_back(*neighboriterator);
-//		  for ( ; it3 != indicesEnd; ++it3) if (*it3 != cur) neighborhood.emplace_back(*it3);
 	  }
 	}
 }
@@ -91,8 +89,6 @@ inline void AnnoySearch<M, V>::mergeNeighbors(const list< ivec >& localNeighborh
 template<class M, class V>
 void AnnoySearch<M, V>::recurse(const ivec& indices, list< ivec >& localNeighborhood) {
 	const vertexidxtype I = indices.n_elem;
-	if (p.check_abort()) return;
-	if (I < 2) stop("Tree split failure.");
 	if (I <= threshold) {
 		localNeighborhood.push_back(indices);
 		p.increment(I);
@@ -104,13 +100,9 @@ void AnnoySearch<M, V>::recurse(const ivec& indices, list< ivec >& localNeighbor
 	const uvec left = find(direction > middle);
 	const uvec right = find(direction <= middle);
 
-	if (left.n_elem >= 2 && right.n_elem >= 2) {
-		recurse(indices(left), localNeighborhood);
-		recurse(indices(right), localNeighborhood);
-	} else { // Handles the rare case where the split fails because of equidistant points
-		recurse(indices.subvec(0, I / 2), localNeighborhood);
-		recurse(indices.subvec(I / 2, I - 1), localNeighborhood);
-	}
+	if (left.n_elem >= 2) recurse(indices(left), localNeighborhood);
+	if (right.n_elem >= 2) recurse(indices(right), localNeighborhood);
+
 };
 
 template<class M, class V>
