@@ -100,9 +100,8 @@ void AnnoySearch<M, V>::recurse(const ivec& indices, list< ivec >& localNeighbor
 	const uvec left = find(direction > middle);
 	const uvec right = find(direction <= middle);
 
-	if (left.n_elem >= 2) recurse(indices(left), localNeighborhood);
-	if (right.n_elem >= 2) recurse(indices(right), localNeighborhood);
-
+	recurse(indices(left), localNeighborhood);
+	recurse(indices(right), localNeighborhood);
 };
 
 template<class M, class V>
