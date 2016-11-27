@@ -89,7 +89,6 @@ neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALS
 edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
 
 test_that("as.dendrogram succeeds on iris4", {
-
 	hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 4, threads = 2, verbose = FALSE)
 	dend <- as_dendrogram_hdbscan(hdobj)
 	expect_true(length(dend[[1]]) == sum(hdobj$hierarchy$nodemembership == 1) + sum(hdobj$hierarchy$parent == 1) - 1 |
@@ -108,6 +107,12 @@ test_that("as.dendrogram succeeds on iris3", {
 	expect_equal(class(dend), "dendrogram")
 	expect_equal(nobs(dend), ncol(dat))
 }	)
+
+test_that("failing example doesn't fail", {
+	data(iris)
+	expect_silent(vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1, threads = 2))
+	expect_silent(hdbscanobj <- hdbscan(vis, minPts = 10, K = 5, threads = 2))
+})
 
 context("gplot")
 
