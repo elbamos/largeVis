@@ -1,7 +1,7 @@
 Package: largeVis
 Type: Package
 Title: High-Quality Visualizations of Large, High-Dimensional Datasets
-Version: 0.1.10.2
+Version: 0.1.10.3
 Author: Amos B. Elberg
 Maintainer: Amos Elberg <amos.elberg@gmail.com>
 Description: Implements the largeVis algorithm (see Tang, et al. (2016)  <https://arxiv.org/abs/1602.00370>) for visualizing very large high-dimensional datasets. Also very fast search for approximate nearest neighbors; outlier detection; and optimized implementations of the HDBSCAN*, DBSCAN and OPTICS clustering algorithms; plotting functions for visualizing the above.
@@ -10,22 +10,18 @@ LazyData: TRUE
 RoxygenNote: 5.0.1
 Depends:
     R (>= 3.0.2),
+    Rcpp,
     Matrix
 Imports:
-    Rcpp (>= 0.12.4),
     ggplot2 (>= 0.9.2.1),
     dbscan
-LinkingTo: Rcpp,RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.200.2.0),testthat(>= 1.0.2)
+LinkingTo: Rcpp (>= 0.12.4),RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.200.2.0),testthat(>= 1.0.2)
 Suggests:
 		testthat,
     covr,
     knitr,
     rmarkdown,
-    wesanderson,
-    RColorBrewer,
-    dplyr,
-    png,
-    magrittr
+    png
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes

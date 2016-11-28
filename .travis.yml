@@ -31,9 +31,6 @@ cran: http://cran.rstudio.com
 
 r_packages:
   - covr
-  - wesanderson
-  - RColorBrewer
-  - magrittr
 
 r_binary_packages:
   - stringi
