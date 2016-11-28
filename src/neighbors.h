@@ -40,20 +40,20 @@ private:
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
 
-	void recurse(const ivec& indices, list< ivec >& localNeighborhood);
-	inline void mergeNeighbors(const list< ivec >& neighbors);
+	void recurse(const shared_ptr<ivec>& indices, list< shared_ptr<ivec> >& localNeighborhood);
+	void mergeNeighbors(const list< shared_ptr<ivec> >& neighbors);
 
-	inline void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
-	inline void reduceThread(const vertexidxtype& loopstart, const vertexidxtype& end);
+	void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
+	void reduceThread(const vertexidxtype& loopstart, const vertexidxtype& end);
 
-	inline void exploreThread(const imat& old_knns, const vertexidxtype& loopstart, const vertexidxtype& end);
-	inline void exploreOne(const vertexidxtype& i, const imat& old_knns,
+	void exploreThread(const imat& old_knns, const vertexidxtype& loopstart, const vertexidxtype& end);
+	void exploreOne(const vertexidxtype& i, const imat& old_knns,
                   vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
                   MinIndexedPQ& positionHeap, vector< Position >& positionVector);
-	inline void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
+	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
 
-	inline void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
-	inline void sortCopyThread(const vertexidxtype& start, const vertexidxtype& end);
+	void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
+	void sortCopyThread(const vertexidxtype& start, const vertexidxtype& end);
 
 	inline void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap, const V& x_i, const vertexidxtype& j) const;
 	inline void addToNeighborhood(const V& x_i, const vertexidxtype& j,

@@ -126,7 +126,7 @@ public:
 
 		while (rho >= 0) {
 			const distancetype localRho = rho;
-			innerLoop(rho, batchSize, holder);
+			innerLoop(localRho, batchSize, holder);
 #ifdef _OPENMP
 #pragma omp atomic
 #endif
