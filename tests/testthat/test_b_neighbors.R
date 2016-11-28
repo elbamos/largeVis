@@ -9,7 +9,6 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 
 test_that("Trees does not error", {
-
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 10,
