@@ -40,7 +40,7 @@ void AnnoySearch<M, V>::addToNeighborhood(const V& x_i, const vertexidxtype& j,
  * The neighborhood is maintained in vertex-index order.
  */
 template<class M, class V>
-void AnnoySearch<M, V>::mergeNeighbors(const list< shared_ptr<ivec> >& localNeighborhoods) {
+void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighborhoods) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
@@ -83,9 +83,9 @@ void AnnoySearch<M, V>::mergeNeighbors(const list< shared_ptr<ivec> >& localNeig
 }
 }
 
-shared_ptr<ivec> copyTo(const shared_ptr<ivec>& indices,
+Neighborholder copyTo(const Neighborholder& indices,
                                const uvec& selections) {
-	shared_ptr<ivec> out = make_shared<ivec>(selections.n_elem);
+	Neighborholder out = make_shared<ivec>(selections.n_elem);
 	auto write = out->begin();
 
 	for (auto it = selections.begin(); it != selections.end(); ++it) {
@@ -99,7 +99,7 @@ shared_ptr<ivec> copyTo(const shared_ptr<ivec>& indices,
 	* The key function of the annoy-trees phase.
 	*/
 template<class M, class V>
-void AnnoySearch<M, V>::recurse(const shared_ptr<ivec>& indices, list< shared_ptr<ivec> >& localNeighborhood) {
+void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood) {
 	const vertexidxtype I = indices->n_elem;
 	if (I <= threshold) {
 		localNeighborhood.emplace_back(indices);
@@ -135,12 +135,12 @@ void AnnoySearch<M, V>::setSeed(Rcpp::Nullable< NumericVector >& seed) {
 template<class M, class V>
 void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& newThreshold) {
 	threshold = newThreshold;
-	shared_ptr<ivec> indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
+	Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
 	for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
-		list< shared_ptr<ivec> > local;
+		list< Neighborholder > local;
 		recurse(indices, local);
 		mergeNeighbors(local);
 	}

@@ -11,7 +11,7 @@ using namespace std;
 using namespace arma;
 
 typedef vector< vertexidxtype > Neighborhood;
-
+typedef shared_ptr<ivec> Neighborholder;
 /*
  * Helper class for n-way merge sort
  */
@@ -41,8 +41,8 @@ private:
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
 
-	void recurse(const shared_ptr<ivec>& indices, list< shared_ptr<ivec> >& localNeighborhood);
-	void mergeNeighbors(const list< shared_ptr<ivec> >& neighbors);
+	void recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood);
+	void mergeNeighbors(const list< Neighborholder >& neighbors);
 
 	void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
 	void reduceThread(const vertexidxtype& loopstart, const vertexidxtype& end);

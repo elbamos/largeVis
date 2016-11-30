@@ -5,27 +5,26 @@ protected:
 	const distancetype gamma;
 	distancetype cap;
 	const dimidxtype D;
-	Gradient(const distancetype& g,
-          const dimidxtype& d);
+	Gradient(const distancetype& g, const dimidxtype& d);
 	virtual void _positiveGradient(const distancetype& dist_squared,
-                                coordinatetype* holder) const = 0;
+                                 coordinatetype* holder) const = 0;
 	virtual void _negativeGradient(const distancetype& dist_squared,
-                                coordinatetype* holder) const = 0;
-	inline void multModify(coordinatetype *col, const coordinatetype& adj) const;
-	inline void multModifyPos(coordinatetype *col, const coordinatetype& adj) const;
-	inline coordinatetype clamp(const coordinatetype& val) const;
+                                 coordinatetype* holder) const = 0;
+	void multModify(coordinatetype *col, const coordinatetype& adj) const;
+	void multModifyPos(coordinatetype *col, const coordinatetype& adj) const;
+	coordinatetype clamp(const coordinatetype& val) const;
+	distancetype distAndVector(const coordinatetype *x_i,
+                             const coordinatetype *x_j,
+                             coordinatetype *output) const;
 
 public:
 	virtual ~Gradient();
-	virtual void positiveGradient(const coordinatetype* i,
-                               const coordinatetype* j,
-                               coordinatetype* holder) const;
-	virtual void negativeGradient(const coordinatetype* i,
-                               const coordinatetype* k,
-                               coordinatetype* holder) const;
-	inline distancetype distAndVector(const coordinatetype *x_i,
-                                   const coordinatetype *x_j,
-                                   coordinatetype *output) const;
+	void positiveGradient(const coordinatetype* i,
+	                      const coordinatetype* j,
+	                      coordinatetype* holder) const;
+	void negativeGradient(const coordinatetype* i,
+                        const coordinatetype* k,
+                        coordinatetype* holder) const;
 };
 
 class AlphaGradient: public Gradient {
@@ -39,14 +38,15 @@ protected:
                                 coordinatetype* holder) const;
 public:
 	AlphaGradient(const distancetype& a,
-               const distancetype& g,
-               const dimidxtype& D);
+                const distancetype& g,
+                const dimidxtype& D);
 };
+
 
 class AlphaOneGradient: public AlphaGradient {
 public:
 	AlphaOneGradient(const distancetype& g,
-                  const dimidxtype& d);
+                   const dimidxtype& d);
 protected:
 	virtual void _positiveGradient(const distancetype& dist_squared,
                                 coordinatetype* holder) const;

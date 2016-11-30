@@ -88,7 +88,7 @@ public:
 		}
 	}
 
-	virtual void innerLoop(const double& rho,
+	virtual void innerLoop(const double& localRho,
                         const unsigned int& batchSize,
                         coordinatetype * const firstholder) {
 		coordinatetype * const secondholder = firstholder + D;
@@ -101,7 +101,7 @@ public:
 			coordinatetype * const y_i = coordsPtr + (i * D);
 			coordinatetype * y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
-			updateMinus(firstholder, y_j, rho);
+			updateMinus(firstholder, y_j, localRho);
 
 			unsigned int m = 0;
 			while (m != M) {
@@ -114,10 +114,10 @@ public:
 				y_j = coordsPtr + (k * D);
 				grad -> negativeGradient(y_i, y_j, secondholder);
 
-				updateMinus(secondholder, y_j, rho);
+				updateMinus(secondholder, y_j, localRho);
 				for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
 			}
-			updateMinus(firstholder, y_i, - rho);
+			updateMinus(firstholder, y_i, - localRho);
 		}
 	}
 
@@ -125,7 +125,7 @@ public:
 		coordinatetype * const holder = new coordinatetype[D * 2];
 
 		while (rho >= 0) {
-			const distancetype localRho = rho;
+			const double localRho = rho;
 			innerLoop(localRho, batchSize, holder);
 #ifdef _OPENMP
 #pragma omp atomic
@@ -173,7 +173,7 @@ public:
 		delete[] momentumarray;
 	}
 
-	virtual void innerLoop(const double& rho, const unsigned int& batchSize,
+	virtual void innerLoop(const double& localRho, const unsigned int& batchSize,
 												 coordinatetype * const firstholder) {
 		coordinatetype * const secondholder = firstholder + D;
 		for (unsigned int example = 0; example != batchSize; ++example) {
@@ -184,7 +184,7 @@ public:
 			coordinatetype* y_i = coordsPtr + (i * D);
 			coordinatetype* y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
-			updateMinus(firstholder, j, y_j, rho);
+			updateMinus(firstholder, j, y_j, localRho);
 
 			unsigned int m = 0;
 			while (m != M) {
@@ -197,10 +197,10 @@ public:
 				y_j = coordsPtr + (k * D);
 				grad -> negativeGradient(y_i, y_j, secondholder);
 
-				updateMinus(secondholder, k, y_j, rho);
+				updateMinus(secondholder, k, y_j, localRho);
 				for (dimidxtype d = 0; d != D; ++d) firstholder[d] += secondholder[d];
 			}
-			updateMinus(firstholder, i, y_i, - rho);
+			updateMinus(firstholder, i, y_i, - localRho);
 		}
 	}
 };
@@ -238,7 +238,7 @@ arma::mat sgd(arma::mat& coords,
 	else {
 		float moment = NumericVector(momentum)[0];
 		if (moment < 0) stop("Momentum cannot be negative.");
-		if (moment > 1) stop("Momentum canot be > 1.");
+		if (moment > 0.95) stop("Bad things happen when momentum is > 0.95.");
 		v = new MomentumVisualizer(
 			 sources_j.memptr(), targets_i.memptr(), coords.memptr(),
 	     D, N, E,
@@ -263,19 +263,14 @@ arma::mat sgd(arma::mat& coords,
 
 	const uword batchSize = 8192;
 #ifdef _OPENMP
-	const unsigned int dynamo = omp_get_dynamic();
-	omp_set_dynamic(0);
-	const unsigned int ts = omp_get_max_threads() * 64;
+	const unsigned int ts = omp_get_max_threads();
 #pragma omp parallel for
 #else
-	const unsigned int ts = 16;
+	const unsigned int ts = 1;
 #endif
 	for (unsigned int t = 0; t < ts; ++t) {
 		v->thread(progress, batchSize);
 	}
-#ifdef _OPENMP
-	omp_set_dynamic(dynamo);
-#endif
 	delete v;
 	return coords;
 }
