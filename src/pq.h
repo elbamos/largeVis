@@ -104,7 +104,7 @@ protected:
 
   	for (VIDX n = 0; n != N; ++n) add();
 
-  	for (auto it = container.begin(); it != container.end(); it++) {
+  	for (auto it = container.begin(); it != container.end();  ++it) {
   		VIDX n = it -> second;
   		agglomerate(n, minimum_spanning_tree[n], it -> first);
   	}
@@ -195,18 +195,15 @@ protected:
    */
   void determineStability(const VIDX& p, const int& minPts) {
   	if (sizes[p] < minPts && p != parents[p]) stop("Condense failed");
-    if (sizes[p] < minPts && p != parents[p]) {
-      stop("Condense failed");
-    }
     if (goodChildrens[p].size() == 1) stop("Only child");
-    double stability = 0;
-    double lambda_birth = lambda_births[p];
 
-    for (auto it = fallenPointses[p].begin();
-         it != fallenPointses[p].end();
-         it++) {
-      stability += lambda_births[*it] - lambda_birth;
-    }
+    const double lambda_birth = lambda_births[p];
+		double stability = std::accumulate(fallenPointses[p].begin(),
+                                       fallenPointses[p].end(),
+                                       0,
+                                       [this](const double& s, const VIDX& f) {return (s + this->lambda_births[f]);});
+		stability -= lambda_birth * fallenPointses[p].size();
+
     VIDX descendantCount = 0;
     for (auto it = goodChildrens[p].begin();
          it != goodChildrens[p].end();

@@ -49,7 +49,6 @@ lv_dbscan <- function(edges,
 #' @return A vector of LOF values for each data point.
 #' @export
 lof <- function(edges) {
-
 	id <- apply(edges,MARGIN = 1, FUN = function(x) which(x != 0))
 	dist <- apply(edges, MARGIN = 1, FUN = function(x) x[x != 0])
 	for (i in 1:ncol(id)) {
@@ -76,4 +75,3 @@ lof <- function(edges) {
 
   ret
 }
-

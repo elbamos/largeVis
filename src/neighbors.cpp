@@ -40,7 +40,7 @@ void AnnoySearch<M, V>::addToNeighborhood(const V& x_i, const vertexidxtype& j,
  * The neighborhood is maintained in vertex-index order.
  */
 template<class M, class V>
-void AnnoySearch<M, V>::mergeNeighbors(const list< shared_ptr<ivec> >& localNeighborhoods) {
+void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighborhoods) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
@@ -83,15 +83,11 @@ void AnnoySearch<M, V>::mergeNeighbors(const list< shared_ptr<ivec> >& localNeig
 }
 }
 
-shared_ptr<ivec> copyTo(const shared_ptr<ivec>& indices,
+Neighborholder copyTo(const Neighborholder& indices,
                                const uvec& selections) {
-	shared_ptr<ivec> out = make_shared<ivec>(selections.n_elem);
-	auto write = out->begin();
-
-	for (auto it = selections.begin(); it != selections.end(); ++it) {
-		*write = (*indices)[*it];
-		++write;
-	}
+	Neighborholder out = make_shared<ivec>(selections.n_elem);
+	std::transform(selections.begin(), selections.end(), out->begin(),
+                [&indices](const uword& it) {return (*indices)[it];});
 	return out;
 }
 
@@ -99,7 +95,7 @@ shared_ptr<ivec> copyTo(const shared_ptr<ivec>& indices,
 	* The key function of the annoy-trees phase.
 	*/
 template<class M, class V>
-void AnnoySearch<M, V>::recurse(const shared_ptr<ivec>& indices, list< shared_ptr<ivec> >& localNeighborhood) {
+void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood) {
 	const vertexidxtype I = indices->n_elem;
 	if (I <= threshold) {
 		localNeighborhood.emplace_back(indices);
@@ -135,12 +131,12 @@ void AnnoySearch<M, V>::setSeed(Rcpp::Nullable< NumericVector >& seed) {
 template<class M, class V>
 void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& newThreshold) {
 	threshold = newThreshold;
-	shared_ptr<ivec> indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
+	Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
 	for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
-		list< shared_ptr<ivec> > local;
+		list< Neighborholder > local;
 		recurse(indices, local);
 		mergeNeighbors(local);
 	}
@@ -157,20 +153,18 @@ void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
 	Neighborhood& neighborhood = treeNeighborhoods[i];
 
 	/*
-	* Sort by distance the first K items, by first assembling into a heap. using compGreater
-	* transforms it from a max heap to a min heap.
+	* Sort by distance the first K items, by assembling into a heap.
 	*/
 	for (auto j = neighborhood.begin(); j != neighborhood.end(); ++j) {
 		addToNeighborhood(x_i, *j, newNeighborhood);
 	}
-	sort_heap(newNeighborhood.begin(), newNeighborhood.end(), std::less<std::pair<distancetype, vertexidxtype>>());
 
 	/*
 	 * Copy the remainder (max K elements) into a column
 	 * of the matrix. Sort those K by vertex index. Pad the column with -1's, if necessary.
 	 */
-	auto continueWriting = knns.begin_col(i);
-	for (auto it = newNeighborhood.begin(); it != newNeighborhood.end(); ++it, ++continueWriting) *continueWriting = it->second;
+	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), knns.begin_col(i),
+                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
 	sort(knns.begin_col(i), continueWriting);
 	std::fill(continueWriting, knns.end_col(i), -1);
 
@@ -272,11 +266,8 @@ void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 	*
 	* We can't use std:copy because we're copying from a vector of pairs
 	*/
-	sort_heap(nodeHeap.begin(), nodeHeap.end(), std::less<std::pair<distancetype, vertexidxtype>>());
-
-	auto copyContinuation = knns.begin_col(i);
-	auto nend = nodeHeap.end();
-	for (auto it = nodeHeap.begin(); it != nend; ++it, ++copyContinuation) *copyContinuation = it->second;
+	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), knns.begin_col(i),
+                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
 	sort(knns.begin_col(i), copyContinuation);
 	if (copyContinuation == knns.begin_col(i)) stop("Neighbor exploration failure.");
 	std::fill(copyContinuation, knns.end_col(i), -1);
@@ -351,9 +342,8 @@ void AnnoySearch<M,V>::sortCopyOne(vector< std::pair<distancetype, vertexidxtype
 		holder.emplace_back(d, *it);
 	}
 	sort(holder.begin(), holder.end());
-	auto copyContinuation = knns.begin_col(i);
-	auto hend = holder.end();
-	for (auto it = holder.begin(); it != hend; ++it, ++copyContinuation) *copyContinuation = it->second;
+	auto copyContinuation = std::transform(holder.begin(), holder.end(), knns.begin_col(i),
+                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
 	std::fill(copyContinuation, knns.end_col(i), -1);
 }
 

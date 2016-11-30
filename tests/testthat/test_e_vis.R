@@ -50,18 +50,12 @@ test_that("largeVis works with cosine", {
 	expect_false(any(is.infinite(visObject$coords)))
 })
 
-test_that("largeVis continues to work as it scales up", {
+test_that("largeVis graidents aren't off", {
 	skip_on_cran()
-	visObject <- largeVis(dat, max_iter = 20, sgd_batches = 1000,  threads = 2,
-												K = 10,  gamma = 0.5, verbose = FALSE)
+	visObject <- largeVis(dat, K = 30, max_iter = 20, threads = 2, verbose = FALSE)
 	expect_false(any(is.na(visObject$coords)))
 	expect_false(any(is.nan(visObject$coords)))
 	expect_false(any(is.infinite(visObject$coords)))
-	for (i in c(10000, 20000 * length(visObject$wij@x))) {
-		coords <- projectKNNs(visObject$wij, sgd_batches = i,  threads = 2,
-													verbose = FALSE)
-		expect_false(any(is.na(coords)))
-		expect_false(any(is.nan(coords)))
-		expect_false(any(is.infinite(coords)))
-	}
+	expect_equal(sum(visObject$coords > 50), 0)
+	expect_equal(sum(visObject$coords < -50), 0)
 })
