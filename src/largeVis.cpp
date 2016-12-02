@@ -167,7 +167,7 @@ public:
                     																	N, E, rho, n_samples, M, alpha, gamma) {
 		this -> momentum = momentum;
 		momentumarray = new coordinatetype[D * N];
-		for (vertexidxtype i = 0; i != D*N; ++i) momentumarray[i] = 0;
+		std::fill(momentumarray, momentumarray + D * N, 0);
 	}
 	~MomentumVisualizer() {
 		delete[] momentumarray;
@@ -247,9 +247,9 @@ arma::mat sgd(arma::mat& coords,
 	}
 
 	distancetype* negweights = new distancetype[N];
-	for (vertexidxtype n = 0; n < N; ++n) negweights[n] = 0;
+	std::fill(negweights, negweights + N, 0);
 	if (useDegree) {
-		for (edgeidxtype e = 0; e < targets_i.n_elem; ++e) negweights[targets_i[e]]++;
+		std::for_each(targets_i.begin(), targets_i.end(), [&negweights](const sword& e) {negweights[e]++;});
 	} else {
 		for (vertexidxtype p = 0; p < N; ++p) {
 			for (edgeidxtype e = ps[p]; e != ps[p + 1]; ++e) {
@@ -257,7 +257,7 @@ arma::mat sgd(arma::mat& coords,
 			}
 		}
 	}
-	for (vertexidxtype n = 0; n < N; ++n) negweights[n] = pow(negweights[n], 0.75);
+	std::for_each(negweights, negweights + N, [](distancetype& weight) {weight = pow(weight, 0.75);});
 	v -> initAlias(weights.memptr(), negweights, seed);
 	delete[] negweights;
 

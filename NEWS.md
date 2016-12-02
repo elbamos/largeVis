@@ -1,3 +1,6 @@
+### largeVis 0.1.11
+* Performance improvements in neighbor search & projectKNNs.
+
 ### largeVis 0.1.10.1
 * Hotfix for issue the caused largeVis to fail if compiled without 64-bit ARMA  
 * Fix for issue reported by @Dalar where sparse neighbor search could fail with division by zero error

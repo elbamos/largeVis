@@ -86,12 +86,8 @@ void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighb
 Neighborholder copyTo(const Neighborholder& indices,
                                const uvec& selections) {
 	Neighborholder out = make_shared<ivec>(selections.n_elem);
-	auto write = out->begin();
-
-	for (auto it = selections.begin(); it != selections.end(); ++it) {
-		*write = (*indices)[*it];
-		++write;
-	}
+	std::transform(selections.begin(), selections.end(), out->begin(),
+                [&indices](const uword& it) {return (*indices)[it];});
 	return out;
 }
 
@@ -157,20 +153,18 @@ void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
 	Neighborhood& neighborhood = treeNeighborhoods[i];
 
 	/*
-	* Sort by distance the first K items, by first assembling into a heap. using compGreater
-	* transforms it from a max heap to a min heap.
+	* Sort by distance the first K items, by assembling into a heap.
 	*/
 	for (auto j = neighborhood.begin(); j != neighborhood.end(); ++j) {
 		addToNeighborhood(x_i, *j, newNeighborhood);
 	}
-	sort_heap(newNeighborhood.begin(), newNeighborhood.end(), std::less<std::pair<distancetype, vertexidxtype>>());
 
 	/*
 	 * Copy the remainder (max K elements) into a column
 	 * of the matrix. Sort those K by vertex index. Pad the column with -1's, if necessary.
 	 */
-	auto continueWriting = knns.begin_col(i);
-	for (auto it = newNeighborhood.begin(); it != newNeighborhood.end(); ++it, ++continueWriting) *continueWriting = it->second;
+	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), knns.begin_col(i),
+                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
 	sort(knns.begin_col(i), continueWriting);
 	std::fill(continueWriting, knns.end_col(i), -1);
 
@@ -272,11 +266,8 @@ void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 	*
 	* We can't use std:copy because we're copying from a vector of pairs
 	*/
-	sort_heap(nodeHeap.begin(), nodeHeap.end(), std::less<std::pair<distancetype, vertexidxtype>>());
-
-	auto copyContinuation = knns.begin_col(i);
-	auto nend = nodeHeap.end();
-	for (auto it = nodeHeap.begin(); it != nend; ++it, ++copyContinuation) *copyContinuation = it->second;
+	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), knns.begin_col(i),
+                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
 	sort(knns.begin_col(i), copyContinuation);
 	if (copyContinuation == knns.begin_col(i)) stop("Neighbor exploration failure.");
 	std::fill(copyContinuation, knns.end_col(i), -1);
@@ -351,9 +342,8 @@ void AnnoySearch<M,V>::sortCopyOne(vector< std::pair<distancetype, vertexidxtype
 		holder.emplace_back(d, *it);
 	}
 	sort(holder.begin(), holder.end());
-	auto copyContinuation = knns.begin_col(i);
-	auto hend = holder.end();
-	for (auto it = holder.begin(); it != hend; ++it, ++copyContinuation) *copyContinuation = it->second;
+	auto copyContinuation = std::transform(holder.begin(), holder.end(), knns.begin_col(i),
+                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
 	std::fill(copyContinuation, knns.end_col(i), -1);
 }
 
