@@ -3,8 +3,6 @@
 #include <memory>
 #include <math.h>
 
-using namespace std;
-
 template<class V, class D>
 class PairingHeap {
 private:
@@ -23,7 +21,7 @@ private:
 
 	NodePointer root = NULL;
 	const V MaxSize;
-	vector< PairNode > PointerArray;
+	std::vector< PairNode > PointerArray;
 
 	void compareAndLink(NodePointer &first, NodePointer second) {
 		if (second == NULL) return;
@@ -48,7 +46,7 @@ private:
 		if (firstSibling->nextSibling == NULL) {
 			return firstSibling;
 		}
-		static vector< NodePointer > treeArray(5);
+		static std::vector< NodePointer > treeArray(5);
 		unsigned int numSiblings = 0;
 		for (; firstSibling != NULL; numSiblings++) {
 			if (numSiblings == treeArray.size()) treeArray.resize(numSiblings * 2);
@@ -68,7 +66,7 @@ private:
 
 public:
 	explicit PairingHeap(const V &N) : root(NULL), MaxSize{N},
-												PointerArray(vector< PairNode >(N)) {
+												PointerArray(std::vector< PairNode >(N)) {
 	}
 
 	const V pop() {

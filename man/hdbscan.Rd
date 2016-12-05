@@ -36,11 +36,11 @@ An object of type \code{hdbscan} with the following fields:
 
  The hierarchy describes the complete post-condensation structure of the tree:
  \describe{
- \item{'nodemembership'}{The node ID of the vertex's immediate parent, after condensation.}
+ \item{'nodemembership'}{The cluster ID of the vertex's immediate parent, after condensation.}
  \item{'lambda'}{\eqn{\lambda_p}}
- \item{'parent'}{The node ID of each node's parent.}
- \item{'stability'}{The node's stability, taking into account child-node stabilities.}
- \item{'selected'}{Whether the node was selected.}
+ \item{'parent'}{The cluster ID of each node's parent.}
+ \item{'stability'}{The cluster's stability, taking into account child-node stabilities.}
+ \item{'selected'}{Whether the cluster was selected.}
  \item{'coredistances'}{The core distance determined for each vertex.}
  }
 }
