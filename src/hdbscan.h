@@ -87,12 +87,12 @@ public:
 	HDBSCAN(const unsigned long long& N, const bool& verbose);
 	~HDBSCAN();
 
-	void makeCoreDistances(const sp_mat& edges,
-                                 const IntegerMatrix& neighbors,
-                                 const int& K);
-	IntegerVector build( const unsigned int& K,
-                               const sp_mat& edges,
-                               const IntegerMatrix& neighbors);
+	void makeCoreDistances(	const sp_mat& edges,
+                          const IntegerMatrix& neighbors,
+                          const int& K);
+	IntegerVector build( 		const unsigned int& K,
+                        	const sp_mat& edges,
+                        	const IntegerMatrix& neighbors);
 	void condenseAndExtract(const unsigned int& minPts, double* clusters) const;
 	Rcpp::List getHierarchy() const;
 };

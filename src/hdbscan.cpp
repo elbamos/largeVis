@@ -5,7 +5,7 @@
 #include "largeVis.h"
 #include "hdbscan.h"
 #include "primsalgorithm.h"
-#define DEBUG
+//#define DEBUG
 
 void HDBSCAN::condense(const unsigned int& minPts) const {
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
@@ -15,12 +15,7 @@ void HDBSCAN::condense(const unsigned int& minPts) const {
 }
 
 void HDCluster::condense(const unsigned int& minPts) {
-#ifdef DEBUG
-	if (left == nullptr) {
-		if (right != nullptr) stop("Assymetry.");
-		return;
-	}
-#endif
+	if (left == nullptr) return;
 	left->condense(minPts);
 	right->condense(minPts);
 
@@ -56,12 +51,12 @@ void HDCluster::condenseSingleton() {
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("max infinity");
 #endif
+
 	HDCluster* keep = left;
 	right = left->right;
 	left = keep->left;
 	keep->left = nullptr;
 	keep->right = nullptr;
-	keep->parent = nullptr;
 	delete keep;
 
 	if (left != nullptr) left->parent = this;
@@ -83,7 +78,7 @@ void HDCluster::condenseTooSmall() {
 
 	left->left = nullptr;
 	left->right = nullptr;
-	left->parent = nullptr;
+
 	delete left;
 	left = nullptr;
 }
@@ -92,24 +87,17 @@ void HDCluster::condenseTooSmall() {
 
 
 void HDCluster::determineStability(const unsigned int& minPts) {
-	if (sz < minPts && parent != nullptr) stop("Condense failed");
 #ifdef DEBUG
-	if (stability == INFINITY) stop("Unstable");
+	if (sz < minPts && parent != nullptr) stop("Condense failed");
 #endif
 	stability = sum_lambda_p - (lambda_birth * fallenPoints.size());
-#ifdef DEBUG
-	if (stability == INFINITY) stop("Unstable 2");
-#endif
 	if (left == nullptr) { // leaf node
 		if (sz >= minPts) selected = true; // Otherwise, this is a parent singleton smaller than minPts.
-		else stop("Root merge failure - provide more neighbors or reduce minPts.");
 	} else {
 		left->determineStability(minPts);
 		right->determineStability(minPts);
 		stability += lambda_death * (left->sz + right->sz);
-#ifdef DEBUG
-		if (stability == INFINITY) stop("Unstable 3");
-#endif
+
 		double childStabilities = left->stability + right->stability;
 		if (stability > childStabilities) {
 			selected = true;
@@ -167,7 +155,7 @@ void HDCluster::reportHierarchy(
 		vector<arma::uword>& clusterParent,
 		vector<bool>& clusterSelected,
 		vector<double>& clusterStability) {
-	reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability, NA_INTEGER);
+	reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability, NA_REAL);
 }
 
 void HDCluster::reportHierarchy(
@@ -181,8 +169,8 @@ void HDCluster::reportHierarchy(
 	arma::uword thisCluster = clusterCnt++;
 	std::for_each(fallenPoints.begin(), fallenPoints.end(),
                [&nodeMembership, &lambdas, &thisCluster](const std::pair<arma::uword, double>& it) {
-               	nodeMembership[it.first] = (thisCluster == NA_INTEGER) ? NA_REAL : thisCluster;
-               	lambdas[it.first] = it.second;
+	               	nodeMembership[it.first] = thisCluster;
+	               	lambdas[it.first] = it.second;
                });
 	clusterParent.emplace_back(parentCluster);
 	clusterSelected.push_back(selected);
@@ -204,9 +192,9 @@ HDCluster::~HDCluster() {
 HDCluster::HDCluster(const arma::uword& id) : sz(1), id(id) {}
 
 HDCluster::HDCluster(HDCluster* point1, HDCluster* point2, set<HDCluster*>& roots, const double& d) :
-	lambda_birth(1/d), lambda_death(1/d) {
-	static arma::sword minId = -1;
-	id = minId--;
+	id(-1), lambda_birth(1/d), lambda_death(1/d) {
+//	static arma::sword minId = -1;
+//	id = minId--;
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("death is infinity");
 #endif
@@ -226,11 +214,6 @@ HDCluster::HDCluster(HDCluster* point1, HDCluster* point2, set<HDCluster*>& root
 	}
 	findAndErase(roots, left);
 	findAndErase(roots, right);
-#ifdef DEBUG
-	if (left == this) stop("idd left");
-	if (right == this) stop("idd right");
-	if (parent == this) stop("idd parent");
-#endif
 }
 
 
