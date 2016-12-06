@@ -30,8 +30,10 @@
 #'    \item{'clusters'}{A vector of the cluster membership for each vertex. Outliers
 #'    are given \code{NA}}
 #'    \item{'probabilities'}{A vector of the degree of each vertex' membership. This
-#'    is calculated as each vertex' \eqn{\lambda_p} over the highest \eqn{\lambda_p}
-#'    in the cluster. }
+#'    is calculated by standardizing each vertex' \eqn{lambda_p} against the \eqn{lambda_birth}
+#'    and \eqn{lambda_deaht} of the cluster.}
+#'    \item{'glosh'}{A vector of GLOSH outlier scores for each node assigned to a cluster. NA for nodes not
+#'    in a cluster.}
 #'    \item{'tree'}{The minimum spanning tree used to generate the clustering.}
 #'    \item{'hierarchy'}{A representation of the condensed cluster hierarchy.}
 #'    \item{'call'}{The call.}
@@ -131,9 +133,14 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 	tree <- clustersout$tree + 1
 	tree[tree == 0] <- NA
 
+	# GLOSH
+	fmax <- aggregate(hierarchy$lambda, by = list(clusters), FUN = max, na.rm = TRUE, simplify = TRUE, drop = FALSE)
+	glosh <- (fmax$x[clusters] - hierarchy$lambda) / fmax$x[clusters]
+
 	ret <- list(
 		clusters = clusters,
 		probabilities = probs$probs,
+		glosh = glosh,
 		tree = tree,
 		hierarchy = hierarchy,
 		call = sys.call()

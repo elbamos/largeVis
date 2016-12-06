@@ -14,7 +14,7 @@ private:
 	void updateVWD(const VIDX& v, const VIDX& w, const double& d) {
 		if (!Q.contains(w)) return;
 		double dist = max(coreDistances[v], coreDistances[w]);
-		dist = max(d, dist);
+		dist = fmax(d, dist);
 		if (Q.decreaseIf(w, dist)) minimum_spanning_tree[w] = v;
 		//  || w == starterIndex
 	}
@@ -22,8 +22,8 @@ private:
 public:
 	PrimsAlgorithm(const VIDX& N, const D* coreDistances) :
 							N{N}, Q(PairingHeap<VIDX,D>(N)), coreDistances{coreDistances} {
-                	minimum_spanning_tree = new VIDX[N];
-    }
+  	minimum_spanning_tree = new VIDX[N];
+  }
 
 	PrimsAlgorithm(const PrimsAlgorithm& p) : PrimsAlgorithm(p.N, p.coreDistances) {};
 
@@ -31,8 +31,10 @@ public:
 		delete[] minimum_spanning_tree;
 	}
 
-	VIDX* run(const arma::sp_mat& edges, const IntegerMatrix& neighbors,
-           Progress& p, const VIDX& start) {
+	VIDX* run(const arma::sp_mat& edges,
+            const IntegerMatrix& neighbors,
+            Progress& p,
+            const VIDX& start) {
 		starterIndex = start;
 		for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
 		Q.batchInsert(N, start);
@@ -58,8 +60,8 @@ public:
 		return minimum_spanning_tree;
 	}
 
-	vector< pair<D, VIDX> > getMergeSequence() const {
-		vector< pair<D, VIDX> > container;
+	std::vector< std::pair<D, VIDX> > getMergeSequence() const {
+		std::vector< std::pair<D, VIDX> > container;
 		container.reserve(N);
 		for (VIDX n = 0; n != N; ++n) container.emplace_back(Q.keyOf(n), n);
 		sort(container.begin(), container.end());

@@ -68,13 +68,6 @@ test_that("hdbscan doesn't crash on glass edges", {
 	expect_equal(length(unique(clustering$clusters)), 2)
 })
 
-test_that("hdbscan doesn't crash on big bad edges", {
-	skip("skipping big bad edges test because the data is too big for cran")
-	load(system.file("testdata/kddneighbors.Rda", package = "largeVis"))
-	load(system.file("testdata/kddedges.Rda", package = "largeVis"))
-	expect_silent(clusters <- hdbscan(edges, neighbors = neighbors, threads = 2, verbose = FALSE))
-})
-
 context("as.dendrogram")
 
 set.seed(1974)
