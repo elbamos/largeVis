@@ -27,8 +27,10 @@ An object of type \code{hdbscan} with the following fields:
    \item{'clusters'}{A vector of the cluster membership for each vertex. Outliers
    are given \code{NA}}
    \item{'probabilities'}{A vector of the degree of each vertex' membership. This
-   is calculated as each vertex' \eqn{\lambda_p} over the highest \eqn{\lambda_p}
-   in the cluster. }
+   is calculated by standardizing each vertex' \eqn{lambda_p} against the \eqn{lambda_birth}
+   and \eqn{lambda_deaht} of the cluster.}
+   \item{'glosh'}{A vector of GLOSH outlier scores for each node assigned to a cluster. NA for nodes not
+   in a cluster.}
    \item{'tree'}{The minimum spanning tree used to generate the clustering.}
    \item{'hierarchy'}{A representation of the condensed cluster hierarchy.}
    \item{'call'}{The call.}
@@ -36,11 +38,11 @@ An object of type \code{hdbscan} with the following fields:
 
  The hierarchy describes the complete post-condensation structure of the tree:
  \describe{
- \item{'nodemembership'}{The node ID of the vertex's immediate parent, after condensation.}
+ \item{'nodemembership'}{The cluster ID of the vertex's immediate parent, after condensation.}
  \item{'lambda'}{\eqn{\lambda_p}}
- \item{'parent'}{The node ID of each node's parent.}
- \item{'stability'}{The node's stability, taking into account child-node stabilities.}
- \item{'selected'}{Whether the node was selected.}
+ \item{'parent'}{The cluster ID of each node's parent.}
+ \item{'stability'}{The cluster's stability, taking into account child-node stabilities.}
+ \item{'selected'}{Whether the cluster was selected.}
  \item{'coredistances'}{The core distance determined for each vertex.}
  }
 }
