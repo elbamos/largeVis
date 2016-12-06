@@ -25,7 +25,7 @@ private:
 	HDCluster* left = nullptr;
 	HDCluster* right = nullptr;
 	arma::uword sz; // Size at top of cluster
-	arma::uword id;
+	arma::sword id;
 	set< std::pair<arma::uword, double >> fallenPoints; // Points that leave cluster betweeen top and split
 	double lambda_birth = 0; // 1 / Distance at which splits from parent cluster
 	double lambda_death = INFINITY; // 1 / Distance at which cluster splits
@@ -37,8 +37,8 @@ private:
 
 	HDCluster* getRoot();
 
-	void condenseSingleton(HDCluster* p);
-	void condenseTooSmall(const bool& l);
+	void condenseSingleton();
+	void condenseTooSmall();
 	void extract( double* ret, arma::uword& selectedClusterCnt, arma::uword currentSelectedCluster) const;
 	void reportHierarchy(
 							 arma::uword& clusterCnt,

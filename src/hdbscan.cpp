@@ -5,7 +5,7 @@
 #include "largeVis.h"
 #include "hdbscan.h"
 #include "primsalgorithm.h"
-//#define DEBUG
+#define DEBUG
 
 void HDBSCAN::condense(const unsigned int& minPts) const {
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
@@ -15,59 +15,77 @@ void HDBSCAN::condense(const unsigned int& minPts) const {
 }
 
 void HDCluster::condense(const unsigned int& minPts) {
-	if (left != nullptr) left->condense(minPts);
-	if (right != nullptr) right->condense(minPts);
-	if (left != nullptr && left->sz < minPts) condenseTooSmall(true);
-	if (right != nullptr && right->sz < minPts)	condenseTooSmall(false);
-	if (left == nullptr && right != nullptr) {
-		HDCluster* p = right;
-		condenseSingleton(p);
-		delete p;
+#ifdef DEBUG
+	if (left == nullptr) {
+		if (right != nullptr) stop("Assymetry.");
+		return;
 	}
-	if (right == nullptr && left != nullptr) {
-		HDCluster* p = left;
-		condenseSingleton(p);
-//		delete p;
+#endif
+	left->condense(minPts);
+	right->condense(minPts);
+
+	if (left->sz < minPts) {
+		condenseTooSmall();
+		swap(left, right); // right definitely null, left not null but could be big or small
+		if (left->sz < minPts) condenseTooSmall();
+		else condenseSingleton();
+	} else {
+		swap(left, right); // right big enough, left valid but size unknown
+		if (left->sz < minPts) {
+			condenseTooSmall(); // now left is gone, right is valid
+			swap(left, right); // left is valid, right is gone
+			condenseSingleton();
+		} // both big enough
 	}
 #ifdef DEBUG
+	if (left != nullptr && left->sz < minPts) stop("bad left");
+	if (right != nullptr && right->sz < minPts) stop("bad right");
 	if ((left == nullptr) != (right == nullptr)) stop("Singleton!");
 #endif
 }
 
 // Entering function we know that child has a split of its own
-void HDCluster::condenseSingleton(HDCluster* p) {
-	if (p->sz == 1) {
-		sum_lambda_p += p->lambda_birth;
-		fallenPoints.emplace(p->id, p->lambda_birth);
+void HDCluster::condenseSingleton() {
+	if (left->sz == 1) {
+		sum_lambda_p += left->lambda_birth;
+		fallenPoints.emplace(left->id, left->lambda_birth);
 	}
-	else sum_lambda_p += p->sum_lambda_p;
-	fallenPoints.insert(p->fallenPoints.begin(), p->fallenPoints.end());
-	lambda_death = max(lambda_death, p->lambda_death);
+	else sum_lambda_p += left->sum_lambda_p;
+	fallenPoints.insert(left->fallenPoints.begin(), left->fallenPoints.end());
+	lambda_death = max(lambda_death, left->lambda_death);
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("max infinity");
 #endif
-	left = p->left;
-	right = p->right;
+	HDCluster* keep = left;
+	right = left->right;
+	left = keep->left;
+	keep->left = nullptr;
+	keep->right = nullptr;
+	keep->parent = nullptr;
+	delete keep;
+
 	if (left != nullptr) left->parent = this;
 	if (right != nullptr) right->parent = this;
 }
 
 // Entering function we know that child has no split of its own
-void HDCluster::condenseTooSmall(const bool& l) {
-	HDCluster* p = (l) ? left : right;
-	if (p->sz == 1) {
-		sum_lambda_p += p->lambda_birth;
-		fallenPoints.emplace(p->id, p->lambda_birth);
+void HDCluster::condenseTooSmall() {
+	if (left->sz == 1) {
+		sum_lambda_p += left->lambda_birth;
+		fallenPoints.emplace(left->id, left->lambda_birth);
 	}
-	else sum_lambda_p += p->sum_lambda_p;
-	fallenPoints.insert(p->fallenPoints.begin(), p->fallenPoints.end());
+	else sum_lambda_p += left->sum_lambda_p;
+	fallenPoints.insert(left->fallenPoints.begin(), left->fallenPoints.end());
 //	lambda_death = max(lambda_death, p->lambda_death);
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("infinity is too small");
 #endif
-	if (l) left = nullptr;
-	else right = nullptr;
-	delete p;
+
+	left->left = nullptr;
+	left->right = nullptr;
+	left->parent = nullptr;
+	delete left;
+	left = nullptr;
 }
 
 
@@ -186,7 +204,9 @@ HDCluster::~HDCluster() {
 HDCluster::HDCluster(const arma::uword& id) : sz(1), id(id) {}
 
 HDCluster::HDCluster(HDCluster* point1, HDCluster* point2, set<HDCluster*>& roots, const double& d) :
-	id(0), lambda_birth(1/d), lambda_death(1/d) {
+	lambda_birth(1/d), lambda_death(1/d) {
+	static arma::sword minId = -1;
+	id = minId--;
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("death is infinity");
 #endif
@@ -206,6 +226,11 @@ HDCluster::HDCluster(HDCluster* point1, HDCluster* point2, set<HDCluster*>& root
 	}
 	findAndErase(roots, left);
 	findAndErase(roots, right);
+#ifdef DEBUG
+	if (left == this) stop("idd left");
+	if (right == this) stop("idd right");
+	if (parent == this) stop("idd parent");
+#endif
 }
 
 
