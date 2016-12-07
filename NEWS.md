@@ -1,7 +1,8 @@
-### largeVis 0.1.11
+### largeVis 0.2
+* largeVis has reached a point of stability where its appropriate to bump the version. 
 * Performance improvements in neighbor search & projectKNNs.
 * Performance improvements in HDBSCAN. 
-* HDBSCAN now outputs GLOSH outlier scores for each point assigned to a cluster.
+* HDBSCAN now outputs GLOSH outlier scores for each point assigned to a cluster, and these are used by gplot. 
 
 ### largeVis 0.1.10.1
 * Hotfix for issue the caused largeVis to fail if compiled without 64-bit ARMA  

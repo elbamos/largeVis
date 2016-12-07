@@ -31,7 +31,7 @@
 #'    are given \code{NA}}
 #'    \item{'probabilities'}{A vector of the degree of each vertex' membership. This
 #'    is calculated by standardizing each vertex' \eqn{lambda_p} against the \eqn{lambda_birth}
-#'    and \eqn{lambda_deaht} of the cluster.}
+#'    and \eqn{lambda_death} of the cluster.}
 #'    \item{'glosh'}{A vector of GLOSH outlier scores for each node assigned to a cluster. NA for nodes not
 #'    in a cluster.}
 #'    \item{'tree'}{The minimum spanning tree used to generate the clustering.}
@@ -42,8 +42,8 @@
 #'  The hierarchy describes the complete post-condensation structure of the tree:
 #'  \describe{
 #'  \item{'nodemembership'}{The cluster ID of the vertex's immediate parent, after condensation.}
-#'  \item{'lambda'}{\eqn{\lambda_p}}
-#'  \item{'parent'}{The cluster ID of each node's parent.}
+#'  \item{'lambda'}{\eqn{\lambda_p} for each vertex.}
+#'  \item{'parent'}{The cluster ID of each cluster's parent.}
 #'  \item{'stability'}{The cluster's stability, taking into account child-node stabilities.}
 #'  \item{'selected'}{Whether the cluster was selected.}
 #'  \item{'coredistances'}{The core distance determined for each vertex.}
@@ -134,8 +134,9 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 	tree[tree == 0] <- NA
 
 	# GLOSH
-	fmax <- aggregate(hierarchy$lambda, by = list(clusters), FUN = max, na.rm = TRUE, simplify = TRUE, drop = FALSE)
-	glosh <- (fmax$x[clusters] - hierarchy$lambda) / fmax$x[clusters]
+	fmax <- aggregate(hierarchy$lambda, by = list(hierarchy$nodemembership), FUN = max, na.rm = TRUE, simplify = TRUE, drop = FALSE)
+	maxes <- fmax$x[match(hierarchy$nodemembership, fmax$Group.1)]
+	glosh <- (maxes - hierarchy$lambda) / maxes
 
 	ret <- list(
 		clusters = clusters,
@@ -156,8 +157,7 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' how clusters were generated.
 #'
 #' Point color corresponds to clusters, with outliers as the \code{NA} color. Alpha
-#' corresponds to the centrality of the node in the cluster (i.e., \eqn{\lambda_p} relative
-#' to \eqn{\lambda_{birth}} and \eqn{\lambda_{death}}). The segments on the plot
+#' corresponds to the node's GLOSH score. The segments on the plot
 #' correspond to the connections on the minimum spanning tree. Segment alpha
 #' corresponds to \eqn{\lambda_p}.
 #'
@@ -189,9 +189,9 @@ gplot <- function(x, coords, text = FALSE) {
 	dframe <- data.frame(coords)
 	colnames(dframe) <- c("x", "y")
 	dframe$cluster = x$clusters
-	dframe$probabilities = x$probabilities
-	dframe$probabilities[is.nan(dframe$probabilities)] <-
-		x$hierarchy$lambda[is.nan(dframe$probabilities)]
+	dframe$glosh = x$glosh
+	dframe$glosh[is.nan(dframe$glosh)] <-
+		x$hierarchy$lambda[is.nan(dframe$glosh)]
 	xy <- data.frame(coords[x$tree, ])
 	colnames(xy) <- c("x2", "y2")
 	dframe <- cbind(dframe, xy)
@@ -201,8 +201,9 @@ gplot <- function(x, coords, text = FALSE) {
 	plt <- ggplot2::ggplot(dframe,
 												 ggplot2::aes_(x = quote(x), y = quote(y),
 												 							xend = quote(x2), yend = quote(y2), color = quote(cluster))) +
-		ggplot2::geom_point(aes_(alpha = quote(probabilities)), size = 0.7) +
-		ggplot2::geom_segment(size = 0.5, ggplot2::aes_(alpha = quote(lambda), size = quote(lambda)))
+		ggplot2::geom_point(aes_(alpha = quote(glosh)), size = 0.7) +
+		ggplot2::geom_segment(size = 0.5, ggplot2::aes_(alpha = quote(glosh))) +
+		ggplot2::scale_alpha_continuous(trans = "reverse")
 
 	if (text == "parent") {
 		plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(parent)), size = 2.5,

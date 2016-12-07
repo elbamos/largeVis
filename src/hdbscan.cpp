@@ -301,7 +301,6 @@ void HDBSCAN::condenseAndExtract(const unsigned int& minPts, double* clusters) c
 Rcpp::List HDBSCAN::getHierarchy() const {
 	vector<arma::uword> nodemembership(N);
 	vector<double> lambdas(N);
-
 	vector<arma::uword> clusterParent;
 	vector<bool> clusterSelected;
 	vector<double> clusterStability;
