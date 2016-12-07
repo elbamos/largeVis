@@ -14,8 +14,9 @@ A \code{dendrogram} object, where nodes have the following attributes:
 \describe{
 \item{'leaf'}{As in \code{\link[stats]{dendrogram}}.}
 \item{'members'}{As in \code{\link[stats]{dendrogram}}.}
-\item{'height'}{The \eqn{\lambda_{birth}} of the node or leaf.}
+\item{'height'}{For clusters, \eqn{1.1 * \lambda_birth}; for leaves, \eqn{\lambda_p}.}
 \item{'probability'}{The probability that the leaf is a true member of its assigned cluster.}
+\item{'glosh'}{The leaf's GLOSH outlier score.}
 \item{'stability'}{The node's determined stability, taking into account child-node stabilities. Missing for leaves.}
 \item{'selected'}{Whether the node was selected as a cluster.  Missing for leaves.  Note that when a node is selected,
 all points under child branches are assigned to the same cluster.}

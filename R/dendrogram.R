@@ -11,8 +11,9 @@
 #' \describe{
 #' \item{'leaf'}{As in \code{\link[stats]{dendrogram}}.}
 #' \item{'members'}{As in \code{\link[stats]{dendrogram}}.}
-#' \item{'height'}{The \eqn{\lambda_{birth}} of the node or leaf.}
+#' \item{'height'}{For clusters, \eqn{1.1 * \lambda_birth}; for leaves, \eqn{\lambda_p}.}
 #' \item{'probability'}{The probability that the leaf is a true member of its assigned cluster.}
+#' \item{'glosh'}{The leaf's GLOSH outlier score.}
 #' \item{'stability'}{The node's determined stability, taking into account child-node stabilities. Missing for leaves.}
 #' \item{'selected'}{Whether the node was selected as a cluster.  Missing for leaves.  Note that when a node is selected,
 #' all points under child branches are assigned to the same cluster.}
@@ -31,13 +32,14 @@ as_dendrogram_hdbscan <- function(object) {
 
 	leafs <- lapply(1:length(object$hierarchy$nodemembership), FUN = function(i)
 		structure(as.list(i),
-			leaf = TRUE,
-			members = 1L,
-			label = i,
-			cluster = object$clusters[i],
-			probability = object$probabilities[i],
-			height = object$hierarchy$lambda[i],
-			class = "dendrogram"
+							leaf = TRUE,
+							members = 1L,
+							label = i,
+							glosh = object$glosh[i],
+							cluster = object$clusters[i],
+							probability = object$probabilities[i],
+							height = object$hierarchy$lambda[i],
+							class = "dendrogram"
 		))
 
 	clusters <- vector("list", C)
@@ -52,10 +54,10 @@ as_dendrogram_hdbscan <- function(object) {
 		newcluster <- structure(
 			.Data = c(children, cousins),
 			members = sum(unlist(vapply(children, FUN.VALUE = 0L, FUN = m))) +
-				        sum(unlist(vapply(cousins, FUN.VALUE = 0L, FUN = m))),
+				sum(unlist(vapply(cousins, FUN.VALUE = 0L, FUN = m))),
 			leaf = FALSE,
 			height = 1.1 * max(0, unlist(vapply(children, FUN.VALUE = 0, FUN = h)),
-												    unlist(vapply(cousins, FUN.VALUE = 0, FUN = h))),
+												 unlist(vapply(cousins, FUN.VALUE = 0, FUN = h))),
 			selected = object$hierarchy$selected[i],
 			cluster = i,
 			stability = object$hierarchy$stability[i],
@@ -74,14 +76,14 @@ as_dendrogram_hdbscan <- function(object) {
 	if (length(clusters) == 1) clusters[[1]]
 	else {
 		structure(clusters,
-			members = sum(unlist(vapply(clusters, FUN.VALUE = 0L, FUN = m))),
-			leaf = FALSE,
-			height = 1.1 * max(unlist(vapply(clusters, FUN.VALUE = 0, FUN = h))),
-			selected = 0,
-			cluster = 0,
-			stability = Inf,
-			label = "root",
-			class = "dendrogram"
+							members = sum(unlist(vapply(clusters, FUN.VALUE = 0L, FUN = m))),
+							leaf = FALSE,
+							height = 1.1 * max(unlist(vapply(clusters, FUN.VALUE = 0, FUN = h))),
+							selected = 0,
+							cluster = 0,
+							stability = Inf,
+							label = "root",
+							class = "dendrogram"
 		)
 	}
 }
