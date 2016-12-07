@@ -25,8 +25,7 @@ how clusters were generated.
 }
 \details{
 Point color corresponds to clusters, with outliers as the \code{NA} color. Alpha
-corresponds to the centrality of the node in the cluster (i.e., \eqn{\lambda_p} relative
-to \eqn{\lambda_{birth}} and \eqn{\lambda_{death}}). The segments on the plot
+corresponds to the node's GLOSH score. The segments on the plot
 correspond to the connections on the minimum spanning tree. Segment alpha
 corresponds to \eqn{\lambda_p}.
 
