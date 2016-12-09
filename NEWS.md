@@ -3,6 +3,7 @@
 * Performance improvements in neighbor search & projectKNNs.
 * Performance improvements in HDBSCAN. 
 * HDBSCAN now outputs GLOSH outlier scores for each point assigned to a cluster, and these are used by gplot. 
+* as_dendrogram_hdbscan is now (properly) an S3 method for as.dendrogram applied to class hdbscan. 
 
 ### largeVis 0.1.10.1
 * Hotfix for issue the caused largeVis to fail if compiled without 64-bit ARMA  

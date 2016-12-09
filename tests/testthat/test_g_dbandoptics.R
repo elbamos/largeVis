@@ -93,6 +93,8 @@ test_that("optics works with largeVis objects", {
 context("optics-elki")
 
 test_that("optics output format is correct", {
+	skip_on_cran()
+	skip_on_travis()
 	load(system.file("testdata/opttest.Rda", package = "largeVis"))
 
 	x <- opttest$test_data

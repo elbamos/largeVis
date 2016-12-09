@@ -68,40 +68,6 @@ test_that("hdbscan doesn't crash on glass edges", {
 	expect_equal(length(unique(clustering$clusters)), 2)
 })
 
-context("as.dendrogram")
-
-set.seed(1974)
-data(iris)
-dat <- as.matrix(iris[, 1:4])
-dat <- scale(dat)
-dupes <- which(duplicated(dat))
-dat <- dat[-dupes, ]
-dat <- t(dat)
-K <- 20
-neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
-edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
-
-test_that("as.dendrogram succeeds on iris4", {
-	hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 4, threads = 2, verbose = FALSE)
-	dend <- as_dendrogram_hdbscan(hdobj)
-	expect_true(length(dend[[1]]) == sum(hdobj$hierarchy$nodemembership == 1, na.rm = TRUE) +
-								sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) |
-								length(dend[[1]]) == 1)
-	expect_equal(sum(is.null(dend)), 0)
-	expect_equal(class(dend), "dendrogram")
-	expect_equal(nobs(dend), ncol(dat))
-}	)
-
-test_that("as.dendrogram succeeds on iris3", {
-
-	hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, threads = 2, verbose = FALSE)
-	dend <- as_dendrogram_hdbscan(hdobj)
-	expect_equal(length(dend), sum(hdobj$hierarchy$nodemembership == 1, na.rm = TRUE) + sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) - 1)
-	expect_equal(sum(is.null(dend)), 0)
-	expect_equal(class(dend), "dendrogram")
-	expect_equal(nobs(dend), ncol(dat))
-}	)
-
 test_that("failing example doesn't fail", {
 	data(iris)
 	expect_silent(vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1, threads = 2))
@@ -115,6 +81,45 @@ test_that("glosh is in range", {
 	expect_equal(sum(hdbscanobj$glosh < 0), 0)
 	expect_equal(sum(hdbscanobj$glosh > 1), 0)
 })
+
+context("as.dendrogram")
+
+set.seed(1974)
+data(iris)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+K <- 20
+neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
+hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 4, threads = 2, verbose = FALSE)
+
+test_that("as.dendrogram is an S3 method", {
+	expect_true(isS3method(f = "as.dendrogram", class = "hdbscan"))
+	expect_silent(dend <- as.dendrogram(hdobj))
+	expect_true(inherits(dend, "dendrogram"))
+})
+
+test_that("as.dendrogram succeeds on iris4", {
+	dend <- as.dendrogram(hdobj)
+	expect_true(length(dend[[1]]) == sum(hdobj$hierarchy$nodemembership == 1, na.rm = TRUE) +
+								sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) |
+								length(dend[[1]]) == 1)
+	expect_equal(sum(is.null(dend)), 0)
+	expect_equal(class(dend), "dendrogram")
+	expect_equal(nobs(dend), ncol(dat))
+}	)
+
+test_that("as.dendrogram succeeds on iris3", {
+	hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, threads = 2, verbose = FALSE)
+	dend <- as.dendrogram(hdobj)
+	expect_equal(length(dend), sum(hdobj$hierarchy$nodemembership == 1, na.rm = TRUE) + sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) - 1)
+	expect_equal(sum(is.null(dend)), 0)
+	expect_equal(class(dend), "dendrogram")
+	expect_equal(nobs(dend), ncol(dat))
+}	)
 
 context("gplot")
 

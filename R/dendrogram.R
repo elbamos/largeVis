@@ -1,4 +1,4 @@
-#' @title as_dendrogram_hdbscan
+#' @title as.dendrogram.hdbscan
 #' @description Convert an hdbscan object into dendrogram compatible with the \code{stats} package.
 #' @note The hdbscan algorithm works by first building a hierarchy based on a minimal spanning tree, then consolidating nodes according to
 #' rules in the algorithm. The algorithm then selects some of the consolidated nodes as clusters, deselecting others. For example, if Node A has children
@@ -27,7 +27,7 @@
 #' hdbscanobj <- hdbscan(vis, minPts = 10, K = 5)
 #' plot(as_dendrogram_hdbscan(hdbscanobj))
 #' }
-as_dendrogram_hdbscan <- function(object) {
+as.dendrogram.hdbscan <- function(object, ...) {
 	C <- length(object$hierarchy$parent)
 
 	leafs <- lapply(1:length(object$hierarchy$nodemembership), FUN = function(i)
