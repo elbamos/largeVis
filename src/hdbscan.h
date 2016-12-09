@@ -35,8 +35,7 @@ private:
 
 	void deselect();
 
-	HDCluster* getRoot();
-
+	void mergeUp();
 	void condenseSingleton();
 	void condenseTooSmall();
 	void extract( double* ret, arma::uword& selectedClusterCnt, arma::uword currentSelectedCluster) const;
@@ -53,10 +52,12 @@ public:
 	~HDCluster();
 	explicit HDCluster(const arma::uword& id);
 
-	HDCluster(HDCluster* point1, HDCluster* point2, set<HDCluster*>& roots, const double& d);
+	HDCluster* getRoot();
+
+	HDCluster(HDCluster* a, HDCluster* b, set<HDCluster*>& roots, const double& d);
 
 	void condense(const unsigned int& minPts);
-	void determineStability(const unsigned int& minPts);
+	double determineStability(const unsigned int& minPts);
 
 	void extract(
 			double* ret, // An N * 2 array where for each point n * 2 is the cluster id for the point and n * 2 + 1 is lambda_p.
@@ -79,7 +80,7 @@ private:
   set<HDCluster*> roots;
   double* coreDistances;
 
-  void buildHierarchy(const vector<pair<double, arma::uword>>& container, const arma::uword* minimum_spanning_tree);
+  void buildHierarchy(const vector<pair<double, arma::uword>>& mergeSequence, const arma::uword* minimum_spanning_tree);
   void condense(const unsigned int& minPts) const;
   void determineStability(const unsigned int& minPts) const;
   void extractClusters(double* ret) const;

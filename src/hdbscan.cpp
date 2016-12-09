@@ -18,19 +18,12 @@ void HDCluster::condense(const unsigned int& minPts) {
 	if (left == nullptr) return;
 	left->condense(minPts);
 	right->condense(minPts);
-
+	// We don't have to check the right side because we always put the bigger child on the right
 	if (left->sz < minPts) {
 		condenseTooSmall();
 		swap(left, right); // right definitely null, left not null but could be big or small
 		if (left->sz < minPts) condenseTooSmall();
 		else condenseSingleton();
-	} else {
-		swap(left, right); // right big enough, left valid but size unknown
-		if (left->sz < minPts) {
-			condenseTooSmall(); // now left is gone, right is valid
-			swap(left, right); // left is valid, right is gone
-			condenseSingleton();
-		} // both big enough
 	}
 #ifdef DEBUG
 	if (left != nullptr && left->sz < minPts) stop("bad left");
@@ -39,24 +32,28 @@ void HDCluster::condense(const unsigned int& minPts) {
 #endif
 }
 
-// Entering function we know that child has a split of its own
-void HDCluster::condenseSingleton() {
+void HDCluster::mergeUp() {
 	if (left->sz == 1) {
 		sum_lambda_p += left->lambda_birth;
 		fallenPoints.emplace(left->id, left->lambda_birth);
 	}
 	else sum_lambda_p += left->sum_lambda_p;
 	fallenPoints.insert(left->fallenPoints.begin(), left->fallenPoints.end());
+}
+
+// Entering function we know that child has a split of its own
+void HDCluster::condenseSingleton() {
+	mergeUp();
 	lambda_death = max(lambda_death, left->lambda_death);
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("max infinity");
 #endif
 
-	HDCluster* keep = left;
 	right = left->right;
+	left->right = nullptr;
+	HDCluster* keep = left;
 	left = keep->left;
 	keep->left = nullptr;
-	keep->right = nullptr;
 	delete keep;
 
 	if (left != nullptr) left->parent = this;
@@ -65,13 +62,7 @@ void HDCluster::condenseSingleton() {
 
 // Entering function we know that child has no split of its own
 void HDCluster::condenseTooSmall() {
-	if (left->sz == 1) {
-		sum_lambda_p += left->lambda_birth;
-		fallenPoints.emplace(left->id, left->lambda_birth);
-	}
-	else sum_lambda_p += left->sum_lambda_p;
-	fallenPoints.insert(left->fallenPoints.begin(), left->fallenPoints.end());
-//	lambda_death = max(lambda_death, p->lambda_death);
+	mergeUp();
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("infinity is too small");
 #endif
@@ -86,7 +77,7 @@ void HDCluster::condenseTooSmall() {
 
 
 
-void HDCluster::determineStability(const unsigned int& minPts) {
+double HDCluster::determineStability(const unsigned int& minPts) {
 #ifdef DEBUG
 	if (sz < minPts && parent != nullptr) stop("Condense failed");
 #endif
@@ -94,17 +85,17 @@ void HDCluster::determineStability(const unsigned int& minPts) {
 	if (left == nullptr) { // leaf node
 		if (sz >= minPts) selected = true; // Otherwise, this is a parent singleton smaller than minPts.
 	} else {
-		left->determineStability(minPts);
-		right->determineStability(minPts);
+		const double childStabilities = left->determineStability(minPts) +
+																		right->determineStability(minPts);
 		stability += lambda_death * (left->sz + right->sz);
 
-		double childStabilities = left->stability + right->stability;
 		if (stability > childStabilities) {
 			selected = true;
 			left->deselect();
 			right->deselect();
 		} else stability = childStabilities;
 	}
+	return stability;
 }
 
 void HDBSCAN::determineStability(const unsigned int& minPts) const {
@@ -189,23 +180,19 @@ HDCluster::~HDCluster() {
 	if (right != nullptr) delete right;
 }
 
-HDCluster::HDCluster(const arma::uword& id) : sz(1), id(id) {}
+HDCluster::HDCluster(const arma::uword& id) : sz(1), id(id) { }
 
-HDCluster::HDCluster(HDCluster* point1, HDCluster* point2, set<HDCluster*>& roots, const double& d) :
-	id(-1), lambda_birth(1/d), lambda_death(1/d) {
-//	static arma::sword minId = -1;
-//	id = minId--;
+HDCluster::HDCluster(HDCluster* a, HDCluster* b, set<HDCluster*>& roots, const double& d) :
+	id(-1), lambda_birth(0), lambda_death(1/d) {
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("death is infinity");
 #endif
-	HDCluster* a = point1->getRoot();
-	HDCluster* b = point2->getRoot();
 	sz = a->sz + b->sz;
 	a->parent = this;
 	b->parent = this;
 	if (d == 0 || (1 / d) == INFINITY) stop("Infinite lambda");
 	a->lambda_birth = b->lambda_birth = lambda_death;
-	if (a->sz > b->sz) {
+	if (a->sz < b->sz) {
 		left = a;
 		right = b;
 	} else {
@@ -242,14 +229,14 @@ HDBSCAN::HDBSCAN(const unsigned long long& N, const bool& verbose) : N{N}, p(Pro
 	coreDistances = new double[N];
 }
 
-void HDBSCAN::buildHierarchy(const vector<pair<double, arma::uword>>& container, const arma::uword* minimum_spanning_tree) {
+void HDBSCAN::buildHierarchy(const vector<pair<double, arma::uword>>& mergeSequence, const arma::uword* minimum_spanning_tree) {
 	vector<HDCluster*> points = vector<HDCluster*>();
 	points.reserve(N);
 	arma::uword cnt = 0;
 	std::generate_n(points.begin(), N, [&cnt](){return new HDCluster(cnt++);});
 	roots.insert(points.begin(), points.end());
 
-	for (auto it = container.begin(); it != container.end();  ++it) {
+	for (auto it = mergeSequence.begin(); it != mergeSequence.end();  ++it) {
 		arma::uword n = it -> second;
 		if (minimum_spanning_tree[n] == -1) continue;
 #ifdef DEBUG
@@ -257,7 +244,7 @@ void HDBSCAN::buildHierarchy(const vector<pair<double, arma::uword>>& container,
 		if (it->first == NA_INTEGER) stop("NA distance");
 		if (it->first == INFINITY) stop("infinite distance");
 #endif
-		HDCluster* newparent = new HDCluster(points[n], points[minimum_spanning_tree[n]], roots, it->first);
+		HDCluster* newparent = new HDCluster(points[n]->getRoot(), points[minimum_spanning_tree[n]]->getRoot(), roots, it->first);
 		roots.insert(newparent);
 	}
 }
