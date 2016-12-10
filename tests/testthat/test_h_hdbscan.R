@@ -32,10 +32,22 @@ test_that("LOF is consistent 10", {
 context("hdbscan")
 
 test_that("hdbscan finds 3 clusters and outliers in spiral with a large Vis object", {
-	skip_on_travis()
 	load(system.file("testdata/spiral.Rda", package = "largeVis"))
 	expect_silent(clustering <- hdbscan(spiral, K = 3, minPts = 20, threads = 1))
 	expect_equal(length(unique(clustering$clusters)), 3)
+	expect_equal(sum(as.numeric(clustering$clusters) < 1, na.rm = TRUE), 0)
+})
+
+test_that("hdbscan finds outliers", {
+	load(system.file("testdata/spiral.Rda", package = "largeVis"))
+	expect_silent(clustering <- hdbscan(spiral, K = 10, minPts = 20, threads = 1))
+	expect_gt(sum(is.na(clustering$clusters)), 0)
+})
+
+test_that("hdbscan is fine with minpts < 6", {
+	load(system.file("testdata/spiral.Rda", package = "largeVis"))
+	expect_silent(clustering <- hdbscan(spiral, K = 10, minPts = 3, threads = 1))
+	expect_gt(sum(is.na(clustering$clusters)), 0)
 })
 
 test_that("hdbscan finds 3 clusters and outliers in spiral", {
@@ -58,14 +70,13 @@ neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALS
 test_that("hdbscan doesn't crash without 3 neighbors and is correct", {
 	edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
 	expect_silent(clustering <- hdbscan(edges, neighbors = neighbors, minPts = 20, K = 3, threads = 2, verbose = FALSE))
-	expect_equal(length(unique(clustering$clusters, 0)), 2)
+	expect_equal(length(unique(clustering$clusters)), 3)
 })
 
 test_that("hdbscan doesn't crash on glass edges", {
 	skip_on_travis()
 	load(system.file("testdata/glassEdges.Rda", package = "largeVis"))
 	expect_silent(clustering <- hdbscan(glassEdges, threads = 2, verbose = FALSE))
-	expect_equal(length(unique(clustering$clusters)), 2)
 })
 
 test_that("failing example doesn't fail", {
