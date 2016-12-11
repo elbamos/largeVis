@@ -21,6 +21,7 @@ Suggests:
     covr,
     knitr,
     rmarkdown,
+    ggforce,
     png
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues

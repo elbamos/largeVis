@@ -164,6 +164,7 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' @param text If \code{TRUE}, include on the plot labels for each node's index.
 #' If \code{"parent"}, the labels will instead be the index number of the node's
 #' cluster.
+#' @param distances If \code{TRUE}, draw circles representing the core distances around each point.
 #'
 #' @return A \code{\link[ggplot2]{ggplot}} object
 #' @export
@@ -180,34 +181,44 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' gplot(clusters, dat)
 #' }
 #' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes_
-gplot <- function(x, coords, text = FALSE) {
+gplot <- function(x, coords, text = FALSE, distances = FALSE) {
 	dframe <- data.frame(coords)
 	colnames(dframe) <- c("x", "y")
 	dframe$cluster = x$clusters
 	dframe$glosh = x$GLOSH
+	dframe$distance = x$hierarchy$coredistances
 	dframe$glosh[is.nan(dframe$glosh)] <-
 		x$hierarchy$lambda[is.nan(dframe$glosh)]
+	dframe$label <- 0:(nrow(dframe) - 1)
+	dframe$parent <- x$hierarchy$nodemembership
 	xy <- data.frame(coords[x$tree, ])
 	colnames(xy) <- c("x2", "y2")
 	dframe <- cbind(dframe, xy)
 	plt <- ggplot2::ggplot(dframe,
 												 ggplot2::aes_(x = quote(x), y = quote(y),
-												 							xend = quote(x2), yend = quote(y2), color = quote(cluster))) +
+												 							xend = quote(x2), yend = quote(y2), color = quote(cluster)))
+	if (distances) {
+		if (requireNamespace("ggforce", quietly = TRUE)) plt <- plt + ggforce::geom_circle(ggplot2::aes_(x0 = quote(x),
+																																 y0 = quote(y),
+																																 r = quote(distance),
+																																 fill = quote(cluster),
+																																 color = quote(cluster)),
+																									 inherit.aes = FALSE, alpha = 0.1, linetype = "dotted")
+		else warning("To display distance circles, the ggforce package must be installed.")
+	}
+	plt <- plt +
 		ggplot2::geom_point(aes_(alpha = quote(glosh)), size = 0.7) +
 		ggplot2::geom_segment(size = 0.5, ggplot2::aes_(alpha = quote(glosh))) +
 		ggplot2::scale_alpha_continuous(trans = "reverse")
 
 	if (text == "parent") {
-		dframe$parent <- x$hierarchy$nodemembership
-		plt + ggplot2::geom_label(ggplot2::aes_(label = quote(parent)), size = 2.5,
+		plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(parent)), size = 2.5,
 																		 label.padding = ggplot2::unit(0.1, "lines"),
 																		 label.size = 0.1, alpha = 0.7)
 	} else if (text) {
-		dframe$label <- 0:(nrow(dframe) - 1)
-		plt + ggplot2::geom_label(ggplot2::aes_(label = quote(label)), size = 2.5,
+		plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(label)), size = 2.5,
 																		 label.padding = ggplot2::unit(0.1, "lines"),
 																		 label.size = 0.1, alpha = 0.7)
-	} else {
-		plt
 	}
+	plt
 }
