@@ -7,7 +7,6 @@
 #' \code{edges} is a \code{largeVis} object.
 #' @param minPts The minimum number of points in a cluster.
 #' @param K The number of points in the core neighborhood. (See details.)
-#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param verbose Verbosity.
 #'
 #' @details The hyperparameter \code{K} controls the size of core neighborhoods.
@@ -88,33 +87,28 @@
 #' @export
 #' @importFrom stats aggregate
 hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
-										threads = NULL,
 										verbose = getOption("verbose", TRUE)) {
 
 	if (inherits(edges, "edgematrix")) edges <- toMatrix(edges)
 	if (inherits(edges, "largeVis")) {
 		if (missing(neighbors)) neighbors <- edges$knns
 		edges <- toMatrix(edges$edges)
+	} else {
+		if (is.null(neighbors)) stop("Neighbors must be specified unless a largeVis object is given.")
 	}
 
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1
 		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
 	}
-	if (is.null(neighbors) || is.null(edges)) stop("Neighbors must be specified unless a largeVis object is given.")
-
-	if (!is.null(threads)) threads <- as.integer(threads)
-
 
 	clustersout <- hdbscanc(edges = edges,
 													neighbors = neighbors,
 													K	= as.integer(K),
 													minPts = as.integer(minPts),
-													threads = threads,
 													verbose = as.logical(verbose))
 
 	clusters <- clustersout$clusters[1, ]
-#	clusters[clusters == -1] <- NA
 	clusters = factor(clusters)
 	probs <- data.frame(
 		probs = clustersout$clusters[2, ]
@@ -134,20 +128,21 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 	tree[tree == 0] <- NA
 
 	# GLOSH
-	fmax <- aggregate(hierarchy$lambda, by = list(hierarchy$nodemembership), FUN = max, na.rm = TRUE, simplify = TRUE, drop = FALSE)
+	fmax <- stats::aggregate(hierarchy$lambda, by = list(hierarchy$nodemembership), FUN = max,
+													 na.rm = TRUE, simplify = TRUE, drop = FALSE)
 	maxes <- fmax$x[match(hierarchy$nodemembership, fmax$Group.1)]
 	glosh <- (maxes - hierarchy$lambda) / maxes
 
-	ret <- list(
-		clusters = clusters,
-		probabilities = probs$probs,
-		glosh = glosh,
-		tree = tree,
-		hierarchy = hierarchy,
-		call = sys.call()
-	)
-	class(ret) <- "hdbscan"
-	return(ret)
+	structure(
+		.Data = list(
+			clusters = clusters,
+			probabilities = probs$probs,
+			GLOSH = glosh,
+			tree = tree,
+			hierarchy = hierarchy
+		),
+		call = sys.call(),
+		class = "hdbscan")
 }
 
 #' gplot
@@ -189,15 +184,12 @@ gplot <- function(x, coords, text = FALSE) {
 	dframe <- data.frame(coords)
 	colnames(dframe) <- c("x", "y")
 	dframe$cluster = x$clusters
-	dframe$glosh = x$glosh
+	dframe$glosh = x$GLOSH
 	dframe$glosh[is.nan(dframe$glosh)] <-
 		x$hierarchy$lambda[is.nan(dframe$glosh)]
 	xy <- data.frame(coords[x$tree, ])
 	colnames(xy) <- c("x2", "y2")
 	dframe <- cbind(dframe, xy)
-	dframe$lambda <- x$hierarchy$lambda / max(x$hierarchy$lambda)
-	dframe$label <- 0:(nrow(dframe) - 1)
-	dframe$parent <- x$hierarchy$nodemembership
 	plt <- ggplot2::ggplot(dframe,
 												 ggplot2::aes_(x = quote(x), y = quote(y),
 												 							xend = quote(x2), yend = quote(y2), color = quote(cluster))) +
@@ -206,13 +198,16 @@ gplot <- function(x, coords, text = FALSE) {
 		ggplot2::scale_alpha_continuous(trans = "reverse")
 
 	if (text == "parent") {
-		plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(parent)), size = 2.5,
+		dframe$parent <- x$hierarchy$nodemembership
+		plt + ggplot2::geom_label(ggplot2::aes_(label = quote(parent)), size = 2.5,
 																		 label.padding = ggplot2::unit(0.1, "lines"),
 																		 label.size = 0.1, alpha = 0.7)
 	} else if (text) {
-		plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(label)), size = 2.5,
+		dframe$label <- 0:(nrow(dframe) - 1)
+		plt + ggplot2::geom_label(ggplot2::aes_(label = quote(label)), size = 2.5,
 																		 label.padding = ggplot2::unit(0.1, "lines"),
 																		 label.size = 0.1, alpha = 0.7)
+	} else {
+		plt
 	}
-	plt
 }

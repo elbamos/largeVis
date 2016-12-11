@@ -274,10 +274,9 @@ void HDBSCAN::makeCoreDistances(const sp_mat& edges,
                                 const IntegerMatrix& neighbors,
                                 const int& K) {
 	if (neighbors.nrow() < K) stop("Specified K bigger than the number of neighbors in the adjacency matrix.");
-	//if (K < 4) stop("K must be >= 4 when used with neighbors.");
-	IntegerVector kthNeighbors = neighbors.row(K - 1);
+	const IntegerVector kthNeighbors = neighbors.row(K - 1);
 	for (arma::uword n = 0; n < N; n++) if (p.increment()) {
-		arma::uword q = kthNeighbors[n];
+		const arma::uword q = kthNeighbors[n];
 		if (q == -1 || q == NA_INTEGER) stop("Insufficient neighbors.");
 		coreDistances[n] = edges(n, q);
 		if (coreDistances[n] == 0) coreDistances[n] = max(edges(q, n), 1e-5);
@@ -329,11 +328,7 @@ List hdbscanc(const arma::sp_mat& edges,
               const IntegerMatrix& neighbors,
               const int& K,
               const int& minPts,
-              Rcpp::Nullable<Rcpp::NumericVector> threads,
               const bool& verbose) {
-#ifdef _OPENMP
-	checkCRAN(threads);
-#endif
 	HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
 	// 1 N
 	IntegerVector tree = object.build(K, edges, neighbors);

@@ -8,16 +8,17 @@
 }
 \arguments{
 \item{object}{An \code{hdbscan} object.}
-\item{...}{Included for compatibility with \code{\link[stats]{as.dendrogram}} and currently ignored.}
+
+\item{...}{For compatibility with \code{\link[stats]{as.dendrogram}}, and currently ignored.}
 }
 \value{
 A \code{dendrogram} object, where nodes have the following attributes:
 \describe{
 \item{'leaf'}{As in \code{\link[stats]{dendrogram}}.}
 \item{'members'}{As in \code{\link[stats]{dendrogram}}.}
-\item{'height'}{For clusters, \eqn{1.1 * \lambda_birth}; for leaves, \eqn{\lambda_p}.}
+\item{'height'}{For clusters, \eqn{\lambda_birth}; for leaves, \eqn{\lambda_p}.}
 \item{'probability'}{The probability that the leaf is a true member of its assigned cluster.}
-\item{'glosh'}{The leaf's GLOSH outlier score.}
+\item{'GLOSH'}{The leaf's GLOSH outlier score.}
 \item{'stability'}{The node's determined stability, taking into account child-node stabilities. Missing for leaves.}
 \item{'selected'}{Whether the node was selected as a cluster.  Missing for leaves.  Note that when a node is selected,
 all points under child branches are assigned to the same cluster.}
@@ -25,7 +26,7 @@ all points under child branches are assigned to the same cluster.}
 }
 }
 \description{
-Convert an hdbscan object into dendrogram compatible with the \code{stats} package.
+Convert an hdbscan object into a dendrogram compatible with the \code{stats} package.
 }
 \note{
 The hdbscan algorithm works by first building a hierarchy based on a minimal spanning tree, then consolidating nodes according to

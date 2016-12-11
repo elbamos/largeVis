@@ -7,7 +7,7 @@
 lof(edges)
 }
 \arguments{
-\item{edges}{An edge matrix of the type produced by \code{\link{buildEdgeMatrix}}.}
+\item{edges}{An `edgematrix` of the type produced by \code{\link{buildEdgeMatrix}}.}
 }
 \value{
 A vector of LOF values for each data point.

@@ -182,7 +182,7 @@ ggplot(data = opticsPoints, aes(x = x, y = y, color = cluster)) +
 ## ----hdbscan,fig.width=6,fig.height=6------------------------------------
 suppressWarnings(set <- do.call(rbind, Map(f = function(y) {
 	rbind(Map(f = function(x) {
-		hdclust <- hdbscan(edges = edges, neighbors = neighbors, K = y, minPts = x, threads = 1)$cluster
+		hdclust <- hdbscan(edges = edges, neighbors = neighbors, K = y, minPts = x)$cluster
 		data.frame(cluster = as.numeric(hdclust), K = x, minPts = y)
 	}, c(6, 10, 20)))
 }, c(2, 6, 12))))

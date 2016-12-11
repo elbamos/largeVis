@@ -25,6 +25,7 @@ buildEdgeMatrix <- function(data,
 						j = indices$j + 1,
 						x = as.vector(distances)),
 						dims = c(ncol(data), ncol(data)),
+						call = sys.call(),
 						method = tolower(distance_method))
 	class(ret) <- "edgematrix"
 	ret
@@ -44,7 +45,9 @@ toMatrix <- function(x) {
 #'
 #' Convert an edge matrix to a \code{dist} object.
 #'
-#' @param x An `edgematrix` object.
+#' @param m An `edgematrix` object.
+#' @param diag logical value indicating whether the diagonal of the distance matrix should be printed by print.dist.
+#' @param upper	logical value indicating whether the upper triangle of the distance matrix should be printed by print.dist.
 #'
 #' @return A \code{\link[stats]{dist}} object.
 #'
@@ -55,9 +58,8 @@ toMatrix <- function(x) {
 #' @rdname buildEdgeMatrix
 #' @importFrom Matrix triu tril t as.matrix diag sparseMatrix
 #' @importFrom stats as.dist
-as.dist.edgematrix <- function(x, diag = FALSE, upper = FALSE) {
-	method <- attr(x, "method")
-	x <- toMatrix(x)
+as.dist.edgematrix <- function(m, diag = FALSE, upper = FALSE) {
+	x <- toMatrix(m)
 	y <- Matrix::tril(x)
 	z <- Matrix::t(Matrix::triu(x))
 	zeros <- y == 0
@@ -69,8 +71,10 @@ as.dist.edgematrix <- function(x, diag = FALSE, upper = FALSE) {
 						Size = ncol(x),
 						Diag = FALSE,
 						Upper = FALSE,
-						method = method,
-						call = sys.call())
+						method = attr(m, "method"),
+						Diag = diag,
+						Upper = upper,
+						call = attr(m, "call"))
 }
 
 #' buildWijMatrix

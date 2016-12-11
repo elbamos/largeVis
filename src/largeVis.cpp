@@ -164,8 +164,7 @@ public:
                     const unsigned int& M,
                     const double& alpha,
                     const double& gamma) : Visualizer(sourcePtr, targetPtr, coordPtr, D,
-                    																	N, E, rho, n_samples, M, alpha, gamma) {
-		this -> momentum = momentum;
+                    																	N, E, rho, n_samples, M, alpha, gamma), momentum{momentum} {
 		momentumarray = new coordinatetype[D * N];
 		std::fill(momentumarray, momentumarray + D * N, 0);
 	}

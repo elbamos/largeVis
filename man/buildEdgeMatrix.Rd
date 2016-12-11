@@ -8,7 +8,7 @@
 buildEdgeMatrix(data, neighbors = NULL, distance_method = "Euclidean",
   threads = NULL, verbose = getOption("verbose", TRUE), ...)
 
-\method{as.dist}{edgematrix}(x, diag = FALSE, upper = FALSE)
+\method{as.dist}{edgematrix}(m, diag = FALSE, upper = FALSE)
 }
 \arguments{
 \item{data}{A matrix with a number of columns equal to the number of columns in `x`}
@@ -24,7 +24,11 @@ will be run with parameters given by \code{...}.}
 
 \item{...}{Additional parameters passed to \code{\link{randomProjectionTreeSearch}} if \code{neighbors} is \code{NULL}.}
 
-\item{x}{An `edgematrix` object.}
+\item{m}{An `edgematrix` object.}
+
+\item{diag}{logical value indicating whether the diagonal of the distance matrix should be printed by print.dist.}
+
+\item{upper}{logical value indicating whether the upper triangle of the distance matrix should be printed by print.dist.}
 }
 \value{
 An `edgematrix` object consisting of the elements of a sparse matrix, with the distance method stored in attribute \code{method}.
