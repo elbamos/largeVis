@@ -4,6 +4,7 @@
 * Performance improvements in HDBSCAN. 
 * HDBSCAN now outputs GLOSH outlier scores for each point assigned to a cluster, and these are used by gplot. 
 * as_dendrogram_hdbscan is now (properly) an S3 method for as.dendrogram applied to class hdbscan. 
+* Edge matrices are now `edgematrix` objects. This allows the as_dist function to be an as.dist.edgematrix S3 method.
 
 ### largeVis 0.1.10.1
 * Hotfix for issue the caused largeVis to fail if compiled without 64-bit ARMA  

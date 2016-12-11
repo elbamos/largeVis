@@ -12,7 +12,6 @@
 #' @param verbose Verbosity.
 #'
 #' @return A vector of the distances between the columns in `x` indexed by `i` and `j`, with attribute \code{method} giving the \code{distance_method}.
-#' @family lowmem
 #' @export
 distance <- function(x,
                      i,

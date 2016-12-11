@@ -98,11 +98,11 @@ largeVis <- function(x,
   												 verbose = verbose)
   if (!save_neighbors) rm(knns)
   gc()
-  if (any(edges@x > 27)) {
+  if (any(edges$x > 27)) {
   	warning(paste(
   		"The Distances between some neighbors are large enough to cause the calculation of p_{j|i} to overflow.",
   		"Scaling the distance vector."))
-  	edges@x <- edges@x / max(edges@x)
+  	edges$x <- edges$x / max(edges$x)
   }
   wij <- buildWijMatrix(edges, threads, perplexity)
   if (!save_edges) rm(edges)
