@@ -4,7 +4,7 @@
 \alias{hdbscan}
 \title{hdbscan}
 \usage{
-hdbscan(edges, neighbors = NULL, minPts = 20, K = 5, threads = NULL,
+hdbscan(edges, neighbors = NULL, minPts = 20, K = 5,
   verbose = getOption("verbose", TRUE))
 }
 \arguments{
@@ -16,8 +16,6 @@ hdbscan(edges, neighbors = NULL, minPts = 20, K = 5, threads = NULL,
 \item{minPts}{The minimum number of points in a cluster.}
 
 \item{K}{The number of points in the core neighborhood. (See details.)}
-
-\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
 
 \item{verbose}{Verbosity.}
 }

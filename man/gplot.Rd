@@ -4,7 +4,7 @@
 \alias{gplot}
 \title{gplot}
 \usage{
-gplot(x, coords, text = FALSE)
+gplot(x, coords, text = FALSE, distances = FALSE)
 }
 \arguments{
 \item{x}{An \code{hdbscan} object.}
@@ -14,6 +14,8 @@ gplot(x, coords, text = FALSE)
 \item{text}{If \code{TRUE}, include on the plot labels for each node's index.
 If \code{"parent"}, the labels will instead be the index number of the node's
 cluster.}
+
+\item{distances}{If \code{TRUE}, draw circles representing the core distances around each point.}
 }
 \value{
 A \code{\link[ggplot2]{ggplot}} object
