@@ -8,8 +8,7 @@
 #' @param verbose Verbosity
 #' @param ... Additional parameters passed to \code{\link{randomProjectionTreeSearch}} if \code{neighbors} is \code{NULL}.
 #'
-#' @return A `sparseMatrix`, with the distance method stored in attribute \code{method} and additional class `edge_matrix.`
-#' @importFrom Matrix sparseMatrix
+#' @return An `edgematrix` object consisting of the elements of a sparse matrix, with the distance method stored in attribute \code{method}.
 #' @export
 buildEdgeMatrix <- function(data,
                             neighbors = NULL,
@@ -21,21 +20,21 @@ buildEdgeMatrix <- function(data,
 	indices <- neighborsToVectors(neighbors)
 	distances <- distance(i = indices$i, j = indices$j, x = data, distance_method = distance_method, verbose = verbose)
 	distances <- pmax(distances, 1e-5)
-	mat <- sparseMatrix(
-		                  i = indices$i + 1,
-											j = indices$j + 1,
-											x = as.vector(distances),
-											dims = c(ncol(data), ncol(data)))
-	structure(.Data = mat,
+	ret <- structure(list(
+		        i = indices$i + 1,
+						j = indices$j + 1,
+						x = as.vector(distances)),
+						dims = c(ncol(data), ncol(data)),
 						method = tolower(distance_method))
+	class(ret) <- "edgematrix"
+	ret
 }
 
-
-#' as_dist_edgematrix
+#' as.dist.edgematrix
 #'
 #' Convert an edge matrix to a \code{dist} object.
 #'
-#' @param x An edge matrix.
+#' @param x An `edgematrix` object.
 #'
 #' @return A \code{\link[stats]{dist}} object.
 #'
@@ -44,9 +43,15 @@ buildEdgeMatrix <- function(data,
 #'
 #' @export
 #' @rdname buildEdgeMatrix
-#' @importFrom Matrix triu tril t as.matrix diag
+#' @importFrom Matrix triu tril t as.matrix diag sparseMatrix
 #' @importFrom stats as.dist
-as_dist_edgematrix <- function(x) {
+as.dist.edgematrix <- function(x, diag = FALSE, upper = FALSE) {
+	x <- sparseMatrix(
+		i = x$i,
+		j = x$j,
+		x = x$x,
+		dims = attr(x, "dims")
+	)
 	y <- Matrix::tril(x)
 	z <- Matrix::t(Matrix::triu(x))
 	zeros <- y == 0
@@ -66,7 +71,7 @@ as_dist_edgematrix <- function(x) {
 #'
 #' Rescale the weights in an edge matrix to match a given perplexity.
 #'
-#' @param x A sparse matrix
+#' @param x An edgematrix, either an `edgematrix` object or a sparse matrix.
 #' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param perplexity Given perplexity.
 #'
@@ -82,9 +87,17 @@ buildWijMatrix <- function(x,
 										       perplexity = 50) UseMethod("buildWijMatrix")
 #' @export
 #' @rdname buildWijMatrix
+buildWijMatrix.edgematrix <- function(x,
+																		 threads = NULL,
+																		 perplexity = 50) {
+	wij <- referenceWij(x$j, x$i, x$x^2, as.integer(threads), perplexity);
+	return(wij)
+}
+#' @export
+#' @rdname buildWijMatrix
 buildWijMatrix.TsparseMatrix <- function(x,
 																				 threads = NULL,
-																	 perplexity = 50) {
+																	       perplexity = 50) {
 	wij <- referenceWij(x@j, x@i, x@x^2, as.integer(threads), perplexity);
 	return(wij)
 }
