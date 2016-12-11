@@ -37,9 +37,10 @@ lv_optics <- function(edges,
 										 xi,
 										 useQueue = TRUE,
 										 verbose = getOption("verbose", TRUE)) {
+	if (inherits(edges, "edgematrix")) edges <- toMatrix(edges)
 	if (inherits(edges, "largeVis")) {
 		if (missing(neighbors)) neighbors <- edges$knns
-		edges <- edges$edges
+		edges <- toMatrix(edges$edges)
 	}
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1

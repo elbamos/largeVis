@@ -4,16 +4,19 @@
 \alias{buildWijMatrix}
 \alias{buildWijMatrix.CsparseMatrix}
 \alias{buildWijMatrix.TsparseMatrix}
+\alias{buildWijMatrix.edgematrix}
 \title{buildWijMatrix}
 \usage{
 buildWijMatrix(x, threads = NULL, perplexity = 50)
+
+\method{buildWijMatrix}{edgematrix}(x, threads = NULL, perplexity = 50)
 
 \method{buildWijMatrix}{TsparseMatrix}(x, threads = NULL, perplexity = 50)
 
 \method{buildWijMatrix}{CsparseMatrix}(x, threads = NULL, perplexity = 50)
 }
 \arguments{
-\item{x}{A sparse matrix}
+\item{x}{An edgematrix, either an `edgematrix` object or a sparse matrix.}
 
 \item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
 

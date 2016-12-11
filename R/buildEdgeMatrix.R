@@ -30,6 +30,16 @@ buildEdgeMatrix <- function(data,
 	ret
 }
 
+#' @importFrom Matrix sparseMatrix
+toMatrix <- function(x) {
+	sparseMatrix(
+		i = x$i,
+		j = x$j,
+		x = x$x,
+		dims = attr(x, "dims")
+	)
+}
+
 #' as.dist.edgematrix
 #'
 #' Convert an edge matrix to a \code{dist} object.
@@ -46,12 +56,8 @@ buildEdgeMatrix <- function(data,
 #' @importFrom Matrix triu tril t as.matrix diag sparseMatrix
 #' @importFrom stats as.dist
 as.dist.edgematrix <- function(x, diag = FALSE, upper = FALSE) {
-	x <- sparseMatrix(
-		i = x$i,
-		j = x$j,
-		x = x$x,
-		dims = attr(x, "dims")
-	)
+	method <- attr(x, "method")
+	x <- toMatrix(x)
 	y <- Matrix::tril(x)
 	z <- Matrix::t(Matrix::triu(x))
 	zeros <- y == 0
@@ -63,7 +69,7 @@ as.dist.edgematrix <- function(x, diag = FALSE, upper = FALSE) {
 						Size = ncol(x),
 						Diag = FALSE,
 						Upper = FALSE,
-						method = attr(x, "method"),
+						method = method,
 						call = sys.call())
 }
 
@@ -90,8 +96,7 @@ buildWijMatrix <- function(x,
 buildWijMatrix.edgematrix <- function(x,
 																		 threads = NULL,
 																		 perplexity = 50) {
-	wij <- referenceWij(x$j, x$i, x$x^2, as.integer(threads), perplexity);
-	return(wij)
+	buildWijMatrix(toMatrix(x), threads, perplexity)
 }
 #' @export
 #' @rdname buildWijMatrix
