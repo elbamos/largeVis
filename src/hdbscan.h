@@ -24,8 +24,8 @@ private:
 	HDCluster* parent = nullptr;
 	HDCluster* left = nullptr;
 	HDCluster* right = nullptr;
-	arma::uword sz; // Size at top of cluster
-	arma::sword id;
+	const arma::uword sz; // Size at top of cluster
+	const arma::sword id;
 	set< std::pair<arma::uword, double >> fallenPoints; // Points that leave cluster betweeen top and split
 	double lambda_birth = 0; // 1 / Distance at which splits from parent cluster
 	double lambda_death = INFINITY; // 1 / Distance at which cluster splits
@@ -58,6 +58,7 @@ public:
 
 	void condense(const unsigned int& minPts);
 	double determineStability(const unsigned int& minPts);
+	void determineSubStability(const unsigned int& minPts);
 
 	void extract(
 			double* ret, // An N * 2 array where for each point n * 2 is the cluster id for the point and n * 2 + 1 is lambda_p.

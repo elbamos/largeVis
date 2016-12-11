@@ -8,6 +8,7 @@
 }
 \arguments{
 \item{object}{An \code{hdbscan} object.}
+\item{...}{Included for compatibility with \code{\link[stats]{as.dendrogram}} and currently ignored.}
 }
 \value{
 A \code{dendrogram} object, where nodes have the following attributes:

@@ -264,7 +264,7 @@ The `dbscan` package has other functions for cutting and visualizing `OPTICS` cl
 
 ### HDBSCAN
 
-`HDBSCAN` [@Campello2013] aims to make the `DBBSCAN` and `OPTICS` approach flexible for graphs with different densities in different regions, by building a hierarchical density-bsaed clustering from which flat clusters are extracted.  `HDBSCAN` does not need the $\epsilon$ hypterparameter, which can be difficult to set. Rather, `HDBSCAN`, in effect, determines different values for $\epsilon$ for different parts of the dataset, based on density. 
+`HDBSCAN` [@Campello2013] aims to make the `DBBSCAN` and `OPTICS` approach flexible for graphs with different densities in different regions, by building a hierarchical density-bsaed clustering from which flat clusters are extracted.  `HDBSCAN` does not need the $\epsilon$ hypterparameter, which can be difficult to set. Rather, `HDBSCAN`, in effect, determines different values for $\epsilon$ for different parts of the dataset. 
 
 ```{r hdbscan,fig.width=6,fig.height=6}
 suppressWarnings(set <- do.call(rbind, Map(f = function(y) {

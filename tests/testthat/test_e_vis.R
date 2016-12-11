@@ -59,3 +59,13 @@ test_that("largeVis graidents aren't off", {
 	expect_equal(sum(visObject$coords > 50), 0)
 	expect_equal(sum(visObject$coords < -50), 0)
 })
+
+test_that("largeVis can eat a data.frame", {
+	expect_silent(visObj <- largeVis(iris, K = 20, max_iter = 10, sgd_batches = 1, threads = 2, verbose = FALSE))
+})
+
+test_that("largeVis rejects wrong data types", {
+	expect_error(visObj <- largeVis(letters, K = 2, max_iter = 10, sgd_batches = 1, threads = 2, verbose = FALSE))
+	expect_error(visObj <- largeVis(matrix(sample(letters, 100, replace = T), nrow = 10, ncol = 10),
+																	K = 2, max_iter = 10, sgd_batches = 1, threads = 2, verbose = FALSE))
+})

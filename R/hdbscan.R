@@ -101,7 +101,6 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
 	}
 	if (is.null(neighbors) || is.null(edges)) stop("Neighbors must be specified unless a largeVis object is given.")
-	if (minPts < 6) stop("minPts must be >= 6")
 
 	if (!is.null(threads)) threads <- as.integer(threads)
 
@@ -115,7 +114,7 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 
 	clusters <- clustersout$clusters[1, ]
 #	clusters[clusters == -1] <- NA
-	clusters = factor(clusters, exclude = NULL)
+	clusters = factor(clusters)
 	probs <- data.frame(
 		probs = clustersout$clusters[2, ]
 	)

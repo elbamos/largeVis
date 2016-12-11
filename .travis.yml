@@ -18,8 +18,18 @@ matrix:
     dist: trusty
     r: release
     env: R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
+  - os: linux
+    dist: trusty
+    r: release
+    r_check_args: --use-valgrind
+  - os: linux
+    dist: trusty
+    r: release
+    env: R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
+    r_check_args: --use-valgrind
   allow_failure:
     r: devel
+    r_check_args: --use-valgrind
 
 cache: packages
 
@@ -63,4 +73,4 @@ addons:
       - valgrind
 
 after_success:
-  - Rscript -e 'covr::codecov(Sys.getenv("TRAVIS_BRANCH"))'
+  - Rscript -e 'covr::codecov(branch = Sys.getenv("TRAVIS_BRANCH"))'
