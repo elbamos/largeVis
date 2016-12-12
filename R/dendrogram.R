@@ -7,7 +7,7 @@
 #' under A but not B or C would not be assigned to any cluster. This function returns a dendrogram of the middle stage, the hierarchy of consolidated
 #' nodes. Whether a node was selected as as cluster is an attribute of each node.
 #' @param object An \code{hdbscan} object.
-#' @param ... For compatibility with \code{\link[stats]{as.dendrogram}}, and currently ignored. 
+#' @param ... For compatibility with \code{\link[stats]{as.dendrogram}}, and currently ignored.
 #' @return A \code{dendrogram} object, where nodes have the following attributes:
 #' \describe{
 #' \item{'leaf'}{As in \code{\link[stats]{dendrogram}}.}
@@ -58,7 +58,7 @@ as.dendrogram.hdbscan <- function(object, ...) {
 			members = sum(unlist(vapply(children, FUN.VALUE = 0L, FUN = m))) +
 				sum(unlist(vapply(cousins, FUN.VALUE = 0L, FUN = m))),
 			leaf = FALSE,
-			height = 1.1 * max(0, unlist(vapply(children, FUN.VALUE = 0, FUN = h)),
+			height = max(0, unlist(vapply(children, FUN.VALUE = 0, FUN = h)),
 												 unlist(vapply(cousins, FUN.VALUE = 0, FUN = h))),
 			selected = object$hierarchy$selected[i],
 			cluster = i,

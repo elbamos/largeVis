@@ -41,12 +41,11 @@ cran: http://cran.rstudio.com
 
 r_packages:
   - covr
+  - ggforce
+  - ggplot2
 
 r_binary_packages:
   - testthat
-  - ggplot2
-  - units
-  - udunits2
   - png
   - Rcpp
   - RcppArmadillo
@@ -74,6 +73,8 @@ addons:
       - gfortran-4.9
       - valgrind
       - libudunits2-dev
+  brew_packages:
+      - udunits
 
 after_success:
   - Rscript -e 'covr::codecov(branch = Sys.getenv("TRAVIS_BRANCH"))'
