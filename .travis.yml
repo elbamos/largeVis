@@ -71,7 +71,7 @@ addons:
       - g++-4.9
       - gfortran-4.9
       - valgrind
-      - libudunits2-0
+      - libudunits2-dev
 
 after_success:
   - Rscript -e 'covr::codecov(branch = Sys.getenv("TRAVIS_BRANCH"))'
