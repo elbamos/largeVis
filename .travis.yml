@@ -3,33 +3,18 @@
 language: r
 
 matrix:
-  include:
-  - os: linux
-    dist: trusty
-    r: release
-  - os: osx
-    r: release
-  - os: linux
-    dist: trusty
-    r: devel
-  - os: osx
-    r: devel
-  - os: linux
-    dist: trusty
-    r: release
-    env: R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
-  - os: linux
-    dist: trusty
-    r: release
-    r_check_args: --use-valgrind
-  - os: linux
-    dist: trusty
-    r: release
-    env: R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
-    r_check_args: --use-valgrind
-  allow_failure:
-    r: devel
-    r_check_args: --use-valgrind
+  os:
+    - linux
+    - osx
+  r:
+    - release
+    - devel
+  env:
+    - R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
+    - R_XTRA_CXXFLAGS = -DARMA_32BIT_WORD
+  r_check_args:
+    -
+    - --use-valgrind
 
 cache: packages
 
