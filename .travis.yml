@@ -41,7 +41,6 @@ cran: http://cran.rstudio.com
 
 r_packages:
   - covr
-  - ggforce
 
 r_binary_packages:
   - testthat
