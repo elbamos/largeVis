@@ -14,7 +14,7 @@ matrix:
     r: devel
   - os: osx
     r: devel
-    env: _R_CHECK_FORCE_SUGGESTS = FALSE
+    env: _R_CHECK_FORCE_SUGGESTS_ = FALSE
   - os: linux
     dist: trusty
     r: release
