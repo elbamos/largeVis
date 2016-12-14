@@ -26,7 +26,7 @@ buildEdgeMatrix <- function(data,
 						x = as.vector(distances)),
 						dims = c(ncol(data), ncol(data)),
 						call = sys.call(),
-						method = tolower(distance_method))
+						Metric = tolower(distance_method))
 	class(ret) <- "edgematrix"
 	ret
 }
@@ -67,11 +67,12 @@ as.dist.edgematrix <- function(m, diag = FALSE, upper = FALSE) {
 	y[y == 0] <- NA
 	Matrix::diag(y) <- 0
 	structure(stats::as.dist(Matrix::as.matrix(y)),
-						class = "dist",
+						class = c("dist", "dissimilarity"),
 						Size = ncol(x),
 						Diag = FALSE,
 						Upper = FALSE,
-						method = attr(m, "method"),
+						Metric = attr(m, "Metric"),
+						NA.message = "Sparse dist matrix",
 						Diag = diag,
 						Upper = upper,
 						call = attr(m, "call"))

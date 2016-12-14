@@ -12,7 +12,7 @@ dat <- t(scale(as.matrix(quakes)))
 																					threads = 2,
 																					verbose = FALSE)
 	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
-	expect_equal(attr(edges, "method"), "euclidean")
+	expect_equal(attr(edges, "Metric"), "euclidean")
 	expect_equal(class(edges), "edgematrix")
 })
 
@@ -85,9 +85,10 @@ test_that("build edge matrix as distance matches dist", {
 	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, max_iter = 10, threads = 2)
 	edges <- buildEdgeMatrix(dat, neighbors)
 	d2 <- as.dist(edges)
-	expect_equal(class(d2), "dist")
+	expect_true(inherits(d2, "dist"))
+	expect_true(inherits(d2, "dissimilarity"))
 	expect_equal(as.matrix(do), as.matrix(d2))
-	expect_equal(attr(d2, "method"), "euclidean")
+	expect_equal(attr(d2, "Metric"), "euclidean")
 	expect_equal(sum(is.na(as.matrix(d2))), 0)
 })
 
@@ -97,5 +98,5 @@ test_that("build edge matrix as distance matches dist with nas", {
 	d3 <- as.dist(edges)
 	todelete <- !is.na(as.matrix(d3))
 	expect_equal(as.matrix(do)[todelete], as.matrix(d3)[todelete])
-	expect_equal(attr(d3, "method"), "euclidean")
+	expect_equal(attr(d3, "Metric"), "euclidean")
 })

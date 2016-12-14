@@ -60,7 +60,7 @@ largeVis <- function(x,
                      K = 50,
 
                      n_trees = 50,
-                     tree_threshold = max(10, ncol(x)),
+                     tree_threshold = max(10, min(nrow(x), ncol(x))),
                      max_iter = 1,
                      distance_method = "Euclidean",
 
