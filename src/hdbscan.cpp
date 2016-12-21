@@ -235,7 +235,7 @@ void HDCluster::deselect() {
 
 
 
-HDBSCAN::HDBSCAN(const unsigned long long& N, const bool& verbose) : N{N}, p(Progress(10 * N, verbose)) {
+HDBSCAN::HDBSCAN(const arma::uword& N, const bool& verbose) : N{N}, p(Progress(10 * N, verbose)) {
 	coreDistances = new double[N];
 }
 

@@ -8,6 +8,7 @@
 * Threading is now disabled in HDBSCAN. The reason is that it did not offer any performance improvement.
 * gplot now has an option to show the core distances for each point, using the ggforce package.
 * dbscan is no longer a dependency
+* Worked-around bug in gcc 4.8 that caused issues on systems whose maintainers have not bothered to incorporate the past three years of compiler bug fixes (e.g., CentOS).
 
 ### largeVis 0.1.10.1
 * Hotfix for issue the caused largeVis to fail if compiled without 64-bit ARMA  

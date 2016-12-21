@@ -86,7 +86,7 @@ private:
   void determineStability(const unsigned int& minPts) const;
   void extractClusters(double* ret) const;
 public:
-	HDBSCAN(const unsigned long long& N, const bool& verbose);
+	HDBSCAN(const arma::uword& N, const bool& verbose);
 	~HDBSCAN();
 
 	void makeCoreDistances(	const sp_mat& edges,
