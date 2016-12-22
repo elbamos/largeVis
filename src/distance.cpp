@@ -63,7 +63,7 @@ arma::vec fastDistance(const IntegerVector is,
 #ifdef _OPENMP
 #pragma omp parallel for shared (xs)
 #endif
-  for (vertexidxtype i=0; i < is.length(); i++) if (p.increment()) xs[i] =
+  for (arma::uword i=0; i < is.length(); i++) if (p.increment()) xs[i] =
     distanceFunction(data.col(is[i]), data.col(js[i]));
   return xs;
 };

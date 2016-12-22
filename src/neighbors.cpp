@@ -165,6 +165,7 @@ void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
 	 */
 	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
+	if (continueWriting == knns.begin_col(i)) stop("At reduction, no neighbors for vertex " + std::to_string(i));
 	sort(knns.begin_col(i), continueWriting);
 	std::fill(continueWriting, knns.end_col(i), -1);
 
@@ -262,14 +263,14 @@ void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 
 	/*
 	* Before the last iteration, we keep the matrix sorted by vertexid, which makes the merge above
-	* more efficient.  In the last iteration, sort by distance.
+	* more efficient.
 	*
 	* We can't use std:copy because we're copying from a vector of pairs
 	*/
 	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
+	if (copyContinuation == knns.begin_col(i)) stop("No neighbors after exploration - this is a bug. Vertex " + std::to_string(i));
 	sort(knns.begin_col(i), copyContinuation);
-	if (copyContinuation == knns.begin_col(i)) stop("Neighbor exploration failure.");
 	std::fill(copyContinuation, knns.end_col(i), -1);
 }
 
