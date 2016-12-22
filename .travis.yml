@@ -31,6 +31,8 @@ r_packages:
   - covr
   - BH
   - ggplot2
+
+r_binary_packages:
   - testthat
   - png
   - Rcpp
@@ -40,12 +42,7 @@ r_packages:
   - knitr
   - rmarkdown
 
-before_install: |
-  mkdir ~/.R
-  cat <<EOF >> ~/.R/Makevars
-  CXX1X=g++-4.9
-  FC=gfortran-4.9
-  CXX1XSTD=-std=c++11
+sudo: required
 
 addons:
   apt:
