@@ -13,19 +13,15 @@ using namespace std;
 //#define DEBUG
 //#define DEBUG2
 
-template<class T>
-void findAndErase(set<T>& theSet, T& theItem) {
-	auto it = theSet.find(theItem);
-	if (it != theSet.end()) theSet.erase(it);
-};
-
 class HDCluster {
 private:
 	HDCluster* parent = nullptr;
 	HDCluster* left = nullptr;
 	HDCluster* right = nullptr;
 	const arma::uword sz; // Size at top of cluster
-	const arma::sword id;
+public:
+	const arma::uword id;
+private:
 	set< std::pair<arma::uword, double >> fallenPoints; // Points that leave cluster betweeen top and split
 	double lambda_birth = 0; // 1 / Distance at which splits from parent cluster
 	double lambda_death = INFINITY; // 1 / Distance at which cluster splits
@@ -38,7 +34,7 @@ private:
 	void mergeUp();
 	void condenseSingleton();
 	void condenseTooSmall();
-	void extract( double* ret, arma::uword& selectedClusterCnt, arma::uword currentSelectedCluster) const;
+	void extract( double* ret, arma::uword& selectedClusterCnt, arma::uword currentSelectedCluster, Progress& p) const;
 	void reportHierarchy(
 							 arma::uword& clusterCnt,
                vector<arma::uword>& nodeMembership, // The clusterid of the immediate parent for each point
@@ -54,15 +50,16 @@ public:
 
 	HDCluster* getRoot();
 
-	HDCluster(HDCluster* a, HDCluster* b, set<HDCluster*>& roots, const double& d);
+	HDCluster(HDCluster* a, HDCluster* b, const arma::uword& id, const double& d);
 
-	void condense(const unsigned int& minPts);
-	double determineStability(const unsigned int& minPts);
-	void determineSubStability(const unsigned int& minPts);
+	void condense(const unsigned int minPts, unsigned int level, Progress& p);
+	double determineStability(const unsigned int& minPts, Progress& p);
+	void determineSubStability(const unsigned int& minPts, Progress& p);
 
 	void extract(
 			double* ret, // An N * 2 array where for each point n * 2 is the cluster id for the point and n * 2 + 1 is lambda_p.
-			arma::uword& selectedClusterCnt
+			arma::uword& selectedClusterCnt,
+			Progress& p
 	) const;
 
 	void reportHierarchy(
@@ -74,17 +71,27 @@ public:
 			vector<double>& clusterStability);
 };
 
+template<typename Tval>
+struct MyTemplatePointerHash1 {
+	size_t operator()(const Tval* val) const {
+		static const size_t shift = (size_t)log2(1 + sizeof(Tval));
+		return (size_t)(val) >> shift;
+	}
+};
+
+typedef unordered_map<arma::uword, HDCluster*> Rootset;
+
 class HDBSCAN {
 private:
   arma::uword N;
   Progress p;
-  set<HDCluster*> roots;
+  Rootset roots;
   double* coreDistances;
 
   void buildHierarchy(const vector<pair<double, arma::uword>>& mergeSequence, const arma::uword* minimum_spanning_tree);
-  void condense(const unsigned int& minPts) const;
-  void determineStability(const unsigned int& minPts) const;
-  void extractClusters(double* ret) const;
+  void condense(const unsigned int& minPts);
+  void determineStability(const unsigned int& minPts);
+  void extractClusters(double* ret);
 public:
 	HDBSCAN(const arma::uword& N, const bool& verbose);
 	~HDBSCAN();
@@ -95,6 +102,6 @@ public:
 	IntegerVector build( 		const unsigned int& K,
                         	const sp_mat& edges,
                         	const IntegerMatrix& neighbors);
-	void condenseAndExtract(const unsigned int& minPts, double* clusters) const;
+	void condenseAndExtract(const unsigned int& minPts, double* clusters);
 	Rcpp::List getHierarchy() const;
 };

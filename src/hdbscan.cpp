@@ -5,19 +5,43 @@
 #include "largeVis.h"
 #include "hdbscan.h"
 #include "primsalgorithm.h"
-//#define DEBUG
+#define DEBUG
 
-void HDBSCAN::condense(const unsigned int& minPts) const {
-	for (auto it = roots.begin(); it != roots.end(); ++it) {
-		HDCluster& thisone = **it;
-		thisone.condense(minPts);
+void HDBSCAN::condense(const unsigned int& minPts) {
+#ifdef _OPENMP
+	const int level = std::log2(omp_get_max_threads()) + 1;
+#pragma omp parallel shared(p)
+#else
+	const int level = 0;
+#endif
+	{
+#ifdef _OPENMP
+#pragma omp master
+#endif
+		for (auto it = roots.begin(); it != roots.end(); ++it) {
+			HDCluster* thisone = it->second;
+			thisone->condense(minPts, level, p);
+		}
 	}
 }
 
-void HDCluster::condense(const unsigned int& minPts) {
+void HDCluster::condense(const unsigned int minPts, unsigned int level, Progress& p) {
 	if (left == nullptr) return;
-	left->condense(minPts);
-	right->condense(minPts);
+	if (level != 0) {
+#ifdef _OPENMP
+#pragma omp task shared(p)
+#endif
+		{
+			left->condense(minPts, level - 1, p);
+		}
+		right->condense(minPts, level - 1, p);
+#ifdef _OPENMP
+#pragma omp taskwait
+#endif
+	} else {
+		left->condense(minPts, level, p);
+		right->condense(minPts, level, p);
+	}
 	// We don't have to check the right side because we always put the bigger child on the right
 	if (left->sz < minPts) {
 		condenseTooSmall();
@@ -30,6 +54,7 @@ void HDCluster::condense(const unsigned int& minPts) {
 	if (right != nullptr && right->sz < minPts) stop("bad right");
 	if ((left == nullptr) != (right == nullptr)) stop("Singleton!");
 #endif
+	p.increment();
 }
 
 void HDCluster::mergeUp() {
@@ -74,16 +99,17 @@ void HDCluster::condenseTooSmall() {
 
 
 
-double HDCluster::determineStability(const unsigned int& minPts) {
+double HDCluster::determineStability(const unsigned int& minPts, Progress& p) {
 #ifdef DEBUG
 	if (sz < minPts && parent != nullptr) stop("Condense failed");
 #endif
 	stability = sum_lambda_p - (lambda_birth * fallenPoints.size());
 	if (left == nullptr) { // leaf node
 		if (sz >= minPts) selected = true; // Otherwise, this is a parent singleton smaller than minPts.
+		p.increment();
 	} else {
-		const double childStabilities = left->determineStability(minPts) +
-																		right->determineStability(minPts);
+		const double childStabilities = left->determineStability(minPts, p) +
+																		right->determineStability(minPts, p);
 		stability += lambda_death * (left->sz + right->sz);
 
 		if (stability > childStabilities) {
@@ -96,25 +122,27 @@ double HDCluster::determineStability(const unsigned int& minPts) {
 }
 
 // Prevents agglomeration in a single cluster.
-void HDCluster::determineSubStability(const unsigned int& minPts) {
+void HDCluster::determineSubStability(const unsigned int& minPts, Progress& p) {
 #ifdef DEBUG
 	if (sz < minPts && parent != nullptr) stop("Condense failed");
 #endif
 	stability = sum_lambda_p - (lambda_birth * fallenPoints.size());
 	if (left != nullptr) {
-		left->determineStability(minPts);
-		right->determineStability(minPts);
+		left->determineStability(minPts, p);
+		right->determineStability(minPts, p);
+	} else {
+		p.increment(sz);
 	}
 }
 
-void HDBSCAN::determineStability(const unsigned int& minPts) const {
+void HDBSCAN::determineStability(const unsigned int& minPts) {
 	if (roots.size() == 1) {
-		HDCluster& root = **roots.begin();
-		root.determineSubStability(minPts);
+		HDCluster& root = *(roots.begin()->second);
+		root.determineSubStability(minPts, p);
 	} else {
 		for (auto it = roots.begin(); it != roots.end(); ++it) {
-			HDCluster& thisone = **it;
-			thisone.determineStability(minPts);
+			HDCluster& thisone = *(it->second);
+			thisone.determineStability(minPts, p);
 		}
 	}
 }
@@ -124,30 +152,38 @@ void HDBSCAN::determineStability(const unsigned int& minPts) const {
 
 
 
-void HDBSCAN::extractClusters(double* ret) const {
+void HDBSCAN::extractClusters(double* ret) {
 	arma::uword selectedClusterCnt = 1; //NA_INTEGER;
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
-		HDCluster& thisone = **it;
-		thisone.extract(ret, selectedClusterCnt);
+		HDCluster& thisone = *(it->second);
+		thisone.extract(ret, selectedClusterCnt, p);
 	}
 }
 
 void HDCluster::extract(
 		double* ret, // An N * 2 array where for each point n * 2 is the cluster id for the point and n * 2 + 1 is lambda_p.
-		arma::uword& selectedClusterCnt
+		arma::uword& selectedClusterCnt,
+		Progress& p
 ) const { // tracker of the clusterx
-	extract(ret, selectedClusterCnt, NA_REAL);
+	extract(ret, selectedClusterCnt, NA_REAL, p);
 }
 
-void HDCluster::extract( double* ret, arma::uword& selectedClusterCnt, arma::uword currentSelectedCluster) const {
+void HDCluster::extract( double* ret,
+                         arma::uword& selectedClusterCnt,
+                         arma::uword currentSelectedCluster,
+                         Progress& p) const {
 	if (selected) currentSelectedCluster = selectedClusterCnt++;
 	std::for_each(fallenPoints.begin(), fallenPoints.end(),
                [&ret, &currentSelectedCluster](const std::pair<arma::uword, double>& it) {
                	ret[it.first * 2] = (currentSelectedCluster == 0) ? NA_REAL : currentSelectedCluster;
                	ret[it.first * 2 + 1] = it.second;
                });
-	if (left != nullptr) left->extract(ret, selectedClusterCnt, currentSelectedCluster);
-	if (right != nullptr) right->extract(ret, selectedClusterCnt, currentSelectedCluster);
+	if (left != nullptr) {
+		left->extract(ret, selectedClusterCnt, currentSelectedCluster, p);
+		right->extract(ret, selectedClusterCnt, currentSelectedCluster, p);
+	} else {
+		p.increment(sz);
+	}
 }
 
 
@@ -196,8 +232,8 @@ HDCluster::~HDCluster() {
 
 HDCluster::HDCluster(const arma::uword& id) : sz(1), id(id) { }
 
-HDCluster::HDCluster(HDCluster* a, HDCluster* b, set<HDCluster*>& roots, const double& d) :
-	sz(a->sz + b->sz), id(-1), lambda_birth(0), lambda_death(1/d) {
+HDCluster::HDCluster(HDCluster* a, HDCluster* b, const arma::uword& id, const double& d) :
+	sz(a->sz + b->sz), id(id), lambda_birth(0), lambda_death(1/d) {
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("death is infinity");
 #endif
@@ -235,21 +271,27 @@ void HDCluster::deselect() {
 
 
 
-HDBSCAN::HDBSCAN(const arma::uword& N, const bool& verbose) : N{N}, p(Progress(10 * N, verbose)) {
-	coreDistances = new double[N];
+HDBSCAN::HDBSCAN(const arma::uword& N, const bool& verbose) :
+	N{N},
+	p(Progress(10 * N, verbose)) {
+		coreDistances = new double[N];
+		roots.reserve(N);
 }
 
 void HDBSCAN::buildHierarchy(const vector<pair<double,
                              arma::uword>>& mergeSequence,
                              const arma::uword* minimum_spanning_tree) {
-	vector<HDCluster*> points = vector<HDCluster*>();
-	points.reserve(N);
 	arma::uword cnt = 0;
-	std::generate_n(points.begin(), N, [&cnt](){return new HDCluster(cnt++);});
-	roots.insert(points.begin(), points.end());
-
-	for (auto it = mergeSequence.begin(); it != mergeSequence.end();  ++it) {
-		arma::uword n = it -> second;
+	std::vector<HDCluster*> points;
+	points.reserve(N);
+	for (cnt = 0; cnt != N; ++cnt) {
+		HDCluster* ret = new HDCluster(cnt);
+		points.push_back(ret);
+		roots.insert({cnt, ret});
+	}
+	roots.max_load_factor(3);
+	for (auto it = mergeSequence.begin(); it != mergeSequence.end();  ++it) if (p.increment()) {
+		const arma::uword& n = it -> second;
 		if (minimum_spanning_tree[n] == -1) continue;
 #ifdef DEBUG
 		if (it->first == 0) stop("Zero distance");
@@ -259,11 +301,12 @@ void HDBSCAN::buildHierarchy(const vector<pair<double,
 		HDCluster  *a, *b;
 		a = points[n]->getRoot();
 		b = points[minimum_spanning_tree[n]]->getRoot();
-		HDCluster* newparent = new HDCluster(a, b, roots, it->first);
-		roots.insert(newparent);
-		findAndErase(roots, a);
-		findAndErase(roots, b);
+		HDCluster* newparent = new HDCluster(a, b, cnt++, it->first);
+		roots.erase(a->id);
+		roots.erase(b->id);
+		roots.emplace(newparent->id, newparent);
 	}
+	roots.rehash(roots.size());
 }
 
 HDBSCAN::~HDBSCAN() {
@@ -286,19 +329,19 @@ void HDBSCAN::makeCoreDistances(const sp_mat& edges,
 IntegerVector HDBSCAN::build( const unsigned int& K,
                               const sp_mat& edges,
                               const IntegerMatrix& neighbors) {
-	makeCoreDistances(edges, neighbors, K);
+	makeCoreDistances(edges, neighbors, K); // 1 N
 	PrimsAlgorithm<arma::uword, double> prim = PrimsAlgorithm<arma::uword, double>(N, coreDistances);
-	const arma::uword* minimum_spanning_tree = prim.run(edges, neighbors, p, 0);
+	const arma::uword* minimum_spanning_tree = prim.run(edges, neighbors, p, 0); // 1N
 	vector< pair<double, arma::uword> > mergeSequence = prim.getMergeSequence();
 	buildHierarchy(mergeSequence, minimum_spanning_tree); // 2 N
 	vector<arma::uword> treevector(minimum_spanning_tree, minimum_spanning_tree + N);
 	return IntegerVector(treevector.begin(), treevector.end());
 }
 
-void HDBSCAN::condenseAndExtract(const unsigned int& minPts, double* clusters) const {
-	condense(minPts); // 2 N
-	determineStability(minPts); // N
-	extractClusters(clusters);
+void HDBSCAN::condenseAndExtract(const unsigned int& minPts, double* clusters) {
+	condense(minPts); // 1 N
+	determineStability(minPts); // 1 N
+	extractClusters(clusters); // 1 N
 };
 
 Rcpp::List HDBSCAN::getHierarchy() const {
@@ -310,7 +353,7 @@ Rcpp::List HDBSCAN::getHierarchy() const {
 
 	arma::uword clusterCnt = 0;
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
-		HDCluster& thisone = **it;
+		HDCluster& thisone = *(it->second);
 		thisone.reportHierarchy(clusterCnt, nodemembership, lambdas, clusterParent, clusterSelected, clusterStability);
 		delete &thisone;
 	}
@@ -328,12 +371,16 @@ List hdbscanc(const arma::sp_mat& edges,
               const IntegerMatrix& neighbors,
               const int& K,
               const int& minPts,
-              const bool& verbose) {
+              const Rcpp::Nullable<Rcpp::NumericVector> threads,
+              const bool verbose) {
+#ifdef _OPENMP
+	checkCRAN(threads);
+#endif
 	HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
 	// 1 N
-	IntegerVector tree = object.build(K, edges, neighbors);
+	IntegerVector tree = object.build(K, edges, neighbors); // 4N
 	NumericMatrix clusters = NumericMatrix(2, edges.n_cols);
-	object.condenseAndExtract(minPts, REAL(clusters));
+	object.condenseAndExtract(minPts, REAL(clusters)); // 3N
 	List hierarchy = object.getHierarchy();
 	return List::create(Named("clusters") = clusters,
                       Named("tree") = IntegerVector(tree),

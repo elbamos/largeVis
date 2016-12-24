@@ -83,8 +83,7 @@ void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighb
 }
 }
 
-Neighborholder copyTo(const Neighborholder& indices,
-                               const uvec& selections) {
+Neighborholder copyTo(const Neighborholder& indices, const uvec& selections) {
 	Neighborholder out = make_shared<ivec>(selections.n_elem);
 	std::transform(selections.begin(), selections.end(), out->begin(),
                 [&indices](const uword& it) {return (*indices)[it];});
@@ -101,11 +100,15 @@ void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborhol
 		localNeighborhood.emplace_back(indices);
 		p.increment(I);
 	} else {
-		const vec direction = hyperplane(*indices);
-		const distancetype middle = median(direction);
-		const uvec left = find(direction > middle);
+		vec direction = hyperplane(*indices);
+		distancetype middle = median(direction);
+		uvec left = find(direction > middle);
+		if (left.n_elem > (I - 2) || left.n_elem < 2) {
+			direction.randu();
+			middle = 0.5;
+			left = find(direction > middle);
+		}
 		const uvec right = find(direction <= middle);
-
 		recurse(copyTo(indices, left), localNeighborhood);
 		recurse(copyTo(indices, right), localNeighborhood);
 	}
@@ -131,6 +134,7 @@ void AnnoySearch<M, V>::setSeed(Rcpp::Nullable< NumericVector >& seed) {
 template<class M, class V>
 void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& newThreshold) {
 	threshold = newThreshold;
+	threshold2 = threshold * 4;
 	Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
 #ifdef _OPENMP
 #pragma omp parallel for

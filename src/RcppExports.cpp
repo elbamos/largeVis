@@ -128,8 +128,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // hdbscanc
-List hdbscanc(const arma::sp_mat& edges, const IntegerMatrix& neighbors, const int& K, const int& minPts, const bool& verbose);
-RcppExport SEXP largeVis_hdbscanc(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP KSEXP, SEXP minPtsSEXP, SEXP verboseSEXP) {
+List hdbscanc(const arma::sp_mat& edges, const IntegerMatrix& neighbors, const int& K, const int& minPts, const Rcpp::Nullable<Rcpp::NumericVector> threads, const bool verbose);
+RcppExport SEXP largeVis_hdbscanc(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP KSEXP, SEXP minPtsSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -137,8 +137,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const IntegerMatrix& >::type neighbors(neighborsSEXP);
     Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
     Rcpp::traits::input_parameter< const int& >::type minPts(minPtsSEXP);
-    Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(hdbscanc(edges, neighbors, K, minPts, verbose));
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::NumericVector> >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(hdbscanc(edges, neighbors, K, minPts, threads, verbose));
     return rcpp_result_gen;
 END_RCPP
 }

@@ -7,6 +7,9 @@
 #' \code{edges} is a \code{largeVis} object.
 #' @param minPts The minimum number of points in a cluster.
 #' @param K The number of points in the core neighborhood. (See details.)
+#' @param threads Maximum number of threads. Determined automatically if \code{NULL} (the default).  It is unlikely that
+#' this parameter should ever need to be adjusted.  It is only available to make it possible to abide by the CRAN limitation that no package
+#' use more than two cores.
 #' @param verbose Verbosity.
 #'
 #' @details The hyperparameter \code{K} controls the size of core neighborhoods.
@@ -87,6 +90,7 @@
 #' @export
 #' @importFrom stats aggregate
 hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
+										threads = NULL,
 										verbose = getOption("verbose", TRUE)) {
 
 	if (inherits(edges, "edgematrix")) edges <- toMatrix(edges)
@@ -106,6 +110,7 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 													neighbors = neighbors,
 													K	= as.integer(K),
 													minPts = as.integer(minPts),
+													threads = threads,
 													verbose = as.logical(verbose))
 
 	clusters <- clustersout$clusters[1, ]

@@ -23,6 +23,10 @@ protected:
 
 		const sp_mat m =  (x1 + x2) / 2;
 		const sp_mat d = x1 - x2;
+		if (I < threshold2 && accu(d) == 0) {
+			direction.randu();
+			return direction;
+		}
 		const distancetype dn = as_scalar(norm(d, 2)) + 1e-5;
 		const sp_mat v =  d / dn; // unit vector
 
