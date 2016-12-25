@@ -16,7 +16,9 @@ using namespace std;
 class HDCluster {
 private:
 	HDCluster* parent = nullptr;
+public:
 	HDCluster* left = nullptr;
+private:
 	HDCluster* right = nullptr;
 	const arma::uword sz; // Size at top of cluster
 public:
@@ -35,7 +37,7 @@ private:
 	void deselect();
 
 	void mergeUp();
-	int innerCondense(const unsigned int minPts);
+	void innerCondense(const unsigned int minPts);
 	void condenseSingleton();
 	void condenseTooSmall();
 	void extract( double* ret, arma::uword& selectedClusterCnt, arma::uword currentSelectedCluster, Progress& p) const;
@@ -74,7 +76,6 @@ public:
 			vector<bool>& clusterSelected,
 			vector<double>& clusterStability);
 
-	void condense(const unsigned int minPts, vector<HDCluster*>& points);
 	void condense(const unsigned int minPts, unsigned int level);
 };
 
@@ -101,6 +102,7 @@ private:
   void determineStability(const unsigned int& minPts);
   void extractClusters(double* ret);
   void condense(const unsigned int& minPts);
+  void condense(const unsigned int& minPts, vector<HDCluster*>& points);
 public:
 	HDBSCAN(const arma::uword& N, const bool& verbose);
 	~HDBSCAN();
