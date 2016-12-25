@@ -5,11 +5,11 @@
 #include "largeVis.h"
 #include "hdbscan.h"
 #include "primsalgorithm.h"
-#define DEBUG
+//#define DEBUG
 
 void HDBSCAN::condense(const unsigned int& minPts) {
 #ifdef _OPENMP
-#pragma omp parallel
+#pragma omp parallel shared(p)
 {
 	const int level = std::log2(omp_get_max_threads()) + 1;
 #pragma omp master
@@ -19,6 +19,7 @@ void HDBSCAN::condense(const unsigned int& minPts) {
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
 		HDCluster* thisone = it->second;
 		thisone->condense(minPts, level);
+		p.increment(thisone->sz);
 	}
 #ifdef _OPENMP
 }
@@ -35,22 +36,22 @@ void HDBSCAN::condense(const unsigned int& minPts, vector<HDCluster*>& points) {
 #else
 	const int level = 0;
 #endif
-{
+	{
 #ifdef _OPENMP
 #pragma omp master
 #endif
-	for (auto it = roots.begin(); it != roots.end(); ++it) {
-		HDCluster* thisone = it->second;
-		if (thisone->left != nullptr)
+		for (auto it = roots.begin(); it != roots.end(); ++it) {
+			HDCluster* thisone = it->second;
+			if (thisone->left != nullptr)
 #ifdef _OPENMP
 #pragma omp task
 #endif
-{
-	thisone->condense(minPts, level);
-	thisone->newparent(points, thisone);
-}
+			{
+				thisone->condense(minPts, level);
+				thisone->newparent(points, thisone);
+			}
+		}
 	}
-}
 #ifdef _OPENMP
 }
 #endif
@@ -65,6 +66,7 @@ void HDBSCAN::determineStability(const unsigned int& minPts) {
 		for (auto it = roots.begin(); it != roots.end(); ++it) {
 			HDCluster& thisone = *(it->second);
 			thisone.determineStability(minPts, p);
+			p.increment(thisone.sz);
 		}
 	}
 }
@@ -79,6 +81,7 @@ void HDBSCAN::extractClusters(double* ret) {
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
 		HDCluster& thisone = *(it->second);
 		thisone.extract(ret, selectedClusterCnt, p);
+		p.increment(thisone.sz);
 	}
 }
 
@@ -87,7 +90,7 @@ void HDBSCAN::extractClusters(double* ret) {
 
 HDBSCAN::HDBSCAN(const arma::uword& N, const bool& verbose) :
 	N{N},
-	p(Progress(10 * N, verbose)) {
+	p(Progress(6 * N, verbose)) {
 		coreDistances = new double[N];
 		roots.reserve(N);
 	}
@@ -118,10 +121,6 @@ void HDBSCAN::buildHierarchy(const vector<pair<double, arma::uword>>& mergeSeque
 		points[n] = points[minimum_spanning_tree[n]] = newparent;
 		if (newparent->rank % 4096 == 0) condense(minPts, points);
 	}
-	/*	for (auto it = points.begin(); it != points.end(); ++it) {
-	HDCluster* newparent = (*it)->getRoot();
-	roots.emplace(newparent->id, newparent);
-}*/
 	roots.rehash(roots.size());
 	}
 
@@ -150,7 +149,7 @@ IntegerVector HDBSCAN::build( const unsigned int& K,
 	PrimsAlgorithm<arma::uword, double> prim = PrimsAlgorithm<arma::uword, double>(N, coreDistances);
 	const arma::uword* minimum_spanning_tree = prim.run(edges, neighbors, p, 0); // 1N
 	vector< pair<double, arma::uword> > mergeSequence = prim.getMergeSequence();
-	buildHierarchy(mergeSequence, minPts, minimum_spanning_tree); // 2 N
+	buildHierarchy(mergeSequence, minPts, minimum_spanning_tree); // 1 N
 	vector<arma::uword> treevector(minimum_spanning_tree, minimum_spanning_tree + N);
 	return IntegerVector(treevector.begin(), treevector.end());
 }

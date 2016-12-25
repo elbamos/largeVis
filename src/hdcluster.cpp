@@ -5,7 +5,7 @@
 #include "largeVis.h"
 #include "hdbscan.h"
 #include "primsalgorithm.h"
-#define DEBUG
+//#define DEBUG
 
 void HDCluster::newparent(vector<HDCluster*>& points, HDCluster* newparent) {
 	for (auto it = fallenPoints.begin(); it != fallenPoints.end(); ++it) {
@@ -44,7 +44,6 @@ void HDCluster::innerCondense(const unsigned int minPts) {
 			rank = 0;
 		} else {
 			condenseSingleton();
-//			--rank;
 			rank = (left == nullptr) ? 0 : max(left->rank, right->rank) + 1;
 		}
 	}
@@ -72,6 +71,7 @@ void HDCluster::condenseSingleton() {
 	HDCluster* keep = left;
 	left = keep->left;
 	keep->left = nullptr;
+	delete keep;
 }
 
 // Entering function we know that child has no split of its own

@@ -20,6 +20,7 @@ public:
 	HDCluster* left = nullptr;
 private:
 	HDCluster* right = nullptr;
+public:
 	const arma::uword sz; // Size at top of cluster
 public:
 	const arma::uword id;
