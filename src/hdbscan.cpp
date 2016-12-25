@@ -60,10 +60,10 @@ void HDCluster::condense(const unsigned int minPts, unsigned int level, Progress
 void HDCluster::mergeUp() {
 	if (left->sz == 1) {
 		sum_lambda_p += left->lambda_birth;
-		fallenPoints.emplace(left->id, left->lambda_birth);
+		fallenPoints.emplace_back(left->id, left->lambda_birth);
 	}
 	else sum_lambda_p += left->sum_lambda_p;
-	fallenPoints.insert(left->fallenPoints.begin(), left->fallenPoints.end());
+	fallenPoints.splice(fallenPoints.end(), left->fallenPoints);
 }
 
 // Entering function we know that child has a split of its own

@@ -22,7 +22,7 @@ private:
 public:
 	const arma::uword id;
 private:
-	set< std::pair<arma::uword, double >> fallenPoints; // Points that leave cluster betweeen top and split
+	list< std::pair<arma::uword, double >> fallenPoints; // Points that leave cluster betweeen top and split
 	double lambda_birth = 0; // 1 / Distance at which splits from parent cluster
 	double lambda_death = INFINITY; // 1 / Distance at which cluster splits
 	double sum_lambda_p = 0; // sum of lambda_p for all points in cluster, fallen and split
