@@ -7,6 +7,16 @@
 #include "primsalgorithm.h"
 #define DEBUG
 
+void HDCluster::newparent(vector<HDCluster*>& points, HDCluster* newparent) {
+	for (auto it = fallenPoints.begin(); it != fallenPoints.end(); ++it) {
+		points[it->first] = newparent;
+	}
+	if (left != nullptr) {
+		left->newparent(points, newparent);
+		right->newparent(points, newparent);
+	}
+}
+
 void HDBSCAN::condense(const unsigned int& minPts) {
 #ifdef _OPENMP
 	const int level = std::log2(omp_get_max_threads()) + 1;
@@ -14,47 +24,70 @@ void HDBSCAN::condense(const unsigned int& minPts) {
 #else
 	const int level = 0;
 #endif
-	{
+{
 #ifdef _OPENMP
 #pragma omp master
 #endif
-		for (auto it = roots.begin(); it != roots.end(); ++it) {
-			HDCluster* thisone = it->second;
-			thisone->condense(minPts, level, p);
-		}
+	for (auto it = roots.begin(); it != roots.end(); ++it) {
+		HDCluster* thisone = it->second;
+		thisone->condense(minPts, level);
 	}
 }
+}
 
-void HDCluster::condense(const unsigned int minPts, unsigned int level, Progress& p) {
-	if (left == nullptr) return;
-	if (level != 0) {
+/*
+ * The version of condense() called during the hierarchy-build phase.
+ * The reason for this is that with large datasets, the condense function
+ * can recurse until it overflows the stack.
+ */
+void HDCluster::condense(const unsigned int minPts, vector<HDCluster*>& points) {
+	if (left != nullptr) {
+		left->condense(minPts, 0);
+		right->condense(minPts, 0);
+	}
+	const int result = innerCondense(minPts);
+	if (result !=0) {
+		if (result == 1) rank = 0;
+		else rank = max(left->rank, right->rank) + 1;
+	}
+}
+/*
+ * The version of condense called in the condense phase.  Multi-threaded.
+ */
+void HDCluster::condense(const unsigned int minPts, unsigned int level) {
+	if (left != nullptr) {
+		if (level != 0) {
 #ifdef _OPENMP
-#pragma omp task shared(p)
+#pragma omp task
 #endif
-		{
-			left->condense(minPts, level - 1, p);
-		}
-		right->condense(minPts, level - 1, p);
+			{
+				left->condense(minPts, level - 1);
+			}
+			right->condense(minPts, level - 1);
 #ifdef _OPENMP
 #pragma omp taskwait
 #endif
-	} else {
-		left->condense(minPts, level, p);
-		right->condense(minPts, level, p);
+		} else {
+			left->condense(minPts, 0);
+			right->condense(minPts, 0);
+		}
 	}
-	// We don't have to check the right side because we always put the bigger child on the right
+	if (left != nullptr) innerCondense(minPts);
+}
+
+int HDCluster::innerCondense(const unsigned int minPts) {
 	if (left->sz < minPts) {
 		condenseTooSmall();
 		swap(left, right); // right definitely null, left not null but could be big or small
-		if (left->sz < minPts) condenseTooSmall();
-		else condenseSingleton();
+		if (left->sz < minPts) {
+			condenseTooSmall();
+			return 1;
+		} else {
+			condenseSingleton();
+			return 2;
+		}
 	}
-#ifdef DEBUG
-	if (left != nullptr && left->sz < minPts) stop("bad left");
-	if (right != nullptr && right->sz < minPts) stop("bad right");
-	if ((left == nullptr) != (right == nullptr)) stop("Singleton!");
-#endif
-	p.increment();
+	return 0;
 }
 
 void HDCluster::mergeUp() {
@@ -79,7 +112,6 @@ void HDCluster::condenseSingleton() {
 	HDCluster* keep = left;
 	left = keep->left;
 	keep->left = nullptr;
-	delete keep;
 }
 
 // Entering function we know that child has no split of its own
@@ -233,7 +265,7 @@ HDCluster::~HDCluster() {
 HDCluster::HDCluster(const arma::uword& id) : sz(1), id(id) { }
 
 HDCluster::HDCluster(HDCluster* a, HDCluster* b, const arma::uword& id, const double& d) :
-	sz(a->sz + b->sz), id(id), lambda_birth(0), lambda_death(1/d) {
+	sz(a->sz + b->sz), id(id), rank(max(a->rank, b->rank) + 1), lambda_birth(0), lambda_death(1/d) {
 #ifdef DEBUG
 	if (lambda_death == INFINITY) stop("death is infinity");
 #endif
@@ -278,8 +310,8 @@ HDBSCAN::HDBSCAN(const arma::uword& N, const bool& verbose) :
 		roots.reserve(N);
 }
 
-void HDBSCAN::buildHierarchy(const vector<pair<double,
-                             arma::uword>>& mergeSequence,
+void HDBSCAN::buildHierarchy(const vector<pair<double, arma::uword>>& mergeSequence,
+                             const unsigned int& minPts,
                              const arma::uword* minimum_spanning_tree) {
 	arma::uword cnt = 0;
 	std::vector<HDCluster*> points;
@@ -304,6 +336,11 @@ void HDBSCAN::buildHierarchy(const vector<pair<double,
 		HDCluster* newparent = new HDCluster(a, b, cnt++, it->first);
 		roots.erase(a->id);
 		roots.erase(b->id);
+		points[n] = points[minimum_spanning_tree[n]] = newparent;
+		if (newparent->rank % 4096 == 0) {
+			newparent->condense(minPts, points);
+			newparent->newparent(points, newparent);
+		}
 		roots.emplace(newparent->id, newparent);
 	}
 	roots.rehash(roots.size());
@@ -328,12 +365,13 @@ void HDBSCAN::makeCoreDistances(const sp_mat& edges,
 
 IntegerVector HDBSCAN::build( const unsigned int& K,
                               const sp_mat& edges,
+                              const unsigned int& minPts,
                               const IntegerMatrix& neighbors) {
 	makeCoreDistances(edges, neighbors, K); // 1 N
 	PrimsAlgorithm<arma::uword, double> prim = PrimsAlgorithm<arma::uword, double>(N, coreDistances);
 	const arma::uword* minimum_spanning_tree = prim.run(edges, neighbors, p, 0); // 1N
 	vector< pair<double, arma::uword> > mergeSequence = prim.getMergeSequence();
-	buildHierarchy(mergeSequence, minimum_spanning_tree); // 2 N
+	buildHierarchy(mergeSequence, minPts, minimum_spanning_tree); // 2 N
 	vector<arma::uword> treevector(minimum_spanning_tree, minimum_spanning_tree + N);
 	return IntegerVector(treevector.begin(), treevector.end());
 }
@@ -378,7 +416,7 @@ List hdbscanc(const arma::sp_mat& edges,
 #endif
 	HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
 	// 1 N
-	IntegerVector tree = object.build(K, edges, neighbors); // 4N
+	IntegerVector tree = object.build(K, edges, minPts, neighbors); // 4N
 	NumericMatrix clusters = NumericMatrix(2, edges.n_cols);
 	object.condenseAndExtract(minPts, REAL(clusters)); // 3N
 	List hierarchy = object.getHierarchy();
