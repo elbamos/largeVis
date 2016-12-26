@@ -131,7 +131,7 @@ public:
 #pragma omp atomic
 #endif
 			rho -= (rhoIncrement * batchSize);
-			if (!progress.increment(batchSize)) break;
+			if (!progress.increment()) break;
 		}
 		delete[] holder;
 	}
@@ -204,6 +204,8 @@ public:
 	}
 };
 
+#define BATCHSIZE 8192
+
 // [[Rcpp::export]]
 arma::mat sgd(arma::mat& coords,
               arma::ivec& targets_i, // vary randomly
@@ -223,7 +225,6 @@ arma::mat sgd(arma::mat& coords,
 #ifdef _OPENMP
 	checkCRAN(threads);
 #endif
-	Progress progress(n_samples, verbose);
 	const dimidxtype D = coords.n_rows;
 	const vertexidxtype N = coords.n_cols;
 	const edgeidxtype E = targets_i.n_elem;
@@ -260,9 +261,14 @@ arma::mat sgd(arma::mat& coords,
 	v -> initAlias(weights.memptr(), negweights, seed);
 	delete[] negweights;
 
-	const uword batchSize = 8192;
+	const uword batchSize = BATCHSIZE;
 #ifdef _OPENMP
 	const unsigned int ts = omp_get_max_threads();
+#else
+	const unsigned int ts = 2;
+#endif
+	Progress progress(max((uword) ts, n_samples / BATCHSIZE), verbose);
+#ifdef _OPENMP
 #pragma omp parallel for
 #else
 	const unsigned int ts = 1;

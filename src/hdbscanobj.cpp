@@ -9,7 +9,7 @@
 
 void HDBSCAN::condense(const unsigned int& minPts) {
 #ifdef _OPENMP
-#pragma omp parallel shared(p)
+#pragma omp parallel
 {
 	const int level = std::log2(omp_get_max_threads()) + 1;
 #pragma omp master
