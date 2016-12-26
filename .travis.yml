@@ -44,6 +44,13 @@ r_binary_packages:
 
 sudo: required
 
+before_install: |
+  mkdir ~/.R
+  cat <<EOF >> ~/.R/Makevars
+  CXX1X=g++-4.9
+  FC=gfortran-4.9
+  CXX1XSTD=-std=c++11
+
 addons:
   apt:
     sources:
