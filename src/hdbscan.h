@@ -46,6 +46,8 @@ private:
                vector<arma::uword>& clusterParent,
                vector<bool>& clusterSelected,
                vector<double>& clusterStability,
+               vector<double>& lambdaBirth,
+               vector<double>& lambdaDeath,
                const arma::uword parentCluster) const;
 
 public:
@@ -71,7 +73,9 @@ public:
 			vector<double>& lambdas,
 			vector<arma::uword>& clusterParent,
 			vector<bool>& clusterSelected,
-			vector<double>& clusterStability);
+			vector<double>& clusterStability,
+			vector<double>& lambdaBirth,
+			vector<double>& lambdaDeath);
 };
 
 class HDBSCAN {

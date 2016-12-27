@@ -4,10 +4,12 @@
 \alias{as.dendrogram.hdbscan}
 \title{as.dendrogram.hdbscan}
 \usage{
-\method{as.dendrogram}{hdbscan}(object, ...)
+\method{as.dendrogram}{hdbscan}(object, includeNodes = FALSE, ...)
 }
 \arguments{
 \item{object}{An \code{hdbscan} object.}
+
+\item{includeNodes}{Whether individual nodes should be included in the dedrogram. Can cause a substantial increase in the size of the object.}
 
 \item{...}{For compatibility with \code{\link[stats]{as.dendrogram}}, and currently ignored.}
 }
@@ -16,7 +18,8 @@ A \code{dendrogram} object, where nodes have the following attributes:
 \describe{
 \item{'leaf'}{As in \code{\link[stats]{dendrogram}}.}
 \item{'members'}{As in \code{\link[stats]{dendrogram}}.}
-\item{'height'}{For clusters, \eqn{\lambda_birth}; for leaves, \eqn{\lambda_p}.}
+\item{'size'}{The number of nodes underneath the cluster.}
+\item{'height'}{The core distance at which the cluster or node was merged.}
 \item{'probability'}{The probability that the leaf is a true member of its assigned cluster.}
 \item{'GLOSH'}{The leaf's GLOSH outlier score.}
 \item{'stability'}{The node's determined stability, taking into account child-node stabilities. Missing for leaves.}
