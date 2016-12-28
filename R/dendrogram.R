@@ -7,12 +7,14 @@
 #' under A but not B or C would not be assigned to any cluster. This function returns a dendrogram of the middle stage, the hierarchy of consolidated
 #' nodes. Whether a node was selected as as cluster is an attribute of each node.
 #' @param object An \code{hdbscan} object.
+#' @param includeNodes Whether individual nodes should be included in the dedrogram. Can cause a substantial increase in the size of the object.
 #' @param ... For compatibility with \code{\link[stats]{as.dendrogram}}, and currently ignored.
 #' @return A \code{dendrogram} object, where nodes have the following attributes:
 #' \describe{
 #' \item{'leaf'}{As in \code{\link[stats]{dendrogram}}.}
 #' \item{'members'}{As in \code{\link[stats]{dendrogram}}.}
-#' \item{'height'}{For clusters, \eqn{\lambda_birth}; for leaves, \eqn{\lambda_p}.}
+#' \item{'size'}{The number of nodes underneath the cluster.}
+#' \item{'height'}{The core distance at which the cluster or node was merged.}
 #' \item{'probability'}{The probability that the leaf is a true member of its assigned cluster.}
 #' \item{'GLOSH'}{The leaf's GLOSH outlier score.}
 #' \item{'stability'}{The node's determined stability, taking into account child-node stabilities. Missing for leaves.}
@@ -29,10 +31,11 @@
 #' hdbscanobj <- hdbscan(vis, minPts = 10, K = 5)
 #' plot(as_dendrogram_hdbscan(hdbscanobj))
 #' }
-as.dendrogram.hdbscan <- function(object, ...) {
+as.dendrogram.hdbscan <- function(object, includeNodes = FALSE, ...) {
 	C <- length(object$hierarchy$parent)
 
-	leafs <- lapply(1:length(object$hierarchy$nodemembership), FUN = function(i)
+	leafs <- NULL
+	if (includeNodes) leafs <- lapply(1:length(object$hierarchy$nodemembership), FUN = function(i)
 		structure(as.list(i),
 							leaf = TRUE,
 							members = 1L,
@@ -40,7 +43,8 @@ as.dendrogram.hdbscan <- function(object, ...) {
 							GLOSH = object$glosh[i],
 							cluster = object$clusters[i],
 							probability = object$probabilities[i],
-							height = object$hierarchy$lambda[i],
+							midpoint = object$probabilities[i] - 0.5,
+							height = 1 / object$hierarchy$lambda[i],
 							class = "dendrogram"
 		))
 
@@ -48,25 +52,41 @@ as.dendrogram.hdbscan <- function(object, ...) {
 	h <- function(z) attr(z, "height")
 	m <- function(z) attr(z, "members")
 	for (i in C:1) {
-		children <- which(object$hierarchy$nodemembership == i)
-		children <- leafs[children]
-		cousins <- which(object$hierarchy$parent == i & (1:C != i))
-		cousins <- clusters[cousins]
+		children <- NULL
+		extraChildren <- 0
+		if (includeNodes) {
+			children <- which(object$hierarchy$nodemembership == i)
+			children <- leafs[children]
+		} else {
+			extraChildren <- sum(object$hierarchy$nodemembership == i, na.rm = TRUE)
+		}
+		whichcousins <- which(object$hierarchy$parent == i & (1:C != i))
+		cousins <- clusters[whichcousins]
 		cousins <- cousins[!sapply(cousins, is.null)]
+		members <- sum(unlist(vapply(children, FUN.VALUE = 0L, FUN = m))) +
+							 sum(unlist(vapply(cousins, FUN.VALUE = 0L, FUN = m)))
+		if (members == 0) members <- length(cousins) + length(children)
+		height <- max(0, unlist(vapply(children, FUN.VALUE = 0, FUN = h)),
+					           unlist(vapply(cousins, FUN.VALUE = 0, FUN = h)),
+									   max(1 / object$hierarchy$lambda[object$hierarchy$nodemembership == i], na.rm = TRUE))
+		midpoint <- ifelse(min(object$hierarchy$stability[object$hierarchy$parent == object$hierarchy$parent[i]], na.rm = TRUE) == object$hierarchy$stability[i], -0.5, 0.5)
+		lb <- object$hierarchy$lamba_birth[i]
 		newcluster <- structure(
 			.Data = c(children, cousins),
-			members = sum(unlist(vapply(children, FUN.VALUE = 0L, FUN = m))) +
-				sum(unlist(vapply(cousins, FUN.VALUE = 0L, FUN = m))),
+			members = members,
 			leaf = FALSE,
-			height = max(0, unlist(vapply(children, FUN.VALUE = 0, FUN = h)),
-												 unlist(vapply(cousins, FUN.VALUE = 0, FUN = h))),
+			size = members + extraChildren,
+			height = height,
+			midpoint = midpoint,
 			selected = object$hierarchy$selected[i],
 			cluster = i,
+			lambda_birth = lb,
+			lambda_death = object$hierarchy$lambda_death[i],
 			stability = object$hierarchy$stability[i],
 			label = paste("cluster", i, "stability",object$hierarchy$stability[i], ifelse(object$hierarchy$selected[i], "selected", "")),
 			class = "dendrogram"
 		)
-		if (attr(newcluster, "members") > 0) {
+		if (attr(newcluster, "members") > 0 || !includeNodes) {
 			clusters[[i]] <- newcluster
 		}
 		clusters[(object$hierarchy$parent == i) & (1:C != i)] <- NA

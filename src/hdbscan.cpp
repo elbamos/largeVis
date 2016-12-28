@@ -102,8 +102,9 @@ void HDCluster::determineSubStability(const unsigned int& minPts) {
 #endif
 	stability = sum_lambda_p - (lambda_birth * fallenPoints.size());
 	if (left != nullptr) {
-		left->determineStability(minPts);
-		right->determineStability(minPts);
+		const double childStabilities = left->determineStability(minPts) +
+																		right->determineStability(minPts);
+		if (childStabilities > stability) stability = childStabilities;
 	}
 }
 
@@ -159,8 +160,11 @@ void HDCluster::reportHierarchy(
 		vector<double>& lambdas,
 		vector<arma::uword>& clusterParent,
 		vector<bool>& clusterSelected,
-		vector<double>& clusterStability) {
-	reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability, NA_REAL);
+		vector<double>& clusterStability,
+		vector<double>& lambdaBirth,
+		vector<double>& lambdaDeath) {
+	reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability,
+                 lambdaBirth, lambdaDeath, NA_REAL);
 }
 
 void HDCluster::reportHierarchy(
@@ -170,6 +174,8 @@ void HDCluster::reportHierarchy(
 		vector<arma::uword>& clusterParent,
 		vector<bool>& clusterSelected,
 		vector<double>& clusterStability,
+		vector<double>& lambdaBirth,
+		vector<double>& lambdaDeath,
 		const arma::uword parentCluster) const {
 	arma::uword thisCluster = clusterCnt++;
 	std::for_each(fallenPoints.begin(), fallenPoints.end(),
@@ -180,8 +186,12 @@ void HDCluster::reportHierarchy(
 	clusterParent.emplace_back(parentCluster);
 	clusterSelected.push_back(selected);
 	clusterStability.emplace_back(stability);
-	if (left != nullptr) left->reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability, thisCluster);
-	if (right != nullptr) right->reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability, thisCluster);
+	lambdaBirth.emplace_back(lambda_birth);
+	lambdaDeath.emplace_back(lambda_death);
+	if (left != nullptr) left->reportHierarchy(clusterCnt, nodeMembership, lambdas,
+     clusterParent, clusterSelected, clusterStability, lambdaBirth, lambdaDeath, thisCluster);
+	if (right != nullptr) right->reportHierarchy(clusterCnt, nodeMembership, lambdas,
+     clusterParent, clusterSelected, clusterStability, lambdaBirth, lambdaDeath,  thisCluster);
 }
 
 
@@ -307,11 +317,14 @@ Rcpp::List HDBSCAN::getHierarchy() const {
 	vector<arma::uword> clusterParent;
 	vector<bool> clusterSelected;
 	vector<double> clusterStability;
+	vector<double> lambdaBirth;
+	vector<double> lambdaDeath;
 
 	arma::uword clusterCnt = 0;
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
 		HDCluster& thisone = **it;
-		thisone.reportHierarchy(clusterCnt, nodemembership, lambdas, clusterParent, clusterSelected, clusterStability);
+		thisone.reportHierarchy(clusterCnt, nodemembership, lambdas, clusterParent, clusterSelected, clusterStability,
+                          lambdaBirth, lambdaDeath);
 		delete &thisone;
 	}
 
@@ -320,7 +333,9 @@ Rcpp::List HDBSCAN::getHierarchy() const {
                        Named("parent") = IntegerVector(clusterParent.begin(), clusterParent.end()),
                        Named("stability") = NumericVector(clusterStability.begin(), clusterStability.end()),
                        Named("selected") = LogicalVector(clusterSelected.begin(), clusterSelected.end()),
-                       Named("coredistances") = wrap(vector<double>(coreDistances, coreDistances + N)));
+                       Named("coredistances") = wrap(vector<double>(coreDistances, coreDistances + N)),
+                       Named("lambda_birth") = NumericVector(lambdaBirth.begin(), lambdaBirth.end()),
+                       Named("lambda_death") = NumericVector(lambdaDeath.begin(), lambdaDeath.end()));
 }
 
 // [[Rcpp::export]]
