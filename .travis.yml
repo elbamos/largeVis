@@ -15,19 +15,6 @@ matrix:
   - os: osx
     r: devel
     env: _R_CHECK_FORCE_SUGGESTS_=FALSE
-  - os: linux
-    dist: trusty
-    r: release
-    env: R_XTRA_CXXFLAGS=-DARMA_64BIT_WORD
-  - os: linux
-    dist: trusty
-    r: release
-    r_check_args: --use-valgrind
-  - os: linux
-    dist: trusty
-    r: release
-    env: R_XTRA_CXXFLAGS=-DARMA_64BIT_WORD
-    r_check_args: --use-valgrind
   allow_failure:
     r: devel
     r_check_args: --use-valgrind
