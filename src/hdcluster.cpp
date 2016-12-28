@@ -120,8 +120,9 @@ void HDCluster::determineSubStability(const unsigned int& minPts, Progress& p) {
 #endif
 	stability = sum_lambda_p - (lambda_birth * fallenPoints.size());
 	if (left != nullptr) {
-		left->determineStability(minPts, p);
-		right->determineStability(minPts, p);
+			const double childStabilities = left->determineStability(minPts, p) +
+																			right->determineStability(minPts, p);
+			if (childStabilities > stability) stability = childStabilities;
 	} else {
 		p.increment(sz);
 	}
@@ -163,8 +164,12 @@ void HDCluster::reportHierarchy(
 		vector<double>& lambdas,
 		vector<arma::uword>& clusterParent,
 		vector<bool>& clusterSelected,
-		vector<double>& clusterStability) {
-	reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability, NA_REAL);
+		vector<double>& clusterStability,
+		vector<double>& lambdaBirth,
+		vector<double>& lambdaDeath) {
+	reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability,
+                 lambdaBirth, lambdaDeath, NA_REAL);
+
 }
 
 void HDCluster::reportHierarchy(
@@ -174,6 +179,8 @@ void HDCluster::reportHierarchy(
 		vector<arma::uword>& clusterParent,
 		vector<bool>& clusterSelected,
 		vector<double>& clusterStability,
+		vector<double>& lambdaBirth,
+		vector<double>& lambdaDeath,
 		const arma::uword parentCluster) const {
 	arma::uword thisCluster = clusterCnt++;
 	std::for_each(fallenPoints.begin(), fallenPoints.end(),
@@ -184,9 +191,14 @@ void HDCluster::reportHierarchy(
 	clusterParent.emplace_back(parentCluster);
 	clusterSelected.push_back(selected);
 	clusterStability.emplace_back(stability);
-	if (left != nullptr) left->reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability, thisCluster);
-	if (right != nullptr) right->reportHierarchy(clusterCnt, nodeMembership, lambdas, clusterParent, clusterSelected, clusterStability, thisCluster);
+	lambdaBirth.emplace_back(lambda_birth);
+	lambdaDeath.emplace_back(lambda_death);
+	if (left != nullptr) left->reportHierarchy(clusterCnt, nodeMembership, lambdas,
+     clusterParent, clusterSelected, clusterStability, lambdaBirth, lambdaDeath, thisCluster);
+	if (right != nullptr) right->reportHierarchy(clusterCnt, nodeMembership, lambdas,
+     clusterParent, clusterSelected, clusterStability, lambdaBirth, lambdaDeath,  thisCluster);
 }
+
 
 
 

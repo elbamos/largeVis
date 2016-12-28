@@ -4,6 +4,8 @@
 // [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
 #include "hdbscan.h"
+#include "primsalgorithm.h"
+//#define DEBUG
 
 // [[Rcpp::export]]
 List hdbscanc(const arma::sp_mat& edges,

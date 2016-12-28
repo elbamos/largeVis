@@ -46,6 +46,8 @@ An object of type \code{hdbscan} with the following fields:
  \item{'stability'}{The cluster's stability, taking into account child-node stabilities.}
  \item{'selected'}{Whether the cluster was selected.}
  \item{'coredistances'}{The core distance determined for each vertex.}
+ \item{'lamba_birth'}{\eqn{\lambda_b} for each cluster.}
+ \item{'lambda_deaeth'}{\eqn{\lambda_d} for each cluster.}
  }
 }
 \description{

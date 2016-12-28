@@ -166,11 +166,13 @@ Rcpp::List HDBSCAN::getHierarchy() const {
 	vector<arma::uword> clusterParent;
 	vector<bool> clusterSelected;
 	vector<double> clusterStability;
+	vector<double> lambdaBirth;
+	vector<double> lambdaDeath;
 
 	arma::uword clusterCnt = 0;
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
 		HDCluster& thisone = *(it->second);
-		thisone.reportHierarchy(clusterCnt, nodemembership, lambdas, clusterParent, clusterSelected, clusterStability);
+		thisone.reportHierarchy(clusterCnt, nodemembership, lambdas, clusterParent, clusterSelected, clusterStability, lambdaBirth, lambdaDeath);
 		delete &thisone;
 	}
 
@@ -179,5 +181,7 @@ Rcpp::List HDBSCAN::getHierarchy() const {
                       Named("parent") = IntegerVector(clusterParent.begin(), clusterParent.end()),
                       Named("stability") = NumericVector(clusterStability.begin(), clusterStability.end()),
                       Named("selected") = LogicalVector(clusterSelected.begin(), clusterSelected.end()),
+                      Named("lambda_birth") = NumericVector(lambdaBirth.begin(), lambdaBirth.end()),
+                    	Named("lambda_death") = NumericVector(lambdaDeath.begin(), lambdaDeath.end()),
                       Named("coredistances") = wrap(vector<double>(coreDistances, coreDistances + N)));
 }

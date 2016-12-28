@@ -49,6 +49,8 @@ private:
                vector<arma::uword>& clusterParent,
                vector<bool>& clusterSelected,
                vector<double>& clusterStability,
+               vector<double>& lambdaBirth,
+               vector<double>& lambdaDeath,
                const arma::uword parentCluster) const;
 
 public:
@@ -60,6 +62,7 @@ public:
 
 	HDCluster(HDCluster* a, HDCluster* b, const arma::uword& id, const double& d);
 
+	void condense(const unsigned int minPts, unsigned int level);
 	double determineStability(const unsigned int& minPts, Progress& p);
 	void determineSubStability(const unsigned int& minPts, Progress& p);
 
@@ -75,9 +78,9 @@ public:
 			vector<double>& lambdas,
 			vector<arma::uword>& clusterParent,
 			vector<bool>& clusterSelected,
-			vector<double>& clusterStability);
-
-	void condense(const unsigned int minPts, unsigned int level);
+			vector<double>& clusterStability,
+			vector<double>& lambdaBirth,
+			vector<double>& lambdaDeath);
 };
 
 template<typename Tval>

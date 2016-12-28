@@ -1,9 +1,13 @@
 ### largeVis 0.2
 * largeVis has reached a point of stability where its appropriate to bump the version. 
 * Performance improvements in neighbor search & projectKNNs.
-* Performance improvements in HDBSCAN. 
-* HDBSCAN now outputs GLOSH outlier scores for each point assigned to a cluster, and these are used by gplot. 
-* as_dendrogram_hdbscan is now (properly) an S3 method for as.dendrogram applied to class hdbscan. 
+* HDBSCAN
+	+	Performance improvements in HDBSCAN. 
+	+	Now outputs GLOSH outlier scores for each point assigned to a cluster, and these are used by gplot. 
+	+ Outputs lambda birth and death
+	+ as_dendrogram_hdbscan is now (properly) an S3 method for as.dendrogram applied to class hdbscan. 
+	+ Improvements to the visualizations of dedrograms
+	+ gplot now has an option to show the core distances for each point, using the ggforce package.
 * Edge matrices are now `edgematrix` objects. This allows the as_dist function to be an S3 method for as.dist applied to class edgematrix.
 * Neighbor search now handles situation when a dataset includes a point where the number of duplicates is greater than the tree threshold.
 * gplot now has an option to show the core distances for each point, using the ggforce package.

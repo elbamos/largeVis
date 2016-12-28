@@ -49,6 +49,8 @@
 #'  \item{'stability'}{The cluster's stability, taking into account child-node stabilities.}
 #'  \item{'selected'}{Whether the cluster was selected.}
 #'  \item{'coredistances'}{The core distance determined for each vertex.}
+#'  \item{'lamba_birth'}{\eqn{\lambda_b} for each cluster.}
+#'  \item{'lambda_deaeth'}{\eqn{\lambda_d} for each cluster.}
 #'  }
 #'
 #' @references R. Campello, D. Moulavi, and J. Sander, Density-Based Clustering Based on Hierarchical Density Estimates In: Advances in Knowledge Discovery and Data Mining, Springer, pp 160-172. 2013
@@ -128,7 +130,7 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 	hierarchy <- clustersout$hierarchy
 	hierarchy$nodemembership <- hierarchy$nodemembership + 1
 	hierarchy$parent <- hierarchy$parent + 1
-	hierarchy$coredistances <- hierarchy$coredistances
+#	hierarchy$coredistances <- hierarchy$coredistances
 	tree <- clustersout$tree + 1
 	tree[tree == 0] <- NA
 
