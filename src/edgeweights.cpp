@@ -95,11 +95,15 @@ public:
   }
 
   void run() {
-   #pragma omp parallel for
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for (vertexidxtype id = 0; id < n_vertices; id++) {
       similarityOne(id);
     }
-   #pragma omp parallel for
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for (vertexidxtype id = 0; id < n_vertices; id++) {
       searchReverse(id);
     }

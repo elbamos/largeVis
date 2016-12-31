@@ -76,11 +76,11 @@ void HDBSCAN::determineStability(const unsigned int& minPts) {
 
 
 
-void HDBSCAN::extractClusters(double* ret) {
-	arma::uword selectedClusterCnt = 1; //NA_INTEGER;
+void HDBSCAN::extractClusters(int* clusters, double* lambdas) {
+	int selectedClusterCnt = 1; //NA_INTEGER;
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
 		HDCluster& thisone = *(it->second);
-		thisone.extract(ret, selectedClusterCnt, p);
+		thisone.extract(clusters, lambdas, selectedClusterCnt, p);
 		p.increment(thisone.sz);
 	}
 }
@@ -154,22 +154,22 @@ IntegerVector HDBSCAN::build( const unsigned int& K,
 	return IntegerVector(treevector.begin(), treevector.end());
 }
 
-void HDBSCAN::condenseAndExtract(const unsigned int& minPts, double* clusters) {
+void HDBSCAN::condenseAndExtract(const unsigned int& minPts, int* clusters, double* lambdas) {
 	condense(minPts); // 1 N
 	determineStability(minPts); // 1 N
-	extractClusters(clusters); // 1 N
+	extractClusters(clusters, lambdas); // 1 N
 };
 
 Rcpp::List HDBSCAN::getHierarchy() const {
-	vector<arma::uword> nodemembership(N);
+	vector<int> nodemembership(N);
 	vector<double> lambdas(N);
-	vector<arma::uword> clusterParent;
+	vector<int> clusterParent;
 	vector<bool> clusterSelected;
 	vector<double> clusterStability;
 	vector<double> lambdaBirth;
 	vector<double> lambdaDeath;
 
-	arma::uword clusterCnt = 0;
+	int clusterCnt = 0;
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
 		HDCluster& thisone = *(it->second);
 		thisone.reportHierarchy(clusterCnt, nodemembership, lambdas, clusterParent, clusterSelected, clusterStability, lambdaBirth, lambdaDeath);

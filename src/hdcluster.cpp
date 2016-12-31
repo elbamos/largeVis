@@ -130,26 +130,28 @@ void HDCluster::determineSubStability(const unsigned int& minPts, Progress& p) {
 
 
 void HDCluster::extract(
-		double* ret, // An N * 2 array where for each point n * 2 is the cluster id for the point and n * 2 + 1 is lambda_p.
-		arma::uword& selectedClusterCnt,
+		int* clusters,
+		double* lambdas, // An N * 2 array where for each point n * 2 is the cluster id for the point and n * 2 + 1 is lambda_p.
+		int& selectedClusterCnt,
 		Progress& p
 ) const { // tracker of the clusterx
-	extract(ret, selectedClusterCnt, NA_REAL, p);
+	extract(clusters, lambdas, selectedClusterCnt, NA_INTEGER, p);
 }
 
-void HDCluster::extract( double* ret,
-                         arma::uword& selectedClusterCnt,
-                         arma::uword currentSelectedCluster,
+void HDCluster::extract( int* clusters,
+                         double* lambdas,
+                         int& selectedClusterCnt,
+                         int currentSelectedCluster,
                          Progress& p) const {
 	if (selected) currentSelectedCluster = selectedClusterCnt++;
 	std::for_each(fallenPoints.begin(), fallenPoints.end(),
-               [&ret, &currentSelectedCluster](const std::pair<arma::uword, double>& it) {
-               	ret[it.first * 2] = (currentSelectedCluster == 0) ? NA_REAL : currentSelectedCluster;
-               	ret[it.first * 2 + 1] = it.second;
+               [&clusters, &lambdas, &currentSelectedCluster](const std::pair<arma::uword, double>& it) {
+               	clusters[it.first] = (currentSelectedCluster == 0) ? NA_INTEGER : currentSelectedCluster;
+               	lambdas[it.first] = it.second;
                });
 	if (left != nullptr) {
-		left->extract(ret, selectedClusterCnt, currentSelectedCluster, p);
-		right->extract(ret, selectedClusterCnt, currentSelectedCluster, p);
+		left->extract(clusters, lambdas, selectedClusterCnt, currentSelectedCluster, p);
+		right->extract(clusters, lambdas, selectedClusterCnt, currentSelectedCluster, p);
 	} else {
 		p.increment(sz);
 	}
@@ -159,10 +161,10 @@ void HDCluster::extract( double* ret,
 
 
 void HDCluster::reportHierarchy(
-		arma::uword& clusterCnt,
-		vector<arma::uword>& nodeMembership, // The clusterid of the immediate parent for each point
+		int& clusterCnt,
+		vector<int>& nodeMembership, // The clusterid of the immediate parent for each point
 		vector<double>& lambdas,
-		vector<arma::uword>& clusterParent,
+		vector<int>& clusterParent,
 		vector<bool>& clusterSelected,
 		vector<double>& clusterStability,
 		vector<double>& lambdaBirth,
@@ -173,16 +175,16 @@ void HDCluster::reportHierarchy(
 }
 
 void HDCluster::reportHierarchy(
-		arma::uword& clusterCnt,
-		vector<arma::uword>& nodeMembership, // The clusterid of the immediate parent for each point
+		int& clusterCnt,
+		vector<int>& nodeMembership, // The clusterid of the immediate parent for each point
 		vector<double>& lambdas,
-		vector<arma::uword>& clusterParent,
+		vector<int>& clusterParent,
 		vector<bool>& clusterSelected,
 		vector<double>& clusterStability,
 		vector<double>& lambdaBirth,
 		vector<double>& lambdaDeath,
-		const arma::uword parentCluster) const {
-	arma::uword thisCluster = clusterCnt++;
+		const int parentCluster) const {
+	int thisCluster = clusterCnt++;
 	std::for_each(fallenPoints.begin(), fallenPoints.end(),
                [&nodeMembership, &lambdas, &thisCluster](const std::pair<arma::uword, double>& it) {
                	nodeMembership[it.first] = thisCluster;

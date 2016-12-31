@@ -16,19 +16,10 @@ using namespace std;
 class HDCluster {
 private:
 	HDCluster* parent = nullptr;
-public:
-	HDCluster* left = nullptr;
-private:
+
 	HDCluster* right = nullptr;
-public:
-	const arma::uword sz; // Size at top of cluster
-public:
-	const arma::uword id;
-private:
+
 	list< std::pair<arma::uword, double >> fallenPoints; // Points that leave cluster betweeen top and split
-public:
-	arma::uword rank = 0;
-private:
 	double lambda_birth = 0; // 1 / Distance at which splits from parent cluster
 	double lambda_death = INFINITY; // 1 / Distance at which cluster splits
 	double sum_lambda_p = 0; // sum of lambda_p for all points in cluster, fallen and split
@@ -41,19 +32,24 @@ private:
 	void innerCondense(const unsigned int minPts);
 	void condenseSingleton();
 	void condenseTooSmall();
-	void extract( double* ret, arma::uword& selectedClusterCnt, arma::uword currentSelectedCluster, Progress& p) const;
+	void extract( int* clusters, double* lambas, int& selectedClusterCnt, int currentSelectedCluster, Progress& p) const;
 	void reportHierarchy(
-							 arma::uword& clusterCnt,
-               vector<arma::uword>& nodeMembership, // The clusterid of the immediate parent for each point
+							 int& clusterCnt,
+               vector<int>& nodeMembership, // The clusterid of the immediate parent for each point
                vector<double>& lambdas,
-               vector<arma::uword>& clusterParent,
+               vector<int>& clusterParent,
                vector<bool>& clusterSelected,
                vector<double>& clusterStability,
                vector<double>& lambdaBirth,
                vector<double>& lambdaDeath,
-               const arma::uword parentCluster) const;
+               const int parentCluster) const;
 
 public:
+	HDCluster* left = nullptr;
+	const arma::uword sz; // Size at top of cluster
+	const arma::uword id;
+	arma::uword rank = 0;
+
 	void newparent(vector<HDCluster*>& points, HDCluster* newparent);
 	~HDCluster();
 	explicit HDCluster(const arma::uword& id);
@@ -67,16 +63,17 @@ public:
 	void determineSubStability(const unsigned int& minPts, Progress& p);
 
 	void extract(
-			double* ret, // An N * 2 array where for each point n * 2 is the cluster id for the point and n * 2 + 1 is lambda_p.
-			arma::uword& selectedClusterCnt,
+			int* clusters,
+			double* lambdas, // An N * 2 array where for each point n * 2 is the cluster id for the point and n * 2 + 1 is lambda_p.
+			int& selectedClusterCnt,
 			Progress& p
 	) const;
 
 	void reportHierarchy(
-			arma::uword& clusterCnt,
-			vector<arma::uword>& nodeMembership, // The clusterid of the immediate parent for each point
+			int& clusterCnt,
+			vector<int>& nodeMembership, // The clusterid of the immediate parent for each point
 			vector<double>& lambdas,
-			vector<arma::uword>& clusterParent,
+			vector<int>& clusterParent,
 			vector<bool>& clusterSelected,
 			vector<double>& clusterStability,
 			vector<double>& lambdaBirth,
@@ -104,7 +101,7 @@ private:
                       const unsigned int& minPts,
                       const arma::uword* minimum_spanning_tree);
   void determineStability(const unsigned int& minPts);
-  void extractClusters(double* ret);
+  void extractClusters(int* clusters, double* lambdas);
   void condense(const unsigned int& minPts);
   void condense(const unsigned int& minPts, vector<HDCluster*>& points);
 public:
@@ -118,6 +115,6 @@ public:
                         	const sp_mat& edges,
                         	const unsigned int& minPts,
                         	const IntegerMatrix& neighbors);
-	void condenseAndExtract(const unsigned int& minPts, double* clusters);
+	void condenseAndExtract(const unsigned int& minPts, int* clusters, double* lambdas);
 	Rcpp::List getHierarchy() const;
 };

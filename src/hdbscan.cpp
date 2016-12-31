@@ -20,10 +20,12 @@ List hdbscanc(const arma::sp_mat& edges,
 	HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
 	// 1 N
 	IntegerVector tree = object.build(K, edges, minPts, neighbors); // 4N
-	NumericMatrix clusters = NumericMatrix(2, edges.n_cols);
-	object.condenseAndExtract(minPts, REAL(clusters)); // 3N
+	IntegerVector clusters = IntegerVector(edges.n_cols);
+	NumericVector lambdas = NumericVector(edges.n_cols);
+	object.condenseAndExtract(minPts, INTEGER(clusters), REAL(lambdas)); // 3N
 	List hierarchy = object.getHierarchy();
 	return List::create(Named("clusters") = clusters,
+                      Named("lambdas") = lambdas,
                       Named("tree") = IntegerVector(tree),
                       Named("hierarchy") = hierarchy);
 }

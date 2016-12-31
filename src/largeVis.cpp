@@ -270,8 +270,6 @@ arma::mat sgd(arma::mat& coords,
 	Progress progress(max((uword) ts, n_samples / BATCHSIZE), verbose);
 #ifdef _OPENMP
 #pragma omp parallel for
-#else
-	const unsigned int ts = 1;
 #endif
 	for (unsigned int t = 0; t < ts; ++t) {
 		v->thread(progress, batchSize);

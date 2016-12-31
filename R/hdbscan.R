@@ -115,10 +115,9 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 													threads = threads,
 													verbose = as.logical(verbose))
 
-	clusters <- clustersout$clusters[1, ]
-	clusters = factor(clusters)
+	clusters = factor(clustersout$clusters)
 	probs <- data.frame(
-		probs = clustersout$clusters[2, ]
+		probs = clustersout$lambdas
 	)
 	mins = stats::aggregate(probs, by = list(clusters), FUN = "min")$probs
 	maxes = stats::aggregate(probs, by = list(clusters), FUN = "max")$probs - mins

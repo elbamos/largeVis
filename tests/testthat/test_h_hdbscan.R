@@ -41,13 +41,13 @@ test_that("hdbscan finds 3 clusters and outliers in spiral with a large Vis obje
 test_that("hdbscan finds outliers", {
 	load(system.file("testdata/spiral.Rda", package = "largeVis"))
 	expect_silent(clustering <- hdbscan(spiral, K = 10, minPts = 20))
-	expect_gt(sum(is.na(clustering$clusters)), 0)
+	expect_true(any(is.na(clustering$clusters)))
 })
 
 test_that("hdbscan is fine with minpts < 6", {
 	load(system.file("testdata/spiral.Rda", package = "largeVis"))
 	expect_silent(clustering <- hdbscan(spiral, K = 10, minPts = 3))
-	expect_gt(sum(is.na(clustering$clusters)), 0)
+	expect_true(any(is.na(clustering$clusters)), 0)
 })
 
 test_that("hdbscan finds 3 clusters and outliers in spiral", {
@@ -117,14 +117,13 @@ test_that("as.dendrogram is an S3 method", {
 
 test_that("as.dendrogram succeeds on iris4", {
 	dend <- as.dendrogram(hdobj, includeNodes = TRUE)
-	expect_true(length(dend[[1]]) == sum(hdobj$hierarchy$nodemembership == 1, na.rm = TRUE) +
-								sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) |
-								length(dend[[1]]) == 1)
+	expect_true(length(dend) == sum(hdobj$hierarchy$nodemembership == 1, na.rm = TRUE) +
+								sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) | length(dend) == 1)
 	expect_equal(sum(is.null(dend)), 0)
 	expect_equal(class(dend), "dendrogram")
 	expect_equal(nobs(dend), ncol(dat))
 	dend <- as.dendrogram(hdobj, includeNodes = FALSE)
-	expect_true(length(dend[[1]]) == sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) - 1)
+	expect_true(length(dend) == sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) + 1)
 	expect_equal(sum(is.null(dend)), 0)
 	expect_equal(class(dend), "dendrogram")
 }	)
@@ -132,12 +131,12 @@ test_that("as.dendrogram succeeds on iris4", {
 test_that("as.dendrogram succeeds on iris3", {
 	hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, verbose = FALSE)
 	dend <- as.dendrogram(hdobj, includeNodes = TRUE)
-	expect_equal(length(dend), sum(hdobj$hierarchy$nodemembership == 1, na.rm = TRUE) + sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) - 1)
+	expect_equal(length(dend), sum(hdobj$hierarchy$nodemembership == 1, na.rm = TRUE) + sum(hdobj$hierarchy$parent == 1, na.rm = TRUE))
 	expect_equal(sum(is.null(dend)), 0)
 	expect_equal(class(dend), "dendrogram")
 	expect_equal(nobs(dend), ncol(dat))
 	dend <- as.dendrogram(hdobj, includeNodes = FALSE)
-	expect_equal(length(dend), sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) - 1)
+	expect_equal(length(dend), sum(hdobj$hierarchy$parent == 1, na.rm = TRUE) + 1)
 	expect_equal(sum(is.null(dend)), 0)
 	expect_equal(class(dend), "dendrogram")
 }	)
