@@ -38,6 +38,8 @@ B and C, the algorithm might select A, and then all points under A, B, and C wou
 and select B and C instead. In that case, the nodes under B would be assigned to one cluster, the nodes under C to a different cluster, and nodes
 under A but not B or C would not be assigned to any cluster. This function returns a dendrogram of the middle stage, the hierarchy of consolidated
 nodes. Whether a node was selected as as cluster is an attribute of each node.
+
+This function remains experimental in terms of finding the best way to represent an hdbscan object in a dendrogram.
 }
 \examples{
 \dontrun{

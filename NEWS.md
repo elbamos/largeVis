@@ -9,8 +9,10 @@
 	+ Improvements to the visualizations of dedrograms
 	+ gplot now has an option to show the core distances for each point, using the ggforce package.
 * Edge matrices are now `edgematrix` objects. This allows the as_dist function to be an S3 method for as.dist applied to class edgematrix.
-* Threading is now disabled in HDBSCAN. The reason is that it did not offer any performance improvement.
+* Neighbor search now handles situation when a dataset includes a point where the number of duplicates is greater than the tree threshold.
+* gplot now has an option to show the core distances for each point, using the ggforce package.
 * dbscan is no longer a dependency
+* Worked-around bug in gcc 4.8 that caused issues on systems whose maintainers have not bothered to incorporate the past three years of compiler bug fixes (e.g., CentOS).
 
 ### largeVis 0.1.10.1
 * Hotfix for issue the caused largeVis to fail if compiled without 64-bit ARMA  

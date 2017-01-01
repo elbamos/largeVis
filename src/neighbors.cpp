@@ -83,8 +83,7 @@ void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighb
 }
 }
 
-Neighborholder copyTo(const Neighborholder& indices,
-                               const uvec& selections) {
+Neighborholder copyTo(const Neighborholder& indices, const uvec& selections) {
 	Neighborholder out = make_shared<ivec>(selections.n_elem);
 	std::transform(selections.begin(), selections.end(), out->begin(),
                 [&indices](const uword& it) {return (*indices)[it];});
@@ -101,11 +100,15 @@ void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborhol
 		localNeighborhood.emplace_back(indices);
 		p.increment(I);
 	} else {
-		const vec direction = hyperplane(*indices);
-		const distancetype middle = median(direction);
-		const uvec left = find(direction > middle);
+		vec direction = hyperplane(*indices);
+		distancetype middle = median(direction);
+		uvec left = find(direction > middle);
+		if (left.n_elem > (I - 2) || left.n_elem < 2) {
+			direction.randu();
+			middle = 0.5;
+			left = find(direction > middle);
+		}
 		const uvec right = find(direction <= middle);
-
 		recurse(copyTo(indices, left), localNeighborhood);
 		recurse(copyTo(indices, right), localNeighborhood);
 	}
@@ -131,6 +134,7 @@ void AnnoySearch<M, V>::setSeed(Rcpp::Nullable< NumericVector >& seed) {
 template<class M, class V>
 void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& newThreshold) {
 	threshold = newThreshold;
+	threshold2 = threshold * 4;
 	Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -165,6 +169,7 @@ void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
 	 */
 	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
+	if (continueWriting == knns.begin_col(i)) stop("At reduction, no neighbors for vertex " + std::to_string(i));
 	sort(knns.begin_col(i), continueWriting);
 	std::fill(continueWriting, knns.end_col(i), -1);
 
@@ -262,14 +267,14 @@ void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 
 	/*
 	* Before the last iteration, we keep the matrix sorted by vertexid, which makes the merge above
-	* more efficient.  In the last iteration, sort by distance.
+	* more efficient.
 	*
 	* We can't use std:copy because we're copying from a vector of pairs
 	*/
 	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
+	if (copyContinuation == knns.begin_col(i)) stop("No neighbors after exploration - this is a bug. Vertex " + std::to_string(i));
 	sort(knns.begin_col(i), copyContinuation);
-	if (copyContinuation == knns.begin_col(i)) stop("Neighbor exploration failure.");
 	std::fill(copyContinuation, knns.end_col(i), -1);
 }
 

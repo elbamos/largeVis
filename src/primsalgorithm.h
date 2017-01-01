@@ -39,12 +39,11 @@ public:
 		for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
 		Q.batchInsert(N, start);
 		Q.decreaseIf(starterIndex, -1);
-		p.increment(N);
 		while (! Q.isEmpty()) {
-			if (Q.size() < 0) stop("bad");
+	//		if (Q.size() < 0) stop("bad");
 			VIDX v = Q.pop();
 			if (! p.increment()) break;
-			if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
+	//		if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
 			IntegerVector vNeighbors = neighbors.column(v);
 			for (auto it = vNeighbors.begin();
         it != vNeighbors.end() && *it != -1;

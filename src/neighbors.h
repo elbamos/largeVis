@@ -66,6 +66,7 @@ protected:
 	const vertexidxtype N;
 	Progress& p;
 	int threshold = 0;
+	int threshold2 = 0;
 
 	virtual double distanceFunction(const V& x_i, const V& x_j) const = 0;
 	virtual vec hyperplane(const ivec& indices) = 0;
@@ -75,7 +76,7 @@ protected:
 	}
 
 public:
-	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : data{data}, K{K}, N(data.n_cols), p{p} {
+	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : data{data}, K{K}, N(data.n_cols), p(p) {
 		treeNeighborhoods = new Neighborhood[N];
 		for (vertexidxtype i = 0; i != N; ++i) treeNeighborhoods[i] = Neighborhood();
 	}
