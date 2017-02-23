@@ -62,8 +62,8 @@ lv_optics <- function(edges,
 	if ( !missing(eps_cl) || !missing(xi) ) {
 		if (!requireNamespace("dbscan", quietly = TRUE)) warning("xi and eps_cl require the dbscan package")
 		else {
-			if ( !missing(xi) ) ret <- dbscan::opticsXi(ret, xi)
-			if ( !missing(eps_cl) ) ret <- dbscan::optics_cut(ret, eps_cl)
+			if ( !missing(xi) ) ret <- dbscan::extractXi(ret, xi)
+			if ( !missing(eps_cl) ) ret <- dbscan::extractDBSCAN(ret, eps_cl)
 		}
 	}
 	ret
