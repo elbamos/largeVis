@@ -91,6 +91,15 @@ test_that("optics works with largeVis objects", {
 	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
 })
 
+test_that("optics works with dbscan", {
+	skip_on_travis()
+
+	vis <- largeVis(dat, threads = 2, sgd_batches = 1)
+	expect_silent(cl <- lv_optics(vis, eps = 1, minPts = 10, eps_cl = .4, xi = .05))
+	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
+})
+
+
 context("optics-elki")
 
 test_that("optics output format is correct", {
