@@ -12,7 +12,7 @@
 
 <meta name="author" content="Amos Elberg" />
 
-<meta name="date" content="2016-12-11" />
+<meta name="date" content="2017-02-23" />
 
 <title>largeVis: An Implementation of the LargeVis Algorithm</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">largeVis: An Implementation of the LargeVis Algorithm</h1>
 <h4 class="author"><em>Amos Elberg</em></h4>
-<h4 class="date"><em>2016-12-11</em></h4>
+<h4 class="date"><em>2017-02-23</em></h4>
 
 
 
@@ -135,7 +135,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(trainData) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">60000</span>, <span class="dv">28</span>, <span class="dv">28</span>)
 <span class="kw">aperm</span>(trainData, <span class="dt">perm =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">2</span>), <span class="dt">resize =</span> <span class="ot">FALSE</span>)
 <span class="kw">set.seed</span>(<span class="dv">1974</span>)
-<span class="kw">manifoldMap</span>(mnistCoords[,<span class="dv">1</span>:<span class="dv">2</span>],
+<span class="kw">manifoldMap</span>(mnistCoords[,<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>],
     <span class="dt">n =</span> <span class="dv">5000</span>,
     <span class="dt">scale =</span> <span class="fl">0.1</span>,
     <span class="dt">images =</span> trainData,
@@ -151,38 +151,38 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h2>Visualizing Graphs</h2>
 <p>The <code>largeVis</code> visualization algorithm can be used to visualize undirected weighted or unweighted acyclic graphs. The included <code>wiki</code> dataset is an example.</p>
 <p>The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available <a href="https://snap.stanford.edu/data/com-Youtube.html">here</a>. The data and visualization are not included here for size reasons.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">youtube &lt;-<span class="st"> </span>readr::<span class="kw">read_tsv</span>(pathToGraphFile, <span class="dt">skip=</span><span class="dv">4</span>, <span class="dt">col_names=</span><span class="ot">FALSE</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">youtube &lt;-<span class="st"> </span>readr<span class="op">::</span><span class="kw">read_tsv</span>(pathToGraphFile, <span class="dt">skip=</span><span class="dv">4</span>, <span class="dt">col_names=</span><span class="ot">FALSE</span>)
 youtube &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(youtube)
-youtube &lt;-<span class="st"> </span>Matrix::<span class="kw">sparseMatrix</span>(<span class="dt">i =</span> youtube[, <span class="dv">1</span>],
+youtube &lt;-<span class="st"> </span>Matrix<span class="op">::</span><span class="kw">sparseMatrix</span>(<span class="dt">i =</span> youtube[, <span class="dv">1</span>],
                                 <span class="dt">j =</span> youtube[, <span class="dv">2</span>],
                                 <span class="dt">x =</span> <span class="kw">rep</span>(<span class="dv">1</span>, <span class="kw">nrow</span>(youtube)), 
                                 <span class="dt">dims =</span> <span class="kw">c</span>(<span class="kw">max</span>(youtube), <span class="kw">max</span>(youtube)))
-youtube &lt;-<span class="st"> </span>youtube +<span class="st"> </span><span class="kw">t</span>(youtube)
-communities &lt;-<span class="st"> </span>readr::<span class="kw">read_lines</span>(pathToCommunities)
+youtube &lt;-<span class="st"> </span>youtube <span class="op">+</span><span class="st"> </span><span class="kw">t</span>(youtube)
+communities &lt;-<span class="st"> </span>readr<span class="op">::</span><span class="kw">read_lines</span>(pathToCommunities)
 communities &lt;-<span class="st"> </span><span class="kw">lapply</span>(communities, 
-                      <span class="dt">FUN =</span> function(x) <span class="kw">as.numeric</span>(<span class="kw">unlist</span>(<span class="kw">strsplit</span>(x, <span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>))))
+                      <span class="dt">FUN =</span> <span class="cf">function</span>(x) <span class="kw">as.numeric</span>(<span class="kw">unlist</span>(<span class="kw">strsplit</span>(x, <span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>))))
 community_assignments &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="dv">0</span>, 
                              <span class="kw">nrow</span>(youtube))
-for (i in <span class="dv">1</span>:<span class="kw">length</span>(communities)) community_assignments[communities[[i]]] &lt;-<span class="st"> </span>i
+<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">length</span>(communities)) community_assignments[communities[[i]]] &lt;-<span class="st"> </span>i
 
 wij &lt;-<span class="st"> </span><span class="kw">buildWijMatrix</span>(youtube)
 youTube_coordinates &lt;-<span class="st"> </span><span class="kw">projectKNNs</span>(youtube)
 youTube_coordinates &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="kw">scale</span>(<span class="kw">t</span>(youTube_coordinates)))
 <span class="kw">colnames</span>(youTube_coordinates) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;x&quot;</span>, <span class="st">&quot;y&quot;</span>)
-youTube_coordinates$community &lt;-<span class="st"> </span><span class="kw">factor</span>(community_assignments)
-youTube_coordinates$alpha &lt;-<span class="st"> </span><span class="kw">factor</span>(<span class="kw">ifelse</span>(youTube_coordinates$community ==<span class="st"> </span><span class="dv">0</span>, <span class="fl">0.05</span>, <span class="fl">0.2</span>))
+youTube_coordinates<span class="op">$</span>community &lt;-<span class="st"> </span><span class="kw">factor</span>(community_assignments)
+youTube_coordinates<span class="op">$</span>alpha &lt;-<span class="st"> </span><span class="kw">factor</span>(<span class="kw">ifelse</span>(youTube_coordinates<span class="op">$</span>community <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="fl">0.05</span>, <span class="fl">0.2</span>))
 <span class="kw">ggplot</span>(youTube_coordinates, <span class="kw">aes</span>( <span class="dt">x =</span> x, 
                       <span class="dt">y =</span> y, 
                       <span class="dt">color =</span> community, 
                       <span class="dt">alpha =</span> alpha, 
-                      <span class="dt">size =</span> alpha)) +
-<span class="st">  </span><span class="kw">geom_point</span>() +
-<span class="st">  </span><span class="kw">scale_alpha_manual</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="fl">0.005</span>, <span class="fl">0.2</span>), <span class="dt">guide =</span> <span class="ot">FALSE</span>) +
-<span class="st">  </span><span class="kw">scale_size_manual</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="fl">0.03</span>, <span class="fl">0.15</span>), <span class="dt">guide =</span> <span class="ot">FALSE</span>) +
+                      <span class="dt">size =</span> alpha)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_point</span>() <span class="op">+</span>
+<span class="st">  </span><span class="kw">scale_alpha_manual</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="fl">0.005</span>, <span class="fl">0.2</span>), <span class="dt">guide =</span> <span class="ot">FALSE</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">scale_size_manual</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="fl">0.03</span>, <span class="fl">0.15</span>), <span class="dt">guide =</span> <span class="ot">FALSE</span>) <span class="op">+</span>
 <span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="st">&quot;&quot;</span>, 
-                     <span class="dt">breaks =</span> <span class="ot">NULL</span>, <span class="dt">limits =</span> <span class="kw">c</span>(-<span class="fl">2.5</span>,<span class="fl">2.5</span>)) +
+                     <span class="dt">breaks =</span> <span class="ot">NULL</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="op">-</span><span class="fl">2.5</span>,<span class="fl">2.5</span>)) <span class="op">+</span>
 <span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="st">&quot;&quot;</span>, 
-                     <span class="dt">breaks =</span> <span class="ot">NULL</span>, <span class="dt">limits =</span> <span class="kw">c</span>(-<span class="fl">2.5</span>,<span class="fl">2.5</span>)) +
+                     <span class="dt">breaks =</span> <span class="ot">NULL</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="op">-</span><span class="fl">2.5</span>,<span class="fl">2.5</span>)) <span class="op">+</span>
 <span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;YouTube Communities&quot;</span>)</code></pre></div>
 </div>
 <div id="distance-methods" class="section level2">

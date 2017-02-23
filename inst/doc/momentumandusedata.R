@@ -163,7 +163,7 @@ ggplot(data.frame(
 
 ## ----opticsvsdbscan,fig.width=2,fig.width=6------------------------------
 suppressWarnings(opticsPoints <- do.call(rbind, Map(f = function(x) {
-		clust = thiscut <- optics_cut(optClust, x)$cluster
+		clust = thiscut <- extractDBSCAN(optClust, x)$cluster
 		data.frame(cluster = clust, eps = x)
 	}, c(1, 3, 5))))
 opticsPoints$cluster <- factor(opticsPoints$cluster)
