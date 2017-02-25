@@ -19,4 +19,3 @@ of k-Nearest Neighbors.
 \references{
 Based on code in the \code{\link[dbscan]{dbscan}} package.
 }
-

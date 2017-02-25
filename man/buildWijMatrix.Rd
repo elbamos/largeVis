@@ -2,9 +2,9 @@
 % Please edit documentation in R/buildEdgeMatrix.R
 \name{buildWijMatrix}
 \alias{buildWijMatrix}
-\alias{buildWijMatrix.CsparseMatrix}
-\alias{buildWijMatrix.TsparseMatrix}
 \alias{buildWijMatrix.edgematrix}
+\alias{buildWijMatrix.TsparseMatrix}
+\alias{buildWijMatrix.CsparseMatrix}
 \title{buildWijMatrix}
 \usage{
 buildWijMatrix(x, threads = NULL, perplexity = 50)
@@ -33,4 +33,3 @@ A \code{list} with the following components: \describe{
 \description{
 Rescale the weights in an edge matrix to match a given perplexity.
 }
-

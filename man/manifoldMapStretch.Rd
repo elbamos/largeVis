@@ -43,4 +43,3 @@ manifoldMapStretch(as.matrix(faceCoords[,1:2]),
 }
 
 }
-

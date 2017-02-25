@@ -7,7 +7,7 @@ Maintainer: Amos Elberg <amos.elberg@gmail.com>
 Description: Implements the largeVis algorithm (see Tang, et al. (2016)  <https://arxiv.org/abs/1602.00370>) for visualizing very large high-dimensional datasets. Also very fast search for approximate nearest neighbors; outlier detection; and optimized implementations of the HDBSCAN*, DBSCAN and OPTICS clustering algorithms; plotting functions for visualizing the above.
 License: GPL-3
 LazyData: TRUE
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 Depends:
     R (>= 3.0.2),
     Rcpp,

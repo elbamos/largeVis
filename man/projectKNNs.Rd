@@ -86,4 +86,3 @@ suppressWarnings(coords <- projectKNNs(vis$wij, threads = 2))
 plot(t(coords))
 }
 }
-

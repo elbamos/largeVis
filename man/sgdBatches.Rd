@@ -30,4 +30,3 @@ plot(K, sgdBatches(rep(N, length(K)), N * K / 2))
 N <- c(seq(from = 1, to = 10000, by = 100), seq(from = 10000, to = 10000000, by = 1000))
 plot(N, sgdBatches(N))
 }
-

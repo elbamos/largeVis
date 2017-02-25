@@ -55,10 +55,18 @@ CPPFLAGS = -I/usr/local/opt/llvm/include
 FLIBS = -L/usr/local/opt/gcc/lib/gcc/6/ -lgfortran -lquadmath -lm
 }
 }
+
 \references{
 Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 R. Campello, D. Moulavi, and J. Sander, Density-Based Clustering Based on Hierarchical Density Estimates In: Advances in Knowledge Discovery and Data Mining, Springer, pp 160-172. 2013
 Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jorg Sander (1999). OPTICS: Ordering Points To Identify the Clustering Structure. ACM SIGMOD international conference on Management of data. ACM Press. pp. 49-60.
 Martin Ester, Hans-Peter Kriegel, Jorg Sander, Xiaowei Xu (1996). Evangelos Simoudis, Jiawei Han, Usama M. Fayyad, eds. A density-based algorithm for discovering clusters in large spatial databases with noise. Proceedings of the Second International Conference on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226-231. ISBN 1-57735-004-9.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/elbamos/largeVis}
+  \item Report bugs at \url{https://github.com/elbamos/largeVis/issues}
+}
 
+}

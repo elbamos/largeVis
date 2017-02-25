@@ -112,4 +112,3 @@ R. Campello, D. Moulavi, and J. Sander, Density-Based Clustering Based on Hierar
 \seealso{
 \url{https://github.com/lmcinnes/hdbscan}
 }
-

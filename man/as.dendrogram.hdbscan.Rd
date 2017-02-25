@@ -49,4 +49,3 @@ hdbscanobj <- hdbscan(vis, minPts = 10, K = 5)
 plot(as_dendrogram_hdbscan(hdbscanobj))
 }
 }
-

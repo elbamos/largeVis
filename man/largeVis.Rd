@@ -82,4 +82,3 @@ plot(t(visObject$coords))
 \references{
 Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 }
-

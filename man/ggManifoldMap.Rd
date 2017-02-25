@@ -31,4 +31,3 @@ It therefore should only be used if other features of \code{ggplot2} are require
 If the objects in the list are \code{matrix} objects, or the array is 3-dimensional, the images will be treated as
 greyscale. If there is an additional dimension, it must have a length of 3 and be RGB color layers.
 }
-
