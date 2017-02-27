@@ -1,10 +1,9 @@
 ## Submission 
  
-This is a resubmisison of a minor version update intended as a hotfix. The response to the last submission was to inquire about test errors with version 0.1.10 and builds of R devel 3.4.
-
-I’ve tested the current submission against R-devel 3.3.2 on linux https://travis-ci.org/elbamos/largeVis/jobs/178220156, R-devel using win builder, and 3.4 on OS X on my own machine.  I’ve tested with valgrind on my own machine using both 32-bit and 64-bit builds. 
-
-I believe the error that was showing in the 0.1.10-r-3.4 log is related to the bug fix that is the reason for this minor version update. The error was occuring on an example that is very similar to an existing test.  I have moved the example to a test intended to replicate it exactly and encased the example version in \dontrun{}. 
+This is the first submission a minor version update, to 0.2. 
+There are several feature and performance changes, which are detailed in NEWS.md
+This update also fixes an installation error created by an update to the `dbscan` package that changed the name of a function. The dependency on `dbscan` has been removed entirely. 
+This update does not attempt to fix certain build problems that the CRAN package check found with Windows-oldrel and Solaris. The issue on Windows-oldrel is related to an older compiler version not fully supporting C++11. The issue on Solaris only occurs with Solaris Studio, not with gcc on Solaris, and appears to relate to buggy support for OpenMP. 
  
 ## Test environments 
 * local OS X install, R 3.3.2 
