@@ -3,7 +3,7 @@
 #include <stdlib.h> // for NULL
 #include <R_ext/Rdynload.h>
 
-/* .Call calls */
+/* .Call calls *//*
 extern SEXP largeVis_checkBits();
 extern SEXP largeVis_checkOpenMP();
 extern SEXP largeVis_dbscan_cpp(SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -33,10 +33,10 @@ static const R_CallMethodDef CallEntries[] = {
   {"largeVis_searchTreesTSparse", (DL_FUNC) &largeVis_searchTreesTSparse, 11},
   {"largeVis_sgd",                (DL_FUNC) &largeVis_sgd,                15},
   {NULL, NULL, 0}
-};
+};*/
 
 void R_init_largeVis(DllInfo *dll)
 {
-  R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
-  R_useDynamicSymbols(dll, FALSE);
+  R_registerRoutines(dll, NULL, /*CallEntries*/ NULL, NULL, NULL);
+  R_useDynamicSymbols(dll, TRUE);
 }
