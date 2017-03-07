@@ -63,7 +63,7 @@ void HDCluster::condenseSingleton() {
 	mergeUp();
 	lambda_death = max(lambda_death, left->lambda_death);
 #ifdef DEBUG
-	if (lambda_death == INFINITY) stop("max infinity");
+	if (lambda_death == INFINITY) throw Rcpp::exception("max infinity");
 #endif
 
 	right = left->right;
@@ -78,7 +78,7 @@ void HDCluster::condenseSingleton() {
 void HDCluster::condenseTooSmall() {
 	mergeUp();
 #ifdef DEBUG
-	if (lambda_death == INFINITY) stop("infinity is too small");
+	if (lambda_death == INFINITY) throw Rcpp::exception("Infinity is too small.");
 #endif
 
 	left->left = nullptr;
@@ -93,7 +93,7 @@ void HDCluster::condenseTooSmall() {
 
 double HDCluster::determineStability(const unsigned int& minPts, Progress& p) {
 #ifdef DEBUG
-	if (sz < minPts && parent != nullptr) stop("Condense failed");
+	if (sz < minPts && parent != nullptr) throw Rcpp::exception("Condense failed.");
 #endif
 	stability = sum_lambda_p - (lambda_birth * fallenPoints.size());
 	if (left == nullptr) { // leaf node
@@ -116,7 +116,7 @@ double HDCluster::determineStability(const unsigned int& minPts, Progress& p) {
 // Prevents agglomeration in a single cluster.
 void HDCluster::determineSubStability(const unsigned int& minPts, Progress& p) {
 #ifdef DEBUG
-	if (sz < minPts && parent != nullptr) stop("Condense failed");
+	if (sz < minPts && parent != nullptr) throw Rcpp::exception("Condense failed.");
 #endif
 	stability = sum_lambda_p - (lambda_birth * fallenPoints.size());
 	if (left != nullptr) {
@@ -217,7 +217,7 @@ HDCluster::HDCluster(const arma::uword& id) : sz(1), id(id) { }
 HDCluster::HDCluster(HDCluster* a, HDCluster* b, const arma::uword& id, const double& d) :
 	sz(a->sz + b->sz), id(id), rank(max(a->rank, b->rank) + 1), lambda_birth(0), lambda_death(1/d) {
 #ifdef DEBUG
-	if (lambda_death == INFINITY) stop("death is infinity");
+	if (lambda_death == INFINITY) throw Rcpp::exception("death is infiinity.");
 #endif
 	a->parent = b->parent = this;
 	a->lambda_birth = b->lambda_birth = lambda_death;

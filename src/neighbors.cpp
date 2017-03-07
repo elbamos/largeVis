@@ -169,7 +169,7 @@ void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
 	 */
 	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
-	if (continueWriting == knns.begin_col(i)) stop("At reduction, no neighbors for vertex " + std::to_string(i));
+	if (continueWriting == knns.begin_col(i)) throw Rcpp::exception("At reduction, no neighbors for vertex.");
 	sort(knns.begin_col(i), continueWriting);
 	std::fill(continueWriting, knns.end_col(i), -1);
 
@@ -273,7 +273,7 @@ void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 	*/
 	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
-	if (copyContinuation == knns.begin_col(i)) stop("No neighbors after exploration - this is a bug. Vertex " + std::to_string(i));
+	if (copyContinuation == knns.begin_col(i)) throw Rcpp::exception("No neighbors after exploration - this is a bug.");
 	sort(knns.begin_col(i), copyContinuation);
 	std::fill(copyContinuation, knns.end_col(i), -1);
 }

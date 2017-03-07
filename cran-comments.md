@@ -1,9 +1,10 @@
 ## Submission 
  
-This is the first submission a minor version update, to 0.2. 
+This is the a resubmission of a minor version update, to 0.2. 
+This resubmission addresses issues related to the new checks for `R_registerRoutines`
+The notes for the original submission were:
 There are several feature and performance changes, which are detailed in NEWS.md
 This update also fixes an installation error created by an update to the `dbscan` package that changed the name of a function. The dependency on `dbscan` has been removed entirely. 
-This update does not attempt to fix certain build problems that the CRAN package check found with Windows-oldrel and Solaris. The issue on Windows-oldrel is related to an older compiler version not fully supporting C++11. The issue on Solaris only occurs with Solaris Studio, not with gcc on Solaris, and appears to relate to buggy support for OpenMP. 
  
 ## Test environments 
 * local OS X install, R 3.3.2 
@@ -18,11 +19,11 @@ This update does not attempt to fix certain build problems that the CRAN package
  
 0 errors | 0 warnings | 1 note 
  
-* The Note concerns the installation size, which I've been able to reduce since the prior version. 
+* The Note concerns the installation size. 
  
 ## Note regarding test errors 
  
-The submission dialog asks me to confirm that CI errors have been fixed. This submission is intended to fix those errors, except that one of the errors concerns Windows with the old release of R. The log for the old-Windows build shows that the compiler in this test is forcing the use of C++ standard 0X even though `Makevars` requires C++11. I believe requiring C++11 is permissible under the CRAN standards and this is specified in the DESCRIPTION file. 
+The submission dialog asks me to confirm that CI errors have been fixed. This submission fixes all errors related to the update to `dbscan`. This submission does not address errors related to old-Windows or Solaris. The log for the old-Windows build shows that the compiler in this test is forcing the use of C++ standard 0X even though `Makevars` requires C++11. I believe requiring C++11 is permissible under the CRAN standards and this is specified in the DESCRIPTION file. Regarding Solaris, I am unable to reproduce the error using gcc on Solaris. I believe the error is tied to Solaris Studio and to a buggy implementation of OpenMP in particular. 
  
 ## Reverse dependencies 
  
