@@ -5,7 +5,7 @@
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
 largeVis(x, dim = 2, K = 50, n_trees = 50, tree_threshold = max(10,
-  ncol(x)), max_iter = 1, distance_method = "Euclidean",
+  min(nrow(x), ncol(x))), max_iter = 1, distance_method = "Euclidean",
   perplexity = max(50, K/3), save_neighbors = TRUE, save_edges = TRUE,
   threads = NULL, verbose = getOption("verbose", TRUE), ...)
 }
@@ -82,4 +82,3 @@ plot(t(visObject$coords))
 \references{
 Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 }
-

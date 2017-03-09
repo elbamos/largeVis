@@ -7,7 +7,9 @@
 #' \code{edges} is a \code{largeVis} object.
 #' @param minPts The minimum number of points in a cluster.
 #' @param K The number of points in the core neighborhood. (See details.)
-#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
+#' @param threads Maximum number of threads. Determined automatically if \code{NULL} (the default).  It is unlikely that
+#' this parameter should ever need to be adjusted.  It is only available to make it possible to abide by the CRAN limitation that no package
+#' use more than two cores.
 #' @param verbose Verbosity.
 #'
 #' @details The hyperparameter \code{K} controls the size of core neighborhoods.
@@ -30,8 +32,10 @@
 #'    \item{'clusters'}{A vector of the cluster membership for each vertex. Outliers
 #'    are given \code{NA}}
 #'    \item{'probabilities'}{A vector of the degree of each vertex' membership. This
-#'    is calculated as each vertex' \eqn{\lambda_p} over the highest \eqn{\lambda_p}
-#'    in the cluster. }
+#'    is calculated by standardizing each vertex' \eqn{lambda_p} against the \eqn{lambda_birth}
+#'    and \eqn{lambda_death} of the cluster.}
+#'    \item{'glosh'}{A vector of GLOSH outlier scores for each node assigned to a cluster. NA for nodes not
+#'    in a cluster.}
 #'    \item{'tree'}{The minimum spanning tree used to generate the clustering.}
 #'    \item{'hierarchy'}{A representation of the condensed cluster hierarchy.}
 #'    \item{'call'}{The call.}
@@ -39,12 +43,14 @@
 #'
 #'  The hierarchy describes the complete post-condensation structure of the tree:
 #'  \describe{
-#'  \item{'nodemembership'}{The node ID of the vertex's immediate parent, after condensation.}
-#'  \item{'lambda'}{\eqn{\lambda_p}}
-#'  \item{'parent'}{The node ID of each node's parent.}
-#'  \item{'stability'}{The node's stability, taking into account child-node stabilities.}
-#'  \item{'selected'}{Whether the node was selected.}
+#'  \item{'nodemembership'}{The cluster ID of the vertex's immediate parent, after condensation.}
+#'  \item{'lambda'}{\eqn{\lambda_p} for each vertex.}
+#'  \item{'parent'}{The cluster ID of each cluster's parent.}
+#'  \item{'stability'}{The cluster's stability, taking into account child-node stabilities.}
+#'  \item{'selected'}{Whether the cluster was selected.}
 #'  \item{'coredistances'}{The core distance determined for each vertex.}
+#'  \item{'lamba_birth'}{\eqn{\lambda_b} for each cluster.}
+#'  \item{'lambda_deaeth'}{\eqn{\lambda_d} for each cluster.}
 #'  }
 #'
 #' @references R. Campello, D. Moulavi, and J. Sander, Density-Based Clustering Based on Hierarchical Density Estimates In: Advances in Knowledge Discovery and Data Mining, Springer, pp 160-172. 2013
@@ -89,20 +95,18 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 										threads = NULL,
 										verbose = getOption("verbose", TRUE)) {
 
+	if (inherits(edges, "edgematrix")) edges <- toMatrix(edges)
 	if (inherits(edges, "largeVis")) {
-		if (is.null(neighbors)) neighbors <- edges$knns
-		edges <- edges$edges
+		if (missing(neighbors)) neighbors <- edges$knns
+		edges <- toMatrix(edges$edges)
+	} else {
+		if (is.null(neighbors)) stop("Neighbors must be specified unless a largeVis object is given.")
 	}
 
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1
 		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
 	}
-	if (is.null(neighbors) || is.null(edges)) stop("Neighbors must be specified unless a largeVis object is given.")
-	if (minPts < 6) stop("minPts must be >= 6")
-
-	if (!is.null(threads)) threads <- as.integer(threads)
-
 
 	clustersout <- hdbscanc(edges = edges,
 													neighbors = neighbors,
@@ -111,11 +115,9 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 													threads = threads,
 													verbose = as.logical(verbose))
 
-	clusters <- clustersout$clusters[1, ]
-	clusters[clusters == -1] <- NA
-	clusters = factor(clusters, exclude = NULL)
+	clusters = factor(clustersout$clusters)
 	probs <- data.frame(
-		probs = clustersout$clusters[2, ]
+		probs = clustersout$lambdas
 	)
 	mins = stats::aggregate(probs, by = list(clusters), FUN = "min")$probs
 	maxes = stats::aggregate(probs, by = list(clusters), FUN = "max")$probs - mins
@@ -127,19 +129,26 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 	hierarchy <- clustersout$hierarchy
 	hierarchy$nodemembership <- hierarchy$nodemembership + 1
 	hierarchy$parent <- hierarchy$parent + 1
-	hierarchy$coredistances <- hierarchy$coredistances
+#	hierarchy$coredistances <- hierarchy$coredistances
 	tree <- clustersout$tree + 1
 	tree[tree == 0] <- NA
 
-	ret <- list(
-		clusters = clusters,
-		probabilities = probs$probs,
-		tree = tree,
-		hierarchy = hierarchy,
-		call = sys.call()
-	)
-	class(ret) <- "hdbscan"
-	return(ret)
+	# GLOSH
+	fmax <- stats::aggregate(hierarchy$lambda, by = list(hierarchy$nodemembership), FUN = max,
+													 na.rm = TRUE, simplify = TRUE, drop = FALSE)
+	maxes <- fmax$x[match(hierarchy$nodemembership, fmax$Group.1)]
+	glosh <- (maxes - hierarchy$lambda) / maxes
+
+	structure(
+		.Data = list(
+			clusters = clusters,
+			probabilities = probs$probs,
+			GLOSH = glosh,
+			tree = tree,
+			hierarchy = hierarchy
+		),
+		call = sys.call(),
+		class = "hdbscan")
 }
 
 #' gplot
@@ -149,8 +158,7 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' how clusters were generated.
 #'
 #' Point color corresponds to clusters, with outliers as the \code{NA} color. Alpha
-#' corresponds to the centrality of the node in the cluster (i.e., \eqn{\lambda_p} relative
-#' to \eqn{\lambda_{birth}} and \eqn{\lambda_{death}}). The segments on the plot
+#' corresponds to the node's GLOSH score. The segments on the plot
 #' correspond to the connections on the minimum spanning tree. Segment alpha
 #' corresponds to \eqn{\lambda_p}.
 #'
@@ -162,6 +170,7 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' @param text If \code{TRUE}, include on the plot labels for each node's index.
 #' If \code{"parent"}, the labels will instead be the index number of the node's
 #' cluster.
+#' @param distances If \code{TRUE}, draw circles representing the core distances around each point.
 #'
 #' @return A \code{\link[ggplot2]{ggplot}} object
 #' @export
@@ -178,24 +187,35 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' gplot(clusters, dat)
 #' }
 #' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes_
-gplot <- function(x, coords, text = FALSE) {
+gplot <- function(x, coords, text = FALSE, distances = FALSE) {
 	dframe <- data.frame(coords)
 	colnames(dframe) <- c("x", "y")
 	dframe$cluster = x$clusters
-	dframe$probabilities = x$probabilities
-	dframe$probabilities[is.nan(dframe$probabilities)] <-
-		x$hierarchy$lambda[is.nan(dframe$probabilities)]
+	dframe$glosh = x$GLOSH
+	dframe$distance = x$hierarchy$coredistances
+	dframe$glosh[is.nan(dframe$glosh)] <-
+		x$hierarchy$lambda[is.nan(dframe$glosh)]
+	dframe$label <- 0:(nrow(dframe) - 1)
+	dframe$parent <- x$hierarchy$nodemembership
 	xy <- data.frame(coords[x$tree, ])
 	colnames(xy) <- c("x2", "y2")
 	dframe <- cbind(dframe, xy)
-	dframe$lambda <- x$hierarchy$lambda / max(x$hierarchy$lambda)
-	dframe$label <- 0:(nrow(dframe) - 1)
-	dframe$parent <- x$hierarchy$nodemembership
 	plt <- ggplot2::ggplot(dframe,
 												 ggplot2::aes_(x = quote(x), y = quote(y),
-												 							xend = quote(x2), yend = quote(y2), color = quote(cluster))) +
-		ggplot2::geom_point(aes_(alpha = quote(probabilities)), size = 0.7) +
-		ggplot2::geom_segment(size = 0.5, ggplot2::aes_(alpha = quote(lambda), size = quote(lambda)))
+												 							xend = quote(x2), yend = quote(y2), color = quote(cluster)))
+	if (distances) {
+		if (requireNamespace("ggforce", quietly = TRUE)) plt <- plt + ggforce::geom_circle(ggplot2::aes_(x0 = quote(x),
+																																 y0 = quote(y),
+																																 r = quote(distance),
+																																 fill = quote(cluster),
+																																 color = quote(cluster)),
+																									 inherit.aes = FALSE, alpha = 0.1, linetype = "dotted")
+		else warning("To display distance circles, the ggforce package must be installed.")
+	}
+	plt <- plt +
+		ggplot2::geom_point(aes_(alpha = quote(glosh)), size = 0.7) +
+		ggplot2::geom_segment(size = 0.5, ggplot2::aes_(alpha = quote(glosh))) +
+		ggplot2::scale_alpha_continuous(trans = "reverse")
 
 	if (text == "parent") {
 		plt <- plt + ggplot2::geom_label(ggplot2::aes_(label = quote(parent)), size = 2.5,

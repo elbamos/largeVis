@@ -28,7 +28,6 @@
 #' @return An \code{\link[dbscan]{optics}} object.
 #' @references  Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jorg Sander (1999). OPTICS: Ordering Points To Identify the Clustering Structure. ACM SIGMOD international conference on Management of data. ACM Press. pp. 49-60.
 #' @export
-#' @importFrom dbscan optics_cut opticsXi
 lv_optics <- function(edges,
 										 neighbors,
 										 eps = Inf,
@@ -37,9 +36,10 @@ lv_optics <- function(edges,
 										 xi,
 										 useQueue = TRUE,
 										 verbose = getOption("verbose", TRUE)) {
+	if (inherits(edges, "edgematrix")) edges <- toMatrix(edges)
 	if (inherits(edges, "largeVis")) {
 		if (missing(neighbors)) neighbors <- edges$knns
-		edges <- edges$edges
+		edges <- toMatrix(edges$edges)
 	}
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1
@@ -59,8 +59,12 @@ lv_optics <- function(edges,
 	ret$call <- sys.call()
 	class(ret) <- "optics"
 
-	if(!missing(eps_cl)) ret <- dbscan::optics_cut(ret, eps_cl)
-	if(!missing(xi)) ret <- dbscan::opticsXi(ret, xi)
-
+	if ( !missing(eps_cl) || !missing(xi) ) {
+		if (!requireNamespace("dbscan", quietly = TRUE)) warning("xi and eps_cl require the dbscan package")
+		else {
+			if ( !missing(xi) ) ret <- dbscan::extractXi(ret, xi)
+			if ( !missing(eps_cl) ) ret <- dbscan::extractDBSCAN(ret, eps_cl)
+		}
+	}
 	ret
 }

@@ -63,6 +63,7 @@ edges <- buildEdgeMatrix(data = dat,
 
 test_that("optics doesn't crash on iris", {
 	expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = FALSE, verbose = FALSE))
+	expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = TRUE, verbose = FALSE))
 })
 
 load(system.file(package = "largeVis", "testdata/irisoptics.Rda"))
@@ -90,9 +91,20 @@ test_that("optics works with largeVis objects", {
 	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
 })
 
+test_that("optics works with dbscan", {
+	skip_on_travis()
+
+	vis <- largeVis(dat, threads = 2, sgd_batches = 1)
+	expect_silent(cl <- lv_optics(vis, eps = 1, minPts = 10, eps_cl = .4, xi = .05))
+	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
+})
+
+
 context("optics-elki")
 
 test_that("optics output format is correct", {
+	skip_on_cran()
+	skip_on_travis()
 	load(system.file("testdata/opttest.Rda", package = "largeVis"))
 
 	x <- opttest$test_data

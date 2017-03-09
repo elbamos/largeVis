@@ -21,4 +21,3 @@ In the returned list, the nodes indexed by `j` are the identified nearest neighb
 In other words, if `i = c(0,0,0,1,1,1)` and `j = c(1,2,3,2,3,4)`, then nodes `1, 2 & 3` are nearest neighbors of node 0,
 but node 0 is not a nearest neighbor of node 1.
 }
-

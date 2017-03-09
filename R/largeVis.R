@@ -60,7 +60,7 @@ largeVis <- function(x,
                      K = 50,
 
                      n_trees = 50,
-                     tree_threshold = max(10, ncol(x)),
+                     tree_threshold = max(10, min(nrow(x), ncol(x))),
                      max_iter = 1,
                      distance_method = "Euclidean",
 
@@ -73,6 +73,9 @@ largeVis <- function(x,
 
                      verbose = getOption("verbose", TRUE),
                     ...) {
+
+	if (!(is.matrix(x) && is.numeric(x)) && !is.data.frame(x)) stop("LargeVis requires a matrix or data.frame")
+	if (is.data.frame(x)) x <- t(as.matrix(x[, sapply(x, is.numeric)]))
 
   #############################################
   # Search for kNearestNeighbors
@@ -95,11 +98,11 @@ largeVis <- function(x,
   												 verbose = verbose)
   if (!save_neighbors) rm(knns)
   gc()
-  if (any(edges@x > 27)) {
+  if (any(edges$x > 27)) {
   	warning(paste(
   		"The Distances between some neighbors are large enough to cause the calculation of p_{j|i} to overflow.",
   		"Scaling the distance vector."))
-  	edges@x <- edges@x / max(edges@x)
+  	edges$x <- edges$x / max(edges$x)
   }
   wij <- buildWijMatrix(edges, threads, perplexity)
   if (!save_edges) rm(edges)

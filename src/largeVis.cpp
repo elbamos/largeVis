@@ -13,8 +13,8 @@ using namespace arma;
 
 class Visualizer {
 private:
-	inline void updateMinus(const coordinatetype* from,
-                          coordinatetype* to,
+	inline void updateMinus(const coordinatetype * const from,
+                          coordinatetype * const to,
                           const distancetype& rho) {
 		for (dimidxtype d = 0; d != D; ++d) to[d] -= from[d] * rho;
 	}
@@ -26,8 +26,8 @@ protected:
 	vertexidxtype * const sourcePointer;
 	coordinatetype * const coordsPtr;
 
-	distancetype rho;
-	const distancetype rhoIncrement;
+	double rho;
+	const double rhoIncrement;
 
 	AliasTable< vertexidxtype, coordinatetype, double > negAlias;
 	AliasTable< edgeidxtype, coordinatetype, double > posAlias;
@@ -44,7 +44,7 @@ public:
             const vertexidxtype& N,
             const edgeidxtype& E,
 
-            distancetype rho,
+            double rho,
             const iterationtype& n_samples,
 
             const unsigned int& M,
@@ -88,22 +88,18 @@ public:
 		}
 	}
 
-	void operator()(const iterationtype& startSampleIdx, const unsigned int& batchSize) {
-		edgeidxtype e_ij;
-		unsigned int example = 0;
-		coordinatetype *firstholder = new coordinatetype[D * 2];
-		coordinatetype *secondholder = firstholder + D;
+	virtual void innerLoop(const double& localRho,
+                        const unsigned int& batchSize,
+                        coordinatetype * const firstholder) {
+		coordinatetype * const secondholder = firstholder + D;
+		for (unsigned int example = 0; example != batchSize; ++example) {
 
-		const distancetype localRho = rho;
-		if (localRho < 0) return;
-		while (example++ != batchSize) {
-			e_ij = posAlias();
-
+			const edgeidxtype e_ij = posAlias();
 			const vertexidxtype j = targetPointer[e_ij];
 			const vertexidxtype i = sourcePointer[e_ij];
 
-			coordinatetype* y_i = coordsPtr + (i * D);
-			coordinatetype* y_j = coordsPtr + (j * D);
+			coordinatetype * const y_i = coordsPtr + (i * D);
+			coordinatetype * y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
 			updateMinus(firstholder, y_j, localRho);
 
@@ -123,8 +119,21 @@ public:
 			}
 			updateMinus(firstholder, y_i, - localRho);
 		}
-		rho -= (rhoIncrement * batchSize);
-		delete[] firstholder;
+	}
+
+	void thread(Progress& progress, const uword& batchSize) {
+		coordinatetype * const holder = new coordinatetype[D * 2];
+
+		while (rho >= 0) {
+			const double localRho = rho;
+			innerLoop(localRho, batchSize, holder);
+#ifdef _OPENMP
+#pragma omp atomic
+#endif
+			rho -= (rhoIncrement * batchSize);
+			if (!progress.increment()) break;
+		}
+		delete[] holder;
 	}
 };
 
@@ -148,38 +157,31 @@ public:
                     const vertexidxtype& N,
                     const edgeidxtype& E,
 
-                    distancetype rho,
+                    double rho,
                     const iterationtype& n_samples,
                     const float& momentum,
 
                     const unsigned int& M,
                     const double& alpha,
                     const double& gamma) : Visualizer(sourcePtr, targetPtr, coordPtr, D,
-                    																	N, E, rho, n_samples, M, alpha, gamma) {
-		this -> momentum = momentum;
+                    																	N, E, rho, n_samples, M, alpha, gamma), momentum{momentum} {
 		momentumarray = new coordinatetype[D * N];
-		for (vertexidxtype i = 0; i != D*N; ++i) momentumarray[i] = 0;
+		std::fill(momentumarray, momentumarray + D * N, 0);
 	}
 	~MomentumVisualizer() {
 		delete[] momentumarray;
 	}
-	void operator()(const iterationtype& startSampleIdx, const unsigned int& batchSize) {
-		edgeidxtype e_ij;
-		unsigned int example = 0;
-		coordinatetype *firstholder = new coordinatetype[D * 2];
-		coordinatetype *secondholder = firstholder + D;
-		coordinatetype * y_i, * y_j;
 
-		const distancetype localRho = rho;
-		if (localRho < 0) return;
-		while (example++ != batchSize) {
-			e_ij = posAlias();
-
+	virtual void innerLoop(const double& localRho, const unsigned int& batchSize,
+												 coordinatetype * const firstholder) {
+		coordinatetype * const secondholder = firstholder + D;
+		for (unsigned int example = 0; example != batchSize; ++example) {
+			const edgeidxtype e_ij = posAlias();
 			const vertexidxtype j = targetPointer[e_ij];
 			const vertexidxtype i = sourcePointer[e_ij];
 
-			y_i = coordsPtr + (i * D);
-			y_j = coordsPtr + (j * D);
+			coordinatetype* y_i = coordsPtr + (i * D);
+			coordinatetype* y_j = coordsPtr + (j * D);
 			grad -> positiveGradient(y_i, y_j, firstholder);
 			updateMinus(firstholder, j, y_j, localRho);
 
@@ -199,10 +201,10 @@ public:
 			}
 			updateMinus(firstholder, i, y_i, - localRho);
 		}
-		rho -= (rhoIncrement * batchSize);
-		delete[] firstholder;
 	}
 };
+
+#define BATCHSIZE 8192
 
 // [[Rcpp::export]]
 arma::mat sgd(arma::mat& coords,
@@ -223,7 +225,6 @@ arma::mat sgd(arma::mat& coords,
 #ifdef _OPENMP
 	checkCRAN(threads);
 #endif
-	Progress progress(n_samples, verbose);
 	const dimidxtype D = coords.n_rows;
 	const vertexidxtype N = coords.n_cols;
 	const edgeidxtype E = targets_i.n_elem;
@@ -236,8 +237,8 @@ arma::mat sgd(arma::mat& coords,
      	M, alpha, gamma);
 	else {
 		float moment = NumericVector(momentum)[0];
-		if (moment < 0) stop("Momentum cannot be negative.");
-		if (moment > 1) stop("Momentum canot be > 1.");
+		if (moment < 0) throw Rcpp::exception("Momentum cannot be negative.");
+		if (moment > 0.95) throw Rcpp::exception("Bad things happen when momentum is > 0.95.");
 		v = new MomentumVisualizer(
 			 sources_j.memptr(), targets_i.memptr(), coords.memptr(),
 	     D, N, E,
@@ -246,9 +247,9 @@ arma::mat sgd(arma::mat& coords,
 	}
 
 	distancetype* negweights = new distancetype[N];
-	for (vertexidxtype n = 0; n < N; ++n) negweights[n] = 0;
+	std::fill(negweights, negweights + N, 0);
 	if (useDegree) {
-		for (edgeidxtype e = 0; e < targets_i.n_elem; ++e) negweights[targets_i[e]]++;
+		std::for_each(targets_i.begin(), targets_i.end(), [&negweights](const sword& e) {negweights[e]++;});
 	} else {
 		for (vertexidxtype p = 0; p < N; ++p) {
 			for (edgeidxtype e = ps[p]; e != ps[p + 1]; ++e) {
@@ -256,22 +257,23 @@ arma::mat sgd(arma::mat& coords,
 			}
 		}
 	}
-	for (vertexidxtype n = 0; n < N; ++n) negweights[n] = pow(negweights[n], 0.75);
+	std::for_each(negweights, negweights + N, [](distancetype& weight) {weight = pow(weight, 0.75);});
 	v -> initAlias(weights.memptr(), negweights, seed);
 	delete[] negweights;
 
-	const unsigned int batchSize = 8192;
-	const iterationtype barrier = (n_samples * .99 < n_samples - coords.n_cols) ? n_samples * .99 : n_samples - coords.n_cols;
+	const uword batchSize = BATCHSIZE;
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+	const unsigned int ts = omp_get_max_threads();
+#else
+	const unsigned int ts = 2;
 #endif
-	for (iterationtype eIdx = 0; eIdx < barrier; eIdx += batchSize) if (progress.increment(batchSize)) {
-		(*v)(eIdx, batchSize);
+	Progress progress(max((uword) ts, n_samples / BATCHSIZE), verbose);
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+	for (unsigned int t = 0; t < ts; ++t) {
+		v->thread(progress, batchSize);
 	}
-#ifdef _OPENMP
-#pragma omp barrier
-#endif
-	for (iterationtype eIdx = barrier; eIdx < n_samples; eIdx += batchSize) if (progress.increment(batchSize)) (*v)(eIdx, batchSize);
 	delete v;
 	return coords;
-};
+}

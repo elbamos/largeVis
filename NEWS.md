@@ -1,3 +1,19 @@
+### largeVis 0.2
+* largeVis has reached a point of stability where its appropriate to bump the version. 
+* Performance improvements in neighbor search & projectKNNs.
+* HDBSCAN
+	+	Performance improvements in HDBSCAN. 
+	+	Now outputs GLOSH outlier scores for each point assigned to a cluster, and these are used by gplot. 
+	+ Outputs lambda birth and death
+	+ as_dendrogram_hdbscan is now (properly) an S3 method for as.dendrogram applied to class hdbscan. 
+	+ Improvements to the visualizations of dedrograms
+	+ gplot now has an option to show the core distances for each point, using the ggforce package.
+* Edge matrices are now `edgematrix` objects. This allows the as_dist function to be an S3 method for as.dist applied to class edgematrix.
+* Neighbor search now handles situation when a dataset includes a point where the number of duplicates is greater than the tree threshold.
+* gplot now has an option to show the core distances for each point, using the ggforce package.
+* dbscan is no longer a dependency
+* Worked-around bug in gcc 4.8 that caused issues on systems whose maintainers have not bothered to incorporate the past three years of compiler bug fixes (e.g., CentOS).
+
 ### largeVis 0.1.10.1
 * Hotfix for issue the caused largeVis to fail if compiled without 64-bit ARMA  
 * Fix for issue reported by @Dalar where sparse neighbor search could fail with division by zero error

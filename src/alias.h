@@ -1,8 +1,6 @@
 #include "largeVis.h"
-#include <memory>
 #include <random>
 #include <queue>
-#include <Rcpp.h>
 
 using namespace std;
 
@@ -22,7 +20,6 @@ public:
 		probs = new C[N];
 		aliases = new T[N];
 	}
-	AliasTable() : AliasTable(0) {}
 
 	~AliasTable() {
 		delete[] probs;
@@ -37,14 +34,11 @@ public:
 	}
 
 	void initialize(const D* weights) {
-		D sm = 0;
-		for (T i = 0; i != N; i++) sm += weights[i];
+		const D sm = std::accumulate(weights, weights + N, 0);
 		for (T i = 0; i != N; i++) probs[i] = weights[i] * N / sm;
 		queue<T> small = queue<T>();
 		queue<T> large = queue<T>();
-		for (T i = 0; i < N; i++) ((probs[i] < 1) ?
-                               small :
-                               large).push(i);
+		for (T i = 0; i < N; i++) ((probs[i] < 1) ? small : large).push(i);
 		while (! large.empty() && ! small.empty()) {
 			T big = large.front();
 			large.pop();
@@ -78,8 +72,8 @@ public:
 		initRandom(seed());
 	}
 
-	T operator()(C random, C random2) const {
-		T candidate = random * N;
+	T operator()(const C& random, const C& random2) const {
+		const T candidate = random * N;
 		return (random2 >= probs[candidate]) ? aliases[candidate] : candidate;
 	}
 

@@ -17,12 +17,12 @@ neighbors <- randomProjectionTreeSearch(dat,
 test_that("buildEdgeMatrix are the same", {
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
   edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE)
-  score <- sum(edges1@x - edges2@x)
+  score <- sum(edges1$x - edges2$x)
   expect_lt(score, 1, label = "Euclidean")
 
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
 	edges2 <- buildEdgeMatrix(data = Matrix::Matrix(dat, sparse = TRUE), neighbors = neighbors, verbose = FALSE, distance_method = "Cosine")
-	score <- sum(edges1@x - edges2@x)
+	score <- sum(edges1$x - edges2$x)
 	expect_lt(score, 1, label = "Cosine")
 })
 

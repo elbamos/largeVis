@@ -8,7 +8,7 @@ lv_dbscan(edges, neighbors, eps = Inf, minPts = nrow(neighbors - 1),
   verbose = getOption("verbose", TRUE))
 }
 \arguments{
-\item{edges}{A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}. Alternatively, a \code{largeVis} object,
+\item{edges}{An `edgematrix` object. Alternatively, a \code{largeVis} object,
 in which case \code{edges} and \code{neighbors} will be taken from the \code{edges} and \code{knns} parameters, respectively.}
 
 \item{neighbors}{An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}}
@@ -32,4 +32,3 @@ implementation leverages the nearest neighbor data assembled by largeVis.
 \references{
 Martin Ester, Hans-Peter Kriegel, Jorg Sander, Xiaowei Xu (1996). Evangelos Simoudis, Jiawei Han, Usama M. Fayyad, eds. A density-based algorithm for discovering clusters in large spatial databases with noise. Proceedings of the Second International Conference on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226-231. ISBN 1-57735-004-9.
 }
-

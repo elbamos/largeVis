@@ -4,7 +4,7 @@
 \alias{gplot}
 \title{gplot}
 \usage{
-gplot(x, coords, text = FALSE)
+gplot(x, coords, text = FALSE, distances = FALSE)
 }
 \arguments{
 \item{x}{An \code{hdbscan} object.}
@@ -14,6 +14,8 @@ gplot(x, coords, text = FALSE)
 \item{text}{If \code{TRUE}, include on the plot labels for each node's index.
 If \code{"parent"}, the labels will instead be the index number of the node's
 cluster.}
+
+\item{distances}{If \code{TRUE}, draw circles representing the core distances around each point.}
 }
 \value{
 A \code{\link[ggplot2]{ggplot}} object
@@ -25,8 +27,7 @@ how clusters were generated.
 }
 \details{
 Point color corresponds to clusters, with outliers as the \code{NA} color. Alpha
-corresponds to the centrality of the node in the cluster (i.e., \eqn{\lambda_p} relative
-to \eqn{\lambda_{birth}} and \eqn{\lambda_{death}}). The segments on the plot
+corresponds to the node's GLOSH score. The segments on the plot
 correspond to the connections on the minimum spanning tree. Segment alpha
 corresponds to \eqn{\lambda_p}.
 
@@ -45,4 +46,3 @@ clusters <- hdbscan(aggregateVis, verbose = FALSE)
 gplot(clusters, dat)
 }
 }
-

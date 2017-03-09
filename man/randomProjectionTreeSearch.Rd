@@ -2,9 +2,9 @@
 % Please edit documentation in R/projectionTreeSearch.R
 \name{randomProjectionTreeSearch}
 \alias{randomProjectionTreeSearch}
+\alias{randomProjectionTreeSearch.matrix}
 \alias{randomProjectionTreeSearch.CsparseMatrix}
 \alias{randomProjectionTreeSearch.TsparseMatrix}
-\alias{randomProjectionTreeSearch.matrix}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
 randomProjectionTreeSearch(x, K = 150, n_trees = 50,
@@ -60,4 +60,3 @@ warning will be issued if it finds fewer neighbors than requested. If the input 
 distinct partitionable clusters, try increasing the \code{tree_threshold} to increase the number
 of returned neighbors.
 }
-

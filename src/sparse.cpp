@@ -23,6 +23,10 @@ protected:
 
 		const sp_mat m =  (x1 + x2) / 2;
 		const sp_mat d = x1 - x2;
+		if (I < threshold2 && accu(d) == 0) {
+			direction.randu();
+			return direction;
+		}
 		const distancetype dn = as_scalar(norm(d, 2)) + 1e-5;
 		const sp_mat v =  d / dn; // unit vector
 
@@ -56,33 +60,28 @@ public:
 	SparseCosine(const SpMat<double>& data, const kidxtype& K, Progress& p) : SparseAnnoySearch(data, K, p) {}
 };
 
-imat searchTreesSparse(const int& threshold,
-                            const int& n_trees,
-                            const kidxtype& K,
-                            const int& maxIter,
-                            const sp_mat& data,
-                            const string& distMethod,
-                            Rcpp::Nullable< NumericVector> seed,
-                            Rcpp::Nullable< NumericVector> threads,
-                            bool verbose) {
+imat searchTreesSparse( const int& threshold,
+                        const int& n_trees,
+                        const kidxtype& K,
+                        const int& maxIter,
+                        const sp_mat& data,
+                        const string& distMethod,
+                        Rcpp::Nullable< NumericVector> seed,
+                        Rcpp::Nullable< NumericVector> threads,
+                        bool verbose) {
 	const vertexidxtype N = data.n_cols;
 
 	Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
 
 	sp_mat dataMat;
 
+	SparseAnnoySearch* annoy;
 	if (distMethod.compare(string("Cosine")) == 0) {
 		dataMat = sp_mat(data);
 		for (vertexidxtype d = 0; d < dataMat.n_cols; d++) dataMat.col(d) /= norm(dataMat.col(d));
-	} else {
-		dataMat = data;
-	}
-
-	SparseAnnoySearch* annoy;
-	if (distMethod.compare(string("Cosine")) == 0) {
 		annoy = new SparseCosine(dataMat, K, p);
 	} else {
-		annoy = new SparseEuclidean(dataMat, K, p);
+		annoy = new SparseEuclidean(data, K, p);
 	}
 
 	annoy->setSeed(seed);

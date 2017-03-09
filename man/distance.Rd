@@ -2,9 +2,9 @@
 % Please edit documentation in R/distance.R
 \name{distance}
 \alias{distance}
+\alias{distance.matrix}
 \alias{distance.CsparseMatrix}
 \alias{distance.TsparseMatrix}
-\alias{distance.matrix}
 \title{Calculate pairwise Euclidean or angular distances efficiently}
 \usage{
 distance(x, i, j, distance_method, threads = NULL, verbose)
@@ -40,4 +40,3 @@ This function is a wrapper around a C++ function that calculates pairwise distan
 \details{
 The Euclidean or angular distances between columns in `x` identified by parameters `i` and `j` are calculated and returned.
 }
-

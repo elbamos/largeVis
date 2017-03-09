@@ -52,4 +52,3 @@ Andrej Karpapthy. \href{http://cs.stanford.edu/people/karpathy/cnnembed/}{t-SNE 
 \seealso{
 \code{\link{ggManifoldMap}}
 }
-

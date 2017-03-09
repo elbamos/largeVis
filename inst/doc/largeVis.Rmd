@@ -15,34 +15,22 @@ vignette: |
 ```{r setupvignette,eval=T,echo=F,warning=F,error=F,message=F}
 require(ggplot2, 
         quietly = TRUE)
-require(RColorBrewer, 
-        quietly = TRUE)
-require(wesanderson, 
-        quietly = TRUE)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>",
                       cache=FALSE)
-colors_discrete <- function(x) 
-  rep(wes_palette("Darjeeling", n = min(x, 5)), 2)[1:x]
-colors_divergent_discrete <- function(x) 
-  grDevices::colorRampPalette(RColorBrewer::brewer.pal(x, "Spectral"))
-colors_continuous <-  function(x) wes_palette(name = "Zissou",
-                                              n = x, 
-                                              type = "continuous")
 
-nacol <- colors_discrete(4)[4]
 theme_set(
   theme_bw() %+replace%
   theme(
     legend.title = element_text(size = rel(0.8),
                               face = "bold"),
-    legend.margin = unit(0, "cm"),
+    legend.margin = margin(0.1,0.1,0.1,0.1, "cm"),
     legend.position = "bottom",
     legend.key.size = unit(0.5, "lines"),
     legend.text = element_text(size = unit(8, "points")), 
     axis.title.y = element_text(angle = 90),
     axis.text = element_text(size = rel(0.7)),
-    plot.margin = unit(c(0, 0.5, 1, 0), "lines"), 
+    plot.margin = margin(0, 0.5, 1, 0, "lines"), 
     axis.title = element_text(size = rel(0.8),
                               face = "bold"),
     title = element_text(size = rel(0.9))
@@ -130,15 +118,12 @@ if (! exists("agcoords") && rebuild) {
     a <- inputs[x, 'a']
     g <- inputs[x, 'g']
     newcoords <- initialcoords
-    projectKNNs(wij, alpha = a, 
+    y <- data.frame(scale(t(projectKNNs(wij, alpha = a, 
                  gamma = g,
                  verbose = FALSE, 
-                 coords = newcoords) %>% 
-      t() %>%
-      scale() %>%
-      data.frame() %>%
-      set_colnames(c("x", "y")) %>%
-      mutate(a = a, g = g, degree = colSums(wiki))
+                 coords = newcoords))))
+    colnames(y) <- c("x", "y")
+    y$degree = colSums(wiki)
   }))
 }
 
@@ -156,8 +141,6 @@ ggplot(agcoords,
                      name = "") +
   scale_y_continuous(breaks = NULL, 
                      name = "") +
-  scale_color_gradientn(colors = colors_continuous(10), 
-                        guide=FALSE) +
   ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  ")))
 ```
 
@@ -223,7 +206,6 @@ ggplot(iriscoords,
   facet_grid(K ~ M, 
              scales = 'free', 
              labeller = label_bquote(K == .(K), M == .(M))) +
-  scale_color_manual(values = colors_discrete(3)) +
   ggtitle("Effect of M and K on Iris Dataset")
 ```
 
@@ -282,9 +264,6 @@ ggplot(youTube_coordinates, aes( x = x,
                       alpha = alpha, 
                       size = alpha)) +
   geom_point() +
-  scale_color_manual(values = 
-                       c("black", colors_continuous(5000)),
-                     guide = FALSE) +
   scale_alpha_manual(values = c(0.005, 0.2), guide = FALSE) +
   scale_size_manual(values = c(0.03, 0.15), guide = FALSE) +
   scale_x_continuous("", 

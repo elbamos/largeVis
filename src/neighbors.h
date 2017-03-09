@@ -2,6 +2,7 @@
 #define _LARGEVISNEIGHBORS
 #include "largeVis.h"
 #include <vector>
+#include <memory>
 #include "progress.hpp"
 #include "minpq.h"
 
@@ -10,7 +11,7 @@ using namespace std;
 using namespace arma;
 
 typedef vector< vertexidxtype > Neighborhood;
-
+typedef shared_ptr<ivec> Neighborholder;
 /*
  * Helper class for n-way merge sort
  */
@@ -40,20 +41,20 @@ private:
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
 
-	void recurse(const ivec& indices, list< ivec >& localNeighborhood);
-	inline void mergeNeighbors(const list< ivec >& neighbors);
+	void recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood);
+	void mergeNeighbors(const list< Neighborholder >& neighbors);
 
-	inline void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
-	inline void reduceThread(const vertexidxtype& loopstart, const vertexidxtype& end);
+	void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
+	void reduceThread(const vertexidxtype& loopstart, const vertexidxtype& end);
 
-	inline void exploreThread(const imat& old_knns, const vertexidxtype& loopstart, const vertexidxtype& end);
-	inline void exploreOne(const vertexidxtype& i, const imat& old_knns,
+	void exploreThread(const imat& old_knns, const vertexidxtype& loopstart, const vertexidxtype& end);
+	void exploreOne(const vertexidxtype& i, const imat& old_knns,
                   vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
                   MinIndexedPQ& positionHeap, vector< Position >& positionVector);
-	inline void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
+	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
 
-	inline void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
-	inline void sortCopyThread(const vertexidxtype& start, const vertexidxtype& end);
+	void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
+	void sortCopyThread(const vertexidxtype& start, const vertexidxtype& end);
 
 	inline void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap, const V& x_i, const vertexidxtype& j) const;
 	inline void addToNeighborhood(const V& x_i, const vertexidxtype& j,
@@ -65,6 +66,7 @@ protected:
 	const vertexidxtype N;
 	Progress& p;
 	int threshold = 0;
+	int threshold2 = 0;
 
 	virtual double distanceFunction(const V& x_i, const V& x_j) const = 0;
 	virtual vec hyperplane(const ivec& indices) = 0;
@@ -74,7 +76,7 @@ protected:
 	}
 
 public:
-	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : data{data}, K{K}, N(data.n_cols), p{p} {
+	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : data{data}, K{K}, N(data.n_cols), p(p) {
 		treeNeighborhoods = new Neighborhood[N];
 		for (vertexidxtype i = 0; i != N; ++i) treeNeighborhoods[i] = Neighborhood();
 	}

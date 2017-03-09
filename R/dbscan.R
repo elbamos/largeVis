@@ -2,7 +2,7 @@
 #'
 #' Implementation of the DBSCAN algorithm using largeVis datastructures.
 #'
-#' @param edges A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}. Alternatively, a \code{largeVis} object,
+#' @param edges An `edgematrix` object. Alternatively, a \code{largeVis} object,
 #' in which case \code{edges} and \code{neighbors} will be taken from the \code{edges} and \code{knns} parameters, respectively.
 #' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}
 #' @param eps See \code{\link[dbscan]{dbscan}}.
@@ -21,9 +21,10 @@ lv_dbscan <- function(edges,
 									 eps = Inf,
 									 minPts = nrow(neighbors - 1),
 									 verbose = getOption("verbose", TRUE)) {
+	if (inherits(edges, "edgematrix")) edges <- toMatrix(edges)
 	if (inherits(edges, "largeVis")) {
 		if (missing(neighbors)) neighbors <- edges$knns
-		edges <- edges$edges
+		edges <- toMatrix(edges$edges)
 	}
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1
@@ -42,14 +43,14 @@ lv_dbscan <- function(edges,
 #' @description Calculate the Local Outlier Factor (LOF) score for each data point given knowledge
 #' of k-Nearest Neighbors.
 #'
-#' @param edges An edge matrix of the type produced by \code{\link{buildEdgeMatrix}}.
+#' @param edges An `edgematrix` of the type produced by \code{\link{buildEdgeMatrix}}.
 #'
 #' @references Based on code in the \code{\link[dbscan]{dbscan}} package.
 #'
 #' @return A vector of LOF values for each data point.
 #' @export
 lof <- function(edges) {
-
+	if (inherits(edges, "edgematrix")) edges <- toMatrix(edges)
 	id <- apply(edges,MARGIN = 1, FUN = function(x) which(x != 0))
 	dist <- apply(edges, MARGIN = 1, FUN = function(x) x[x != 0])
 	for (i in 1:ncol(id)) {
@@ -76,4 +77,3 @@ lof <- function(edges) {
 
   ret
 }
-
