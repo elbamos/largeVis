@@ -2,6 +2,9 @@
  
 This is the a resubmission of a minor version update, to 0.2. 
 This resubmission addresses issues related to the new checks for `R_registerRoutines`
+
+I am seeing warnings with R_devel regarding "Found ‘abort’, possibly from ‘abort’ (C)." I believe the warning is a false alarm that arises out of linking the `RcppProgress` package, which has a function called `abort()`. I am working with the author of that package on an update to resolve the issue.  
+
 The notes for the original submission were:
 There are several feature and performance changes, which are detailed in NEWS.md
 This update also fixes an installation error created by an update to the `dbscan` package that changed the name of a function. The dependency on `dbscan` has been removed entirely. 
