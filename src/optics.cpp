@@ -83,8 +83,8 @@ public:
 								         coredist(vector< double >(N)),
 								         predecessor(vector< long long >(N, NA_INTEGER)),
 								         progress(Progress(N, verbose)) {
-         	if (neighbors.n_rows < minPts) stop("Insufficient neighbors.");
-         	if (minPts < 2) stop("minPts must be >= 2");
+         	if (neighbors.n_rows < minPts) throw Rcpp::exception("Insufficient neighbors.");
+         	if (minPts < 2) throw Rcpp::exception("minPts must be >= 2");
          	orderedPoints.reserve(N);
          	for (long long n = 0; n != N; n++) {
          		double nthDistance = edges(n, neighbors(minPts - 2, n));

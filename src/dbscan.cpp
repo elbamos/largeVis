@@ -71,8 +71,7 @@ public:
          								 visited(vector< bool >(N, false)),
 								         clusterAssignments(vector<int>(N, -1)),
 								         progress(Progress(N, verbose)) {
-         	if (neighbors.n_rows < minPts) stop("Insufficient neighbors.");
-
+         	if (neighbors.n_rows < minPts) throw Rcpp::exception("Insufficient Neighbors.");
        }
 
 

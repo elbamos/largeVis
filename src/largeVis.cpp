@@ -237,8 +237,8 @@ arma::mat sgd(arma::mat& coords,
      	M, alpha, gamma);
 	else {
 		float moment = NumericVector(momentum)[0];
-		if (moment < 0) stop("Momentum cannot be negative.");
-		if (moment > 0.95) stop("Bad things happen when momentum is > 0.95.");
+		if (moment < 0) throw Rcpp::exception("Momentum cannot be negative.");
+		if (moment > 0.95) throw Rcpp::exception("Bad things happen when momentum is > 0.95.");
 		v = new MomentumVisualizer(
 			 sources_j.memptr(), targets_i.memptr(), coords.memptr(),
 	     D, N, E,

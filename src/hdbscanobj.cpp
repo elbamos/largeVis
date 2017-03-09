@@ -107,9 +107,9 @@ void HDBSCAN::buildHierarchy(const vector<pair<double, arma::uword>>& mergeSeque
 		const arma::uword& n = it -> second;
 		if (minimum_spanning_tree[n] == -1) continue;
 #ifdef DEBUG
-		if (it->first == 0) stop("Zero distance");
-		if (it->first == NA_INTEGER) stop("NA distance");
-		if (it->first == INFINITY) stop("infinite distance");
+		if (it->first == 0) throw Rcpp::exception("Zero distance");
+		if (it->first == NA_INTEGER) throw Rcpp::exception("NA distance");
+		if (it->first == INFINITY) throw Rcpp::exception("infinite distance");
 #endif
 		HDCluster  *a, *b;
 		a = points[n]->getRoot();
@@ -131,11 +131,11 @@ HDBSCAN::~HDBSCAN() {
 void HDBSCAN::makeCoreDistances(const sp_mat& edges,
                                 const IntegerMatrix& neighbors,
                                 const int& K) {
-	if (neighbors.nrow() < K) stop("Specified K bigger than the number of neighbors in the adjacency matrix.");
+	if (neighbors.nrow() < K) throw Rcpp::exception("Specified K bigger than the number of neighbors in the adjacency matrix.");
 	const IntegerVector kthNeighbors = neighbors.row(K - 1);
 	for (arma::uword n = 0; n < N; n++) if (p.increment()) {
 		const arma::uword q = kthNeighbors[n];
-		if (q == -1 || q == NA_INTEGER) stop("Insufficient neighbors.");
+		if (q == -1 || q == NA_INTEGER) throw Rcpp::exception("Insufficient neighbors.");
 		coreDistances[n] = edges(n, q);
 		if (coreDistances[n] == 0) coreDistances[n] = max(edges(q, n), 1e-5);
 	}
