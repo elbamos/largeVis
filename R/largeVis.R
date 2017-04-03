@@ -74,7 +74,7 @@ largeVis <- function(x,
                      verbose = getOption("verbose", TRUE),
                     ...) {
 
-	if (!(is.matrix(x) && is.numeric(x)) && !is.data.frame(x)) stop("LargeVis requires a matrix or data.frame")
+	if (!(is.matrix(x) && is.numeric(x)) && !is.data.frame(x) && ! inherits(x, "Matrix")) stop("LargeVis requires a matrix or data.frame")
 	if (is.data.frame(x)) x <- t(as.matrix(x[, sapply(x, is.numeric)]))
 
   #############################################

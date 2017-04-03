@@ -34,8 +34,8 @@ buildEdgeMatrix <- function(data,
 #' @importFrom Matrix sparseMatrix
 toMatrix <- function(x) {
 	sparseMatrix(
-		i = x$i,
-		j = x$j,
+		i = x$j,
+		j = x$i,
 		x = x$x,
 		dims = attr(x, "dims")
 	)

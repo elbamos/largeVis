@@ -95,7 +95,7 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 										threads = NULL,
 										verbose = getOption("verbose", TRUE)) {
 
-	if (inherits(edges, "edgematrix")) edges <- toMatrix(edges)
+	if (inherits(edges, "edgematrix")) edges <- t(toMatrix(edges))
 	if (inherits(edges, "largeVis")) {
 		if (missing(neighbors)) neighbors <- edges$knns
 		edges <- toMatrix(edges$edges)
