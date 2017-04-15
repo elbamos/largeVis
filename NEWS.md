@@ -1,3 +1,6 @@
+### largeVis 0.2.0.1
+* Fix for a bug in which the edgeMatrix needed to be transposed in some circumstances.
+
 ### largeVis 0.2
 * largeVis has reached a point of stability where its appropriate to bump the version. 
 * Performance improvements in neighbor search & projectKNNs.

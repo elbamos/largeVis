@@ -77,7 +77,7 @@ and recompile from source. (`devtools::install_github("elbamos/largeVis")` will 
 ```
 SHLIB_OPENMP_CFLAGS = -fopenmp
 R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
-LDFLAGS =  ""-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib"
+LDFLAGS = -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib"
 CPPFLAGS =  -I/usr/local/opt/llvm/include
 PATH = /usr/local/opt/llvm/bin:$PATH 
 ```
