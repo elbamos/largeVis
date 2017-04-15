@@ -21,16 +21,19 @@ lv_dbscan <- function(edges,
 									 eps = Inf,
 									 minPts = nrow(neighbors - 1),
 									 verbose = getOption("verbose", TRUE)) {
-	if (inherits(edges, "edgematrix")) edges <- toMatrix(edges)
-	if (inherits(edges, "largeVis")) {
+	if (inherits(edges, "edgematrix")) {
+		edges <- t(toMatrix(edges))
+	} else if (inherits(edges, "largeVis")) {
 		if (missing(neighbors)) neighbors <- edges$knns
-		edges <- toMatrix(edges$edges)
+		edges <- t(toMatrix(edges$edges))
+	} else {
+		stop("edges must be either an edgematrix or a largeVis object")
 	}
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1
 		if (ncol(neighbors) != ncol(edges)) neighbors <- t(neighbors)
 	}
-	if (is.null(edges) || is.null(neighbors)) stop("Both edges and neighbors must be provided.")
+	if (is.null(edges) || is.null(neighbors)) stop("Both edges and neighbors must be specified (or use a largeVis object)")
 
 	clusters <- dbscan_cpp(edges, neighbors, as.double(eps), as.integer(minPts), as.logical(verbose))
 

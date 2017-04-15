@@ -122,11 +122,10 @@ grid.raster(img)
 ## ----dbscan,fig.width=6,fig.height=6-------------------------------------
 load(system.file(package = "largeVis", "vignettedata/spiral.Rda"))
 dat <- spiral
-neighbors <- randomProjectionTreeSearch(t(dat), K = 20)
-edges <- buildEdgeMatrix(t(dat), neighbors = neighbors)
+vis <- largeVis(t(dat), K = 20, save_edges = TRUE, save_neighbors = TRUE, sgd_batches = 1)
 set <- rbind(Map(f = function(y) {
 	rbind(Map(f = function(x) {
-		clust = lv_dbscan(edges = edges, neighbors = neighbors, eps = x, minPts = y)$cluster
+		clust = lv_dbscan(vis, eps = x, minPts = y)$cluster
 		data.frame(cluster = clust, eps = x, minPts = y)
 	}, c(1, 3, 5)))
 }, c(5, 10, 20)))
@@ -147,9 +146,8 @@ ggplot(data = set, aes(x = x, y = y, color = cluster)) +
 	ggtitle("Effect of eps and minPts on DBSCAN results")
 
 ## ----optics,fig.width=5,message=FALSE,warning=FALSE----------------------
-library(dbscan, quietly = TRUE)
-optClust <- lv_optics(edges = edges, neighbors = neighbors, eps = 5, useQueue = FALSE, minPts = 5)
-optClust2 <- lv_optics(edges = edges, neighbors = neighbors, eps = 5, useQueue = TRUE, minPts = 5)
+optClust <- lv_optics(vis, eps = 5, useQueue = FALSE, minPts = 5)
+optClust2 <- lv_optics(vis, eps = 5, useQueue = TRUE, minPts = 5)
 ggplot(data.frame(
 	o = c(optClust$order, optClust2$order), 
 	d = c(optClust$reachdist, optClust2$reachdist), 
@@ -163,7 +161,7 @@ ggplot(data.frame(
 
 ## ----opticsvsdbscan,fig.width=2,fig.width=6------------------------------
 suppressWarnings(opticsPoints <- do.call(rbind, Map(f = function(x) {
-		clust = thiscut <- extractDBSCAN(optClust, x)$cluster
+		clust = thiscut <- dbscan::extractDBSCAN(optClust, x)$cluster
 		data.frame(cluster = clust, eps = x)
 	}, c(1, 3, 5))))
 opticsPoints$cluster <- factor(opticsPoints$cluster)
@@ -182,7 +180,7 @@ ggplot(data = opticsPoints, aes(x = x, y = y, color = cluster)) +
 ## ----hdbscan,fig.width=6,fig.height=6------------------------------------
 suppressWarnings(set <- do.call(rbind, Map(f = function(y) {
 	rbind(Map(f = function(x) {
-		hdclust <- hdbscan(edges = edges, neighbors = neighbors, K = y, minPts = x)$cluster
+		hdclust <- largeVis::hdbscan(vis, K = y, minPts = x)$cluster
 		data.frame(cluster = as.numeric(hdclust), K = x, minPts = y)
 	}, c(6, 10, 20)))
 }, c(2, 6, 12))))

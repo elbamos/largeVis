@@ -95,13 +95,15 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 										threads = NULL,
 										verbose = getOption("verbose", TRUE)) {
 
-	if (inherits(edges, "edgematrix")) edges <- t(toMatrix(edges))
-	if (inherits(edges, "largeVis")) {
+	if (inherits(edges, "edgematrix")) {
+		edges <- t(toMatrix(edges))
+	} else if (inherits(edges, "largeVis")) {
 		if (missing(neighbors)) neighbors <- edges$knns
-		edges <- toMatrix(edges$edges)
+		edges <- t(toMatrix(edges$edges))
 	} else {
-		if (is.null(neighbors)) stop("Neighbors must be specified unless a largeVis object is given.")
+		stop("edges must be either an edgematrix or a largeVis object")
 	}
+	if (is.null(edges) || is.null(neighbors)) stop("Both edges and neighbors must be specified (or use a largeVis object)")
 
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1
