@@ -36,7 +36,7 @@ public:
             Progress& p,
             const VIDX& start) {
 		starterIndex = start;
-		for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = -1;
+		for (VIDX n = 0; n != N; ++n) minimum_spanning_tree[n] = NA_INTEGER;
 		Q.batchInsert(N, start);
 		Q.decreaseIf(starterIndex, -1);
 		while (! Q.isEmpty()) {
