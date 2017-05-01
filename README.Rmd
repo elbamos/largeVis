@@ -66,19 +66,4 @@ show(gplot(clusters, Aggregation[, 1:2]) +
 
 #### Building Notes
 
-* The CRAN binaries are likely to have been compiled with 32-bit ARMA objects, and without OpenMP on OS X. 
-* To get 64-bit ARMA objects, add to `~.R/Makevars`:
-```
-R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
-```
-and recompile from source. (`devtools::install_github("elbamos/largeVis")` will work). 
-
-* Getting OpenMP support on OS X is a bit tricky. What I've done, is to install `llvm` (version 3.8 or later), and then add the following to `~.R/Makevars`:
-```
-SHLIB_OPENMP_CFLAGS = -fopenmp
-R_XTRA_CXXFLAGS = -DARMA_64BIT_WORD
-LDFLAGS = -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib"
-CPPFLAGS =  -I/usr/local/opt/llvm/include
-PATH = /usr/local/opt/llvm/bin:$PATH 
-```
-*	Recompile from source, as above.  
+* **Note on R 3.4**: Before R 3.4, the CRAN binaries were likely to have been compiled without OpenMP, and getting OpenMP to work on Mac OS X was somewhat tricky. This should all have changed (for the better) with R 3.4, which natively using `clang 4.0` by default. Since R 3.4 is new, I'm not able to provide advice, but am interested in hearing of any issues and any workarounds to issues that you may discover. 
