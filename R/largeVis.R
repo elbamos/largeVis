@@ -121,7 +121,6 @@ largeVis <- function(x,
   #######################################################
 
   returnvalue <- list(
-    knns = t(knns),
     wij = wij,
     call = sys.call(),
     coords = coords
