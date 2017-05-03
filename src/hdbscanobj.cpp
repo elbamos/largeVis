@@ -105,7 +105,7 @@ void HDBSCAN::buildHierarchy(const vector<pair<double, arma::uword>>& mergeSeque
 	roots.max_load_factor(3);
 	for (auto it = mergeSequence.begin(); it != mergeSequence.end();  ++it) if (p.increment()) {
 		const arma::uword& n = it -> second;
-		if (minimum_spanning_tree[n] == -1) continue;
+		if (minimum_spanning_tree[n] == NA_INTEGER) continue;
 #ifdef DEBUG
 		if (it->first == 0) throw Rcpp::exception("Zero distance");
 		if (it->first == NA_INTEGER) throw Rcpp::exception("NA distance");
@@ -134,7 +134,7 @@ void HDBSCAN::makeCoreDistances(const sp_mat& edges,
 	if (neighbors.nrow() < K) throw Rcpp::exception("Specified K bigger than the number of neighbors in the adjacency matrix.");
 	const IntegerVector kthNeighbors = neighbors.row(K - 1);
 	for (arma::uword n = 0; n < N; n++) if (p.increment()) {
-		const arma::uword q = kthNeighbors[n];
+		const arma::sword q = kthNeighbors[n];
 		if (q == -1 || q == NA_INTEGER) throw Rcpp::exception("Insufficient neighbors.");
 		coreDistances[n] = edges(n, q);
 		if (coreDistances[n] == 0) coreDistances[n] = max(edges(q, n), 1e-5);

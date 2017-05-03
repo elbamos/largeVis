@@ -215,7 +215,7 @@ HDCluster::~HDCluster() {
 HDCluster::HDCluster(const arma::uword& id) : sz(1), id(id) { }
 
 HDCluster::HDCluster(HDCluster* a, HDCluster* b, const arma::uword& id, const double& d) :
-	sz(a->sz + b->sz), lambda_birth(0), lambda_death(1/d), id(id), rank(max(a->rank, b->rank) + 1) {
+	lambda_birth(0), lambda_death(1/d), sz(a->sz + b->sz), id(id), rank(max(a->rank, b->rank) + 1) {
 #ifdef DEBUG
 	if (lambda_death == INFINITY) throw Rcpp::exception("death is infiinity.");
 #endif

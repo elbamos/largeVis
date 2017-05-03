@@ -78,7 +78,7 @@ imat searchTreesSparse( const int& threshold,
 	SparseAnnoySearch* annoy;
 	if (distMethod.compare(string("Cosine")) == 0) {
 		dataMat = sp_mat(data);
-		for (vertexidxtype d = 0; d < dataMat.n_cols; d++) dataMat.col(d) /= norm(dataMat.col(d));
+		for (arma::uword d = 0; d < dataMat.n_cols; d++) dataMat.col(d) /= norm(dataMat.col(d));
 		annoy = new SparseCosine(dataMat, K, p);
 	} else {
 		annoy = new SparseEuclidean(data, K, p);

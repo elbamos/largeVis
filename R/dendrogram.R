@@ -28,12 +28,10 @@
 #' @importFrom stats as.dendrogram
 #' @export
 #' @examples
-#' \dontrun{
 #' data(iris)
 #' vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1)
 #' hdbscanobj <- hdbscan(vis, minPts = 10, K = 5)
-#' plot(as_dendrogram_hdbscan(hdbscanobj))
-#' }
+#' plot(as.dendrogram.hdbscan(hdbscanobj))
 as.dendrogram.hdbscan <- function(object, includeNodes = FALSE, ...) {
 	C <- length(object$hierarchy$parent)
 

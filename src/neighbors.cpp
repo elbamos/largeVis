@@ -95,7 +95,7 @@ Neighborholder copyTo(const Neighborholder& indices, const uvec& selections) {
 	*/
 template<class M, class V>
 void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood) {
-	const vertexidxtype I = indices->n_elem;
+	const arma::uword I = indices->n_elem;
 	if (I <= threshold) {
 		localNeighborhood.emplace_back(indices);
 		p.increment(I);
@@ -139,7 +139,7 @@ void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& n
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-	for (int t = 0; t < n_trees; t++) if (! p.check_abort()) {
+	for (unsigned int t = 0; t < n_trees; t++) if (! p.check_abort()) {
 		list< Neighborholder > local;
 		recurse(indices, local);
 		mergeNeighbors(local);
