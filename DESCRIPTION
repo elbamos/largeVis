@@ -10,7 +10,6 @@ LazyData: TRUE
 RoxygenNote: 6.0.1
 Depends:
     R (>= 3.0.2),
-    Rcpp,
     Matrix
 Imports:
     ggplot2 (>= 2.1.0)

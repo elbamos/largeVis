@@ -7,11 +7,36 @@ matrix:
   - os: linux
     dist: trusty
     r: release
+    before_install: |1
+     mkdir ~/.R
+     cat <<EOF > ~/.R/Makevars
+     CC=gcc-6
+     CXX=g++-6
+     CXX1X=g++-6
+     CXX11=g++-6
+
   - os: osx
     r: release
+    before_install: |1
+     mkdir ~/.R
+     cat <<EOF > ~/.R/Makevars
+     CC=/usr/local/opt/llvm/bin/clang
+     CXX=/usr/local/opt/llvm/bin/clang++
+     CXX1X=/usr/local/opt/llvm/bin/clang++
+     CXX11=/usr/local/opt/llvm/bin/clang++
+     LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib"
+
   - os: linux
     dist: trusty
     r: devel
+    before_install: |1
+     mkdir ~/.R
+     cat <<EOF > ~/.R/Makevars
+     CC=gcc-6
+     CXX=g++-6
+     CXX1X=g++-6
+     CXX11=g++-6
+
   - os: osx
     r: devel
     env: _R_CHECK_FORCE_SUGGESTS_=FALSE
@@ -44,25 +69,19 @@ r_binary_packages:
 
 sudo: required
 
-before_install: |
-  mkdir ~/.R
-  cat <<EOF >> ~/.R/Makevars
-  CXX1X=g++-4.9
-  FC=gfortran-4.9
-  CXX1XSTD=-std=c++11
-
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - gcc-4.9
-      - g++-4.9
-      - gfortran-4.9
+      - gcc-6
+      - g++-6
+      - gfortran-6
       - valgrind
       - libudunits2-dev
   brew_packages:
       - udunits
+      - llvm
 
 after_success:
   - Rscript -e 'covr::codecov(branch = Sys.getenv("TRAVIS_BRANCH"))'

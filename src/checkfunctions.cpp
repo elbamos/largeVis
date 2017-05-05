@@ -1,4 +1,3 @@
-// [[Rcpp::plugins(openmp)]]
 #include "largeVis.h"
 #include <Rcpp.h>
 
