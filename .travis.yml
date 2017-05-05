@@ -9,10 +9,11 @@ matrix:
     r: release
     before_install: |1
      mkdir ~/.R
-     cat <<EOF > ~/.R/Makevars 
+     cat <<EOF > ~/.R/Makevars
      CC=gcc-6
      CXX=g++-6
      CXX1X=g++-6
+     CXX11=g++-6
 
   - os: osx
     r: release
@@ -21,10 +22,11 @@ matrix:
     r: devel
     before_install: |1
      mkdir ~/.R
-     cat <<EOF > ~/.R/Makevars 
+     cat <<EOF > ~/.R/Makevars
      CC=gcc-6
      CXX=g++-6
      CXX1X=g++-6
+     CXX11=g++-6
 
   - os: osx
     r: devel
