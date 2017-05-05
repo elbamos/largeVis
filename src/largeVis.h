@@ -1,8 +1,12 @@
 #ifndef _LARGEVIS
 #define _LARGEVIS
 
-#if __GNUG__ && __GNUC__ < 5 && __GNUC_MINOR__ < 9
+#ifndef __llvm__
+#ifndef __clang__
+#if ((__GNUC__ < 5) && (__GNUC_MINOR__ < 9))
 #error largeVis is incompatible with gcc < 4.9. Upgrade gcc or use llvm.
+#endif
+#endif
 #endif
 
 #include <RcppArmadillo.h>
