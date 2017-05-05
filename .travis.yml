@@ -7,11 +7,25 @@ matrix:
   - os: linux
     dist: trusty
     r: release
+    before_install: |1
+     mkdir ~/.R
+     cat <<EOF > ~/.R/Makevars 
+     CC=gcc-6
+     CXX=g++-6
+     CXX1X=g++-6
+
   - os: osx
     r: release
   - os: linux
     dist: trusty
     r: devel
+    before_install: |1
+     mkdir ~/.R
+     cat <<EOF > ~/.R/Makevars 
+     CC=gcc-6
+     CXX=g++-6
+     CXX1X=g++-6
+
   - os: osx
     r: devel
     env: _R_CHECK_FORCE_SUGGESTS_=FALSE
@@ -56,6 +70,7 @@ addons:
       - libudunits2-dev
   brew_packages:
       - udunits
+      - llvm
 
 after_success:
   - Rscript -e 'covr::codecov(branch = Sys.getenv("TRAVIS_BRANCH"))'
