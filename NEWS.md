@@ -1,6 +1,8 @@
 ### largeVis 0.2.0.1
 * Fix for a bug in which the edgeMatrix needed to be transposed in some circumstances.
 * Accepted a PR related to a bug where `largeVis` would fail if saveNeighbors was set to FALSE.
+* Fixed a documentation error.
+* Compilation will now throw a useful error if the user tries to compile using gcc < 4.9 (which had buggy C++11 implementations).
 
 ### largeVis 0.2
 * largeVis has reached a point of stability where its appropriate to bump the version. 

@@ -26,4 +26,4 @@ BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes
 BuildVignettes: TRUE
 VignetteBuilder: knitr
-SystemRequirements: C++11
+SystemRequirements: C++11 

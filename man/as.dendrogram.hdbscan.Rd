@@ -42,10 +42,8 @@ nodes. Whether a node was selected as as cluster is an attribute of each node.
 This function remains experimental in terms of finding the best way to represent an hdbscan object in a dendrogram.
 }
 \examples{
-\dontrun{
 data(iris)
-vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1)
+vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1, threads = 1)
 hdbscanobj <- hdbscan(vis, minPts = 10, K = 5)
-plot(as_dendrogram_hdbscan(hdbscanobj))
-}
+plot(as.dendrogram(hdbscanobj))
 }
