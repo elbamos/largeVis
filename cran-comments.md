@@ -13,7 +13,7 @@ This is the first submission of a bug-fix update, to 0.2.1.
  
 0 errors | 0 warnings | 2 notes 
  
-* The Notes concern installation size, and a false-alarm regarding misspelled word.
+* The Notes concern installation size, and a false-alarm regarding misspelled words.
  
 ## Note regarding test errors 
  

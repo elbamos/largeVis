@@ -17,14 +17,6 @@ matrix:
 
   - os: osx
     r: release
-    before_install: |1
-     mkdir ~/.R
-     cat <<EOF > ~/.R/Makevars
-     CC=/usr/local/clang4/bin/clang
-     CXX=/usr/local/clang4/bin/clang++
-     CXX1X=/usr/local/clang4/bin/clang++
-     CXX11=/usr/local/clang4/bin/clang++
-     LDFLAGS=-L/usr/local/clang4/lib
 
   - os: linux
     dist: trusty
@@ -80,7 +72,6 @@ addons:
       - libudunits2-dev
   brew_packages:
       - udunits
-      - llvm
 
 after_success:
   - Rscript -e 'covr::codecov(branch = Sys.getenv("TRAVIS_BRANCH"))'
