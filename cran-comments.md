@@ -1,6 +1,7 @@
 ## Submission 
  
-This is the first submission of a bug-fix update, to 0.2.1.
+This is a resubmission of a bug-fix update, to 0.2.1.
+After the first submission, it was requested that I change a URL in the DESCRIPTION file to a DOI.  I have done this.
  
 ## Test environments 
 * local OS X install, R 3.4
