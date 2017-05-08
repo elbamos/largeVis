@@ -7,6 +7,11 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 
+test_that("largeVis simple linux failure is fixed", {
+	d2 <- t(as.matrix(iris[, 1:4]))
+	expect_silent(vis <- largeVis(d2))
+})
+
 test_that("largeVis works", {
 	visObject <- largeVis(dat, max_iter = 20, n_trees = 100,
 												tree_threshold = 50, sgd_batches = 1000,  threads = 2,

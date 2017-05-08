@@ -1,7 +1,3 @@
-// [[Rcpp::plugins(openmp)]]
-// [[Rcpp::plugins(cpp11)]]
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::depends(RcppProgress)]]
 #include "neighbors.h"
 #include "distance.h"
 

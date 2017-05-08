@@ -1,7 +1,3 @@
-// [[Rcpp::plugins(openmp)]]
-// [[Rcpp::plugins(cpp11)]]
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::depends(RcppProgress)]]
 #include "largeVis.h"
 #include <vector>
 
@@ -132,7 +128,7 @@ public:
   arma::sp_mat getWIJ() {
     umat locations = umat(2, edge_from.size());
     vec values = vec(edge_weight.size());
-    for (edgeidxtype i = 0; i < edge_from.size(); i++) {
+    for (vector< vertexidxtype >::size_type i = 0; i < edge_from.size(); i++) {
       locations(0, i) = edge_from[i];
       locations(1, i) = edge_to[i];
       values[i] = edge_weight[i];

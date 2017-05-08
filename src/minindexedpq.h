@@ -1,4 +1,3 @@
-// [[Rcpp::plugins(cpp11)]]
 #include <vector>
 #include <memory>
 #include <math.h>
