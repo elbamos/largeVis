@@ -70,19 +70,19 @@
 #' @examples
 #' \dontrun{
 #' library(largeVis)
-#' # The spiral dataset can be downloaded from https://github.com/elbamos/clusteringdatasets
+#' library(clusteringdatasets)  # See https://github.com/elbamos/clusteringdatasets
 #' data(spiral)
 #' dat <- as.matrix(spiral[, 1:2])
 #' neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
-#'                                        max_iter = 5)
+#'                                        max_iter = 5, threads = 1)
 #' edges <- buildEdgeMatrix(t(dat), neighbors)
-#' clusters <- hdbscan(edges, neighbors = neighbors, verbose = FALSE)
+#' clusters <- hdbscan(edges, neighbors = neighbors, verbose = FALSE, threads = 1)
 #'
 #' # Calling largeVis while setting sgd_batches to 1 is
 #' # the simplest way to generate the data structures neeeded for hdbscan
-#' spiralVis <- largeVis(t(dat), K = 10, tree_threshold = 100, max_iter = 5, sgd_batches = 1)
-#' clusters <- hdbscan(spiralVis, verbose = FALSE)
-#'
+#' spiralVis <- largeVis(t(dat), K = 10, tree_threshold = 100, max_iter = 5,
+#'                       sgd_batches = 1, threads = 1)
+#' clusters <- hdbscan(spiralVis, verbose = FALSE, threads = 1)
 #' # The gplot function helps to visualize the clustering
 #' largeHighDimensionalDataset <- matrix(rnorm(50000), ncol = 50)
 #' vis <- largeVis(largeHighDimensionalDataset)
