@@ -1,4 +1,7 @@
-### largeVis 0.2.0.1
+### largeVis 0.2.2dev
+*	Modified Makevars should now automatically handle OpenMP correctly on OS X with R 3.4.
+
+### largeVis 0.2.1
 * Fix for a bug in which the edgeMatrix needed to be transposed in some circumstances.
 * Accepted a PR related to a bug where `largeVis` would fail if saveNeighbors was set to FALSE.
 * Fixed a documentation error.
