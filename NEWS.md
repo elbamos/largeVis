@@ -1,5 +1,6 @@
 ### largeVis 0.2.2dev
 *	Modified Makevars should now automatically handle OpenMP correctly on OS X with R 3.4.
+* Added check for whether hdbscan failed to find any clusters, addressing reported bug.
 
 ### largeVis 0.2.1
 * Fix for a bug in which the edgeMatrix needed to be transposed in some circumstances.

@@ -3,5 +3,8 @@
 .RData
 .Ruserdata
 inst/doc
+src/*.o-*
 Examples.html
 largeVis.Rproj
+*.o-*
+*.o-ed56fa1f

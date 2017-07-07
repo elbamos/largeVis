@@ -118,9 +118,16 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 													verbose = as.logical(verbose))
 
 	clusters = factor(clustersout$clusters)
+	if (nlevels(clusters) == 0) stop(paste(
+	  "hdbscan could not find any clusters in this data.",
+	  "This can happen when the algorithm becomes undefined because of a large number of duplicate points.",
+	  "Try adjusting K and minPts, or reconsider whether including duplicates makes sense."
+	))
+
 	probs <- data.frame(
 		probs = clustersout$lambdas
 	)
+
 	mins = stats::aggregate(probs, by = list(clusters), FUN = "min")$probs
 	maxes = stats::aggregate(probs, by = list(clusters), FUN = "max")$probs - mins
 	probs$probs[!is.na(clusters)] <- (probs$probs[!is.na(clusters)] -
