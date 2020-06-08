@@ -237,9 +237,9 @@ ggplot(data.frame(
 		scale_y_continuous("Reachability Distance")
 ```
 
-`OPTICS` can be thought of as a hierarchical generalization of `DBSCAN`. `OPTICS` clusterings are readily convertible to `DBSCAN` clusterings by cutting clusters when the `reachability distance` exceeds a threshold. This can be done using the `extractDBSCAN` function of the `dbscan` package. The resulting clusters are identical to what would be obtained using `DBSCAN` with the same parameters, except in assignment of noise points. 
+`OPTICS` can be thought of as a hierarchical generalization of `DBSCAN`. `OPTICS` clusterings are readily convertible to `DBSCAN` clusterings by cutting clusters when the `reachability distance` exceeds a threshold. This can be done using the `extractDBSCAN` function of the `dbscan` package. The resulting clusters are identical to what would be obtained using `DBSCAN` with the same parameters, except in assignment of noise points. (This is not shown, to avoid creating a dependency on the `dbscan` package.) 
 
-```{r opticsvsdbscan,fig.width=2,fig.width=6}
+```{r opticsvsdbscan,fig.width=2,fig.width=6,eval=F,echo=T}
 suppressWarnings(opticsPoints <- do.call(rbind, Map(f = function(x) {
 		clust = thiscut <- dbscan::extractDBSCAN(optClust, x)$cluster
 		data.frame(cluster = clust, eps = x)

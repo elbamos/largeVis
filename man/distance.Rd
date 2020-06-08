@@ -9,14 +9,32 @@
 \usage{
 distance(x, i, j, distance_method, threads = NULL, verbose)
 
-\method{distance}{matrix}(x, i, j, distance_method = "Euclidean",
-  threads = NULL, verbose = getOption("verbose", TRUE))
+\method{distance}{matrix}(
+  x,
+  i,
+  j,
+  distance_method = "Euclidean",
+  threads = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 
-\method{distance}{CsparseMatrix}(x, i, j, distance_method = "Euclidean",
-  threads = NULL, verbose = getOption("verbose", TRUE))
+\method{distance}{CsparseMatrix}(
+  x,
+  i,
+  j,
+  distance_method = "Euclidean",
+  threads = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 
-\method{distance}{TsparseMatrix}(x, i, j, distance_method = "Euclidean",
-  threads = NULL, verbose = getOption("verbose", TRUE))
+\method{distance}{TsparseMatrix}(
+  x,
+  i,
+  j,
+  distance_method = "Euclidean",
+  threads = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 }
 \arguments{
 \item{x}{A (potentially sparse) matrix, where examples are columns and features are rows.}

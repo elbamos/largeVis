@@ -4,10 +4,21 @@
 \alias{projectKNNs}
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
-projectKNNs(wij, dim = 2, sgd_batches = NULL, M = 5, gamma = 7,
-  alpha = 1, rho = 1, coords = NULL, useDegree = FALSE,
-  momentum = NULL, seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+projectKNNs(
+  wij,
+  dim = 2,
+  sgd_batches = NULL,
+  M = 5,
+  gamma = 7,
+  alpha = 1,
+  rho = 1,
+  coords = NULL,
+  useDegree = FALSE,
+  momentum = NULL,
+  seed = NULL,
+  threads = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 }
 \arguments{
 \item{wij}{A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.}

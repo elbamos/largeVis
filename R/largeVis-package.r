@@ -30,4 +30,5 @@
 #' @docType package
 #' @useDynLib largeVis
 #' @aliases NULL
+#' @import Rcpp
 "_PACKAGE"

@@ -5,8 +5,14 @@
 \alias{as.dist.edgematrix}
 \title{Build an nearest-neighbor graph weighted by distance.}
 \usage{
-buildEdgeMatrix(data, neighbors = NULL, distance_method = "Euclidean",
-  threads = NULL, verbose = getOption("verbose", TRUE), ...)
+buildEdgeMatrix(
+  data,
+  neighbors = NULL,
+  distance_method = "Euclidean",
+  threads = NULL,
+  verbose = getOption("verbose", TRUE),
+  ...
+)
 
 \method{as.dist}{edgematrix}(m, diag = FALSE, upper = FALSE)
 }
@@ -36,8 +42,6 @@ An `edgematrix` object consisting of the elements of a sparse matrix, with the d
 A \code{\link[stats]{dist}} object.
 }
 \description{
-Build an nearest-neighbor graph weighted by distance.
-
 Convert an edge matrix to a \code{dist} object.
 }
 \note{

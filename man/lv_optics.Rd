@@ -4,8 +4,16 @@
 \alias{lv_optics}
 \title{lv_optics}
 \usage{
-lv_optics(edges, neighbors, eps = Inf, minPts = nrow(neighbors), eps_cl, xi,
-  useQueue = TRUE, verbose = getOption("verbose", TRUE))
+lv_optics(
+  edges,
+  neighbors,
+  eps = Inf,
+  minPts = nrow(neighbors),
+  eps_cl,
+  xi,
+  useQueue = TRUE,
+  verbose = getOption("verbose", TRUE)
+)
 }
 \arguments{
 \item{edges}{A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}. Alternatively, a \code{largeVis} object,

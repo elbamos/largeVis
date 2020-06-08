@@ -4,8 +4,13 @@
 \alias{lv_dbscan}
 \title{lv_dbscan}
 \usage{
-lv_dbscan(edges, neighbors, eps = Inf, minPts = nrow(neighbors - 1),
-  verbose = getOption("verbose", TRUE))
+lv_dbscan(
+  edges,
+  neighbors,
+  eps = Inf,
+  minPts = nrow(neighbors - 1),
+  verbose = getOption("verbose", TRUE)
+)
 }
 \arguments{
 \item{edges}{An `edgematrix` object. Alternatively, a \code{largeVis} object,

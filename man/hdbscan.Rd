@@ -4,8 +4,14 @@
 \alias{hdbscan}
 \title{hdbscan}
 \usage{
-hdbscan(edges, neighbors = NULL, minPts = 20, K = 5, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+hdbscan(
+  edges,
+  neighbors = NULL,
+  minPts = 20,
+  K = 5,
+  threads = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 }
 \arguments{
 \item{edges}{An edge matrix of the type returned by \code{\link{buildEdgeMatrix}} or, alternatively, a \code{largeVis} object.}

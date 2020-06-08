@@ -1,3 +1,8 @@
+### largeVis 0.2.3
+* The purpose of this update is to get the package back on CRAN
+* Updated Makevars to take advantage of simpler availability of OpenMP
+* Removed vignette dependency on `dbscan` package. 
+
 ### largeVis 0.2.2dev
 *	Modified Makevars should now automatically handle OpenMP correctly on OS X with R 3.4.
 

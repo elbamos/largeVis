@@ -7,25 +7,53 @@
 \alias{randomProjectionTreeSearch.TsparseMatrix}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
-randomProjectionTreeSearch(x, K = 150, n_trees = 50,
-  tree_threshold = max(10, nrow(x)), max_iter = 1,
-  distance_method = "Euclidean", seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+randomProjectionTreeSearch(
+  x,
+  K = 150,
+  n_trees = 50,
+  tree_threshold = max(10, nrow(x)),
+  max_iter = 1,
+  distance_method = "Euclidean",
+  seed = NULL,
+  threads = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 
-\method{randomProjectionTreeSearch}{matrix}(x, K = 150, n_trees = 50,
-  tree_threshold = max(10, nrow(x)), max_iter = 1,
-  distance_method = "Euclidean", seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+\method{randomProjectionTreeSearch}{matrix}(
+  x,
+  K = 150,
+  n_trees = 50,
+  tree_threshold = max(10, nrow(x)),
+  max_iter = 1,
+  distance_method = "Euclidean",
+  seed = NULL,
+  threads = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 
-\method{randomProjectionTreeSearch}{CsparseMatrix}(x, K = 150, n_trees = 50,
-  tree_threshold = max(10, nrow(x)), max_iter = 1,
-  distance_method = "Euclidean", seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+\method{randomProjectionTreeSearch}{CsparseMatrix}(
+  x,
+  K = 150,
+  n_trees = 50,
+  tree_threshold = max(10, nrow(x)),
+  max_iter = 1,
+  distance_method = "Euclidean",
+  seed = NULL,
+  threads = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 
-\method{randomProjectionTreeSearch}{TsparseMatrix}(x, K = 150, n_trees = 50,
-  tree_threshold = max(10, nrow(x)), max_iter = 1,
-  distance_method = "Euclidean", seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+\method{randomProjectionTreeSearch}{TsparseMatrix}(
+  x,
+  K = 150,
+  n_trees = 50,
+  tree_threshold = max(10, nrow(x)),
+  max_iter = 1,
+  distance_method = "Euclidean",
+  seed = NULL,
+  threads = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 }
 \arguments{
 \item{x}{A (potentially sparse) matrix, where examples are columnns and features are rows.}
