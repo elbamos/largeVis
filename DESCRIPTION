@@ -7,20 +7,20 @@ Maintainer: Amos Elberg <amos.elberg@gmail.com>
 Description: Implements the largeVis algorithm (see Tang, et al. (2016)  <DOI:10.1145/2872427.2883041>) for visualizing very large high-dimensional datasets. Also very fast search for approximate nearest neighbors; outlier detection; and optimized implementations of the HDBSCAN*, DBSCAN and OPTICS clustering algorithms; plotting functions for visualizing the above.
 License: GPL-3
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.0
 Depends:
     R (>= 3.0.2),
     Matrix
 Imports:
-    ggplot2 (>= 2.1.0)
+    ggplot2 (>= 2.1.0),
+    Rcpp
 LinkingTo: Rcpp (>= 0.12.4),RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.200.2.0),testthat(>= 1.0.2)
 Suggests:
     ggforce, 
     testthat,
     knitr,
     rmarkdown,
-    png,
-    dbscan
+    png
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes
