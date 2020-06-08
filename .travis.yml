@@ -1,33 +1,18 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: r
+cache: packages
 
 matrix:
   include:
   - os: linux
-    dist: trusty
     r: release
-    before_install: |1
-     mkdir ~/.R
-     cat <<EOF > ~/.R/Makevars
-     CC=gcc-6
-     CXX=g++-6
-     CXX1X=g++-6
-     CXX11=g++-6
 
   - os: osx
     r: release
 
   - os: linux
-    dist: trusty
     r: devel
-    before_install: |1
-     mkdir ~/.R
-     cat <<EOF > ~/.R/Makevars
-     CC=gcc-6
-     CXX=g++-6
-     CXX1X=g++-6
-     CXX11=g++-6
 
   - os: osx
     r: devel
@@ -36,7 +21,7 @@ matrix:
     r: devel
     r_check_args: --use-valgrind
 
-cache: packages
+
 
 env:
   global:
@@ -55,7 +40,6 @@ r_binary_packages:
   - Rcpp
   - RcppArmadillo
   - RcppProgress
-  - dbscan
   - knitr
   - rmarkdown
 
@@ -66,9 +50,6 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - gcc-6
-      - g++-6
-      - gfortran-6
       - libudunits2-dev
   brew_packages:
       - udunits
