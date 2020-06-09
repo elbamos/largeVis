@@ -50,8 +50,6 @@ sudo: required
 
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
       - libudunits2-dev
   brew_packages:
