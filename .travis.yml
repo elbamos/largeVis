@@ -36,15 +36,15 @@ r_packages:
   - covr
   - BH
   - ggplot2
-
-r_binary_packages:
-  - testthat
   - png
-  - Rcpp
-  - RcppArmadillo
   - RcppProgress
   - knitr
   - rmarkdown
+
+r_binary_packages:
+  - testthat
+  - Rcpp
+  - RcppArmadillo
 
 sudo: required
 
