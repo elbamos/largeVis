@@ -105,7 +105,7 @@ public:
 
 				// Check that the draw isn't one of i's edges
 				if (k == i || k == j) continue;
-				m++;
+				++m;
 
 				y_j = coordsPtr + (k * D);
 				grad -> negativeGradient(y_i, y_j, secondholder);
@@ -187,7 +187,7 @@ public:
 
 				// Check that the draw isn't one of i's edges
 				if (k == i || k == j) continue;
-				m++;
+				++m;
 
 				y_j = coordsPtr + (k * D);
 				grad -> negativeGradient(y_i, y_j, secondholder);
@@ -245,7 +245,7 @@ arma::mat sgd(arma::mat& coords,
 	distancetype* negweights = new distancetype[N];
 	std::fill(negweights, negweights + N, 0);
 	if (useDegree) {
-		std::for_each(targets_i.begin(), targets_i.end(), [&negweights](const sword& e) {negweights[e]++;});
+		std::for_each(targets_i.begin(), targets_i.end(), [&negweights](const sword& e) {++negweights[e];});
 	} else {
 		for (vertexidxtype p = 0; p < N; ++p) {
 			for (edgeidxtype e = ps[p]; e != ps[p + 1]; ++e) {

@@ -6,12 +6,14 @@ cache: packages
 matrix:
   include:
   - os: linux
+    dist: trusty
     r: release
 
   - os: osx
     r: release
 
   - os: linux
+    dist: trusty
     r: devel
 
   - os: osx
@@ -26,6 +28,7 @@ matrix:
 env:
   global:
   - OS=$(uname -s)
+  - _R_CHECK_FORCE_SUGGESTS_=false
 
 cran: http://cran.rstudio.com
 

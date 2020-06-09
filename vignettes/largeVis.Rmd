@@ -7,7 +7,7 @@ output:
     fig_caption: yes
 bibliography: largevisvignettes.bib
 vignette: |
-  %\VignetteIndexEntry{largeVis}    
+  %\VignetteIndexEntry{largeVis: An Implementation of the LargeVis Algorithm}    
   %\VignetteEngine{knitr::rmarkdown}    
   %\VignetteEncoding{UTF-8}
 ---
