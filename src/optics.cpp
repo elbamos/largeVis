@@ -37,7 +37,7 @@ protected:
 		const sp_colvec pEdges = edges->col(p);
 		for (auto it = neighbors -> begin_col(p);
        	 (it != neighbors -> end_col(p)) && (*it != -1);
-       	 it++) if (! visited[*it]) {
+       	 ++it) if (! visited[*it]) {
 			long long q = *it;
 			if (pEdges[q] < eps) addNeighbor(p, q, seeds);
 			else {
@@ -47,7 +47,7 @@ protected:
 		}
 		if (! exceeded) for (auto it = edges -> begin_col(p);
                          it != edges -> end_col(p);
-                         it++) {
+                         ++it) {
 			if (! visited[it.row()] && *it < eps) {
 				addNeighbor(p, it.row(), seeds);
 			}
@@ -82,7 +82,7 @@ public:
          	if (neighbors.n_rows < minPts) throw Rcpp::exception("Insufficient neighbors.");
          	if (minPts < 2) throw Rcpp::exception("minPts must be >= 2");
          	orderedPoints.reserve(N);
-         	for (long long n = 0; n != N; n++) {
+         	for (long long n = 0; n != N; ++n) {
          		double nthDistance = edges(n, neighbors(minPts - 2, n));
          		visited[n] = FALSE;
          		coredist[n] = (nthDistance < eps) ? nthDistance : INFINITY;
@@ -94,7 +94,7 @@ public:
 	}
 
 	void queue() {
-		for (long long n = 0; n != N; n++) {
+		for (long long n = 0; n != N; ++n) {
 			seedQueue.emplace(coredist[n], n);
 		}
 	}
@@ -122,7 +122,7 @@ public:
 
 	void runAll() {
 		PairingHeap<long long, double> seeds(N);
-		for (long long p = 0; p != N && progress.increment(); p++) {
+		for (long long p = 0; p != N && progress.increment(); ++p) {
 			if (! visited[p]) runOne(p, seeds);
 		}
 	}

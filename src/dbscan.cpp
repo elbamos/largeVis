@@ -24,7 +24,7 @@ protected:
 		bool exceeded = false;
 		for (auto it = neighbors -> begin_col(p);
          it != neighbors -> end_col(p);
-         it ++) {
+         ++it) {
 			if (*it == -1 || (*edges)(p, *it) > eps) {
 				exceeded = true;
 				break;
@@ -34,7 +34,7 @@ protected:
 		if (! exceeded) {
 			for (auto it = edges -> begin_col(p);
         	 it != edges -> end_col(p);
-        	 it++) {
+        	 ++it) {
 				if (*it < eps) holder.insert(it.row());
 			}
 		}
@@ -44,7 +44,7 @@ protected:
 
 	void expandCluster(long long& P, list< long long >& pNeighbors, int& C) {
 		clusterAssignments[P] = C;
-		for (auto pprime = pNeighbors.begin(); pprime != pNeighbors.end(); pprime++) {
+		for (auto pprime = pNeighbors.begin(); pprime != pNeighbors.end(); ++pprime) {
 			if (! visited[*pprime]) {
 				visited[*pprime] = true;
 				list< long long > pprimeNeighbors = regionQuery(*pprime);
@@ -73,7 +73,7 @@ public:
 
 	IntegerVector run() {
 		int C = -1;
-		for (long long p = 0; p < N; p++) if (progress.increment() && ! visited[p]) {
+		for (long long p = 0; p < N; ++p) if (progress.increment() && ! visited[p]) {
 			visited[p] = true;
 			list< long long > pNeighbors = regionQuery(p);
 			if (pNeighbors.size() >= minPts - 1) {
