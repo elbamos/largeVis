@@ -5,7 +5,7 @@
 distancetype relDist(const arma::vec& i, const arma::vec& j) {
   const dimidxtype D = i.n_elem;
   distancetype cnt = 0;
-  for (dimidxtype idx = 0; idx < D; idx++) cnt += ((i[idx] - j[idx]) * (i[idx] - j[idx]));
+  for (dimidxtype idx = 0; idx < D; ++idx) cnt += ((i[idx] - j[idx]) * (i[idx] - j[idx]));
   return cnt;
 }
 // Vanilla euclidean
@@ -17,7 +17,7 @@ distancetype dist(const arma::vec& i, const arma::vec& j) {
 distancetype cosDist(const arma::vec& i, const arma::vec& j) {
   const dimidxtype D = i.n_elem;
 	distancetype pp = 0, qq = 0, pq = 0;
-  for (dimidxtype d = 0; d < D; d++) {
+  for (dimidxtype d = 0; d < D; ++d) {
     pp += (i[d]) * (i[d]);
     qq += (j[d]) * (j[d]);
     pq += (i[d]) * (j[d]);
@@ -59,7 +59,7 @@ arma::vec fastDistance(const IntegerVector is,
 #ifdef _OPENMP
 #pragma omp parallel for shared (xs)
 #endif
-  for (R_xlen_t i=0; i < is.length(); i++) if (p.increment()) xs[i] =
+  for (R_xlen_t i=0; i < is.length(); ++i) if (p.increment()) xs[i] =
     distanceFunction(data.col(is[i]), data.col(js[i]));
   return xs;
 };

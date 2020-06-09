@@ -11,7 +11,7 @@ distancetype Gradient::distAndVector(const coordinatetype *x_i,
                                      const coordinatetype *x_j,
                                      coordinatetype *output) const {
 	double cnt = 0;
-	for (dimidxtype d = 0; d < D; d++) {
+	for (dimidxtype d = 0; d < D; ++d) {
 		const double t = x_i[d] - x_j[d];
 		output[d] = t;
 		cnt += t * t;

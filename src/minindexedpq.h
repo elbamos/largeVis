@@ -47,7 +47,7 @@ private:
 		}
 		static std::vector< NodePointer > treeArray(5);
 		unsigned int numSiblings = 0;
-		for (; firstSibling != NULL; numSiblings++) {
+		for (; firstSibling != NULL; ++numSiblings) {
 			if (numSiblings == treeArray.size()) treeArray.resize(numSiblings * 2);
 			treeArray[numSiblings] = firstSibling;
 			firstSibling->prev->nextSibling = NULL;
@@ -101,7 +101,7 @@ public:
 	}
 
 	void batchInsert(const V& n, const V& start) {
-		for (V i = 0; i != n; i++) {
+		for (V i = 0; i != n; ++i) {
 			D key = (start == i) ? -1 : INFINITY;
 			insert(i, key);
 		}

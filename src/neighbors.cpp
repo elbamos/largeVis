@@ -139,7 +139,7 @@ void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& n
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-	for (unsigned int t = 0; t < n_trees; t++) if (! p.check_abort()) {
+	for (unsigned int t = 0; t < n_trees; ++t) if (! p.check_abort()) {
 		list< Neighborholder > local;
 		recurse(indices, local);
 		mergeNeighbors(local);

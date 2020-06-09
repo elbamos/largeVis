@@ -37,7 +37,7 @@ public:
 		edge_weight.reserve(n_edges);
 		next.reserve(n_edges);
 		reverse.reserve(n_edges);
-		for (vertexidxtype x = 0; x < n_vertices; x++) {
+		for (vertexidxtype x = 0; x < n_vertices; ++x) {
 			while (n_edge < n_edges && from[n_edge] == x) {
 				edge_from.push_back(x);
 				edge_to.push_back(to[n_edge]);
@@ -94,18 +94,18 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (vertexidxtype id = 0; id < n_vertices; id++) {
+    for (vertexidxtype id = 0; id < n_vertices; ++id) {
       similarityOne(id);
     }
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (vertexidxtype id = 0; id < n_vertices; id++) {
+    for (vertexidxtype id = 0; id < n_vertices; ++id) {
       searchReverse(id);
     }
     edgeidxtype n_edge = edge_to.size();
     double sum_weight = 0;
-    for (vertexidxtype id = 0; id != n_vertices; id++) {
+    for (vertexidxtype id = 0; id != n_vertices; ++id) {
       for (edgeidxtype p = head[id]; p >= 0; p = next[p]) {
       	vertexidxtype y = edge_to[p];
       	edgeidxtype q = reverse[p];
@@ -128,7 +128,7 @@ public:
   arma::sp_mat getWIJ() {
     umat locations = umat(2, edge_from.size());
     vec values = vec(edge_weight.size());
-    for (vector< vertexidxtype >::size_type i = 0; i < edge_from.size(); i++) {
+    for (vector< vertexidxtype >::size_type i = 0; i < edge_from.size(); ++i) {
       locations(0, i) = edge_from[i];
       locations(1, i) = edge_to[i];
       values[i] = edge_weight[i];
