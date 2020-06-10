@@ -40,8 +40,6 @@ r_packages:
   - RcppProgress
   - knitr
   - rmarkdown
-
-r_binary_packages:
   - testthat
   - Rcpp
   - RcppArmadillo
