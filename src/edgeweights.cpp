@@ -127,17 +127,15 @@ public:
 
   arma::sp_mat getWIJ() {
     umat locations = umat(2, edge_from.size());
-    vec values = vec(edge_weight.size());
     for (vector< vertexidxtype >::size_type i = 0; i < edge_from.size(); ++i) {
       locations(0, i) = edge_from[i];
       locations(1, i) = edge_to[i];
-      values[i] = edge_weight[i];
     }
     sp_mat wij = sp_mat(
       true, // add_values
       locations,
-      values,
-      n_vertices, n_vertices // n_col and n_row
+      vec(edge_weight),
+      n_vertices, n_vertices, true, false
     );
     return wij;
   }
