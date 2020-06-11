@@ -6,29 +6,15 @@ cache: packages
 matrix:
   include:
   - os: linux
-    dist: trusty
+    dist: bionic
     r: release
-    before_install: |1
-     mkdir ~/.R
-     cat <<EOF > ~/.R/Makevars
-     CC=gcc-6
-     CXX=g++-6
-     CXX1X=g++-6
-     CXX11=g++-6
 
   - os: osx
     r: release
 
   - os: linux
-    dist: trusty
+    dist: bionic
     r: devel
-    before_install: |1
-     mkdir ~/.R
-     cat <<EOF > ~/.R/Makevars
-     CC=gcc-6
-     CXX=g++-6
-     CXX1X=g++-6
-     CXX11=g++-6
 
   - os: osx
     r: devel
@@ -63,9 +49,6 @@ sudo: required
 addons:
   apt:
     packages:
-      - gcc-6
-      - g++-6
-      - gfortran-6
       - libudunits2-dev
   brew_packages:
       - udunits
