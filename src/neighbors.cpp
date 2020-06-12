@@ -112,7 +112,7 @@ void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborhol
 		recurse(copyTo(indices, left), localNeighborhood);
 		recurse(copyTo(indices, right), localNeighborhood);
 	}
-};
+}
 
 template<class M, class V>
 void AnnoySearch<M, V>::setSeed(Rcpp::Nullable< NumericVector >& seed) {

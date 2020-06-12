@@ -26,14 +26,17 @@ distancetype cosDist(const arma::vec& i, const arma::vec& j) {
   if (ppqq > 0) return 2.0 - 2.0 * pq / sqrt(ppqq);
   else return 2.0; // cos is 0
 }
+
 // Versions of the distance functions for finding the neighbors
 // of sparse matrices.  Not optimized.
 distancetype sparseDist(const sp_mat& i, const sp_mat& j) {
   return as_scalar(sqrt(sum(square(i - j))));
 }
+
 distancetype sparseCosDist(const sp_mat& i, const sp_mat& j) {
   return 2.0 - 2.0 * (as_scalar((dot(i,j)) / as_scalar(norm(i,2) * norm(j,2))));
 }
+
 distancetype sparseRelDist(const sp_mat& i, const sp_mat& j) {
   return as_scalar(sum(square(i - j)));
 }
@@ -62,7 +65,7 @@ arma::vec fastDistance(const IntegerVector is,
   for (R_xlen_t i=0; i < is.length(); ++i) if (p.increment()) xs[i] =
     distanceFunction(data.col(is[i]), data.col(js[i]));
   return xs;
-};
+}
 
 vec fastSparseDistance(const ivec& is,
                        const ivec& js,
@@ -83,7 +86,7 @@ vec fastSparseDistance(const ivec& is,
   for (arma::uword i=0; i < is.n_elem; i++) if (p.increment()) xs[i] =
     distanceFunction(data.col(is[i]), data.col(js[i]));
   return xs;
-};
+}
 
 // [[Rcpp::export]]
 arma::vec fastCDistance(const arma::ivec& is,

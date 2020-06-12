@@ -67,7 +67,7 @@ context("alias tests") {
 		expect_true(testAlias() == 70);
 		expect_true(testAlias() == 90);
 	}
-};
+}
 
 context("gradient tests") {
 
@@ -112,4 +112,4 @@ context("gradient tests") {
 		expect_true(pow(holder[0] -0.5960146101, 2) < 0.1);
 		expect_true(holder[1] == - holder[0]);
 	}
-};
+}

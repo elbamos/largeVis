@@ -154,7 +154,7 @@ void HDBSCAN::condenseAndExtract(const unsigned int& minPts, int* clusters, doub
 	condense(minPts); // 1 N
 	determineStability(minPts); // 1 N
 	extractClusters(clusters, lambdas); // 1 N
-};
+}
 
 Rcpp::List HDBSCAN::getHierarchy() const {
 	vector<int> nodemembership(N);
