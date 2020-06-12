@@ -11,7 +11,7 @@
 
 \item{includeNodes}{Whether individual nodes should be included in the dedrogram. Can cause a substantial increase in the size of the object.}
 
-\item{...}{For compatibility with \code{\link[stats]{as.dendrogram}}, and currently ignored.}
+\item{...}{For compatibility with \code{as.dendrogram}, and currently ignored.}
 }
 \value{
 A \code{dendrogram} object, where nodes have the following attributes:

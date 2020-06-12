@@ -8,7 +8,7 @@
 #' nodes. Whether a node was selected as as cluster is an attribute of each node.
 #' @param object An \code{hdbscan} object.
 #' @param includeNodes Whether individual nodes should be included in the dedrogram. Can cause a substantial increase in the size of the object.
-#' @param ... For compatibility with \code{\link[stats]{as.dendrogram}}, and currently ignored.
+#' @param ... For compatibility with \code{as.dendrogram}, and currently ignored.
 #' @return A \code{dendrogram} object, where nodes have the following attributes:
 #' \describe{
 #' \item{'leaf'}{As in \code{\link[stats]{dendrogram}}.}

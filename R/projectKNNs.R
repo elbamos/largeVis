@@ -38,7 +38,7 @@
 #'
 #' @note If specified, \code{seed} is passed to the C++ and used to initialize the random number generator. This will not, however, be
 #' sufficient to ensure reproducible results, because the initial coordinate matrix is generated using the \code{R} random number generator.
-#' To ensure reproducibility, call \code{\link[base]{set.seed}} before calling this function, or pass it a pre-allocated coordinate matrix.
+#' To ensure reproducibility, call \code{set.seed} before calling this function, or pass it a pre-allocated coordinate matrix.
 #'
 #' @note The original paper called for weights in negative sampling to be calculated according to the degree of each vertex, the number of edges
 #' connecting to the vertex. The reference implementation, however, uses the sum of the weights of the edges to each vertex. In experiments, the
