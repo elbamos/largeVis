@@ -1,6 +1,7 @@
 ### largeVis 0.2.3
 * The purpose of this update is to get the package back on CRAN
 * Updated Makevars to take advantage of simpler availability of OpenMP
+* Direct arma to not link against LAPACK. This should have no impact on performance, since the package uses no LAPACK calls. Linking against LAPACK did, however, create issues linking on some UNIX-based systems. Please contact me if you experience any issues. 
 * Thanks to @gdkmr, @meowcat, @evanbiederstedt and @SamGG for bugging me to get this back on CRAN.
 
 ### largeVis 0.2.2dev
