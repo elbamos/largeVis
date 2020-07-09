@@ -60,7 +60,7 @@ if (rebuild) {
 	load("../../largeVisData/mnist/test.RData")
 	load("../../largeVisData/mnist/train.RData")
 	mnist <- t(rbind(trainData, testData)) - 0.5
-	preVis <- largeVis(mnist, K = 100, tree_threshold = 200, n_trees = 100, sgd_batches = 100, verbose = TRUE)
+	preVis <- largeVis(mnist, K = 100, tree_threshold = 200, n_trees = 100, sgd_batches = 100, verbose = FALSE)
 	set.seed(1974)
 	labels <- rbind(trainLabels, testLabels)
 	labels <- apply(labels, 1, function(x) which(x == 1))
@@ -70,8 +70,8 @@ if (rebuild) {
 
 ```{r usedegree}
 if (rebuild) {
-	noDegree <- projectKNNs(preVis$wij, seed = 1974, verbose = TRUE)
-	degree <- projectKNNs(preVis$wij, useDegree = TRUE, verbose = TRUE)
+	noDegree <- projectKNNs(preVis$wij, seed = 1974, verbose = FALSE)
+	degree <- projectKNNs(preVis$wij, useDegree = TRUE, verbose = FALSE)
 	degreeCoords <- data.frame(rbind(t(noDegree), t(degree)), 
 		label = factor(c(labels, labels)), 
 		degree = factor(rep(c("weights", "degree"), 
@@ -117,11 +117,11 @@ Adding momentum can make it possible to reduce the number of sgd batches, in som
 if (rebuild) {
 	starterCoords <- matrix(runif(n = 2 * ncol(mnist)) - 0.5, ncol = 2)
 	firstCoords <- data.frame(
-		t(projectKNNs(preVis$wij, coords = t(starterCoords), sgd_batches = 0.1, verbose = TRUE)), 
+		t(projectKNNs(preVis$wij, coords = t(starterCoords), sgd_batches = 0.1, verbose = FALSE)), 
     lambda = 0, batches = 0.1, label = labels)
 	for (batches in c(0.3, 0.8)) {
 		newCoords <- data.frame(t(projectKNNs(preVis$wij, 
-		verbose = TRUE, 
+		verbose = FALSE, 
 		sgd_batches = batches, 
 		coords = t(starterCoords))))
 		newCoords$lambda <- 0
@@ -132,7 +132,7 @@ if (rebuild) {
 	for (lambda in c(0.4, 0.9)) {
 			for (batches in c(0.1, 0.3, 0.5)) {
 				newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, 
-				verbose = TRUE,
+				verbose = FALSE,
 				sgd_batches = batches, 
 				momentum = lambda,
 				coords = t(starterCoords)))))

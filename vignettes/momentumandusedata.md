@@ -1,6 +1,7 @@
 New Features in largeVis 0.1.10
 ===============================
 
+
 Version 0.1.10 of `largeVis` adds two features that were not part of the original `LargeVis` paper:  
 
 	*	The SGD phase of the LargeVis algorithm can be accelerated using momentum training.
@@ -15,6 +16,7 @@ During the stochastic gradient descent phase of `largeVis`, \code{M} nodes that 
 Versions of `largeVis` prior to 0.1.8 (i.e., before the reference implementation became available) used degree. These results may be more aesthetically pleasing to many people. Version 0.1.10 therefore allows this to be set as a parameter. The default is to use edge weights, as in the reference implementation. 
 
 The difference is that using edge weights, the resulting clusters tend to be more plainly convex. Using degree encourages a wider variation of irregular shapes. The effect is imperceptible at small data sizes; is subtle noticeable at around 50,000 nodes; but becomes pronounced on datasets of greater than 1 million nodes.  
+
 
 
 

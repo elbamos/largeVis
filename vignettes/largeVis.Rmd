@@ -178,7 +178,7 @@ if (!exists("iriscoords")) {
     do.call(rbind, lapply(Ms, FUN = function(M) {
       coords <- projectKNNs(wij = wij, M = M, 
                             coords = coordsinput, 
-                            verbose = TRUE, 
+                            verbose = FALSE, 
                             sgd_batches = 2000000)
       coords <- scale(t(coords))
       coords <- data.frame(coords)
