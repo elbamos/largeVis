@@ -13,8 +13,8 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
 -   Functions for visualizing manifolds like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
 
 Please see the vignettes for more details:
-* [largeVis: An Implementation of the LargeVis Algorithm](https://github.com/elbamos/largeVis/blob/master/vignettes/largeVis.md)
-* [New Features in largeVis 0.1.10](https://github.com/elbamos/largeVis/blob/master/vignettes/momentumandusedata.md)
+* [largeVis: An Implementation of the LargeVis Algorithm](https://github.com/elbamos/largeVis/blob/feature/backoncran/vignettes/largeVis.Rmd)
+* [New Features in largeVis 0.1.10](https://github.com/elbamos/largeVis/blob/feature/backoncran/vignettes/momentumandusedata.md)
 
 ### News Highlights
 

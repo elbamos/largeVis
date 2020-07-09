@@ -18,10 +18,6 @@ The difference is that using edge weights, the resulting clusters tend to be mor
 
 
 
-
-
-
-
 ![plot of chunk drawdegreeimage](figure/drawdegreeimage-1.png)
 
 ## Momentum Training
@@ -37,7 +33,6 @@ With momentum, this becomes:  $\theta_{t + 1} = \theta_t + \mu_t$ where $\mu_t =
 The momentum paramter, $\lambda$, controls the rate of decay. 
 
 Adding momentum can make it possible to reduce the number of sgd batches, in some cases substantially, without reducing the visual quality of the result. 
-
 
 
 
