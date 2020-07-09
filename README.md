@@ -12,6 +12,10 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
     -   `DBSCAN`
 -   Functions for visualizing manifolds like [this](http://cs.stanford.edu/people/karpathy/cnnembed/).
 
+Please see the vignettes for more details:
+* [largeVis: An Implementation of the LargeVis Algorithm](https://github.com/elbamos/largeVis/blob/master/vignettes/largeVis.md)
+* [New Features in largeVis 0.1.10](https://github.com/elbamos/largeVis/blob/master/vignettes/momentumandusedata.md)
+
 ### News Highlights
 
 -   Version 0.1.10 re-adds clustering, and also adds momentum training to largeVis, as well as a host of other features and improvements.
@@ -33,4 +37,4 @@ This is an implementation of the `largeVis` algorithm described in (<https://arx
 
 #### Building Notes
 
--   **Note on R 3.4**: Before R 3.4, the CRAN binaries were likely to have been compiled without OpenMP, and getting OpenMP to work on Mac OS X was somewhat tricky. This should all have changed (for the better) with R 3.4, which natively using `clang 4.0` by default. Since R 3.4 is new, I'm not able to provide advice, but am interested in hearing of any issues and any workarounds to issues that you may discover.
+-   **Note on R 3.4**: Before R 3.4, the CRAN binaries were likely to have been compiled without OpenMP, and getting OpenMP to work on Mac OS X was somewhat tricky. This should all have changed (for the better) with R 3.4, which natively using `clang 4.0` by default. 

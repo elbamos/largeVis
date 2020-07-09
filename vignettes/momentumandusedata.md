@@ -1,44 +1,5 @@
----
-title: "New Features in largeVis 0.1.10"
-author: "Amos Elberg"
-date: "Sept. 22, 2016"
-output: rmarkdown::html_vignette
-bibliography: largevisvignettes.bib
-vignette: >
-  %\VignetteIndexEntry{largeVisnewfeatures}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
-```{r setupvignette,eval=TRUE,echo=FALSE,warning=FALSE,error=FALSE,message=FALSE}
-require(ggplot2, 
-        quietly = TRUE)
-library(png)
-library(grid)
-knitr::opts_chunk$set(collapse = TRUE, 
-                      comment = "#>",
-                      cache = FALSE, 
-											echo = FALSE)
-theme_set(
-  theme_bw() %+replace%
-  theme(
-    legend.title = element_text(size = rel(0.8), face = "bold"),
-    legend.margin = margin(0, "cm"),
-    legend.position = "right",
-    legend.key.size = unit(2, "lines"),
-    legend.text = element_text(size = unit(8, "points")), 
-    axis.title.y = element_text(angle = 90),
-    axis.text = element_text(size = rel(0.7)),
-    plot.margin = margin(0, 0.5, 1, 0, "lines"), 
-    axis.title = element_text(size = rel(0.8),
-                              face = "bold"),
-    title = element_text(size = rel(0.9))
-  ) 
-)
-rebuild <- FALSE
-par(mar = c(0.3, 0.3, 0.3, 0.3))
-require(largeVis,quietly = TRUE)
-```
+New Features in largeVis 0.1.10
+===============================
 
 Version 0.1.10 of `largeVis` adds two features that were not part of the original `LargeVis` paper:  
 
@@ -55,49 +16,13 @@ Versions of `largeVis` prior to 0.1.8 (i.e., before the reference implementation
 
 The difference is that using edge weights, the resulting clusters tend to be more plainly convex. Using degree encourages a wider variation of irregular shapes. The effect is imperceptible at small data sizes; is subtle noticeable at around 50,000 nodes; but becomes pronounced on datasets of greater than 1 million nodes.  
 
-```{r prepmnist}
-if (rebuild) {
-	load("../../largeVisData/mnist/test.RData")
-	load("../../largeVisData/mnist/train.RData")
-	mnist <- t(rbind(trainData, testData)) - 0.5
-	preVis <- largeVis(mnist, K = 100, tree_threshold = 200, n_trees = 100, sgd_batches = 100, verbose = TRUE)
-	set.seed(1974)
-	labels <- rbind(trainLabels, testLabels)
-	labels <- apply(labels, 1, function(x) which(x == 1))
-	labels <- labels - 1
-}
-```
 
-```{r usedegree}
-if (rebuild) {
-	noDegree <- projectKNNs(preVis$wij, seed = 1974, verbose = TRUE)
-	degree <- projectKNNs(preVis$wij, useDegree = TRUE, verbose = TRUE)
-	degreeCoords <- data.frame(rbind(t(noDegree), t(degree)), 
-														 label = factor(c(labels, labels)), 
-														 degree = factor(rep(c("weights", "degree"), 
-														 										each = ncol(degree))))
-}
-```
 
-```{r drawdegree}
-if (rebuild) {
-	degreeplot <- ggplot(degreeCoords, aes(x = X1, y = X2, color = label)) + 
-		geom_point(size = 0.02, alpha = 0.1) + 
-		facet_grid(. ~ degree) +
-		scale_x_continuous("", labels = NULL, breaks = NULL) + 
-		scale_y_continuous("", labels = NULL, breaks = NULL) +
-		guides(color = FALSE) +
-		ggtitle("Effect of useDegree")
-	ggsave(degreeplot, 
-			 filename = system.file(package = "largeVis", "vignettedata/degreeplot.png"),
-			 width = 5, height = 4)
-}
-```
 
-```{r drawdegreeimage,fig.width=5,fig.height=4} 
-img <- readPNG(system.file(package = "largeVis", "vignettedata/degreeplot.png"))
-grid.raster(img)
-```
+
+
+
+![plot of chunk drawdegreeimage](figure/drawdegreeimage-1.png)
 
 ## Momentum Training
 
@@ -113,60 +38,11 @@ The momentum paramter, $\lambda$, controls the rate of decay.
 
 Adding momentum can make it possible to reduce the number of sgd batches, in some cases substantially, without reducing the visual quality of the result. 
 
-```{r momentum}
-if (rebuild) {
-	starterCoords <- matrix(runif(n = 2 * ncol(mnist)) - 0.5, ncol = 2)
-	firstCoords <- data.frame(
-		t(projectKNNs(preVis$wij, coords = t(starterCoords), sgd_batches = 0.1, verbose = TRUE)), 
-    lambda = 0, batches = 0.1, label = labels)
-	for (batches in c(0.3, 0.8)) {
-		newCoords <- data.frame(t(projectKNNs(preVis$wij, 
-																					verbose = TRUE, 
-																					sgd_batches = batches, 
-																					coords = t(starterCoords))))
-		newCoords$lambda <- 0
-		newCoords$batches <- batches
-		newCoords$label <- labels
-		firstCoords <<- rbind(firstCoords, newCoords)
-	}
-	for (lambda in c(0.4, 0.9)) {
-			for (batches in c(0.1, 0.3, 0.5)) {
-				newtime <- system.time(newCoords <- data.frame(t(projectKNNs(preVis$wij, 
-																																		 verbose = TRUE,
-																																		 sgd_batches = batches, 
-																																		 momentum = lambda, 
-																																		 coords = t(starterCoords)))))
-				newCoords$lambda <- lambda
-				newCoords$batches <- batches
-				newCoords$label <- labels
-				firstCoords <<- rbind(firstCoords, newCoords)
-			}
-	}
-	momentumCoords <- firstCoords
-	momentumCoords$label <- factor(momentumCoords$label)
-}
-```
 
-```{r drawmomentum,warning=FALSE}
-if (rebuild) {
-	momentumPlot <- ggplot(momentumCoords, aes(x = X1, y = X2, color = label)) + 
-		geom_point(size = 0.01, alpha = 0.1) + 
-		facet_grid(batches ~ lambda, scales = "free", labeller = label_bquote(cols = lambda == .(lambda), 
-																																					rows = b == .(batches))) +
-		scale_x_continuous("", limits = c(-40, 40), labels = NULL, breaks = NULL) + 
-		scale_y_continuous("", limits = c(-40, 40), labels = NULL, breaks = NULL) +
-		guides(color = FALSE) +
-		ggtitle("Effect of Momentum and Reduced Training Batches")
-	ggsave(momentumPlot, 
-				 filename = system.file(package = "largeVis", "vignettedata/momentumplot.png"),
-				 width = 6, height = 4)
-}
-```
 
-```{r drawmomentumimage,fig.width=6,fig.height=4} 
-img <- readPNG(system.file(package = "largeVis", "vignettedata/momentumplot.png"))
-grid.raster(img)
-```
+
+
+![plot of chunk drawmomentumimage](figure/drawmomentumimage-1.png)
 
 ## Clustering
 
@@ -186,32 +62,7 @@ The objects returned by the `largeVis` `DBSCAN` implementation are compatible wi
 
 The following chart illustrates the effect of the $\epsilon$ and `minPts` parameters on the performance of `DBSCAN`.
 
-```{r dbscan,fig.width=6,fig.height=6}
-load(system.file(package = "largeVis", "vignettedata/spiral.Rda"))
-dat <- spiral
-vis <- largeVis(t(dat), K = 20, save_edges = TRUE, save_neighbors = TRUE, sgd_batches = 1)
-set <- rbind(Map(f = function(y) {
-	rbind(Map(f = function(x) {
-		clust = lv_dbscan(vis, eps = x, minPts = y)$cluster
-		data.frame(cluster = clust, eps = x, minPts = y)
-	}, c(1, 3, 5)))
-}, c(5, 10, 20)))
-lbind <- function(x) do.call(rbind, x)
-set <- lapply(set, FUN = lbind)
-set <- lbind(set)
-set$x <- rep(dat[, 1], 9)
-set$y <- rep(dat[, 2], 9)
-set$cluster <- factor(set$cluster)
-set$eps <- ordered(set$eps, labels = paste("epsilon == ", c(1, 3, 5), sep = ""))
-set$minPts <- ordered(set$minPts, labels = paste("minPts == ", c(5, 10, 20), sep = ""))
-ggplot(data = set, aes(x = x, y = y, color = cluster)) +
-	geom_point(size = 0.5, alpha = 0.7) +
-	facet_grid(minPts ~ eps, labeller = label_parsed) + 
-	scale_x_continuous("", breaks = NULL) +
-	scale_y_continuous("", breaks = NULL) +
-	guides(color = FALSE) +
-	ggtitle("Effect of eps and minPts on DBSCAN results")
-```
+![plot of chunk dbscan](figure/dbscan-1.png)
 
 ### OPTICS
 
@@ -222,24 +73,12 @@ points in denser regions of the space as the seeds for new clusters.
 
 This is illustrated in the following `reachability plots` for the spiral dataset:
 
-```{r optics,fig.width=5,message=FALSE,warning=FALSE}
-optClust <- lv_optics(vis, eps = 5, useQueue = FALSE, minPts = 5)
-optClust2 <- lv_optics(vis, eps = 5, useQueue = TRUE, minPts = 5)
-ggplot(data.frame(
-	o = c(optClust$order, optClust2$order), 
-	d = c(optClust$reachdist, optClust2$reachdist), 
-	useQueue = rep(c("No Queue", "Use Queue"), each = length(optClust$order))
-), aes(x = o, y = d)) + 
-		geom_point(stat = 'identity', size = 0.1) + 
-		geom_bar(stat = 'identity', alpha = 0.3) +
-		facet_grid(useQueue ~ .) +
-		scale_x_continuous("Order") + 
-		scale_y_continuous("Reachability Distance")
-```
+![plot of chunk optics](figure/optics-1.png)
 
 `OPTICS` can be thought of as a hierarchical generalization of `DBSCAN`. `OPTICS` clusterings are readily convertible to `DBSCAN` clusterings by cutting clusters when the `reachability distance` exceeds a threshold. This can be done using the `extractDBSCAN` function of the `dbscan` package. The resulting clusters are identical to what would be obtained using `DBSCAN` with the same parameters, except in assignment of noise points. (This is not shown, to avoid creating a dependency on the `dbscan` package.) 
 
-```{r opticsvsdbscan,fig.width=2,fig.width=6,eval=F,echo=T}
+
+```r
 suppressWarnings(opticsPoints <- do.call(rbind, Map(f = function(x) {
 		clust = thiscut <- dbscan::extractDBSCAN(optClust, x)$cluster
 		data.frame(cluster = clust, eps = x)
@@ -264,29 +103,7 @@ The `dbscan` package has other functions for cutting and visualizing `OPTICS` cl
 
 `HDBSCAN` [@Campello2013] aims to make the `DBBSCAN` and `OPTICS` approach flexible for graphs with different densities in different regions, by building a hierarchical density-bsaed clustering from which flat clusters are extracted.  `HDBSCAN` does not need the $\epsilon$ hypterparameter, which can be difficult to set. Rather, `HDBSCAN`, in effect, determines different values for $\epsilon$ for different parts of the dataset. 
 
-```{r hdbscan,fig.width=6,fig.height=6}
-suppressWarnings(set <- do.call(rbind, Map(f = function(y) {
-	rbind(Map(f = function(x) {
-		hdclust <- largeVis::hdbscan(vis, K = y, minPts = x)$cluster
-		data.frame(cluster = as.numeric(hdclust), K = x, minPts = y)
-	}, c(6, 10, 20)))
-}, c(2, 6, 12))))
-lbind <- function(x) do.call(rbind, x)
-set <- lbind(set)
-set$x <- rep(dat[, 1], 9)
-set$y <- rep(dat[, 2], 9)
-set$cluster <- factor(set$cluster)
-set$K <- factor(paste("K=", set$K))
-set$minPts <- factor(paste("minPts=", set$minPts))
-
-ggplot(data = set, aes(x = x, y = y, color = cluster)) +
-	geom_point(size = 0.5, alpha = 0.7) +
-	facet_grid(minPts ~ K) + 
-	scale_x_continuous("", breaks = NULL) +
-	scale_y_continuous("", breaks = NULL) +
-	guides(color = FALSE) +
-	ggtitle("HDBSCAN Is Robust\nTo Hyperparameter Changes")
-```
+![plot of chunk hdbscan](figure/hdbscan-1.png)
 
 The `largeVis` implementation of `HDBSCAN` produces flat and hierarchical clusterings simultaneously.  The hiearchical clusterings are compatible with `hclust` and other R hierarchical clustering packages and tools by means of an `as.dendrogram.hdbscan` function, which converts them to standard R dendrograms.  The package also includes a function for visualizing the clustering.  
 

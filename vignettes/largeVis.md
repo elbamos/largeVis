@@ -1,45 +1,6 @@
----
-title: 'largeVis: An Implementation of the LargeVis Algorithm'
-author: "Amos Elberg"
-date: '`r Sys.Date()`'
-output:
-  rmarkdown::html_vignette:
-    fig_caption: yes
-bibliography: largevisvignettes.bib
-vignette: |
-  %\VignetteIndexEntry{largeVis: An Implementation of the LargeVis Algorithm}    
-  %\VignetteEngine{knitr::rmarkdown}    
-  %\VignetteEncoding{UTF-8}
----
+largeVis: An Implementation of the LargeVis Algorithm
+=====================================================
 
-```{r setupvignette,eval=TRUE,echo=FALSE,warning=FALSE,error=FALSE,message=FALSE}
-require(ggplot2, 
-        quietly = TRUE)
-knitr::opts_chunk$set(collapse = TRUE, 
-                      comment = "#>",
-                      cache=FALSE)
-
-theme_set(
-  theme_bw() %+replace%
-  theme(
-    legend.title = element_text(size = rel(0.8),
-                              face = "bold"),
-    legend.margin = margin(0.1,0.1,0.1,0.1, "cm"),
-    legend.position = "bottom",
-    legend.key.size = unit(0.5, "lines"),
-    legend.text = element_text(size = unit(8, "points")), 
-    axis.title.y = element_text(angle = 90),
-    axis.text = element_text(size = rel(0.7)),
-    plot.margin = margin(0, 0.5, 1, 0, "lines"), 
-    axis.title = element_text(size = rel(0.8),
-                              face = "bold"),
-    title = element_text(size = rel(0.9))
-  ) 
-)
-rebuild <- FALSE
-
-require(largeVis,quietly = TRUE)
-```
 This Vingette provides an overview of the largeVis package.  
 
 ## Introduction
@@ -98,51 +59,11 @@ The `LargeVis` algorithm, explained in detail in @tang2016visualizing, estimates
 
 The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperparameters:
 
-```{r reload,eval=!rebuild}
+
+```r
 load(system.file(package = "largeVis", "vignettedata/vignettedata.Rda"))
 ```
-```{r drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis',cache=FALSE}
-if (! exists("agcoords") && rebuild) {
-  data(wiki)
-  inputs <- data.frame(
-    g = rep(c(.5,1,7,14), 5),
-    a = rep(c(0,.1,1,5,10), each = 4)
-  )
-  wij <- buildWijMatrix(wiki, perplexity = 50)
-  set.seed(1974) 
-  initialcoords <- matrix(rnorm(ncol(wij) * 2), nrow = 2)
-  
-  agcoords <- do.call(rbind, 
-                      lapply(1:nrow(inputs), 
-                             FUN = function(x) {
-    a <- inputs[x, 'a']
-    g <- inputs[x, 'g']
-    newcoords <- initialcoords
-    y <- data.frame(scale(t(projectKNNs(wij, alpha = a, 
-                 gamma = g,
-                 verbose = FALSE, 
-                 coords = newcoords))))
-    colnames(y) <- c("x", "y")
-    y$degree = colSums(wiki)
-  }))
-}
-
-ggplot(agcoords,
-       aes(x = x, 
-           y = y, 
-           color = degree)) +
-  geom_point(alpha = 0.2, 
-             size = 0.05) +
-  facet_grid(a ~ g,
-             labeller = label_bquote(alpha == .(a), 
-                                     gamma == .(g)),
-             scales = 'free') +
-  scale_x_continuous(breaks = NULL, 
-                     name = "") +
-  scale_y_continuous(breaks = NULL, 
-                     name = "") +
-  ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  ")))
-```
+<img src="figure/drawhyperparameters-1.png" title="plot of chunk drawhyperparameters" alt="plot of chunk drawhyperparameters" style="display: block; margin: auto;" />
 
 The additional hyperparameters $\rho$ and `min-`$\rho$ control the starting and final learning rate for the stochastic gradient descent process. 
 
@@ -154,60 +75,7 @@ The `vis` function combines `randomProjectionTreeSearch` and `projectKNNs`, alon
 
 The following chart illustrates the effect of the `M` and `K` parameters, using the `iris` dataset. Each row re-uses the same set of identified `K` neighbors, and initial coordinates. 
 
-```{r drawiris,echo=F,fig.width=4,fig.height=4.5,fig.align='center',results='asis'}
-if (!exists("iriscoords")) {
-  data(iris)
-  Ks <- c(5, 10,20,30)
-  Ms <- c(5, 10, 20)
-  dat <- iris[,1:4]
-  dupes <- duplicated(dat)
-  dat <- dat[-dupes,]
-  labels <- iris$Species[-dupes]
-  dat <- as.matrix(dat)
-  dat <- t(dat)
-  
-  set.seed(1974)
-  coordsinput <- matrix(rnorm(ncol(dat) * 2), nrow = 2)
-  
-  iriscoords <- do.call(rbind, lapply(Ks, FUN = function(K) {
-    neighbors <- randomProjectionTreeSearch(dat, 
-                                        K = K, 
-                                        verbose = FALSE)
-    edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE)
-    wij <- buildWijMatrix(edges)
-    do.call(rbind, lapply(Ms, FUN = function(M) {
-      coords <- projectKNNs(wij = wij, M = M, 
-                            coords = coordsinput, 
-                            verbose = TRUE, 
-                            sgd_batches = 2000000)
-      coords <- scale(t(coords))
-      coords <- data.frame(coords)
-      colnames(coords) <- c("x", "y")
-      coords$K <- K
-      coords$M <- M
-      coords$rebuild <- 'no'
-      coords$Species <- as.integer(labels)
-      coords
-    }))
-  }))
-  iriscoords$Species <- factor(iriscoords$Species)
-  levels(iriscoords$Species) <- levels(iris$Species)
-}
-
-ggplot(iriscoords,
-       aes(x = x,
-           y = y,
-           color = Species)) +
-         geom_point(size = 0.5) +
-  scale_x_continuous("", 
-                     breaks = NULL) +
-  scale_y_continuous("", 
-                     breaks = NULL) +
-  facet_grid(K ~ M, 
-             scales = 'free', 
-             labeller = label_bquote(K == .(K), M == .(M))) +
-  ggtitle("Effect of M and K on Iris Dataset")
-```
+<img src="figure/drawiris-1.png" title="plot of chunk drawiris" alt="plot of chunk drawiris" style="display: block; margin: auto;" />
 
 ### `manifoldMap`
 
@@ -215,7 +83,8 @@ The `manifoldMap` function is useful when the examples being clustered are thems
 
 The following code will generate the visualization shown in the examples:
 
-```{r echomanifold,echo=T,eval=F}
+
+```r
 dim(trainData) <- c(60000, 28, 28)
 aperm(trainData, perm = c(1,3,2), resize = FALSE)
 set.seed(1974)
@@ -237,7 +106,8 @@ The `largeVis` visualization algorithm can be used to visualize undirected weigh
 
 The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). The data and visualization are not included here for size reasons.
 
-```{r youtube,eval=F,echo=T}
+
+```r
 youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
 youtube <- as.matrix(youtube)
 youtube <- Matrix::sparseMatrix(i = youtube[, 1],
@@ -285,7 +155,8 @@ The algorithm is necessarily memory-intensive for large datasets.
 
 A simple way to reduce peak memory usage, is to turn-off the `save_neighbors` parameter when running `vis`. If this is insufficient, the steps of the algorithm can be run separately with the `neighborsToVectors`, `distance`, and `buildEdgeMatrix` functions.  In this case, the workflow is:
 
-```{r lowmemexample,eval=F,echo=T}
+
+```r
 neighbors <- randomProjectionTreeSearch(largeDataset)
 edges <- buildEdgeMatrix(data = largeDataset, neighbors = neighbors)
 rm(neighbors)
@@ -302,6 +173,4 @@ Memory requirements during the neighbor search may be managed by reducing `n_tre
 
 ## References
 
-```{r save,eval=rebuild,echo=F}
-save(agcoords, iriscoords, file = "vignettedata/vignettedata.Rda")
-```
+
