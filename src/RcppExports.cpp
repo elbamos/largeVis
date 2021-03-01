@@ -61,13 +61,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // fastDistance
-arma::vec fastDistance(const IntegerVector is, const IntegerVector js, const arma::mat& data, const std::string& distMethod, Rcpp::Nullable<Rcpp::NumericVector> threads, bool verbose);
+arma::vec fastDistance(const arma::ivec& is, const arma::ivec& js, const arma::mat& data, const std::string& distMethod, Rcpp::Nullable<Rcpp::NumericVector> threads, bool verbose);
 RcppExport SEXP _largeVis_fastDistance(SEXP isSEXP, SEXP jsSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const IntegerVector >::type is(isSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector >::type js(jsSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type is(isSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type js(jsSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type threads(threadsSEXP);

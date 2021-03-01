@@ -1,5 +1,6 @@
 #include "largeVis.h"
 #include <Rcpp.h>
+#include <RcppParallel.h>
 
 using namespace Rcpp;
 
@@ -35,3 +36,5 @@ arma::vec fastSDistance(const arma::vec& is,
                         const arma::vec& x,
                         const std::string& distMethod,
                         bool verbose);
+
+

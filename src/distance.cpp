@@ -41,30 +41,61 @@ distancetype sparseRelDist(const sp_mat& i, const sp_mat& j) {
   return as_scalar(sum(square(i - j)));
 }
 
+class DistanceWorker : public RcppParallel::Worker {
+private:
+	const arma::mat  data;
+	const arma::ivec is;
+	const arma::ivec js;
+	distancetype (*distFunction)(const vec&, const vec&) = nullptr;
+	Progress p;
+	vec* out;
+
+public:
+
+
+	DistanceWorker(
+		const arma::mat &data,
+		const arma::ivec &is,
+		const arma::ivec &js,
+		distancetype (*distFunction)(const vec&, const vec&),
+		vec *out,
+		Progress &p) :
+	data{data},
+	is{is},
+	js{js},
+	distFunction{distFunction},
+	out{out},
+	p{p} {
+	}
+
+	void operator()(std::size_t begin, std::size_t end) {
+		for (std::size_t pos=begin; pos < end; ++pos) {
+			(*out)[pos] = distFunction(data.col(is[pos]), data.col(js[pos]));
+		}
+	}
+};
+
 /*
  * Fast calculation of pairwise distances with the result stored in a pre-allocated vector.
  */
 // [[Rcpp::export]]
-arma::vec fastDistance(const IntegerVector is,
-                       const IntegerVector js,
+arma::vec fastDistance(const arma::ivec& is,
+                       const arma::ivec& js,
                        const arma::mat& data,
                        const std::string& distMethod,
                        Rcpp::Nullable<Rcpp::NumericVector> threads,
                        bool verbose) {
-#ifdef _OPENMP
-	checkCRAN(threads);
-#endif
-  Progress p(is.size(), verbose);
-  vec xs = vec(is.size());
-  distancetype (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j);
-  if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = dist;
-  else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = cosDist;
-#ifdef _OPENMP
-#pragma omp parallel for shared (xs)
-#endif
-  for (R_xlen_t i=0; i < is.length(); ++i) if (p.increment()) xs[i] =
-    distanceFunction(data.col(is[i]), data.col(js[i]));
-  return xs;
+	Progress p(is.size(), verbose);
+	vec xs = vec(is.size());
+	xs.fill(0);
+
+	distancetype (*distanceFunction)(const arma::vec& x_i, const arma::vec& x_j);
+	if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = dist;
+	else distanceFunction = cosDist;
+
+	DistanceWorker worker(data, is, js, distanceFunction, &xs, p);
+	parallelFor(0, is.n_elem, worker);
+	return xs;
 }
 
 vec fastSparseDistance(const ivec& is,
