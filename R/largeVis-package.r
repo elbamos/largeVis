@@ -31,4 +31,5 @@
 #' @useDynLib largeVis
 #' @aliases NULL
 #' @import Rcpp
+#' @importFrom RcppParallel RcppParallelLibs
 "_PACKAGE"

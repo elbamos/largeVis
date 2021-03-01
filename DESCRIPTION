@@ -13,8 +13,9 @@ Depends:
     Matrix
 Imports:
     ggplot2 (>= 2.1.0),
-    Rcpp
-LinkingTo: Rcpp (>= 0.12.4),RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.200.2.0),testthat(>= 1.0.2)
+    Rcpp,
+    RcppParallel
+LinkingTo: Rcpp (>= 0.12.4),RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.200.2.0),testthat(>= 1.0.2),RcppParallel
 Suggests:
     ggforce, 
     testthat,
@@ -27,4 +28,4 @@ BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes
 BuildVignettes: TRUE
 VignetteBuilder: knitr
-SystemRequirements: C++11
+SystemRequirements: C++11, GNU make
