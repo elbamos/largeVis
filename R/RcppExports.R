@@ -17,16 +17,16 @@ searchTrees <- function(threshold, n_trees, K, maxIter, data, distMethod, seed, 
     .Call('_largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, data, distMethod, seed, threads, verbose)
 }
 
-fastDistance <- function(is, js, data, distMethod, threads, verbose) {
-    .Call('_largeVis_fastDistance', PACKAGE = 'largeVis', is, js, data, distMethod, threads, verbose)
+fastDistance <- function(is, js, data, distMethod, verbose) {
+    .Call('_largeVis_fastDistance', PACKAGE = 'largeVis', is, js, data, distMethod, verbose)
 }
 
-fastCDistance <- function(is, js, i_locations, p_locations, x, distMethod, threads, verbose) {
-    .Call('_largeVis_fastCDistance', PACKAGE = 'largeVis', is, js, i_locations, p_locations, x, distMethod, threads, verbose)
+fastCDistance <- function(is, js, i_locations, p_locations, x, distMethod, verbose) {
+    .Call('_largeVis_fastCDistance', PACKAGE = 'largeVis', is, js, i_locations, p_locations, x, distMethod, verbose)
 }
 
-fastSDistance <- function(is, js, i_locations, j_locations, x, distMethod, threads, verbose) {
-    .Call('_largeVis_fastSDistance', PACKAGE = 'largeVis', is, js, i_locations, j_locations, x, distMethod, threads, verbose)
+fastSDistance <- function(is, js, i_locations, j_locations, x, distMethod, verbose) {
+    .Call('_largeVis_fastSDistance', PACKAGE = 'largeVis', is, js, i_locations, j_locations, x, distMethod, verbose)
 }
 
 referenceWij <- function(i, j, d, threads, perplexity) {

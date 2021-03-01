@@ -40,7 +40,7 @@ test_that("sparseDistances", {
   new_distances <- distance(mat,
                             as.vector(index_matrix[, 2]),
                             as.vector(index_matrix[, 1]),
-                            "Euclidean", threads = 2,
+                            "Euclidean",
                             verbose = FALSE)
   diffs <- as.vector(d) - new_distances
   expect_lt(sum(diffs), 1e-10)

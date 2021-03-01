@@ -83,7 +83,6 @@ arma::vec fastDistance(const arma::ivec& is,
                        const arma::ivec& js,
                        const arma::mat& data,
                        const std::string& distMethod,
-                       Rcpp::Nullable<Rcpp::NumericVector> threads,
                        bool verbose) {
 	Progress p(is.size(), verbose);
 	vec xs = vec(is.size());
@@ -98,6 +97,40 @@ arma::vec fastDistance(const arma::ivec& is,
 	return xs;
 }
 
+class SparseDistanceWorker : public RcppParallel::Worker {
+private:
+	const arma::sp_mat  data;
+	const arma::ivec is;
+	const arma::ivec js;
+	distancetype (*distFunction)(const sp_mat&, const sp_mat&) = nullptr;
+	Progress p;
+	vec* out;
+
+public:
+
+
+	SparseDistanceWorker(
+		const arma::sp_mat &data,
+		const arma::ivec &is,
+		const arma::ivec &js,
+		distancetype (*distFunction)(const sp_mat&, const sp_mat&),
+		vec *out,
+		Progress &p) :
+	data{data},
+	is{is},
+	js{js},
+	distFunction{distFunction},
+	out{out},
+	p{p} {
+	}
+
+	void operator()(std::size_t begin, std::size_t end) {
+		for (std::size_t pos=begin; pos < end; ++pos) {
+			(*out)[pos] = distFunction(data.col(is[pos]), data.col(js[pos]));
+		}
+	}
+};
+
 vec fastSparseDistance(const ivec& is,
                        const ivec& js,
                        const sp_mat& data,
@@ -111,11 +144,9 @@ vec fastSparseDistance(const ivec& is,
       const sp_mat& x_j);
   if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = sparseDist;
   else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = sparseCosDist;
-#ifdef _OPENMP
-#pragma omp parallel for shared (xs)
-#endif
-  for (arma::uword i=0; i < is.n_elem; i++) if (p.increment()) xs[i] =
-    distanceFunction(data.col(is[i]), data.col(js[i]));
+
+  SparseDistanceWorker worker(data, is, js, distanceFunction, &xs, p);
+  parallelFor(0, is.n_elem, worker);
   return xs;
 }
 
@@ -126,11 +157,7 @@ arma::vec fastCDistance(const arma::ivec& is,
                         const arma::uvec& p_locations,
                         const arma::vec& x,
                         const std::string& distMethod,
-                        Rcpp::Nullable<Rcpp::NumericVector> threads,
                         bool verbose) {
-#ifdef _OPENMP
-	checkCRAN(threads);
-#endif
   const vertexidxtype N = p_locations.n_elem - 1;
   const sp_mat data = sp_mat(i_locations, p_locations, x, N, N);
   return fastSparseDistance(is,js,data,distMethod,verbose);
@@ -143,11 +170,7 @@ arma::vec fastSDistance(const arma::ivec& is,
                         const arma::uvec& j_locations,
                         const arma::vec& x,
                         const std::string& distMethod,
-                        Rcpp::Nullable<Rcpp::NumericVector> threads,
                         bool verbose) {
-#ifdef _OPENMP
-	checkCRAN(threads);
-#endif
   const umat locations = join_cols(i_locations, j_locations);
   const sp_mat data = sp_mat(locations, x);
   return fastSparseDistance(is,js,data,distMethod,verbose);
