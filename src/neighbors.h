@@ -45,10 +45,6 @@ public:
 	void recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood);
 	void mergeNeighbors(const list< Neighborholder >& neighbors);
 
-	void exploreThread(const imat& old_knns, const vertexidxtype& loopstart, const vertexidxtype& end);
-	void exploreOne(const vertexidxtype& i, const imat& old_knns,
-                  vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
-                  MinIndexedPQ& positionHeap, vector< Position >& positionVector);
 	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
 
 	void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
@@ -105,6 +101,37 @@ public:
 		newNeighborhood.reserve(searcher->K * searcher->threshold);
 		for (vertexidxtype i = begin; i < end; ++i) {
 			reduceOne(i, newNeighborhood);
+		}
+	}
+};
+
+template<class M, class V>
+class ExploreWorker : public RcppParallel::Worker {
+public:
+	AnnoySearch<M, V> *searcher;
+	imat *old_knns;
+
+	ExploreWorker<M,V>(AnnoySearch<M,V> *searcher, imat *old_knns) : searcher {searcher}, old_knns {old_knns} {}
+
+	void exploreOne(const vertexidxtype& i, const imat& old_knns,
+                 vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
+                 MinIndexedPQ& positionHeap, vector< Position >& positionVector);
+
+	void operator()(std::size_t begin, std::size_t end) {
+		/*
+		 * The goal here is to maintain a size-K minHeap of the points with the shortest distances
+		 * to the target point. This is a merge sort with more than two sorted arrays being merged.
+		 * We can use a simple priority queue because the number of entries in the queue, which equals
+		 * K + 1, is small and well-controlled.
+		 */
+		vector< std::pair<distancetype, vertexidxtype> > nodeHeap;
+		nodeHeap.reserve(searcher->K);
+		MinIndexedPQ positionHeap(searcher->K + 1);
+		vector< Position > positionVector;
+		positionVector.reserve(searcher->K + 1);
+
+		for (vertexidxtype i = begin; i < end; ++i) {
+			exploreOne(i, *old_knns, nodeHeap, positionHeap, positionVector);
 		}
 	}
 };

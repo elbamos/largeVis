@@ -189,34 +189,14 @@ void AnnoySearch<M, V>::reduce() {
 	parallelFor(0, N, worker);
 }
 
-template<class M, class V>
-void AnnoySearch<M, V>::exploreThread(const imat& old_knns,
-				                                     const vertexidxtype& loopstart,
-				                                     const vertexidxtype& end) {
-	/*
-	 * The goal here is to maintain a size-K minHeap of the points with the shortest distances
-	 * to the target point. This is a merge sort with more than two sorted arrays being merged.
-	 * We can use a simple priority queue because the number of entries in the queue, which equals
-	 * K + 1, is small and well-controlled.
-	 */
-	vector< std::pair<distancetype, vertexidxtype> > nodeHeap;
-	nodeHeap.reserve(K);
-	MinIndexedPQ positionHeap(K + 1);
-	vector< Position > positionVector;
-	positionVector.reserve(K + 1);
-
-	for (vertexidxtype i = loopstart; i != end; ++i) if (p.increment()) {
-		exploreOne(i, old_knns, nodeHeap, positionHeap, positionVector);
-	}
-}
 
 template<class M, class V>
-void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
+void ExploreWorker<M,V>::exploreOne(const vertexidxtype& i,
 												                 const imat& old_knns,
 												                 vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
 												                 MinIndexedPQ& positionHeap,
 												                 vector< Position >& positionVector) {
-	const V& x_i = data.col(i);
+	const V& x_i = searcher->data.col(i);
 
 	positionVector.clear();
 	nodeHeap.clear();
@@ -238,10 +218,10 @@ void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 		const vertexidxtype nextOne = positionHeap.minKey();
 
 		if (nextOne != lastOne && nextOne != i) {
-			addHeap(nodeHeap, x_i, nextOne);
+			searcher->addHeap(nodeHeap, x_i, nextOne);
 			lastOne = nextOne;
 		}
-		advanceHeap(positionHeap, positionVector);
+		searcher->advanceHeap(positionHeap, positionVector);
 	}
 
 	/*
@@ -250,11 +230,11 @@ void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 	*
 	* We can't use std:copy because we're copying from a vector of pairs
 	*/
-	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), knns.begin_col(i),
+	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), searcher->knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
-	if (copyContinuation == knns.begin_col(i)) throw Rcpp::exception("No neighbors after exploration - this is a bug.");
-	sort(knns.begin_col(i), copyContinuation);
-	std::fill(copyContinuation, knns.end_col(i), -1);
+	if (copyContinuation == searcher->knns.begin_col(i)) throw Rcpp::exception("No neighbors after exploration - this is a bug.");
+	sort(searcher->knns.begin_col(i), copyContinuation);
+	std::fill(copyContinuation, searcher->knns.end_col(i), -1);
 }
 
 template<class M, class V>
@@ -264,20 +244,9 @@ void AnnoySearch<M,V>::exploreNeighborhood(const unsigned int& maxIter) {
 
 	for (unsigned int T = 0; T != maxIter; ++T) if (! p.check_abort()) {
 		swap(knns, old_knns);
-#ifdef _OPENMP
-		const unsigned int dynamo = omp_get_dynamic();
-		omp_set_dynamic(0);
-		const vertexidxtype chunk = (N / omp_get_max_threads()) + 1;
-#pragma omp parallel for shared(old_knns)
-#else
-		const vertexidxtype chunk = N;
-#endif
-		for (vertexidxtype i = 0; i <= N; i += chunk) {
-			exploreThread(old_knns, i, min(i + chunk, N));
-		}
-#ifdef _OPENMP
-		omp_set_dynamic(dynamo);
-#endif
+		ExploreWorker<M, V> worker(this, &old_knns);
+
+		parallelFor(0, N, worker);
 	}
 }
 
