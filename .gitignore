@@ -7,3 +7,5 @@ Examples.html
 largeVis.Rproj
 doc
 Meta
+
+*.tmp
