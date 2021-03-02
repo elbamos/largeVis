@@ -8,7 +8,7 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 80
-neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+neighbors <- randomProjectionTreeSearch(dat, K = K, verbose = FALSE)
 
 
 test_that(paste("LOF is consistent", 20), {
@@ -65,7 +65,7 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 20
-neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+neighbors <- randomProjectionTreeSearch(dat, K = K, verbose = FALSE)
 
 test_that("hdbscan doesn't crash without 3 neighbors and is correct", {
 	edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
@@ -103,7 +103,7 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 20
-neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+neighbors <- randomProjectionTreeSearch(dat, K = K, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
 hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 4, verbose = FALSE)
 
@@ -151,7 +151,7 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 20
-neighbors <- randomProjectionTreeSearch(dat, K = K,  threads = 2, verbose = FALSE)
+neighbors <- randomProjectionTreeSearch(dat, K = K,  verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
 
 test_that("gplot isn't broken", {

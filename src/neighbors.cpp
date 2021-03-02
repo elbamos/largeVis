@@ -115,11 +115,6 @@ template<class M, class V>
 void AnnoySearch<M, V>::setSeed(Rcpp::Nullable< NumericVector >& seed) {
 	long innerSeed;
 	if (seed.isNotNull()) {
-#ifdef _OPENMP
-		storedThreads = omp_get_max_threads();
-		omp_set_num_threads(1);
-		omp_set_dynamic(0);
-#endif
 		innerSeed = NumericVector(seed)[0];
 	} else {
 		random_device hardseed;

@@ -11,8 +11,7 @@ neighbors <- randomProjectionTreeSearch(dat,
 																				n_trees = 10,
 																				tree_threshold = 20,
 																				max_iter = 10,
-																				verbose = FALSE,
-																				threads = 1)
+																				verbose = FALSE)
 
 test_that("buildEdgeMatrix are the same", {
 	edges1 <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
@@ -46,6 +45,7 @@ test_that("sparseDistances", {
   expect_lt(sum(diffs), 1e-10)
 })
 
+# TODO: Two threads
 test_that("Can determine sparse iris neighbors accurately", {
   bests <- apply(d, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
   bests <- bests[-1,] - 1
@@ -54,7 +54,7 @@ test_that("Can determine sparse iris neighbors accurately", {
                                           n_trees = 20,
                                           max_iter = 2,
                                           tree_threshold = 30,
-  																				seed = 1974, threads = 2,
+  																				seed = 1974,
                                           verbose = FALSE)
   expect_lte(sum(neighbors - bests, na.rm = TRUE), 5)
 })

@@ -9,7 +9,6 @@ dat <- t(scale(as.matrix(quakes)))
 																					tree_threshold = 30,
 																					max_iter = 1,
 																					n_trees = 10,
-																					threads = 2,
 																					verbose = FALSE)
 	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
 	expect_equal(attr(edges, "Metric"), "euclidean")
@@ -26,7 +25,7 @@ test_that("wij doesn't crash", {
 	dupes <- which(duplicated(dat))
 	dat <- dat[-dupes, ]
 	dat <- t(dat)
-	neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
+	neighbors <- randomProjectionTreeSearch(dat, K = 20)
 	edges <- buildEdgeMatrix(dat, neighbors)
 	expect_silent(wij <- buildWijMatrix(edges, threads = 2))
 })
@@ -39,7 +38,7 @@ dat <- scale(dat)
 dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
-neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
+neighbors <- randomProjectionTreeSearch(dat, K = 20)
 edges <- buildEdgeMatrix(dat, neighbors)
 wij <- buildWijMatrix(edges, threads = 2)
 
@@ -82,7 +81,7 @@ dat <- t(dat)
 do <- dist(t(dat))
 
 test_that("build edge matrix as distance matches dist", {
-	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, max_iter = 10, threads = 2)
+	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, max_iter = 10)
 	edges <- buildEdgeMatrix(dat, neighbors)
 	d2 <- as.dist(edges)
 	expect_true(inherits(d2, "dist"))
@@ -93,7 +92,7 @@ test_that("build edge matrix as distance matches dist", {
 })
 
 test_that("build edge matrix as distance matches dist with nas", {
-	neighbors <- randomProjectionTreeSearch(dat, K = 20, threads = 2)
+	neighbors <- randomProjectionTreeSearch(dat, K = 20)
 	edges <- buildEdgeMatrix(dat, neighbors)
 	d3 <- as.dist(edges)
 	todelete <- !is.na(as.matrix(d3))

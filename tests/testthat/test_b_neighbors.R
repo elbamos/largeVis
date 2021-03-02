@@ -13,32 +13,33 @@ test_that("Trees does not error", {
 																												K = 5,
 																												n_trees = 10,
 																												tree_threshold = 30,
-																												max_iter = 0, threads = 1,
+																												max_iter = 0,
 																												verbose = FALSE))
+	# TODO: All should be one thread except this one, two threads
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 10,
 																												tree_threshold = 30,
-																												max_iter = 0, threads = 2,
+																												max_iter = 0,
 																												verbose = FALSE))
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 50,
 																												tree_threshold = 20,
-																												max_iter = 1, threads = 1,
+																												max_iter = 1,
 																												verbose = FALSE))
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 50,
 																												tree_threshold = 20,
-																												max_iter = 1, threads = 2,
+																												max_iter = 1,
 																												verbose = FALSE))
-
+  # Two threads here
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 50,
 																												tree_threshold = 20,
-																												max_iter = 2, threads = 2,
+																												max_iter = 2,
 																												verbose = FALSE))
 })
 
@@ -48,24 +49,26 @@ d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
 bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
 bests <- bests[-1,] - 1
 
+# Two threads
 test_that("max threshold is sufficient to find all neighbors", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
 																					n_trees = 1,
 																					tree_threshold = ncol(dat),
-																					max_iter = 0, threads = 2,
+																					max_iter = 0,
 																					verbose = FALSE)
 	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[,x] %in% bests[,x]))
 	score <- sum(as.numeric(scores))
 	expect_gte(score, M * ncol(dat) - 1) # Two neighbors are equidistanct
 })
 
+# Two threads
 test_that("exploration is not negative", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
 																					n_trees = 1,
 																					tree_threshold = ncol(dat),
-																					max_iter = 0, threads = 2,
+																					max_iter = 0,
 																					verbose = FALSE)
 	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
 	score <- sum(as.numeric(scores))
@@ -75,7 +78,7 @@ test_that("exploration is not negative", {
 																					K = M,
 																					n_trees = 1,
 																					tree_threshold = ncol(dat),
-																					max_iter = 1, threads = 2,
+																					max_iter = 1,
 																					verbose = FALSE)
 	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
 	score <- sum(as.numeric(scores))
@@ -85,7 +88,7 @@ test_that("exploration is not negative", {
 																					K = M,
 																					n_trees = 1,
 																					tree_threshold = ncol(dat),
-																					max_iter = 2, threads = 2,
+																					max_iter = 2,
 																					verbose = FALSE)
 	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
 	score <- sum(as.numeric(scores))
@@ -98,7 +101,6 @@ test_that("Can determine iris neighbors with iterations 1 thread", {
 																					n_trees = 20,
 																					tree_threshold = 30,
 																					max_iter = 10,
-																					threads = 1,
 																					verbose = FALSE)
 	expect_equal(sum(is.na(neighbors)), 0)
 	expect_equal(nrow(neighbors), 5)
@@ -110,13 +112,13 @@ test_that("Can determine iris neighbors with iterations 1 thread", {
 	expect_gte(score, M * ncol(dat) - 1) # Two neighbors are equidistanct
 })
 
+# Two threads
 test_that("Can determine iris neighbors with iterations 2 threads", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = 5,
 																					n_trees = 20,
 																					tree_threshold = 30,
 																					max_iter = 10,
-																					threads = 2,
 																					verbose = FALSE)
 
 	expect_equal(sum(is.na(neighbors)), 0)
@@ -129,13 +131,14 @@ test_that("Can determine iris neighbors with iterations 2 threads", {
 	expect_gte(score, M * ncol(dat) - 1) # Two neighbors are equidistanct
 })
 
+# Two threads
 test_that("Can determine iris neighbors accurately, Euclidean", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
 																					n_trees = 20,
 																					tree_threshold = 30,
 																					max_iter = 12,
-																					verbose = FALSE,  threads = 2,
+																					verbose = FALSE,
 																					seed = 1974)
 	expect_lte(sum(neighbors != bests, na.rm = TRUE), 5)
 })
@@ -161,8 +164,7 @@ test_that("With a bigger dataset, performance is as expected", {
 																						tree_threshold = t,
 																						max_iter = 0,
 																						verbose = FALSE,
-																						seed = 1974,
-																						threads = 1)
+																						seed = 1974)
 		score <- sum(neighbors != bests, na.rm = TRUE)
 		expect_lte(score, oldscore, label = paste("threshold =", t))
 		oldscore <- score
@@ -171,13 +173,13 @@ test_that("With a bigger dataset, performance is as expected", {
 	oldscore <- nrow(quakes) * M
 
 	for (t in c(5, 20, 40, 90)) {
+		# TODO: Two threads
 		neighbors <- randomProjectionTreeSearch(t(quakes),
 																						K = M,
 																						n_trees = t,
 																						tree_threshold = 10,
 																						max_iter = 0,
 																						verbose = FALSE,
-																						threads = 2,
 																						seed = 1974)
 		score <- sum(neighbors != bests, na.rm = TRUE)
 		expect_lte(score, oldscore, label = paste("n_trees=", t))
@@ -187,13 +189,13 @@ test_that("With a bigger dataset, performance is as expected", {
 	oldscore <- nrow(quakes) * M
 
 	for (t in c(0, 5, 20, 40)) {
+		# TODO: Two threads
 		neighbors <- randomProjectionTreeSearch(t(quakes),
 																						K = M,
 																						n_trees = 5,
 																						tree_threshold = 10,
 																						max_iter = t,
 																						verbose = FALSE,
-																						threads = 2,
 																						seed = 1974)
 		score <- max(0, sum(neighbors != bests, na.rm = TRUE))
 		expect_lte(score, oldscore, label = paste("iters=", t))

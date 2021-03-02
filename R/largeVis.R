@@ -82,7 +82,6 @@ largeVis <- function(x,
                                      K = K,
                                      max_iter = max_iter,
                                      distance_method = distance_method,
-  																	 threads,
                                      verbose = verbose)
   #############################################
   # Clean knns

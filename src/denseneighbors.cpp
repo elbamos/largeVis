@@ -59,11 +59,7 @@ arma::imat searchTrees(const int& threshold,
                        const arma::mat& data,
                        const std::string& distMethod,
                        Rcpp::Nullable< NumericVector > seed,
-                       Rcpp::Nullable< NumericVector > threads,
                        bool verbose) {
-#ifdef _OPENMP
-	checkCRAN(threads);
-#endif
   const vertexidxtype N = data.n_cols;
 
   Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
