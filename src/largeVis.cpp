@@ -2,6 +2,7 @@
 #include "alias.h"
 #include "progress.hpp"
 #include "gradients.h"
+#include <RcppParallel.h>
 
 using namespace Rcpp;
 using namespace std;
@@ -15,15 +16,11 @@ private:
 		for (dimidxtype d = 0; d != D; ++d) to[d] -= from[d] * rho;
 	}
 protected:
-	const dimidxtype D;
 	const unsigned int M;
 
 	vertexidxtype * const targetPointer;
 	vertexidxtype * const sourcePointer;
 	coordinatetype * const coordsPtr;
-
-	double rho;
-	const double rhoIncrement;
 
 	AliasTable< vertexidxtype, coordinatetype, double > negAlias;
 	AliasTable< edgeidxtype, coordinatetype, double > posAlias;
@@ -32,6 +29,11 @@ protected:
 	unsigned int storedThreads = 0;
 
 public:
+	const dimidxtype D;
+	double rho;
+	const double rhoIncrement;
+	mutex mutex;
+
 	Visualizer(vertexidxtype *sourcePtr,
             vertexidxtype *targetPtr,
             coordinatetype *coordPtr,
@@ -52,15 +54,13 @@ public:
 	            rho{rho},
 	            rhoIncrement((rho - 0.0001) / n_samples),
 	            negAlias(AliasTable< vertexidxtype, coordinatetype, double >(N)),
-	            posAlias(AliasTable< edgeidxtype, coordinatetype, double >(E)){
+	            posAlias(AliasTable< edgeidxtype, coordinatetype, double >(E)),
+	            mutex() {
     	if (alpha == 0) grad = new ExpGradient(gamma, D);
     	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
     	else grad = new AlphaGradient(alpha, gamma, D);
     }
 	virtual ~Visualizer() {
-#ifdef _OPENMP
-		if (storedThreads > 0) omp_set_num_threads(storedThreads);
-#endif
 		delete grad;
 	}
 
@@ -71,10 +71,6 @@ public:
 		posAlias.initialize(posWeights);
 
 		if (seed.isNotNull()) {
-#ifdef _OPENMP
-			storedThreads = omp_get_max_threads();
-			omp_set_num_threads(1);
-#endif
 			vertexidxtype innerSeed = Rcpp::NumericVector(seed)[0];
 			innerSeed = negAlias.initRandom(innerSeed);
 			posAlias.initRandom(innerSeed);
@@ -115,21 +111,6 @@ public:
 			}
 			updateMinus(firstholder, y_i, - localRho);
 		}
-	}
-
-	void thread(Progress& progress, const uword& batchSize) {
-		coordinatetype * const holder = new coordinatetype[D * 2];
-
-		while (rho >= 0) {
-			const double localRho = rho;
-			innerLoop(localRho, batchSize, holder);
-#ifdef _OPENMP
-#pragma omp atomic
-#endif
-			rho -= (rhoIncrement * batchSize);
-			if (!progress.increment()) break;
-		}
-		delete[] holder;
 	}
 };
 
@@ -202,6 +183,32 @@ public:
 
 #define BATCHSIZE 8192
 
+class VisualizerWorker : public RcppParallel::Worker {
+public:
+	Visualizer *vis;
+	long batchSize;
+
+	VisualizerWorker(Visualizer *vis, long batchSize) : vis {vis}, batchSize {batchSize} {};
+
+	void operator()(std::size_t begin, std::size_t end) {
+
+		coordinatetype * const holder = new coordinatetype[vis->D * 2];
+
+		for (long i = begin; i < end; ++i) {
+			const double localRho = vis->rho;
+			if (localRho <= 0) return;
+
+			vis->innerLoop(localRho, batchSize, holder);
+
+			vis->mutex.lock();
+			vis->rho -= (vis->rhoIncrement * batchSize);
+			vis->mutex.unlock();
+		}
+
+		delete[] holder;
+	}
+};
+
 // [[Rcpp::export]]
 arma::mat sgd(arma::mat& coords,
               arma::ivec& targets_i, // vary randomly
@@ -216,7 +223,6 @@ arma::mat sgd(arma::mat& coords,
               const Rcpp::Nullable<Rcpp::NumericVector> momentum,
               const bool& useDegree,
               const Rcpp::Nullable<Rcpp::NumericVector> seed,
-              const Rcpp::Nullable<Rcpp::NumericVector> threads,
               const bool verbose) {
 #ifdef _OPENMP
 	checkCRAN(threads);
@@ -258,18 +264,11 @@ arma::mat sgd(arma::mat& coords,
 	delete[] negweights;
 
 	const uword batchSize = BATCHSIZE;
-#ifdef _OPENMP
-	const unsigned int ts = omp_get_max_threads();
-#else
-	const unsigned int ts = 2;
-#endif
-	Progress progress(max((uword) ts, n_samples / BATCHSIZE), verbose);
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-	for (unsigned int t = 0; t < ts; ++t) {
-		v->thread(progress, batchSize);
-	}
+
+	const uword batches = n_samples / batchSize;
+
+	VisualizerWorker worker(v, batchSize);
+	parallelFor(0, batches, worker);
 	delete v;
 	return coords;
 }

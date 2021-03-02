@@ -81,13 +81,13 @@ test_that("hdbscan doesn't crash on glass edges", {
 
 test_that("failing example doesn't fail", {
 	data(iris)
-	expect_silent(vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1, threads = 2))
+	expect_silent(vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1))
 	expect_silent(hdbscanobj <- hdbscan(vis, minPts = 10, K = 5))
 })
 
 test_that("glosh is in range", {
 	data(iris)
-	expect_silent(vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1, threads = 2))
+	expect_silent(vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1))
 	expect_silent(hdbscanobj <- hdbscan(vis, minPts = 10, K = 5))
 	expect_equal(sum(hdbscanobj$glosh < 0), 0)
 	expect_equal(sum(hdbscanobj$glosh > 1), 0)

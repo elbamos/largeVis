@@ -33,7 +33,6 @@
 #' @param seed Random seed to be passed to the C++ functions; sampled from hardware entropy pool if \code{NULL} (the default).
 #' Note that if the seed is not \code{NULL} (the default), the maximum number of threads will be set to 1 in phases of the algorithm
 #' that would otherwise be non-deterministic.
-#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param verbose Verbosity
 #'
 #' @note If specified, \code{seed} is passed to the C++ and used to initialize the random number generator. This will not, however, be
@@ -56,8 +55,8 @@
 #' CO2$Treatment <- as.integer(CO2$Treatment)
 #' co <- scale(as.matrix(CO2))
 #' # Very small datasets often produce a warning regarding the alias table.  This is safely ignored.
-#' suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1, threads = 2))
-#' suppressWarnings(coords <- projectKNNs(vis$wij, threads = 2))
+#' suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1))
+#' suppressWarnings(coords <- projectKNNs(vis$wij))
 #' plot(t(coords))
 #' }
 projectKNNs <- function(wij, # symmetric sparse matrix
@@ -71,7 +70,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
 												useDegree = FALSE,
 												momentum = NULL,
 												seed = NULL,
-												threads = NULL,
                         verbose = getOption("verbose", TRUE)) {
 
   if (alpha < 0) stop("alpha < 0 is meaningless")
@@ -92,7 +90,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   	sgd_batches = sgd_batches * sgdBatches(N, length(wij@x / 2))
   }
 
-  if (!is.null(threads)) threads <- as.integer(threads)
   if (!is.null(momentum)) momentum <- as.double(momentum)
 
   #################################################
@@ -112,7 +109,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   							momentum = momentum,
   							useDegree = as.logical(useDegree),
   							seed = seed,
-  							threads = threads,
                 verbose = as.logical(verbose))
 
   return(coords)

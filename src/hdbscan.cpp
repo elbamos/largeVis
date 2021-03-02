@@ -10,9 +10,6 @@ List hdbscanc(const arma::sp_mat& edges,
               const int& minPts,
               const Rcpp::Nullable<Rcpp::NumericVector> threads,
               const bool verbose) {
-#ifdef _OPENMP
-	checkCRAN(threads);
-#endif
 	HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
 	// 1 N
 	IntegerVector tree = object.build(K, edges, minPts, neighbors); // 4N
