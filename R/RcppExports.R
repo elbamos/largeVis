@@ -29,8 +29,8 @@ fastSDistance <- function(is, js, i_locations, j_locations, x, distMethod, verbo
     .Call('_largeVis_fastSDistance', PACKAGE = 'largeVis', is, js, i_locations, j_locations, x, distMethod, verbose)
 }
 
-referenceWij <- function(i, j, d, threads, perplexity) {
-    .Call('_largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, threads, perplexity)
+referenceWij <- function(i, j, d, perplexity) {
+    .Call('_largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, perplexity)
 }
 
 hdbscanc <- function(edges, neighbors, K, minPts, threads, verbose) {

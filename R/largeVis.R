@@ -99,7 +99,7 @@ largeVis <- function(x,
   		"Scaling the distance vector."))
   	edges$x <- edges$x / max(edges$x)
   }
-  wij <- buildWijMatrix(edges, threads, perplexity)
+  wij <- buildWijMatrix(edges, perplexity)
   if (!save_edges) rm(edges)
 
   #######################################################

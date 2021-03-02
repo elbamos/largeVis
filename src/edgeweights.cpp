@@ -42,7 +42,6 @@ void ReferenceEdges::run() {
 arma::sp_mat referenceWij(const arma::ivec& i,
 				                  const arma::ivec& j,
 				                  arma::vec& d,
-				                  Rcpp::Nullable<Rcpp::NumericVector> threads,
 				                  double perplexity) {
   ReferenceEdges ref = ReferenceEdges(perplexity, i, j, d);
   // vec sigmas = ref.getSigmas();

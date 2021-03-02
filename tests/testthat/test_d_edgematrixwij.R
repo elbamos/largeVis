@@ -27,7 +27,7 @@ test_that("wij doesn't crash", {
 	dat <- t(dat)
 	neighbors <- randomProjectionTreeSearch(dat, K = 20)
 	edges <- buildEdgeMatrix(dat, neighbors)
-	expect_silent(wij <- buildWijMatrix(edges, threads = 2))
+	expect_silent(wij <- buildWijMatrix(edges))
 })
 
 context("project knns")
@@ -40,22 +40,22 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 neighbors <- randomProjectionTreeSearch(dat, K = 20)
 edges <- buildEdgeMatrix(dat, neighbors)
-wij <- buildWijMatrix(edges, threads = 2)
+wij <- buildWijMatrix(edges)
 
 test_that("project knns doesn't crash", {
-	coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, threads = 2)
+	coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE)
 })
 
 test_that("project knns doesn't crash with momentum", {
-	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, momentum = 0.5, threads = 2))
+	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, momentum = 0.5))
 })
 
 test_that("project knns doesn't crash with useDegree", {
-	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, useDegree = TRUE, threads = 2))
+	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, useDegree = TRUE))
 })
 
 test_that("project knns doesn't crash with useDegree and momentum", {
-	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, useDegree = TRUE, momentum = 0.5, threads = 2))
+	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, useDegree = TRUE, momentum = 0.5))
 })
 
 context("sgd batches")

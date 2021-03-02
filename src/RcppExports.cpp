@@ -109,17 +109,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // referenceWij
-arma::sp_mat referenceWij(const arma::ivec& i, const arma::ivec& j, arma::vec& d, Rcpp::Nullable<Rcpp::NumericVector> threads, double perplexity);
-RcppExport SEXP _largeVis_referenceWij(SEXP iSEXP, SEXP jSEXP, SEXP dSEXP, SEXP threadsSEXP, SEXP perplexitySEXP) {
+arma::sp_mat referenceWij(const arma::ivec& i, const arma::ivec& j, arma::vec& d, double perplexity);
+RcppExport SEXP _largeVis_referenceWij(SEXP iSEXP, SEXP jSEXP, SEXP dSEXP, SEXP perplexitySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::ivec& >::type i(iSEXP);
     Rcpp::traits::input_parameter< const arma::ivec& >::type j(jSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type d(dSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< double >::type perplexity(perplexitySEXP);
-    rcpp_result_gen = Rcpp::wrap(referenceWij(i, j, d, threads, perplexity));
+    rcpp_result_gen = Rcpp::wrap(referenceWij(i, j, d, perplexity));
     return rcpp_result_gen;
 END_RCPP
 }
