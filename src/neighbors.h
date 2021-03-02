@@ -41,11 +41,9 @@ private:
 	int storedThreads = 0;
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
+	mutex trees_mutex;
 
 protected:
-	void recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood);
-	void mergeNeighbors(const list< Neighborholder >& neighbors);
-
 	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
 
 	inline void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap, const V& x_i, const vertexidxtype& j) const;
@@ -68,7 +66,7 @@ public:
 	const kidxtype K;
 	unsigned int threshold = 0;
 
-	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : data{data}, K{K}, N(data.n_cols), p(p) {
+	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : trees_mutex(), data{data}, K{K}, N(data.n_cols), p(p) {
 		treeNeighborhoods = new Neighborhood[N];
 		for (vertexidxtype i = 0; i != N; ++i) treeNeighborhoods[i] = Neighborhood();
 	}
@@ -91,9 +89,29 @@ public:
 	void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
 	void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
 
-		void exploreNeighborhood(const unsigned int& maxIter);
+	void exploreNeighborhood(const unsigned int& maxIter);
+
+	void recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood);
+	void mergeNeighbors(const list< Neighborholder >& neighbors);
 
 	imat sortAndReturn();
+};
+
+template<class M, class V>
+class TreesWorker : public RcppParallel::Worker  {
+public:
+	AnnoySearch<M, V> *searcher;
+	Neighborholder indices;
+
+	TreesWorker<M,V>(AnnoySearch<M,V> *searcher, Neighborholder &indices) : searcher {searcher}, indices {indices} {}
+
+	void operator()(std::size_t begin, std::size_t end) {
+		for (vertexidxtype i = begin; i != end; ++i) {
+			list< Neighborholder > local;
+			searcher->recurse(indices, local);
+			searcher->mergeNeighbors(local);
+		}
+	}
 };
 
 template<class M, class V>

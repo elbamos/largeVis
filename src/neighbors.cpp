@@ -41,10 +41,7 @@ void AnnoySearch<M, V>::addToNeighborhood(const V& x_i, const vertexidxtype& j,
  */
 template<class M, class V>
 void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighborhoods) {
-#ifdef _OPENMP
-#pragma omp critical
-#endif
-	{
+	trees_mutex.lock();
 	Neighborhood tmp;
 	for (auto it = localNeighborhoods.begin(); it != localNeighborhoods.end(); ++it) {
 		const ivec& indices = **it;
@@ -80,7 +77,7 @@ void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighb
 		  copy_if(it3, indicesEnd, back, [&cur](const vertexidxtype& tst) {return tst != cur;});
 	  }
 	}
-}
+	trees_mutex.unlock();
 }
 
 Neighborholder copyTo(const Neighborholder& indices, const uvec& selections) {
@@ -136,17 +133,9 @@ void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& n
 	threshold = newThreshold;
 	threshold2 = threshold * 4;
 	Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-	for (unsigned int t = 0; t < n_trees; ++t) if (! p.check_abort()) {
-		list< Neighborholder > local;
-		recurse(indices, local);
-		mergeNeighbors(local);
-	}
-#ifdef _OPENMP
-	if (storedThreads > 0) omp_set_num_threads(storedThreads);
-#endif
+
+	TreesWorker<M,V> worker(this, indices);
+	parallelFor(0, n_trees, worker);
 }
 
 template<class M, class V>
