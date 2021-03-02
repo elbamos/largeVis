@@ -35,30 +35,26 @@ public:
 // M is the type of arma matrix e.g., mat, sp_mat
 template<class M, class V>
 class AnnoySearch {
-public:
+private:
 	Neighborhood* treeNeighborhoods;
 	imat knns;
 	int storedThreads = 0;
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
 
+protected:
 	void recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood);
 	void mergeNeighbors(const list< Neighborholder >& neighbors);
 
 	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
-
-	void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
-	void sortCopyThread(const vertexidxtype& start, const vertexidxtype& end);
 
 	inline void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap, const V& x_i, const vertexidxtype& j) const;
 	inline void addToNeighborhood(const V& x_i, const vertexidxtype& j,
                          vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const;
 
 	const M& data;
-	const kidxtype K;
 	const vertexidxtype N;
 	Progress& p;
-	unsigned int threshold = 0;
 	int threshold2 = 0;
 
 	virtual double distanceFunction(const V& x_i, const V& x_j) const = 0;
@@ -67,6 +63,10 @@ public:
 	inline long sample(const long& i) {
 		return (long) (rnd(mt) * (i - 1));
 	}
+
+public:
+	const kidxtype K;
+	unsigned int threshold = 0;
 
 	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : data{data}, K{K}, N(data.n_cols), p(p) {
 		treeNeighborhoods = new Neighborhood[N];
@@ -83,14 +83,33 @@ public:
 
 	void trees(const unsigned int& n_trees, const unsigned int& newThreshold);
 	void reduce();
+
 	void exploreOne(const vertexidxtype& i, const imat& old_knns,
                  vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
                  MinIndexedPQ& positionHeap, vector< Position >& positionVector);
 
 	void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
-	void exploreNeighborhood(const unsigned int& maxIter);
+	void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
+
+		void exploreNeighborhood(const unsigned int& maxIter);
 
 	imat sortAndReturn();
+};
+
+template<class M, class V>
+class SortCopyWorker : public RcppParallel::Worker  {
+public:
+	AnnoySearch<M, V> *searcher;
+
+	SortCopyWorker<M,V>(AnnoySearch<M,V> *searcher) : searcher {searcher} {}
+
+	void operator()(std::size_t begin, std::size_t end) {
+		vector< std::pair<distancetype, vertexidxtype>> holder;
+		holder.reserve(searcher->K);
+		for (vertexidxtype i = begin; i != end; ++i) {
+			searcher->sortCopyOne(holder, i);
+		}
+	}
 };
 
 template<class M, class V>

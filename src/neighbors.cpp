@@ -255,31 +255,9 @@ void AnnoySearch<M,V>::exploreNeighborhood(const unsigned int& maxIter) {
  */
 template<class M, class V>
 imat AnnoySearch<M, V>::sortAndReturn() {
-#ifdef _OPENMP
-	const unsigned int dynamo = omp_get_dynamic();
-	if (omp_get_num_threads() > 1) omp_set_dynamic(0);
-	const vertexidxtype chunk = (N / omp_get_max_threads()) + 1;
-#pragma omp parallel for
-#else
-	const vertexidxtype chunk = N;
-#endif
-	for (vertexidxtype i = 0; i <= N; i += chunk) {
-		sortCopyThread(i, min(i + chunk, N));
-	}
-#ifdef _OPENMP
-	if (omp_get_num_threads() > 1) omp_set_dynamic(dynamo);
-#endif
+	SortCopyWorker<M, V> worker(this);
+	parallelFor(0, N, worker);
 	return knns;
-}
-
-template<class M, class V>
-void AnnoySearch<M,V>::sortCopyThread(const vertexidxtype& start,
-                                      const vertexidxtype& end) {
-	vector< std::pair<distancetype, vertexidxtype>> holder;
-	holder.reserve(K);
-	for (vertexidxtype i = start; i != end; ++i) if (p.increment()) {
-		sortCopyOne(holder, i);
-	}
 }
 
 template<class M, class V>
