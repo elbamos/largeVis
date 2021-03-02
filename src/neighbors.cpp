@@ -150,40 +150,30 @@ void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& n
 }
 
 template<class M, class V>
-void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
+void ReduceWorker<M, V>::reduceOne(const vertexidxtype& i,
                                   vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood) {
-	const V& x_i = data.col(i);
+	const V& x_i = searcher->data.col(i);
 	newNeighborhood.clear();
-	Neighborhood& neighborhood = treeNeighborhoods[i];
+	Neighborhood& neighborhood = searcher->treeNeighborhoods[i];
 
 	/*
 	* Sort by distance the first K items, by assembling into a heap.
 	*/
 	for (auto j = neighborhood.begin(); j != neighborhood.end(); ++j) {
-		addToNeighborhood(x_i, *j, newNeighborhood);
+		searcher->addToNeighborhood(x_i, *j, newNeighborhood);
 	}
 
 	/*
 	 * Copy the remainder (max K elements) into a column
 	 * of the matrix. Sort those K by vertex index. Pad the column with -1's, if necessary.
 	 */
-	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), knns.begin_col(i),
+	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), searcher->knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
-	if (continueWriting == knns.begin_col(i)) throw Rcpp::exception("At reduction, no neighbors for vertex.");
-	sort(knns.begin_col(i), continueWriting);
-	std::fill(continueWriting, knns.end_col(i), -1);
+	if (continueWriting == searcher->knns.begin_col(i)) throw Rcpp::exception("At reduction, no neighbors for vertex.");
+	sort(searcher->knns.begin_col(i), continueWriting);
+	std::fill(continueWriting,searcher->knns.end_col(i), -1);
 
-	treeNeighborhoods[i].resize(0);
-}
-
-template<class M, class V>
-void AnnoySearch<M, V>::reduceThread(const vertexidxtype& loopstart,
-                                     				const vertexidxtype& end) {
-	vector< std::pair<distancetype, vertexidxtype> > newNeighborhood;
-	newNeighborhood.reserve(K * threshold);
-	for (vertexidxtype i = loopstart; i != end; ++i) if (p.increment()) {
-		reduceOne(i, newNeighborhood);
-	}
+	searcher->treeNeighborhoods[i].resize(0);
 }
 
 	/*
@@ -194,20 +184,9 @@ void AnnoySearch<M, V>::reduceThread(const vertexidxtype& loopstart,
 template<class M, class V>
 void AnnoySearch<M, V>::reduce() {
 	knns = imat(K,N);
-#ifdef _OPENMP
-	const unsigned int dynamo = omp_get_dynamic();
-	omp_set_dynamic(0);
-	const vertexidxtype chunk = (N / omp_get_max_threads()) + 1;
-#pragma omp parallel for
-#else
-	const vertexidxtype chunk = N;
-#endif
-	for (vertexidxtype i = 0; i <= N; i += chunk) {
-		reduceThread(i, min(i + chunk, N));
-	}
-#ifdef _OPENMP
-	omp_set_dynamic(dynamo);
-#endif
+
+	ReduceWorker<M,V> worker(this);
+	parallelFor(0, N, worker);
 }
 
 template<class M, class V>

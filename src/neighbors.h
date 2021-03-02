@@ -3,8 +3,9 @@
 #include "largeVis.h"
 #include <vector>
 #include <memory>
-#include "progress.hpp"
+#include <progress.hpp>
 #include "minpq.h"
+#include <RcppParallel.h>
 
 using namespace Rcpp;
 using namespace std;
@@ -34,7 +35,7 @@ public:
 // M is the type of arma matrix e.g., mat, sp_mat
 template<class M, class V>
 class AnnoySearch {
-private:
+public:
 	Neighborhood* treeNeighborhoods;
 	imat knns;
 	int storedThreads = 0;
@@ -43,9 +44,6 @@ private:
 
 	void recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood);
 	void mergeNeighbors(const list< Neighborholder >& neighbors);
-
-	void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
-	void reduceThread(const vertexidxtype& loopstart, const vertexidxtype& end);
 
 	void exploreThread(const imat& old_knns, const vertexidxtype& loopstart, const vertexidxtype& end);
 	void exploreOne(const vertexidxtype& i, const imat& old_knns,
@@ -60,7 +58,6 @@ private:
 	inline void addToNeighborhood(const V& x_i, const vertexidxtype& j,
                          vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const;
 
-protected:
 	const M& data;
 	const kidxtype K;
 	const vertexidxtype N;
@@ -75,7 +72,6 @@ protected:
 		return (long) (rnd(mt) * (i - 1));
 	}
 
-public:
 	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : data{data}, K{K}, N(data.n_cols), p(p) {
 		treeNeighborhoods = new Neighborhood[N];
 		for (vertexidxtype i = 0; i != N; ++i) treeNeighborhoods[i] = Neighborhood();
@@ -94,4 +90,23 @@ public:
 	void exploreNeighborhood(const unsigned int& maxIter);
 	imat sortAndReturn();
 };
+
+template<class M, class V>
+class ReduceWorker : public RcppParallel::Worker  {
+public:
+	AnnoySearch<M, V> *searcher;
+
+	ReduceWorker<M,V>(AnnoySearch<M,V> *searcher) : searcher {searcher} {}
+
+	void reduceOne(const vertexidxtype& i, vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood);
+
+	void operator()(std::size_t begin, std::size_t end) {
+		vector< std::pair<distancetype, vertexidxtype> > newNeighborhood;
+		newNeighborhood.reserve(searcher->K * searcher->threshold);
+		for (vertexidxtype i = begin; i < end; ++i) {
+			reduceOne(i, newNeighborhood);
+		}
+	}
+};
+
 #endif
