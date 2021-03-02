@@ -150,30 +150,30 @@ void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& n
 }
 
 template<class M, class V>
-void ReduceWorker<M, V>::reduceOne(const vertexidxtype& i,
+void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
                                   vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood) {
-	const V& x_i = searcher->data.col(i);
+	const V& x_i = data.col(i);
 	newNeighborhood.clear();
-	Neighborhood& neighborhood = searcher->treeNeighborhoods[i];
+	Neighborhood& neighborhood = treeNeighborhoods[i];
 
 	/*
 	* Sort by distance the first K items, by assembling into a heap.
 	*/
 	for (auto j = neighborhood.begin(); j != neighborhood.end(); ++j) {
-		searcher->addToNeighborhood(x_i, *j, newNeighborhood);
+		addToNeighborhood(x_i, *j, newNeighborhood);
 	}
 
 	/*
 	 * Copy the remainder (max K elements) into a column
 	 * of the matrix. Sort those K by vertex index. Pad the column with -1's, if necessary.
 	 */
-	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), searcher->knns.begin_col(i),
+	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
-	if (continueWriting == searcher->knns.begin_col(i)) throw Rcpp::exception("At reduction, no neighbors for vertex.");
-	sort(searcher->knns.begin_col(i), continueWriting);
-	std::fill(continueWriting,searcher->knns.end_col(i), -1);
+	if (continueWriting == knns.begin_col(i)) throw Rcpp::exception("At reduction, no neighbors for vertex.");
+	sort(knns.begin_col(i), continueWriting);
+	std::fill(continueWriting, knns.end_col(i), -1);
 
-	searcher->treeNeighborhoods[i].resize(0);
+	treeNeighborhoods[i].resize(0);
 }
 
 	/*
@@ -191,12 +191,12 @@ void AnnoySearch<M, V>::reduce() {
 
 
 template<class M, class V>
-void ExploreWorker<M,V>::exploreOne(const vertexidxtype& i,
+void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 												                 const imat& old_knns,
 												                 vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
 												                 MinIndexedPQ& positionHeap,
 												                 vector< Position >& positionVector) {
-	const V& x_i = searcher->data.col(i);
+	const V& x_i = data.col(i);
 
 	positionVector.clear();
 	nodeHeap.clear();
@@ -218,10 +218,10 @@ void ExploreWorker<M,V>::exploreOne(const vertexidxtype& i,
 		const vertexidxtype nextOne = positionHeap.minKey();
 
 		if (nextOne != lastOne && nextOne != i) {
-			searcher->addHeap(nodeHeap, x_i, nextOne);
+			addHeap(nodeHeap, x_i, nextOne);
 			lastOne = nextOne;
 		}
-		searcher->advanceHeap(positionHeap, positionVector);
+		advanceHeap(positionHeap, positionVector);
 	}
 
 	/*
@@ -230,11 +230,11 @@ void ExploreWorker<M,V>::exploreOne(const vertexidxtype& i,
 	*
 	* We can't use std:copy because we're copying from a vector of pairs
 	*/
-	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), searcher->knns.begin_col(i),
+	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), knns.begin_col(i),
                                         [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
-	if (copyContinuation == searcher->knns.begin_col(i)) throw Rcpp::exception("No neighbors after exploration - this is a bug.");
-	sort(searcher->knns.begin_col(i), copyContinuation);
-	std::fill(copyContinuation, searcher->knns.end_col(i), -1);
+	if (copyContinuation == knns.begin_col(i)) throw Rcpp::exception("No neighbors after exploration - this is a bug.");
+	sort(knns.begin_col(i), copyContinuation);
+	std::fill(copyContinuation, knns.end_col(i), -1);
 }
 
 template<class M, class V>
