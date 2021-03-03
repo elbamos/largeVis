@@ -29,7 +29,8 @@ protected:
 		return direction;
 	}
 public:
-	DenseAnnoySearch(const mat& data, const kidxtype& K, Progress& p) : AnnoySearch(data, K, p) {}
+	DenseAnnoySearch(const mat& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
+		AnnoySearch(data, K, verbose, maxIter, n_trees) {}
 };
 
 class DenseEuclidean : public DenseAnnoySearch {
@@ -38,7 +39,8 @@ protected:
 		return relDist(x_i, x_j);
 	}
 public:
-	DenseEuclidean(const Mat<double>& data, const kidxtype& K, Progress& p) : DenseAnnoySearch(data, K, p) {}
+	DenseEuclidean(const Mat<double>& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
+		DenseAnnoySearch(data, K, verbose, maxIter, n_trees) {}
 };
 
 class DenseCosine : public DenseAnnoySearch {
@@ -47,7 +49,8 @@ protected:
 		return cosDist(x_i, x_j);
 	}
 public:
-	DenseCosine(const Mat<double>& data, const kidxtype& K, Progress& p) : DenseAnnoySearch(data, K, p) {}
+	DenseCosine(const Mat<double>& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
+		DenseAnnoySearch(data, K, verbose, maxIter, n_trees) {}
 };
 
 
@@ -60,17 +63,14 @@ arma::imat searchTrees(const int& threshold,
                        const std::string& distMethod,
                        Rcpp::Nullable< NumericVector > seed,
                        bool verbose) {
-  const vertexidxtype N = data.n_cols;
-
-  Progress p((N * n_trees) + (3 * N) + (N * maxIter), verbose);
 
   const mat dataMat = (distMethod.compare(string("Cosine")) == 0) ? normalise(data) : mat();
 
 	DenseAnnoySearch* annoy;
 	if (distMethod.compare(string("Cosine")) == 0) {
-		annoy = new DenseCosine(dataMat, K, p);
+		annoy = new DenseCosine(dataMat, K, verbose, maxIter, n_trees);
 	} else {
-		annoy = new DenseEuclidean(data, K, p);
+		annoy = new DenseEuclidean(data, K, verbose, maxIter, n_trees);
 	}
 
 	annoy->setSeed(seed);

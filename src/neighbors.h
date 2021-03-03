@@ -50,9 +50,12 @@ protected:
 	inline void addToNeighborhood(const V& x_i, const vertexidxtype& j,
                          vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const;
 
+public:
 	const M& data;
 	const vertexidxtype N;
-	Progress& p;
+
+protected:
+	Progress p;
 	int threshold2 = 0;
 
 	virtual double distanceFunction(const V& x_i, const V& x_j) const = 0;
@@ -66,12 +69,13 @@ public:
 	const kidxtype K;
 	unsigned int threshold = 0;
 
-	AnnoySearch(const M& data, const kidxtype& K, Progress& p) : trees_mutex(), data{data}, K{K}, N(data.n_cols), p(p) {
+	AnnoySearch(const M& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
+			trees_mutex(), data{data}, K{K},
+			N(data.n_cols),
+			p((N * n_trees) + (3 * N) + (N * maxIter), verbose) {
 		treeNeighborhoods = new Neighborhood[N];
 		for (vertexidxtype i = 0; i != N; ++i) treeNeighborhoods[i] = Neighborhood();
 	}
-
-	AnnoySearch(const AnnoySearch& other) : AnnoySearch(other.data, other.K, other.p) {}
 
 	virtual ~AnnoySearch() {
 		delete[] treeNeighborhoods;
@@ -101,13 +105,14 @@ template<class M, class V>
 class TreesWorker : public RcppParallel::Worker  {
 public:
 	AnnoySearch<M, V> *searcher;
-	Neighborholder indices;
 
-	TreesWorker<M,V>(AnnoySearch<M,V> *searcher, Neighborholder &indices) : searcher {searcher}, indices {indices} {}
+	TreesWorker<M,V>(AnnoySearch<M,V> *searcher) : searcher {searcher} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		for (vertexidxtype i = begin; i != end; ++i) {
+			Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, searcher->data.n_cols - 1));
 			list< Neighborholder > local;
+
 			searcher->recurse(indices, local);
 			searcher->mergeNeighbors(local);
 		}

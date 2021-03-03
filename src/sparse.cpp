@@ -34,7 +34,8 @@ protected:
 		return direction;
 	}
 public:
-	SparseAnnoySearch(const sp_mat& data, const kidxtype& K, Progress& p) : AnnoySearch(data, K, p) {}
+	SparseAnnoySearch(const sp_mat& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
+		AnnoySearch(data, K, verbose, maxIter, n_trees) {}
 };
 
 
@@ -44,7 +45,8 @@ protected:
 		return sparseRelDist(x_i, x_j);
 	}
 public:
-	SparseEuclidean(const SpMat<double>& data, const kidxtype& K, Progress& p) : SparseAnnoySearch(data, K, p) {}
+	SparseEuclidean(const SpMat<double>& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
+		SparseAnnoySearch(data, K, verbose, maxIter, n_trees) {}
 };
 
 class SparseCosine : public SparseAnnoySearch {
@@ -53,7 +55,8 @@ protected:
 		return sparseCosDist(x_i, x_j);
 	}
 public:
-	SparseCosine(const SpMat<double>& data, const kidxtype& K, Progress& p) : SparseAnnoySearch(data, K, p) {}
+	SparseCosine(const SpMat<double>& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
+		SparseAnnoySearch(data, K, verbose, maxIter, n_trees) {}
 };
 
 imat searchTreesSparse( const int& threshold,
@@ -74,9 +77,9 @@ imat searchTreesSparse( const int& threshold,
 	if (distMethod.compare(string("Cosine")) == 0) {
 		dataMat = sp_mat(data);
 		for (arma::uword d = 0; d < dataMat.n_cols; d++) dataMat.col(d) /= norm(dataMat.col(d));
-		annoy = new SparseCosine(dataMat, K, p);
+		annoy = new SparseCosine(dataMat, K, verbose, maxIter, n_trees);
 	} else {
-		annoy = new SparseEuclidean(data, K, p);
+		annoy = new SparseEuclidean(data, K, verbose, maxIter, n_trees);
 	}
 
 	annoy->setSeed(seed);
