@@ -47,7 +47,7 @@ private:
 	const arma::ivec is;
 	const arma::ivec js;
 	distancetype (*distFunction)(const vec&, const vec&) = nullptr;
-	Progress p;
+	Progress *p;
 	vec* out;
 
 public:
@@ -59,7 +59,7 @@ public:
 		const arma::ivec &js,
 		distancetype (*distFunction)(const vec&, const vec&),
 		vec *out,
-		Progress &p) :
+		Progress *p) :
 	data{data},
 	is{is},
 	js{js},
@@ -69,7 +69,7 @@ public:
 	}
 
 	void operator()(std::size_t begin, std::size_t end) {
-		for (std::size_t pos=begin; pos < end; ++pos) {
+		for (std::size_t pos=begin; pos < end; ++pos) if (p->increment()) {
 			(*out)[pos] = distFunction(data.col(is[pos]), data.col(js[pos]));
 		}
 	}
@@ -92,7 +92,7 @@ arma::vec fastDistance(const arma::ivec& is,
 	if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = dist;
 	else distanceFunction = cosDist;
 
-	DistanceWorker worker(data, is, js, distanceFunction, &xs, p);
+	DistanceWorker worker(data, is, js, distanceFunction, &xs, &p);
 	parallelFor(0, is.n_elem, worker);
 	return xs;
 }
@@ -103,29 +103,27 @@ private:
 	const arma::ivec is;
 	const arma::ivec js;
 	distancetype (*distFunction)(const sp_mat&, const sp_mat&) = nullptr;
-	Progress p;
+	Progress *p;
 	vec* out;
 
 public:
-
-
 	SparseDistanceWorker(
 		const arma::sp_mat &data,
 		const arma::ivec &is,
 		const arma::ivec &js,
 		distancetype (*distFunction)(const sp_mat&, const sp_mat&),
 		vec *out,
-		Progress &p) :
+		Progress *p) :
 	data{data},
 	is{is},
 	js{js},
 	distFunction{distFunction},
 	out{out},
 	p{p} {
-	}
+	};
 
 	void operator()(std::size_t begin, std::size_t end) {
-		for (std::size_t pos=begin; pos < end; ++pos) {
+		for (std::size_t pos=begin; pos < end; ++pos) if (p->increment()) {
 			(*out)[pos] = distFunction(data.col(is[pos]), data.col(js[pos]));
 		}
 	}
@@ -145,7 +143,7 @@ vec fastSparseDistance(const ivec& is,
   if (distMethod.compare(std::string("Euclidean")) == 0) distanceFunction = sparseDist;
   else if (distMethod.compare(std::string("Cosine")) == 0) distanceFunction = sparseCosDist;
 
-  SparseDistanceWorker worker(data, is, js, distanceFunction, &xs, p);
+  SparseDistanceWorker worker(data, is, js, distanceFunction, &xs, &p);
   parallelFor(0, is.n_elem, worker);
   return xs;
 }
