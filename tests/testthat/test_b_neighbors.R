@@ -7,6 +7,7 @@ dat <- scale(dat)
 dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
+RcppParallel::setThreadOptions(numThreads = 1)
 
 test_that("Trees does not error", {
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
@@ -15,13 +16,15 @@ test_that("Trees does not error", {
 																												tree_threshold = 30,
 																												max_iter = 0,
 																												verbose = FALSE))
-	# TODO: All should be one thread except this one, two threads
+
+	RcppParallel::setThreadOptions(numThreads = 2)
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 10,
 																												tree_threshold = 30,
 																												max_iter = 0,
 																												verbose = FALSE))
+	RcppParallel::setThreadOptions(numThreads = 1)
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 50,
@@ -34,7 +37,7 @@ test_that("Trees does not error", {
 																												tree_threshold = 20,
 																												max_iter = 1,
 																												verbose = FALSE))
-  # Two threads here
+	RcppParallel::setThreadOptions(numThreads = 2)
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 50,
@@ -49,7 +52,7 @@ d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
 bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
 bests <- bests[-1,] - 1
 
-# Two threads
+RcppParallel::setThreadOptions(numThreads = 2)
 test_that("max threshold is sufficient to find all neighbors", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
@@ -62,7 +65,7 @@ test_that("max threshold is sufficient to find all neighbors", {
 	expect_gte(score, M * ncol(dat) - 1) # Two neighbors are equidistanct
 })
 
-# Two threads
+RcppParallel::setThreadOptions(numThreads = 2)
 test_that("exploration is not negative", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
@@ -95,6 +98,7 @@ test_that("exploration is not negative", {
 	expect_gte(score, oldscore, label = "2 iterations")
 })
 
+RcppParallel::setThreadOptions(numThreads = 1)
 test_that("Can determine iris neighbors with iterations 1 thread", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = 5,
@@ -112,7 +116,7 @@ test_that("Can determine iris neighbors with iterations 1 thread", {
 	expect_gte(score, M * ncol(dat) - 1) # Two neighbors are equidistanct
 })
 
-# Two threads
+RcppParallel::setThreadOptions(numThreads = 2)
 test_that("Can determine iris neighbors with iterations 2 threads", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = 5,
@@ -131,7 +135,7 @@ test_that("Can determine iris neighbors with iterations 2 threads", {
 	expect_gte(score, M * ncol(dat) - 1) # Two neighbors are equidistanct
 })
 
-# Two threads
+RcppParallel::setThreadOptions(numThreads = 2)
 test_that("Can determine iris neighbors accurately, Euclidean", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,

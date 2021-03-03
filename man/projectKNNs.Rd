@@ -16,7 +16,6 @@ projectKNNs(
   useDegree = FALSE,
   momentum = NULL,
   seed = NULL,
-  threads = NULL,
   verbose = getOption("verbose", TRUE)
 )
 }
@@ -49,8 +48,6 @@ momentum can drastically speed-up training time, at the cost of additional memor
 \item{seed}{Random seed to be passed to the C++ functions; sampled from hardware entropy pool if \code{NULL} (the default).
 Note that if the seed is not \code{NULL} (the default), the maximum number of threads will be set to 1 in phases of the algorithm
 that would otherwise be non-deterministic.}
-
-\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
 
 \item{verbose}{Verbosity}
 }
@@ -86,14 +83,15 @@ is to use the edge weights, consistent with the reference implementation.
 }
 \examples{
 \dontrun{
+checkCRAN()
 data(CO2)
 CO2$Plant <- as.integer(CO2$Plant)
 CO2$Type <- as.integer(CO2$Type)
 CO2$Treatment <- as.integer(CO2$Treatment)
 co <- scale(as.matrix(CO2))
 # Very small datasets often produce a warning regarding the alias table.  This is safely ignored.
-suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1, threads = 2))
-suppressWarnings(coords <- projectKNNs(vis$wij, threads = 2))
+suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1))
+suppressWarnings(coords <- projectKNNs(vis$wij))
 plot(t(coords))
 }
 }

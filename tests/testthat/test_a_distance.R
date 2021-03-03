@@ -6,6 +6,8 @@ index_matrix <- matrix(c(rep(0:9, each = 10), rep(0:9, 10)),
 											 ncol = 2, byrow = FALSE)
 test_matrix <- t(test_matrix)
 
+RcppParallel::setThreadOptions(numThreads = 2)
+
 test_that("Euclidean distances are correct", {
   distances <- as.matrix(dist(test_matrix, method = "euclidean"))
   new_distances <- distance(as.vector(index_matrix[, 2]),

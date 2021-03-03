@@ -224,9 +224,6 @@ arma::mat sgd(arma::mat& coords,
               const bool& useDegree,
               const Rcpp::Nullable<Rcpp::NumericVector> seed,
               const bool verbose) {
-#ifdef _OPENMP
-	checkCRAN(threads);
-#endif
 	const dimidxtype D = coords.n_rows;
 	const vertexidxtype N = coords.n_cols;
 	const edgeidxtype E = targets_i.n_elem;

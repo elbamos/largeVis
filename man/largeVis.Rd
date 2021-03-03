@@ -15,7 +15,6 @@ largeVis(
   perplexity = max(50, K/3),
   save_neighbors = TRUE,
   save_edges = TRUE,
-  threads = NULL,
   verbose = getOption("verbose", TRUE),
   ...
 )
@@ -43,10 +42,6 @@ in the input set.}
 
 \item{save_edges}{Whether to include in the output the distance matrix of nearest neighbors.}
 
-\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).  It is unlikely that
-this parameter should ever need to be adjusted.  It is only available to make it possible to abide by the CRAN limitation that no package
-use more than two cores.}
-
 \item{verbose}{Verbosity}
 
 \item{...}{Additional arguments passed to \code{\link{projectKNNs}}.}
@@ -68,9 +63,10 @@ Apply the LargeVis algorithm for visualizing large high-dimensional datasets.
 }
 \examples{
 # iris
+checkCRAN()
 data(iris)
 dat <- as.matrix(iris[,1:4])
-visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000, threads = 1)
+visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000)
 plot(t(visObject$coords))
 
 \dontrun{

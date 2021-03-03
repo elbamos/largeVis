@@ -15,7 +15,6 @@ randomProjectionTreeSearch(
   max_iter = 1,
   distance_method = "Euclidean",
   seed = NULL,
-  threads = NULL,
   verbose = getOption("verbose", TRUE)
 )
 
@@ -27,7 +26,6 @@ randomProjectionTreeSearch(
   max_iter = 1,
   distance_method = "Euclidean",
   seed = NULL,
-  threads = NULL,
   verbose = getOption("verbose", TRUE)
 )
 
@@ -39,7 +37,6 @@ randomProjectionTreeSearch(
   max_iter = 1,
   distance_method = "Euclidean",
   seed = NULL,
-  threads = NULL,
   verbose = getOption("verbose", TRUE)
 )
 
@@ -51,7 +48,6 @@ randomProjectionTreeSearch(
   max_iter = 1,
   distance_method = "Euclidean",
   seed = NULL,
-  threads = NULL,
   verbose = getOption("verbose", TRUE)
 )
 }
@@ -71,8 +67,6 @@ using a value equivalent to the number of features in the input set.}
 
 \item{seed}{Random seed passed to the C++ functions. If \code{seed} is not \code{NULL} (the default),
 the maximum number of threads will be set to 1 in phases that would be non-determinstic otherwise.}
-
-\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
 
 \item{verbose}{Whether to print verbose logging using the \code{progress} package.}
 }

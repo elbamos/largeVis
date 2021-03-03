@@ -5,10 +5,6 @@ checkBits <- function() {
     .Call('_largeVis_checkBits', PACKAGE = 'largeVis')
 }
 
-checkOpenMP <- function() {
-    .Call('_largeVis_checkOpenMP', PACKAGE = 'largeVis')
-}
-
 dbscan_cpp <- function(edges, neighbors, eps, minPts, verbose) {
     .Call('_largeVis_dbscan_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, verbose)
 }

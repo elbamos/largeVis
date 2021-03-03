@@ -9,7 +9,6 @@ buildEdgeMatrix(
   data,
   neighbors = NULL,
   distance_method = "Euclidean",
-  threads = NULL,
   verbose = getOption("verbose", TRUE),
   ...
 )
@@ -23,8 +22,6 @@ buildEdgeMatrix(
 will be run with parameters given by \code{...}.}
 
 \item{distance_method}{One of "Euclidean" or "Cosine"}
-
-\item{threads}{The number of threads to use in calculating distance; set automatically if \code{NULL} (the default).}
 
 \item{verbose}{Verbosity}
 

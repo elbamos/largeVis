@@ -31,6 +31,7 @@
 #'
 #' @examples
 #' # iris
+#' checkCRAN()
 #' data(iris)
 #' dat <- as.matrix(iris[,1:4])
 #' visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000)
