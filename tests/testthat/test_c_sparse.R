@@ -6,6 +6,8 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 
+RcppParallel::setThreadOptions(numThreads = 2)
+
 neighbors <- randomProjectionTreeSearch(dat,
 																				K = 5,
 																				n_trees = 10,

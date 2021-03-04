@@ -193,12 +193,12 @@ test_that("With a bigger dataset, performance is as expected", {
 
 	oldscore <- nrow(quakes) * M
 
-	for (t in c(0, 5, 20, 40)) {
-		# TODO: Two threads
+	RcppParallel::setThreadOptions(numThreads = 1)
+	for (t in c(1, 10, 20, 40)) {
 		neighbors <- randomProjectionTreeSearch(t(quakes),
 																						K = M,
-																						n_trees = 5,
-																						tree_threshold = 10,
+																						n_trees = 10,
+																						tree_threshold = 20,
 																						max_iter = t,
 																						verbose = FALSE,
 																						seed = 1974)

@@ -1,5 +1,7 @@
 context("specific issue tests")
 
+RcppParallel::setThreadOptions(numThreads=2)
+
 test_that("dim064 issue is resolved (large numbers of duplicate points)", {
 	load(system.file("testdata/badmat.Rda", package = "largeVis"))
 	badmat <- badmat

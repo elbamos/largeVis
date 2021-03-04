@@ -7,6 +7,8 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 
+RcppParallel::setThreadOptions(numThreads=2)
+
 test_that("largeVis simple linux failure is fixed", {
 	d2 <- t(as.matrix(iris[, 1:4]))
 	expect_silent(vis <- largeVis(d2))
