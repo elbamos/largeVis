@@ -187,8 +187,9 @@ class VisualizerWorker : public RcppParallel::Worker {
 public:
 	Visualizer *vis;
 	long batchSize;
+	Progress *p;
 
-	VisualizerWorker(Visualizer *vis, long batchSize) : vis {vis}, batchSize {batchSize} {};
+	VisualizerWorker(Visualizer *vis, long batchSize, Progress *p) : vis {vis}, batchSize {batchSize}, p {p} {};
 
 	void operator()(std::size_t begin, std::size_t end) {
 
@@ -202,6 +203,7 @@ public:
 
 			vis->mutex.lock();
 			vis->rho -= (vis->rhoIncrement * batchSize);
+			if (!p->increment()) break;
 			vis->mutex.unlock();
 		}
 
@@ -264,8 +266,10 @@ arma::mat sgd(arma::mat& coords,
 
 	const uword batches = n_samples / batchSize;
 
-	VisualizerWorker worker(v, batchSize);
+	Progress progress(batches, verbose);
+	VisualizerWorker worker(v, batchSize, &progress);
 	parallelFor(0, batches, worker);
+
 	delete v;
 	return coords;
 }
