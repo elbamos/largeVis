@@ -8,7 +8,6 @@ List hdbscanc(const arma::sp_mat& edges,
               const IntegerMatrix& neighbors,
               const int& K,
               const int& minPts,
-              const Rcpp::Nullable<Rcpp::NumericVector> threads,
               const bool verbose) {
 	HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
 	// 1 N
