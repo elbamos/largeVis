@@ -53,9 +53,9 @@ protected:
 public:
 	const M& data;
 	const vertexidxtype N;
+	Progress p;
 
 protected:
-	Progress p;
 	int threshold2 = 0;
 
 	virtual double distanceFunction(const V& x_i, const V& x_j) const = 0;
@@ -109,7 +109,7 @@ public:
 	TreesWorker<M,V>(AnnoySearch<M,V> *searcher) : searcher {searcher} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
-		for (vertexidxtype i = begin; i != end; ++i) {
+		for (vertexidxtype i = begin; i != end; ++i) if (! searcher->p.check_abort()) {
 			Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, searcher->data.n_cols - 1));
 			list< Neighborholder > local;
 
@@ -129,7 +129,7 @@ public:
 	void operator()(std::size_t begin, std::size_t end) {
 		vector< std::pair<distancetype, vertexidxtype>> holder;
 		holder.reserve(searcher->K);
-		for (vertexidxtype i = begin; i != end; ++i) {
+		for (vertexidxtype i = begin; i != end; ++i) if (searcher->p.increment()) {
 			searcher->sortCopyOne(holder, i);
 		}
 	}
@@ -145,7 +145,7 @@ public:
 	void operator()(std::size_t begin, std::size_t end) {
 		vector< std::pair<distancetype, vertexidxtype> > newNeighborhood;
 		newNeighborhood.reserve(searcher->K * searcher->threshold);
-		for (vertexidxtype i = begin; i < end; ++i) {
+		for (vertexidxtype i = begin; i < end; ++i) if (searcher->p.increment()) {
 			searcher->reduceOne(i, newNeighborhood);
 		}
 	}
@@ -172,7 +172,7 @@ public:
 		vector< Position > positionVector;
 		positionVector.reserve(searcher->K + 1);
 
-		for (vertexidxtype i = begin; i < end; ++i) {
+		for (vertexidxtype i = begin; i < end; ++i) if (searcher->p.increment()) {
 			searcher->exploreOne(i, *old_knns, nodeHeap, positionHeap, positionVector);
 		}
 	}

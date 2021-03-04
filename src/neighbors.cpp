@@ -38,6 +38,11 @@ void AnnoySearch<M, V>::addToNeighborhood(const V& x_i, const vertexidxtype& j,
  * During the annoy-tree phase, used to copy the elements of a leaf
  * into the neighborhood for each point in the leaf.
  * The neighborhood is maintained in vertex-index order.
+ *
+ * FOR each neighborhood in the list
+ *		FOR each point in the neighborhood
+ *			Make the point's stored neighborhood the merger of the prior stored neighborhood and the new neighborhood
+ * The resulting neighborhood is sorted by index and includes the id of the neighborhood
  */
 template<class M, class V>
 void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighborhoods) {
@@ -89,6 +94,7 @@ Neighborholder copyTo(const Neighborholder& indices, const uvec& selections) {
 
 	/*
 	* The key function of the annoy-trees phase.
+	* The result is a list of log2(N) neighborhoods where each neighborhood has n <= threshold points
 	*/
 template<class M, class V>
 void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood) {
@@ -172,12 +178,16 @@ void AnnoySearch<M, V>::reduce() {
 }
 
 
+/*
+ * Given a neighborhood for a point (which may include an index for the point as well), use a
+ * constant size heap to find the K nearest neighbors of the point.
+ */
 template<class M, class V>
-void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
-												                 const imat& old_knns,
-												                 vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
-												                 MinIndexedPQ& positionHeap,
-												                 vector< Position >& positionVector) {
+void AnnoySearch<M,V>::exploreOne( const vertexidxtype& i,
+									                 const imat& old_knns,
+									                 vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
+									                 MinIndexedPQ& positionHeap,
+									                 vector< Position >& positionVector) {
 	const V& x_i = data.col(i);
 
 	positionVector.clear();
