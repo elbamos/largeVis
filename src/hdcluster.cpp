@@ -17,17 +17,9 @@ void HDCluster::newparent(vector<HDCluster*>& points, HDCluster* newparent) {
 void HDCluster::condense(const unsigned int minPts, unsigned int level) {
 	if (left != nullptr) {
 		const unsigned int newlevel = (level == 0) ? level : level - 1;
-#ifdef _OPENMP
-#pragma omp task
-#endif
-{
-	left->condense(minPts, newlevel);
-}
-right->condense(minPts, newlevel);
-#ifdef _OPENMP
-#pragma omp taskwait
-#endif
-innerCondense(minPts);
+		left->condense(minPts, newlevel);
+		right->condense(minPts, newlevel);
+		innerCondense(minPts);
 	}
 }
 

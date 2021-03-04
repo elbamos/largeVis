@@ -11,10 +11,6 @@
 
 #include <RcppArmadillo.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 using namespace arma;
 /*
  * Global types
@@ -28,9 +24,5 @@ typedef uword iterationtype;
 
 typedef unsigned int dimidxtype;
 typedef unsigned int kidxtype;
-
-#ifdef _OPENMP
-void checkCRAN(Rcpp::Nullable<Rcpp::NumericVector> threads);
-#endif
 
 #endif

@@ -4,53 +4,26 @@
 //#define DEBUG
 
 void HDBSCAN::condense(const unsigned int& minPts) {
-#ifdef _OPENMP
-#pragma omp parallel
-{
-	const int level = std::log2(omp_get_max_threads()) + 1;
-#pragma omp master
-#else
 	const int level = 0;
-#endif
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
 		HDCluster* thisone = it->second;
 		thisone->condense(minPts, level);
 		p.increment(thisone->sz);
 	}
-#ifdef _OPENMP
-}
-#endif
 }
 
 void HDBSCAN::condense(const unsigned int& minPts, vector<HDCluster*>& points) {
 	//	set<HDCluster*> theseroots;
 	//	std::for_each(points.begin(), points.end(), [&theseroots](HDCluster* it) {theseroots.insert(it->getRoot());});
-#ifdef _OPENMP
-#pragma omp parallel
-{
-	const int level = std::log2(omp_get_max_threads()) + 1;
-#else
 	const int level = 0;
-#endif
-	{
-#ifdef _OPENMP
-#pragma omp master
-#endif
-		for (auto it = roots.begin(); it != roots.end(); ++it) {
-			HDCluster* thisone = it->second;
-			if (thisone->left != nullptr)
-#ifdef _OPENMP
-#pragma omp task
-#endif
-			{
-				thisone->condense(minPts, level);
-				thisone->newparent(points, thisone);
-			}
+	for (auto it = roots.begin(); it != roots.end(); ++it) {
+		HDCluster* thisone = it->second;
+		if (thisone->left != nullptr)
+		{
+			thisone->condense(minPts, level);
+			thisone->newparent(points, thisone);
 		}
 	}
-#ifdef _OPENMP
-}
-#endif
 }
 
 

@@ -13,6 +13,7 @@ List hdbscanc(const arma::sp_mat& edges,
 	HDBSCAN object = HDBSCAN(edges.n_cols, verbose);
 	// 1 N
 	IntegerVector tree = object.build(K, edges, minPts, neighbors); // 4N
+
 	IntegerVector clusters = IntegerVector(edges.n_cols);
 	NumericVector lambdas = NumericVector(edges.n_cols);
 	object.condenseAndExtract(minPts, INTEGER(clusters), REAL(lambdas)); // 3N
