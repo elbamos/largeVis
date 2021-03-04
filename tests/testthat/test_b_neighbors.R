@@ -7,9 +7,9 @@ dat <- scale(dat)
 dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
-RcppParallel::setThreadOptions(numThreads = 1)
 
 test_that("Trees does not error", {
+	RcppParallel::setThreadOptions(numThreads = 1)
 	expect_silent(neighbors <- randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 10,
@@ -147,6 +147,7 @@ test_that("Can determine iris neighbors accurately, Euclidean", {
 	expect_lte(sum(neighbors != bests, na.rm = TRUE), 5)
 })
 
+RcppParallel::setThreadOptions(numThreads = 1)
 test_that("With a bigger dataset, performance is as expected", {
 	M <- 10
 	data(quakes)
@@ -176,8 +177,8 @@ test_that("With a bigger dataset, performance is as expected", {
 
 	oldscore <- nrow(quakes) * M
 
+	RcppParallel::setThreadOptions(numThreads = 2)
 	for (t in c(5, 20, 40, 90)) {
-		# TODO: Two threads
 		neighbors <- randomProjectionTreeSearch(t(quakes),
 																						K = M,
 																						n_trees = t,
@@ -205,4 +206,5 @@ test_that("With a bigger dataset, performance is as expected", {
 		expect_lte(score, oldscore, label = paste("iters=", t))
 		oldscore <- score
 	}
+
 })
