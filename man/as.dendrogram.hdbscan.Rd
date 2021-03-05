@@ -43,7 +43,8 @@ This function remains experimental in terms of finding the best way to represent
 }
 \examples{
 data(iris)
-vis <- largeVis(t(iris[,1:4]), K = 20, sgd_batches = 1, threads = 1)
+checkCRAN()
+vis <- largeVis(t(iris[,1:4]), K = 20)
 hdbscanobj <- hdbscan(vis, minPts = 10, K = 5)
 plot(as.dendrogram(hdbscanobj))
 }

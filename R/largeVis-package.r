@@ -35,8 +35,7 @@
 "_PACKAGE"
 
 
-#' @importFrom devtools r_env_vars
 #' @importFrom RcppParallel setThreadOptions
 checkCRAN <- function() {
-	if (devtools::r_env_vars()[['NOT_CRAN']] != "true") RcppParallel::setThreadOptions(numThreads = 2)
+	if (!identical(Sys.getenv("NOT_CRAN"), "true")) RcppParallel::setThreadOptions(numThreads = 2)
 }

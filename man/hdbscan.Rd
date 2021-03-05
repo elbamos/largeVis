@@ -9,7 +9,6 @@ hdbscan(
   neighbors = NULL,
   minPts = 20,
   K = 5,
-  threads = NULL,
   verbose = getOption("verbose", TRUE)
 )
 }
@@ -22,10 +21,6 @@ hdbscan(
 \item{minPts}{The minimum number of points in a cluster.}
 
 \item{K}{The number of points in the core neighborhood. (See details.)}
-
-\item{threads}{Maximum number of threads. Determined automatically if \code{NULL} (the default).  It is unlikely that
-this parameter should ever need to be adjusted.  It is only available to make it possible to abide by the CRAN limitation that no package
-use more than two cores.}
 
 \item{verbose}{Verbosity.}
 }
