@@ -1,4 +1,5 @@
 #include "neighbors.h"
+#define NOPARTREES
 
 template<class M, class V>
 void AnnoySearch<M, V>::advanceHeap(MinIndexedPQ& positionHeap,
@@ -34,6 +35,40 @@ void AnnoySearch<M, V>::addToNeighborhood(const V& x_i, const vertexidxtype& j,
 		}
 	}
 
+void mergeFoundAndOldNeighborhoods(Neighborhood& oldNeighborhood, const ivec& indices, const vertexidxtype cur) {
+	Neighborhood tmp;
+	tmp.reserve(tmp.size() + indices.size() - 1);
+
+	if (oldNeighborhood.begin() == oldNeighborhood.end()) {
+		// If this is the first iteration, no need to merge, just copy
+		auto back = std::back_inserter(oldNeighborhood);
+		copy_if(indices.begin(), indices.end(), back, [&cur](const vertexidxtype& tst) {return tst != cur;});
+	} else {
+		auto it3 = indices.begin();
+		auto neighboriterator = oldNeighborhood.begin();
+
+		while (neighboriterator != oldNeighborhood.end() && it3 != indices.end()) {
+			vertexidxtype newone = *neighboriterator;
+			if (newone < *it3) ++neighboriterator;
+			else if (*it3 < newone) {
+				if (*it3 == cur) {
+					++it3;
+					continue;
+				}
+				newone = *it3;
+				++it3;
+			} else {
+				++neighboriterator; ++it3;
+			}
+			tmp.emplace_back(newone);
+		}
+		auto back = std::back_inserter(tmp);
+		copy(neighboriterator, oldNeighborhood.end(), back);
+		copy_if(it3, indices.end(), back, [&cur](const vertexidxtype& tst) {return tst != cur;});
+		tmp.swap(oldNeighborhood);
+	}
+}
+
 /*
  * During the annoy-tree phase, used to copy the elements of a leaf
  * into the neighborhood for each point in the leaf.
@@ -46,43 +81,17 @@ void AnnoySearch<M, V>::addToNeighborhood(const V& x_i, const vertexidxtype& j,
  */
 template<class M, class V>
 void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighborhoods) {
-	trees_mutex.lock();
 	Neighborhood tmp;
 	for (auto it = localNeighborhoods.begin(); it != localNeighborhoods.end(); ++it) {
 		const ivec& indices = **it;
 		const auto indicesEnd = indices.end();
 		for (auto it2 = indices.begin(); it2 != indicesEnd; ++it2) {
+			lock_guard<mutex> local_mutex(trees_mutex);
 			const vertexidxtype cur = *it2;
 		  Neighborhood& neighborhood = treeNeighborhoods[cur];
-		  tmp.clear();
-		  tmp.swap(neighborhood);
-		  neighborhood.reserve(tmp.size() + indices.size() - 1);
-
-		  auto it3 = indices.begin();
-		  auto neighboriterator = tmp.begin();
-		  auto tmpe = tmp.end();
-
-		  while (neighboriterator != tmpe && it3 != indicesEnd) {
-		  	vertexidxtype newone = *neighboriterator;
-		  	if (newone < *it3) ++neighboriterator;
-		  	else if (*it3 < newone) {
-		  		if (*it3 == cur) {
-		  			++it3;
-		  			continue;
-		  		}
-		  		newone = *it3;
-		  		++it3;
-		  	} else {
-		  		++neighboriterator; ++it3;
-		  	}
-		  	neighborhood.emplace_back(newone);
-		  }
-		  auto back = std::back_inserter(neighborhood);
-		  copy(neighboriterator, tmpe, back);
-		  copy_if(it3, indicesEnd, back, [&cur](const vertexidxtype& tst) {return tst != cur;});
+		  mergeFoundAndOldNeighborhoods(neighborhood, indices, cur);
 	  }
 	}
-	trees_mutex.unlock();
 }
 
 Neighborholder copyTo(const Neighborholder& indices, const uvec& selections) {
@@ -135,10 +144,13 @@ void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& n
 	threshold2 = threshold * 4;
 	Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
 	TreesWorker<M,V> worker(this, &indices);
+#ifdef NOPARTREES
 	for (int i = 0; i < n_trees; ++i) {
 		worker(i, i + 1);
 	}
-//	parallelFor(0, n_trees, worker);
+#else
+  parallelFor(0, n_trees, worker, 1);
+#endif
 }
 
 template<class M, class V>
