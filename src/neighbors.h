@@ -41,9 +41,9 @@ private:
 	int storedThreads = 0;
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
-	recursive_mutex recurse_mutex;
 public:
 	mutex trees_mutex;
+	recursive_mutex recurse_mutex;
 
 protected:
 	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
@@ -114,8 +114,9 @@ public:
 	void operator()(std::size_t begin, std::size_t end) {
 		for (vertexidxtype i = begin; i != end; ++i) if (! searcher->p.check_abort()) {
 			list< Neighborholder > local;
-			Neighborholder indices2 = make_shared<ivec>(regspace<ivec>(0, searcher->data.n_cols - 1));
-			searcher->recurse(indices2, local);
+			searcher->recurse_mutex.lock();
+			searcher->recurse(*indices, local);
+			searcher->recurse_mutex.unlock();
 			lock_guard<mutex> local_mutex(searcher->trees_mutex);
 			searcher->mergeNeighbors(local);
 		}
