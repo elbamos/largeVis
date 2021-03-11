@@ -161,8 +161,9 @@ test_that("With a bigger dataset, performance is as expected", {
 
 	oldscore <- nrow(quakes) * M
 
+
 	for (t in c(14, 40, 80, 160)) {
-		set.seed(1974)
+		RcppParallel::setThreadOptions(numThreads = 1)
 		neighbors <- randomProjectionTreeSearch(t(quakes),
 																						K = M,
 																						n_trees = 20,
@@ -171,14 +172,14 @@ test_that("With a bigger dataset, performance is as expected", {
 																						verbose = FALSE,
 																						seed = 1974)
 		score <- sum(neighbors != bests, na.rm = TRUE)
-		expect_lte(score, oldscore, label = paste("threshold =", t))
+	  expect_lte(score, oldscore, label = paste("threshold =", t))
 		oldscore <- score
 	}
 
 	oldscore <- nrow(quakes) * M
 
-	RcppParallel::setThreadOptions(numThreads = 2)
 	for (t in c(5, 20, 40, 90)) {
+		RcppParallel::setThreadOptions(numThreads = 1)
 		neighbors <- randomProjectionTreeSearch(t(quakes),
 																						K = M,
 																						n_trees = t,
@@ -193,8 +194,8 @@ test_that("With a bigger dataset, performance is as expected", {
 
 	oldscore <- nrow(quakes) * M
 
-	RcppParallel::setThreadOptions(numThreads = 1)
-	for (t in c(1, 10, 20, 40)) {
+	for (t in c(1, 5, 10, 20)) {
+		RcppParallel::setThreadOptions(numThreads = 1)
 		neighbors <- randomProjectionTreeSearch(t(quakes),
 																						K = M,
 																						n_trees = 10,

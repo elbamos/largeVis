@@ -133,8 +133,12 @@ template<class M, class V>
 void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& newThreshold) {
 	threshold = newThreshold;
 	threshold2 = threshold * 4;
-	TreesWorker<M,V> worker(this);
-	parallelFor(0, n_trees, worker);
+	Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
+	TreesWorker<M,V> worker(this, &indices);
+	for (int i = 0; i < n_trees; ++i) {
+		worker(i, i + 1);
+	}
+//	parallelFor(0, n_trees, worker);
 }
 
 template<class M, class V>

@@ -105,15 +105,15 @@ template<class M, class V>
 class TreesWorker : public RcppParallel::Worker  {
 public:
 	AnnoySearch<M, V> *searcher;
+	Neighborholder *indices;
 
-	TreesWorker<M,V>(AnnoySearch<M,V> *searcher) : searcher {searcher} {}
+	TreesWorker<M,V>(AnnoySearch<M,V> *searcher, Neighborholder *indices) : searcher {searcher}, indices{indices} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		for (vertexidxtype i = begin; i != end; ++i) if (! searcher->p.check_abort()) {
-			Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, searcher->data.n_cols - 1));
 			list< Neighborholder > local;
 
-			searcher->recurse(indices, local);
+			searcher->recurse(*indices, local);
 			searcher->mergeNeighbors(local);
 		}
 	}
