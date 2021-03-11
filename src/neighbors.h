@@ -53,6 +53,7 @@ protected:
 
 public:
 	const M& data;
+	const kidxtype K;
 	const vertexidxtype N;
 	Progress p;
 
@@ -67,7 +68,6 @@ protected:
 	}
 
 public:
-	const kidxtype K;
 	unsigned int threshold = 0;
 
 	AnnoySearch(const M& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :

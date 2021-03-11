@@ -47,8 +47,8 @@ private:
 	const arma::ivec is;
 	const arma::ivec js;
 	distancetype (*distFunction)(const vec&, const vec&) = nullptr;
-	Progress *p;
 	vec* out;
+	Progress *p;
 
 public:
 
@@ -103,8 +103,8 @@ private:
 	const arma::ivec is;
 	const arma::ivec js;
 	distancetype (*distFunction)(const sp_mat&, const sp_mat&) = nullptr;
-	Progress *p;
 	vec* out;
+	Progress *p;
 
 public:
 	SparseDistanceWorker(

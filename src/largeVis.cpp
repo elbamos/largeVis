@@ -15,6 +15,8 @@ private:
                           const distancetype& rho) {
 		for (dimidxtype d = 0; d != D; ++d) to[d] -= from[d] * rho;
 	}
+public:
+	const dimidxtype D;
 protected:
 	const unsigned int M;
 
@@ -29,7 +31,6 @@ protected:
 	unsigned int storedThreads = 0;
 
 public:
-	const dimidxtype D;
 	double rho;
 	const double rhoIncrement;
 	mutex vis_mutex;
@@ -51,10 +52,10 @@ public:
 	            targetPointer{targetPtr},
 	            sourcePointer{sourcePtr},
 	            coordsPtr{coordPtr},
-	            rho{rho},
-	            rhoIncrement((rho - 0.0001) / n_samples),
 	            negAlias(AliasTable< vertexidxtype, coordinatetype, double >(N)),
 	            posAlias(AliasTable< edgeidxtype, coordinatetype, double >(E)),
+	            rho{rho},
+	            rhoIncrement((rho - 0.0001) / n_samples),
 	            vis_mutex() {
     	if (alpha == 0) grad = new ExpGradient(gamma, D);
     	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
