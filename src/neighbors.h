@@ -41,6 +41,7 @@ private:
 	int storedThreads = 0;
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
+public:
 	mutex trees_mutex;
 
 protected:
@@ -112,7 +113,7 @@ public:
 	void operator()(std::size_t begin, std::size_t end) {
 		for (vertexidxtype i = begin; i != end; ++i) if (! searcher->p.check_abort()) {
 			list< Neighborholder > local;
-
+			lock_guard<mutex> local_mutex(searcher->trees_mutex);
 			searcher->recurse(*indices, local);
 			searcher->mergeNeighbors(local);
 		}

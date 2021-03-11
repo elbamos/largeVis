@@ -1,5 +1,5 @@
 #include "neighbors.h"
-#define NOPARTREES
+//#define NOPARTREES
 
 template<class M, class V>
 void AnnoySearch<M, V>::advanceHeap(MinIndexedPQ& positionHeap,
@@ -86,7 +86,7 @@ void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighb
 		const ivec& indices = **it;
 		const auto indicesEnd = indices.end();
 		for (auto it2 = indices.begin(); it2 != indicesEnd; ++it2) {
-			lock_guard<mutex> local_mutex(trees_mutex);
+			//lock_guard<mutex> local_mutex(trees_mutex);
 			const vertexidxtype cur = *it2;
 		  Neighborhood& neighborhood = treeNeighborhoods[cur];
 		  mergeFoundAndOldNeighborhoods(neighborhood, indices, cur);
