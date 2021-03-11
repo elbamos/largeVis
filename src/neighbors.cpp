@@ -112,6 +112,7 @@ void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborhol
 		localNeighborhood.emplace_back(indices);
 		p.increment(I);
 	} else {
+		recurse_mutex.lock();
 		vec direction = hyperplane(*indices);
 		distancetype middle = median(direction);
 		uvec left = find(direction > middle);
@@ -123,6 +124,7 @@ void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborhol
 		const uvec right = find(direction <= middle);
 		recurse(copyTo(indices, left), localNeighborhood);
 		recurse(copyTo(indices, right), localNeighborhood);
+		recurse_mutex.unlock();
 	}
 }
 
