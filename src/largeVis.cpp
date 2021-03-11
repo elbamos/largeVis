@@ -32,7 +32,7 @@ public:
 	const dimidxtype D;
 	double rho;
 	const double rhoIncrement;
-	mutex mutex;
+	mutex vis_mutex;
 
 	Visualizer(vertexidxtype *sourcePtr,
             vertexidxtype *targetPtr,
@@ -55,7 +55,7 @@ public:
 	            rhoIncrement((rho - 0.0001) / n_samples),
 	            negAlias(AliasTable< vertexidxtype, coordinatetype, double >(N)),
 	            posAlias(AliasTable< edgeidxtype, coordinatetype, double >(E)),
-	            mutex() {
+	            vis_mutex() {
     	if (alpha == 0) grad = new ExpGradient(gamma, D);
     	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
     	else grad = new AlphaGradient(alpha, gamma, D);
@@ -201,10 +201,10 @@ public:
 
 			vis->innerLoop(localRho, batchSize, holder);
 
-			vis->mutex.lock();
+			vis->vis_mutex.lock();
 			vis->rho -= (vis->rhoIncrement * batchSize);
 			if (!p->increment()) break;
-			vis->mutex.unlock();
+			vis->vis_mutex.unlock();
 		}
 
 		delete[] holder;
