@@ -98,12 +98,15 @@ The `LargeVis` algorithm, explained in detail in @tang2016visualizing, estimates
 
 The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperparameters:
 
-```{r reload,eval=!rebuild}
+```{r reload,eval=!rebuild,echo=F}
 load(system.file(package = "largeVis", "vignettedata/vignettedata.Rda"))
 ```
 ```{r drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis',cache=FALSE}
 if (! exists("agcoords") && rebuild) {
-  data(wiki)
+  dataPath <- "/Volumes/Datasets2/DATASETS/Wiki_embedding/"
+  library(word2vec)
+  vectors <- read.wordvectors(paste0(dataPath, "doc_vec"), type = 'txt')
+  
   inputs <- data.frame(
     g = rep(c(.5,1,7,14), 5),
     a = rep(c(0,.1,1,5,10), each = 4)
@@ -238,6 +241,8 @@ The `largeVis` visualization algorithm can be used to visualize undirected weigh
 The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). The data and visualization are not included here for size reasons.
 
 ```{r youtube,eval=F,echo=T}
+pathToGraphFile <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.ungraph.txt"
+pathToCommunities <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.top5000.cmty.txt"
 youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
 youtube <- as.matrix(youtube)
 youtube <- Matrix::sparseMatrix(i = youtube[, 1],
@@ -253,7 +258,7 @@ community_assignments <- rep(0,
 for (i in 1:length(communities)) community_assignments[communities[[i]]] <- i
 
 wij <- buildWijMatrix(youtube)
-youTube_coordinates <- projectKNNs(youtube)
+youTube_coordinates <- projectKNNs(youtube, verbose=T)
 youTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
 colnames(youTube_coordinates) <- c("x", "y")
 youTube_coordinates$community <- factor(community_assignments)
@@ -270,7 +275,8 @@ ggplot(youTube_coordinates, aes( x = x,
                      breaks = NULL, limits = c(-2.5,2.5)) +
   scale_y_continuous("", 
                      breaks = NULL, limits = c(-2.5,2.5)) +
-  ggtitle("YouTube Communities")
+  ggtitle("YouTube Communities") +
+  guides(color = FALSE)
 ```
 
 ## Distance Methods

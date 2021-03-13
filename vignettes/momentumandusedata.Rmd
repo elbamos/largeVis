@@ -35,7 +35,7 @@ theme_set(
     title = element_text(size = rel(0.9))
   ) 
 )
-rebuild <- FALSE
+rebuild <- TRUE
 par(mar = c(0.3, 0.3, 0.3, 0.3))
 require(largeVis,quietly = TRUE)
 ```
