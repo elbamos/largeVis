@@ -106,6 +106,9 @@ if (! exists("agcoords") && rebuild) {
   dataPath <- "/Volumes/Datasets2/DATASETS/Wiki_embedding/"
   library(word2vec)
   vectors <- read.wordvectors(paste0(dataPath, "doc_vec"), type = 'txt')
+  vectors <- t(vectors)
+  neighbors <- randomProjectionTreeSearch(vectors, verbose = T)
+  
   
   inputs <- data.frame(
     g = rep(c(.5,1,7,14), 5),
