@@ -113,14 +113,14 @@ public:
 	TreesWorker<M,V>(AnnoySearch<M,V> *searcher, Neighborholder *indices) : searcher {searcher}, indices{indices} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
-		Rcout << "thread processing trees " << begin << " to " << end << "\n";
+		Rcout << "thread processing trees " << begin << " to " << end - 1 << "\n";
 		list< Neighborholder > local;
 		for (std::size_t i = begin; i != end; ++i) if (! searcher->p.check_abort()) {
 			Rcout << "starting tree " << i << "\n";
 			searcher->recurse(*indices, local);
 			Rcout << "completed tree " << i << "\n";
 		}
-		Rcout << "merging trees " << begin << " to " << end << "\n";
+		Rcout << "merging trees " << begin << " to " << end - 1 << "\n";
 		searcher->mergeNeighbors(local);
 		Rcout << "merged\n";
 	}
