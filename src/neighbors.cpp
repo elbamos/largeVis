@@ -35,8 +35,8 @@ void AnnoySearch<M, V>::addToNeighborhood(const V& x_i, const vertexidxtype& j,
 		}
 	}
 
-void mergeFoundAndOldNeighborhoods(Neighborhood& oldNeighborhood, const ivec& indices, const vertexidxtype cur) {
-	Neighborhood tmp;
+void mergeFoundAndOldNeighborhoods(Neighborhood& oldNeighborhood, const ivec& indices, const vertexidxtype cur, Neighborhood &tmp) {
+	tmp.clear();
 	tmp.reserve(tmp.size() + indices.size() - 1);
 
 	if (oldNeighborhood.begin() == oldNeighborhood.end()) {
@@ -89,7 +89,7 @@ void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighb
 			//lock_guard<mutex> local_mutex(trees_mutex);
 			const vertexidxtype cur = *it2;
 		  Neighborhood& neighborhood = treeNeighborhoods[cur];
-		  mergeFoundAndOldNeighborhoods(neighborhood, indices, cur);
+		  mergeFoundAndOldNeighborhoods(neighborhood, indices, cur, tmp);
 	  }
 	}
 }
