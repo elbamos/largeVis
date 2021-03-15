@@ -44,27 +44,27 @@ void mergeFoundAndOldNeighborhoods(Neighborhood& oldNeighborhood, const ivec& in
 		auto back = std::back_inserter(oldNeighborhood);
 		copy_if(indices.begin(), indices.end(), back, [&cur](const vertexidxtype& tst) {return tst != cur;});
 	} else {
-		auto it3 = indices.begin();
-		auto neighboriterator = oldNeighborhood.begin();
+		auto it_indices = indices.begin();
+		auto it_on = oldNeighborhood.begin();
 
-		while (neighboriterator != oldNeighborhood.end() && it3 != indices.end()) {
-			vertexidxtype newone = *neighboriterator;
-			if (newone < *it3) ++neighboriterator;
-			else if (*it3 < newone) {
-				if (*it3 == cur) {
-					++it3;
-					continue;
-				}
-				newone = *it3;
-				++it3;
-			} else {
-				++neighboriterator; ++it3;
+		while (it_on != oldNeighborhood.end() && it_indices != indices.end()) {
+			// We don't need to check if the old neighbor matches cur, because it can't
+			if (*it_indices == cur) ++it_indices; // new neighbor is current index, filter it out
+			else if (*it_indices == *it_on) { // both the same
+				tmp.emplace_back(*it_on);
+				++it_on;
+				++it_indices;
+			} else if (*it_indices < *it_on) { // new neighbor is lower, copy it
+				tmp.emplace_back(*it_indices);
+				++it_indices;
+			} else { // old neighbor is lower, copy it
+				tmp.emplace_back(*it_on);
+				++it_on;
 			}
-			tmp.emplace_back(newone);
 		}
 		auto back = std::back_inserter(tmp);
-		copy(neighboriterator, oldNeighborhood.end(), back);
-		copy_if(it3, indices.end(), back, [&cur](const vertexidxtype& tst) {return tst != cur;});
+		copy(it_on, oldNeighborhood.end(), back);
+		copy_if(it_indices, indices.end(), back, [&cur](const vertexidxtype& tst) {return tst != cur;});
 		tmp.swap(oldNeighborhood);
 	}
 }
@@ -86,11 +86,12 @@ void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighb
 		const ivec& indices = **it;
 		const auto indicesEnd = indices.end();
 		for (auto it2 = indices.begin(); it2 != indicesEnd; ++it2) {
-			//lock_guard<mutex> local_mutex(trees_mutex);
 			const vertexidxtype cur = *it2;
+			lock_guard<mutex> local_mutex(trees_mutex[cur & mutex_offset]);
 		  Neighborhood& neighborhood = treeNeighborhoods[cur];
 		  mergeFoundAndOldNeighborhoods(neighborhood, indices, cur, tmp);
 	  }
+		p.increment(indices.size());
 	}
 }
 

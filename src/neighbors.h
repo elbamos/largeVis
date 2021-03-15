@@ -42,8 +42,9 @@ private:
 	uniform_real_distribution<double> rnd;
 	mt19937_64 mt;
 public:
-	mutex trees_mutex;
-	recursive_mutex recurse_mutex;
+	const static int num_mutexes = 4096;
+	const static int mutex_offset = num_mutexes - 1;
+	mutex trees_mutex[num_mutexes];
 
 protected:
 	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
@@ -74,7 +75,7 @@ public:
 	AnnoySearch(const M& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
 			trees_mutex(), data{data}, K{K},
 			N(data.n_cols),
-			p((N * n_trees) + (3 * N) + (N * maxIter), verbose) {
+			p((2 * N * n_trees) + (3 * N) + (N * maxIter), verbose) {
 		treeNeighborhoods = new Neighborhood[N];
 		for (vertexidxtype i = 0; i != N; ++i) treeNeighborhoods[i] = Neighborhood();
 	}
@@ -119,7 +120,6 @@ public:
 			searcher->recurse(*indices, local);
 			Rcout << "completed tree " << i << "\n";
 		}
-		lock_guard<mutex> local_mutex(searcher->trees_mutex);
 		Rcout << "merging trees " << begin << " to " << end << "\n";
 		searcher->mergeNeighbors(local);
 		Rcout << "merged\n";
