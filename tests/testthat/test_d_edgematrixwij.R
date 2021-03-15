@@ -6,7 +6,6 @@ test_that("Edge Matrix doesn't crash", {
 dat <- t(scale(as.matrix(quakes)))
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = 20,
-																					tree_threshold = 30,
 																					max_iter = 1,
 																					n_trees = 10,
 																					verbose = FALSE)

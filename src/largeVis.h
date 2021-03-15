@@ -11,16 +11,15 @@
 
 #include <RcppArmadillo.h>
 
-using namespace arma;
 /*
  * Global types
  */
 typedef double distancetype;
 typedef double coordinatetype;
 
-typedef sword vertexidxtype;
-typedef sword edgeidxtype;
-typedef uword iterationtype;
+typedef arma::sword vertexidxtype;
+typedef arma::sword edgeidxtype;
+typedef arma::uword iterationtype;
 
 typedef unsigned int dimidxtype;
 typedef unsigned int kidxtype;

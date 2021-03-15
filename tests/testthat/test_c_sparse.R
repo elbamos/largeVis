@@ -11,7 +11,6 @@ RcppParallel::setThreadOptions(numThreads = 2)
 neighbors <- randomProjectionTreeSearch(dat,
 																				K = 5,
 																				n_trees = 10,
-																				tree_threshold = 20,
 																				max_iter = 10,
 																				verbose = FALSE)
 
@@ -55,7 +54,6 @@ test_that("Can determine sparse iris neighbors accurately", {
                                           K = M,
                                           n_trees = 20,
                                           max_iter = 2,
-                                          tree_threshold = 30,
   																				seed = 1974,
                                           verbose = FALSE)
   expect_lte(sum(neighbors - bests, na.rm = TRUE), 5)
