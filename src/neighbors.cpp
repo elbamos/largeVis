@@ -150,7 +150,7 @@ void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& n
 		worker(i, i + 1);
 	}
 #else
-  parallelFor(0, n_trees, worker, 1);
+  parallelFor(0, n_trees, worker, 8);
 #endif
 }
 
