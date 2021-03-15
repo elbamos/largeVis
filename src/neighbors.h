@@ -112,14 +112,17 @@ public:
 	TreesWorker<M,V>(AnnoySearch<M,V> *searcher, Neighborholder *indices) : searcher {searcher}, indices{indices} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
-		for (vertexidxtype i = begin; i != end; ++i) if (! searcher->p.check_abort()) {
-			list< Neighborholder > local;
-			searcher->recurse_mutex.lock();
+		Rcout << "thread processing trees " << begin << " to " << end << "\n";
+		list< Neighborholder > local;
+		for (std::size_t i = begin; i != end; ++i) if (! searcher->p.check_abort()) {
+			Rcout << "starting tree " << i << "\n";
 			searcher->recurse(*indices, local);
-			searcher->recurse_mutex.unlock();
-			lock_guard<mutex> local_mutex(searcher->trees_mutex);
-			searcher->mergeNeighbors(local);
+			Rcout << "completed tree " << i << "\n";
 		}
+		lock_guard<mutex> local_mutex(searcher->trees_mutex);
+		Rcout << "merging trees " << begin << " to " << end << "\n";
+		searcher->mergeNeighbors(local);
+		Rcout << "merged\n";
 	}
 };
 
