@@ -5,8 +5,6 @@
 #' @param K The number of nearest-neighbors to use in computing the kNN graph
 #' @param n_trees See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 #' used in the examples in the original paper.
-#' @param tree_threshold See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
-#' in the input set.
 #' @param max_iter See \code{\link{randomProjectionTreeSearch}}.
 #' @param distance_method One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See \code{\link{buildWijMatrix}}.
@@ -54,7 +52,6 @@ largeVis <- function(x,
                      K = 50,
 
                      n_trees = 50,
-                     tree_threshold = max(10, min(nrow(x), ncol(x))),
                      max_iter = 1,
                      distance_method = "Euclidean",
 
@@ -74,7 +71,6 @@ largeVis <- function(x,
   #############################################
   knns <- randomProjectionTreeSearch(x,
                                      n_trees = n_trees,
-                                     tree_threshold = tree_threshold,
                                      K = K,
                                      max_iter = max_iter,
                                      distance_method = distance_method,

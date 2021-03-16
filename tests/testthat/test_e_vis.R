@@ -16,7 +16,7 @@ test_that("largeVis simple linux failure is fixed", {
 
 test_that("largeVis works", {
 	visObject <- largeVis(dat, max_iter = 20, n_trees = 100,
-												tree_threshold = 50, sgd_batches = 1000,
+											  sgd_batches = 1000,
 												K = 20,  verbose = FALSE)
 	expect_false(any(is.na(visObject$coords)))
 	expect_false(any(is.nan(visObject$coords)))

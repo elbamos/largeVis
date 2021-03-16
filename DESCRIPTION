@@ -15,7 +15,7 @@ Imports:
     ggplot2 (>= 2.1.0),
     Rcpp,
     RcppParallel
-LinkingTo: Rcpp (>= 0.12.4),RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.200.2.0),testthat(>= 1.0.2),RcppParallel
+LinkingTo: Rcpp (>= 0.12.4),RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.200.2.0),testthat(>= 1.0.2),RcppParallel,RcppAnnoy
 Suggests:
     ggforce, 
     testthat,
@@ -28,4 +28,4 @@ BugReports: https://github.com/elbamos/largeVis/issues
 NeedsCompilation: yes
 BuildVignettes: TRUE
 VignetteBuilder: knitr
-SystemRequirements: C++11, GNU make
+SystemRequirements: C++14, GNU make

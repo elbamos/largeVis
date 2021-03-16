@@ -1,4 +1,4 @@
-CXX_STD=CXX11
+CXX_STD=CXX14
 
 PKG_CXXFLAGS=-DARMA_DONT_USE_LAPACK -DARMA_64BIT_WORD -DNDEBUG
 PKG_LIBS += $(shell ${R_HOME}/bin/Rscript -e "RcppParallel::RcppParallelLibs()")

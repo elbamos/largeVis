@@ -2,6 +2,8 @@
 #include "distance.h"
 #include <progress.hpp>
 
+using namespace arma;
+
 distancetype relDist(const arma::vec& i, const arma::vec& j) {
   const dimidxtype D = i.n_elem;
   distancetype cnt = 0;
