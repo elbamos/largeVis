@@ -12,6 +12,7 @@
 #' @param n_trees The number of trees to build.
 #' @param max_iter Number of iterations in the neighborhood exploration phase.
 #' @param distance_method One of "Euclidean" or "Cosine."
+#' @param save_file If not null, the annoy index will be built on-disk at this path.
 #' @param seed Random seed passed to the C++ functions. If \code{seed} is not \code{NULL} (the default),
 #' the maximum number of threads will be set to 1 in phases that would be non-determinstic otherwise.
 #' @param verbose Whether to print verbose logging using the \code{progress} package.

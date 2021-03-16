@@ -62,6 +62,8 @@ randomProjectionTreeSearch(
 
 \item{distance_method}{One of "Euclidean" or "Cosine."}
 
+\item{save_file}{If not null, the annoy index will be built on-disk at this path.}
+
 \item{seed}{Random seed passed to the C++ functions. If \code{seed} is not \code{NULL} (the default),
 the maximum number of threads will be set to 1 in phases that would be non-determinstic otherwise.}
 
