@@ -92,6 +92,6 @@ co <- scale(as.matrix(CO2))
 # Very small datasets often produce a warning regarding the alias table.  This is safely ignored.
 suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1))
 suppressWarnings(coords <- projectKNNs(vis$wij))
-plot(t(coords))
+plot(t(coords), col = factor(CO2$Type))
 }
 }

@@ -70,16 +70,14 @@
 #' library(clusteringdatasets)  # See https://github.com/elbamos/clusteringdatasets
 #' data(spiral)
 #' dat <- as.matrix(spiral[, 1:2])
-#' neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
-#'                                        max_iter = 5, threads = 1)
+#' neighbors <- randomProjectionTreeSearch(t(dat), K = 10, max_iter = 5)
 #' edges <- buildEdgeMatrix(t(dat), neighbors)
-#' clusters <- hdbscan(edges, neighbors = neighbors, verbose = FALSE, threads = 1)
+#' clusters <- hdbscan(edges, neighbors = neighbors, verbose = FALSE)
 #'
 #' # Calling largeVis while setting sgd_batches to 1 is
 #' # the simplest way to generate the data structures neeeded for hdbscan
-#' spiralVis <- largeVis(t(dat), K = 10, tree_threshold = 100, max_iter = 5,
-#'                       sgd_batches = 1, threads = 1)
-#' clusters <- hdbscan(spiralVis, verbose = FALSE, threads = 1)
+#' spiralVis <- largeVis(t(dat), K = 10, max_iter = 5, sgd_batches = 1)
+#' clusters <- hdbscan(spiralVis, verbose = FALSE)
 #' # The gplot function helps to visualize the clustering
 #' largeHighDimensionalDataset <- matrix(rnorm(50000), ncol = 50)
 #' vis <- largeVis(largeHighDimensionalDataset)
@@ -178,10 +176,9 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' # The aggregation dataset can be downloaded from https://github.com/elbamos/clusteringdatasets
 #' data(Aggregation)
 #' dat <- as.matrix(Aggregation[, 1:2])
-#' aggregateVis <- largeVis(dat, K = 10, tree_threshold = 100,
-#'                          max_iter = 5, sgd_batches = 1)
+#' aggregateVis <- largeVis(t(dat), K = 10, max_iter = 5, sgd_batches = 1)
 #' clusters <- hdbscan(aggregateVis, verbose = FALSE)
-#' gplot(clusters, dat)
+#' gplot(clusters, dat) + ggplot2::theme_minimal()
 #' }
 #' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes_
 gplot <- function(x, coords, text = FALSE, distances = FALSE) {

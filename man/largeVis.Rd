@@ -58,22 +58,14 @@ A `largeVis` object with the following slots:
 Apply the LargeVis algorithm for visualizing large high-dimensional datasets.
 }
 \examples{
-# iris
-checkCRAN()
-data(iris)
-dat <- as.matrix(iris[,1:4])
-visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000)
-plot(t(visObject$coords))
-
 \dontrun{
 # mnist
 # Note: The MNIST dataset may be obtained using the deepnet package.
 load("./mnist.Rda")
-dat <- mnist$images
-dim(dat) <- c(42000, 28 * 28)
+dat <- mnist$train$x
 dat <- (dat / 255) - 0.5
 dat <- t(dat)
-visObject <- largeVis(dat, n_trees = 50, tree_th = 200, K = 50)
+visObject <- largeVis(dat, n_trees = 50, K = 50)
 plot(t(visObject$coords))
 }
 

@@ -58,7 +58,7 @@
 #' # Very small datasets often produce a warning regarding the alias table.  This is safely ignored.
 #' suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1))
 #' suppressWarnings(coords <- projectKNNs(vis$wij))
-#' plot(t(coords))
+#' plot(t(coords), col = factor(CO2$Type))
 #' }
 projectKNNs <- function(wij, # symmetric sparse matrix
                         dim = 2, # dimension of the projection space
@@ -126,16 +126,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
 #'
 #' @return The recommended number of sgd batches.
 #' @export
-#'
-#' @examples
-#' # Observe that increasing K has no effect on processing time
-#' N <- 70000 # MNIST
-#' K <- 10:250
-#' plot(K, sgdBatches(rep(N, length(K)), N * K / 2))
-#'
-#' # Observe that processing time scales linarly with N
-#' N <- c(seq(from = 1, to = 10000, by = 100), seq(from = 10000, to = 10000000, by = 1000))
-#' plot(N, sgdBatches(N))
 sgdBatches <- function(N, E = 150 * N / 2) {
 	ifelse(N < 10000, 2000 * E, ifelse(N < 1000000, 1000000 * (9000 * (N - 10000) / (1000000 - 10000) + 1000), N * 10000))
 }
