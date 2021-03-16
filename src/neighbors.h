@@ -70,7 +70,7 @@ public:
 
 	void setSeed(Rcpp::Nullable< NumericVector >& seed);
 
-	void trees(const unsigned int& n_trees);
+	void trees(const unsigned int& n_trees, const Rcpp::Nullable< Rcpp::String > &saveFile);
 	void reduce();
 
 	void exploreOne(const vertexidxtype& i, const arma::imat& old_knns,

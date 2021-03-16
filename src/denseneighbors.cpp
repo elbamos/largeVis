@@ -13,21 +13,8 @@ public:
 		AnnoySearch<arma::Mat<double>, arma::Col<double>, Distance>(data, K, verbose, maxIter, n_trees) {}
 };
 
-class DenseEuclidean : public DenseAnnoySearch<Euclidean> {
-public:
-	DenseEuclidean(const Mat<double>& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
-		DenseAnnoySearch(data, K, verbose, maxIter, n_trees) {}
-};
-
-class DenseCosine : public DenseAnnoySearch<Angular> {
-protected:
-	virtual distancetype distanceFunction(const Col<double>& x_i, const Col<double>& x_j) const {
-		return cosDist(x_i, x_j);
-	}
-public:
-	DenseCosine(const Mat<double>& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
-		DenseAnnoySearch(data, K, verbose, maxIter, n_trees) {}
-};
+typedef DenseAnnoySearch<Euclidean> DenseEuclidean ;
+typedef DenseAnnoySearch<Angular> DenseCosine ;
 
 
 // [[Rcpp::export]]
@@ -37,6 +24,7 @@ arma::imat searchTrees(
                        const int& maxIter,
                        const arma::mat& data,
                        const std::string& distMethod,
+                       Rcpp::Nullable< Rcpp::String > &saveFile,
                        Rcpp::Nullable< NumericVector > seed,
                        bool verbose) {
 
@@ -46,7 +34,7 @@ arma::imat searchTrees(
 	if (distMethod.compare(string("Cosine")) == 0) {
 		DenseAnnoySearch<Angular>* annoy = new DenseCosine(dataMat, K, verbose, maxIter, n_trees);
 		annoy->setSeed(seed);
-		annoy->trees(n_trees);
+		annoy->trees(n_trees, saveFile);
 		annoy->reduce();
 		annoy->exploreNeighborhood(maxIter);
 		ret = annoy->sortAndReturn();
@@ -54,7 +42,7 @@ arma::imat searchTrees(
 	} else {
 		DenseAnnoySearch<Euclidean>* annoy = new DenseEuclidean(data, K, verbose, maxIter, n_trees);
 		annoy->setSeed(seed);
-		annoy->trees(n_trees);
+		annoy->trees(n_trees, saveFile);
 		annoy->reduce();
 		annoy->exploreNeighborhood(maxIter);
 		ret = annoy->sortAndReturn();

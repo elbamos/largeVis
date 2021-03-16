@@ -9,8 +9,8 @@ dbscan_cpp <- function(edges, neighbors, eps, minPts, verbose) {
     .Call('_largeVis_dbscan_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, verbose)
 }
 
-searchTrees <- function(n_trees, K, maxIter, data, distMethod, seed, verbose) {
-    .Call('_largeVis_searchTrees', PACKAGE = 'largeVis', n_trees, K, maxIter, data, distMethod, seed, verbose)
+searchTrees <- function(n_trees, K, maxIter, data, distMethod, saveFile, seed, verbose) {
+    .Call('_largeVis_searchTrees', PACKAGE = 'largeVis', n_trees, K, maxIter, data, distMethod, saveFile, seed, verbose)
 }
 
 fastDistance <- function(is, js, data, distMethod, verbose) {
@@ -41,11 +41,11 @@ optics_cpp <- function(edges, neighbors, eps, minPts, useQueue, verbose) {
     .Call('_largeVis_optics_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, useQueue, verbose)
 }
 
-searchTreesCSparse <- function(n_trees, K, maxIter, i, p, x, distMethod, seed, verbose) {
-    .Call('_largeVis_searchTreesCSparse', PACKAGE = 'largeVis', n_trees, K, maxIter, i, p, x, distMethod, seed, verbose)
+searchTreesCSparse <- function(n_trees, K, maxIter, i, p, x, distMethod, saveFile, seed, verbose) {
+    .Call('_largeVis_searchTreesCSparse', PACKAGE = 'largeVis', n_trees, K, maxIter, i, p, x, distMethod, saveFile, seed, verbose)
 }
 
-searchTreesTSparse <- function(n_trees, K, maxIter, i, j, x, distMethod, seed, verbose) {
-    .Call('_largeVis_searchTreesTSparse', PACKAGE = 'largeVis', n_trees, K, maxIter, i, j, x, distMethod, seed, verbose)
+searchTreesTSparse <- function(n_trees, K, maxIter, i, j, x, distMethod, saveFile, seed, verbose) {
+    .Call('_largeVis_searchTreesTSparse', PACKAGE = 'largeVis', n_trees, K, maxIter, i, j, x, distMethod, saveFile, seed, verbose)
 }
 

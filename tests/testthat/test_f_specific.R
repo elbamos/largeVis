@@ -26,7 +26,7 @@ test_that("neighbors does not fail with 0 max iters when the neighborhood is com
 	dat <- t(dat)
 	K <- 148
 	distances <- as.matrix(dist(t(dat)))
-	expect_silent(neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 40,
+	expect_silent(neighbors <- randomProjectionTreeSearch(dat, K = K,
 																												n_trees = 10, max_iter = 0, verbose = FALSE))
 })
 

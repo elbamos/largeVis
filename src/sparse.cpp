@@ -12,26 +12,8 @@ public:
 		AnnoySearch<arma::SpMat<double>, arma::SpMat<double>, Distance>(data, K, verbose, maxIter, n_trees) {}
 };
 
-
-class SparseEuclidean : public SparseAnnoySearch<Euclidean> {
-protected:
-	virtual distancetype distanceFunction(const SpMat<double> &x_i, const SpMat<double> &x_j) const {
-		return sparseRelDist(x_i, x_j);
-	}
-public:
-	SparseEuclidean(const SpMat<double>& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
-		SparseAnnoySearch(data, K, verbose, maxIter, n_trees) {}
-};
-
-class SparseCosine : public SparseAnnoySearch<Angular> {
-protected:
-	virtual distancetype distanceFunction(const SpMat<double>& x_i, const SpMat<double>& x_j) const {
-		return sparseCosDist(x_i, x_j);
-	}
-public:
-	SparseCosine(const SpMat<double>& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
-		SparseAnnoySearch(data, K, verbose, maxIter, n_trees) {}
-};
+typedef SparseAnnoySearch<Euclidean> SparseEuclidean ;
+typedef SparseAnnoySearch<Angular> SparseCosine ;
 
 imat searchTreesSparse(
                         const int& n_trees,
@@ -40,6 +22,7 @@ imat searchTreesSparse(
                         const sp_mat& data,
                         const string& distMethod,
                         Rcpp::Nullable< NumericVector> seed,
+                        const Rcpp::Nullable< Rcpp::String >& saveFile,
                         bool verbose) {
 	const vertexidxtype N = data.n_cols;
 
@@ -51,18 +34,18 @@ imat searchTreesSparse(
 	if (distMethod.compare(string("Cosine")) == 0) {
 		dataMat = sp_mat(data);
 		for (arma::uword d = 0; d < dataMat.n_cols; d++) dataMat.col(d) /= norm(dataMat.col(d));
-		SparseAnnoySearch<Angular>* annoy = new SparseCosine(dataMat, K, verbose, maxIter, n_trees);
+		SparseCosine* annoy = new SparseCosine(dataMat, K, verbose, maxIter, n_trees);
 		annoy->setSeed(seed);
-		annoy->trees(n_trees);
+		annoy->trees(n_trees, saveFile);
 		annoy->reduce();
 		annoy->exploreNeighborhood(maxIter);
 		imat ret = annoy->sortAndReturn();
 		delete annoy;
 		return ret;
 	} else {
-		SparseAnnoySearch<Euclidean>* annoy = new SparseEuclidean(data, K, verbose, maxIter, n_trees);
+		SparseEuclidean* annoy = new SparseEuclidean(data, K, verbose, maxIter, n_trees);
 		annoy->setSeed(seed);
-		annoy->trees(n_trees);
+		annoy->trees(n_trees, saveFile);
 		annoy->reduce();
 		annoy->exploreNeighborhood(maxIter);
 		imat ret = annoy->sortAndReturn();
@@ -82,11 +65,12 @@ arma::imat searchTreesCSparse(
                              const arma::uvec& p,
                              const arma::vec& x,
                              const std::string& distMethod,
+                             const Rcpp::Nullable< Rcpp::String > &saveFile,
                              Rcpp::Nullable< Rcpp::NumericVector> seed,
                              bool verbose) {
   const vertexidxtype N = p.size() -1;
   const sp_mat data = sp_mat(i,p,x,N,N);
-  return searchTreesSparse(n_trees,K,maxIter,data,distMethod,seed, verbose);
+  return searchTreesSparse(n_trees,K,maxIter,data,distMethod,seed, saveFile, verbose);
 }
 
 // [[Rcpp::export]]
@@ -98,9 +82,10 @@ arma::imat searchTreesTSparse(
                              const arma::uvec& j,
                              const arma::vec& x,
                              const std::string& distMethod,
+                             const Rcpp::Nullable< Rcpp::String > &saveFile,
                              Rcpp::Nullable< NumericVector> seed,
                              bool verbose) {
   const umat locations = join_cols(i,j);
   const sp_mat data = sp_mat(locations,x);
-  return searchTreesSparse(n_trees,K,maxIter,data,distMethod,seed, verbose);
+  return searchTreesSparse(n_trees,K,maxIter,data,distMethod,seed, saveFile, verbose);
 }
