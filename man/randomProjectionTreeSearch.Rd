@@ -11,9 +11,9 @@ randomProjectionTreeSearch(
   x,
   K = 150,
   n_trees = 50,
-  tree_threshold = max(10, nrow(x)),
   max_iter = 1,
   distance_method = "Euclidean",
+  save_file = NULL,
   seed = NULL,
   verbose = getOption("verbose", TRUE)
 )
@@ -22,9 +22,9 @@ randomProjectionTreeSearch(
   x,
   K = 150,
   n_trees = 50,
-  tree_threshold = max(10, nrow(x)),
   max_iter = 1,
   distance_method = "Euclidean",
+  save_file = NULL,
   seed = NULL,
   verbose = getOption("verbose", TRUE)
 )
@@ -33,9 +33,9 @@ randomProjectionTreeSearch(
   x,
   K = 150,
   n_trees = 50,
-  tree_threshold = max(10, nrow(x)),
   max_iter = 1,
   distance_method = "Euclidean",
+  save_file = NULL,
   seed = NULL,
   verbose = getOption("verbose", TRUE)
 )
@@ -44,9 +44,9 @@ randomProjectionTreeSearch(
   x,
   K = 150,
   n_trees = 50,
-  tree_threshold = max(10, nrow(x)),
   max_iter = 1,
   distance_method = "Euclidean",
+  save_file = NULL,
   seed = NULL,
   verbose = getOption("verbose", TRUE)
 )
@@ -57,9 +57,6 @@ randomProjectionTreeSearch(
 \item{K}{How many nearest neighbors to seek for each node.}
 
 \item{n_trees}{The number of trees to build.}
-
-\item{tree_threshold}{The threshold for creating a new branch.  The paper authors suggest
-using a value equivalent to the number of features in the input set.}
 
 \item{max_iter}{Number of iterations in the neighborhood exploration phase.}
 

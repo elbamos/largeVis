@@ -9,7 +9,6 @@ largeVis(
   dim = 2,
   K = 50,
   n_trees = 50,
-  tree_threshold = max(10, min(nrow(x), ncol(x))),
   max_iter = 1,
   distance_method = "Euclidean",
   perplexity = max(50, K/3),
@@ -28,9 +27,6 @@ largeVis(
 
 \item{n_trees}{See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 used in the examples in the original paper.}
-
-\item{tree_threshold}{See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
-in the input set.}
 
 \item{max_iter}{See \code{\link{randomProjectionTreeSearch}}.}
 

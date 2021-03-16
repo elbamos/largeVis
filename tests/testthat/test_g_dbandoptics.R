@@ -108,7 +108,7 @@ test_that("optics output format is correct", {
 	load(system.file("testdata/opttest.Rda", package = "largeVis"))
 
 	x <- opttest$test_data
-	neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399, tree_threshold = 100, max_iter = 10, seed = 1974)
+	neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399, max_iter = 10, seed = 1974)
 	edges <- buildEdgeMatrix(t(opttest$test_data), neighbors = neighbors)
 
 	eps <- .1
