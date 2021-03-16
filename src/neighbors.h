@@ -12,6 +12,8 @@
 using namespace Rcpp;
 using namespace std;
 
+typedef float annoy_distance;
+
 typedef vector< vertexidxtype > Neighborhood;
 typedef shared_ptr<arma::ivec> Neighborholder;
 /*
@@ -46,15 +48,15 @@ private:
 protected:
 	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
 
-	inline void addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap, const vertexidxtype& i, const vertexidxtype& j) const;
+	inline void addHeap(vector< std::pair<annoy_distance, vertexidxtype> >& heap, const vertexidxtype& i, const vertexidxtype& j) const;
 	inline void addToNeighborhood(const vertexidxtype& i, const vertexidxtype& j,
-                         vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const;
+                         vector< std::pair<annoy_distance, vertexidxtype> >& neighborhood) const;
 
 
 
 public:
 	const M& data;
-	AnnoyIndex<vertexidxtype, distancetype, Distance, Kiss64Random, RcppAnnoyIndexThreadPolicy> annoy_index;
+	AnnoyIndex<vertexidxtype, annoy_distance, Distance, Kiss64Random, RcppAnnoyIndexThreadPolicy> annoy_index;
 	const kidxtype K;
 	const vertexidxtype N;
 	Progress p;
@@ -74,11 +76,11 @@ public:
 	void reduce();
 
 	void exploreOne(const vertexidxtype& i, const arma::imat& old_knns,
-                 vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
+                 vector< std::pair<annoy_distance, vertexidxtype> >& nodeHeap,
                  MinIndexedPQ& positionHeap, vector< Position >& positionVector);
 
 	void reduceOne(const vertexidxtype& i);
-	void sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder, const vertexidxtype& i);
+	void sortCopyOne(vector< std::pair<annoy_distance, vertexidxtype>>& holder, const vertexidxtype& i);
 
 	void exploreNeighborhood(const unsigned int& maxIter);
 
@@ -93,7 +95,7 @@ public:
 	SortCopyWorker<M,V,Distance>(AnnoySearch<M,V,Distance> *searcher) : searcher {searcher} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
-		vector< std::pair<distancetype, vertexidxtype>> holder;
+		vector< std::pair<annoy_distance, vertexidxtype>> holder;
 		holder.reserve(searcher->K);
 		for (vertexidxtype i = begin; i != end; ++i) if (searcher->p.increment()) {
 			searcher->sortCopyOne(holder, i);
@@ -130,7 +132,7 @@ public:
 		 * We can use a simple priority queue because the number of entries in the queue, which equals
 		 * K + 1, is small and well-controlled.
 		 */
-		vector< std::pair<distancetype, vertexidxtype> > nodeHeap;
+		vector< std::pair<annoy_distance, vertexidxtype> > nodeHeap;
 		nodeHeap.reserve(searcher->K);
 		MinIndexedPQ positionHeap(searcher->K + 1);
 		vector< Position > positionVector;

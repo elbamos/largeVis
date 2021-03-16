@@ -14,25 +14,25 @@ void AnnoySearch<M, V, Distance>::advanceHeap(MinIndexedPQ& positionHeap,
 }
 
 template<class M, class V, typename Distance>
-void AnnoySearch<M, V, Distance>::addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap,
+void AnnoySearch<M, V, Distance>::addHeap(vector< std::pair<annoy_distance, vertexidxtype> >& heap,
               									const vertexidxtype& i, const vertexidxtype& j) const {
-		const distancetype d = annoy_index.get_distance(i, j);
+		const annoy_distance d = annoy_index.get_distance(i, j);
 		heap.emplace_back(d, j);
-		push_heap(heap.begin(), heap.end(), std::less<std::pair<distancetype, vertexidxtype>>());
+		push_heap(heap.begin(), heap.end(), std::less<std::pair<annoy_distance, vertexidxtype>>());
 		if (heap.size() > K) {
-			pop_heap(heap.begin(), heap.end(), std::less<std::pair<distancetype, vertexidxtype>>());
+			pop_heap(heap.begin(), heap.end(), std::less<std::pair<annoy_distance, vertexidxtype>>());
 			heap.pop_back();
 		}
 	}
 
 template<class M, class V, typename Distance>
 void AnnoySearch<M, V, Distance>::addToNeighborhood(const vertexidxtype& i, const vertexidxtype& j,
-									                        vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const {
-		const distancetype d = annoy_index.get_distance(i, j);
+									                        vector< std::pair<annoy_distance, vertexidxtype> >& neighborhood) const {
+		const annoy_distance d = annoy_index.get_distance(i, j);
 		neighborhood.emplace_back(d, j);
-		push_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<distancetype, vertexidxtype>>());
+		push_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<annoy_distance, vertexidxtype>>());
 		if (neighborhood.size() > K) {
-			pop_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<distancetype, vertexidxtype>>());
+			pop_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<annoy_distance, vertexidxtype>>());
 			neighborhood.pop_back();
 		}
 	}
@@ -51,7 +51,7 @@ void AnnoySearch<M, V, Distance>::setSeed(Rcpp::Nullable< NumericVector >& seed)
 
 template<class M, class V, typename Distance>
 void AnnoySearch<M, V, Distance>::trees(const unsigned int& n_trees, const Rcpp::Nullable< Rcpp::String > &savefile) {
-	vector<distancetype> tmp(data.n_rows);
+	vector<annoy_distance> tmp(data.n_rows);
 	for (size_t i = 0; i < N; ++i) {
 		copy(data.col(i).begin(), data.col(i).end(), tmp.begin());
 		annoy_index.add_item(i, tmp.data());
@@ -61,14 +61,15 @@ void AnnoySearch<M, V, Distance>::trees(const unsigned int& n_trees, const Rcpp:
 		std::string file_path = save_file_path.get_cstring();
 		annoy_index.on_disk_build(file_path.c_str(), NULL);
 	}
+	p.increment(N * n_trees);
 	annoy_index.build(n_trees);
-	p.increment(2 * N * n_trees);
+	p.increment(N * n_trees);
 }
 
 template<class M, class V, typename Distance>
 void AnnoySearch<M, V, Distance>::reduceOne(const vertexidxtype& i) {
 	vector<vertexidxtype> neighbor_index;
-	vector<distancetype> neighbor_dist;
+	vector<annoy_distance> neighbor_dist;
 	annoy_index.get_nns_by_item(i, K + 1, -1, &neighbor_index, &neighbor_dist);
 
 	sort(neighbor_index.begin(), neighbor_index.end());
@@ -99,7 +100,7 @@ void AnnoySearch<M, V, Distance>::reduceOne(const vertexidxtype& i) {
 template<class M, class V, typename Distance>
 void AnnoySearch<M, V, Distance>::exploreOne( const vertexidxtype& i,
 									                 const imat& old_knns,
-									                 vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
+									                 vector< std::pair<annoy_distance, vertexidxtype> >& nodeHeap,
 									                 MinIndexedPQ& positionHeap,
 									                 vector< Position >& positionVector) {
 	positionVector.clear();
@@ -135,7 +136,7 @@ void AnnoySearch<M, V, Distance>::exploreOne( const vertexidxtype& i,
 	* We can't use std:copy because we're copying from a vector of pairs
 	*/
 	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), knns.begin_col(i),
-                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
+                                        [](const std::pair<annoy_distance, vertexidxtype>& input) {return input.second;});
 	if (copyContinuation == knns.begin_col(i)) throw Rcpp::exception("No neighbors after exploration - this is a bug.");
 	sort(knns.begin_col(i), copyContinuation);
 	std::fill(copyContinuation, knns.end_col(i), -1);
@@ -165,19 +166,19 @@ imat AnnoySearch<M, V, Distance>::sortAndReturn() {
 }
 
 template<class M, class V, typename Distance>
-void AnnoySearch<M, V, Distance>::sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder,
+void AnnoySearch<M, V, Distance>::sortCopyOne(vector< std::pair<annoy_distance, vertexidxtype>>& holder,
                                    const vertexidxtype& i) {
 	holder.clear();
 	/*
 	* Its cheaper to not maintain a heap and instead just sort because we'll never have more entries than we need.
 	*/
 	for (auto it = knns.begin_col(i); it != knns.end_col(i) && *it != -1; ++it) {
-		const distancetype d = annoy_index.get_distance(i, *it);
+		const annoy_distance d = annoy_index.get_distance(i, *it);
 		holder.emplace_back(d, *it);
 	}
 	sort(holder.begin(), holder.end());
 	auto copyContinuation = std::transform(holder.begin(), holder.end(), knns.begin_col(i),
-                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
+                                        [](const std::pair<annoy_distance, vertexidxtype>& input) {return input.second;});
 	std::fill(copyContinuation, knns.end_col(i), -1);
 }
 
