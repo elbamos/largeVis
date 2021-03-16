@@ -56,7 +56,7 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 147
-neighbors <- randomProjectionTreeSearch(dat, K = K, tree_threshold = 80, n_trees = 10,  max_iter = 4, verbose = FALSE)
+neighbors <- randomProjectionTreeSearch(dat, K = K, n_trees = 10,  max_iter = 4, verbose = FALSE)
 edges <- buildEdgeMatrix(data = dat,
 												 neighbors = neighbors,
 												 verbose = FALSE)

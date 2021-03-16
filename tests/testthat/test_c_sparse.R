@@ -56,5 +56,5 @@ test_that("Can determine sparse iris neighbors accurately", {
                                           max_iter = 2,
   																				seed = 1974,
                                           verbose = FALSE)
-  expect_lte(sum(neighbors - bests, na.rm = TRUE), 5)
+  expect_lte(sum(neighbors != bests, na.rm = TRUE), 6)
 })
