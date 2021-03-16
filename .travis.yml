@@ -10,6 +10,7 @@ matrix:
     r: release
 
   - os: osx
+    osx_image: xcode12.2
     r: release
 
   - os: linux
@@ -17,6 +18,7 @@ matrix:
     r: devel
 
   - os: osx
+    osx_image: xcode12.2
     r: devel
     env: _R_CHECK_FORCE_SUGGESTS_=FALSE
   allow_failure:
