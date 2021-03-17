@@ -56,15 +56,15 @@ void AnnoySearch<M, V, Distance>::setSeed(Rcpp::Nullable< NumericVector >& seed)
 
 template<class M, class V, typename Distance>
 void AnnoySearch<M, V, Distance>::trees(const unsigned int& n_trees, const Rcpp::Nullable< Rcpp::String > &savefile) {
-	vector<annoy_distance> tmp(data.n_rows);
-	for (size_t i = 0; i < N; ++i) {
-		copy(data.col(i).begin(), data.col(i).end(), tmp.begin());
-		annoy_index.add_item(i, tmp.data());
-	}
 	if (savefile.isNotNull()) {
 		String save_file_path = String(savefile);
 		std::string file_path = save_file_path.get_cstring();
 		annoy_index.on_disk_build(file_path.c_str(), NULL);
+	}
+	vector<annoy_distance> tmp(data.n_rows);
+	for (size_t i = 0; i < N; ++i) {
+		copy(data.col(i).begin(), data.col(i).end(), tmp.begin());
+		annoy_index.add_item(i, tmp.data());
 	}
 	p.increment(N * n_trees);
 	int threads = getNumThreads();

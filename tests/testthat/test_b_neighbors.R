@@ -41,6 +41,18 @@ test_that("Trees does not error", {
 																												verbose = FALSE))
 })
 
+RcppParallel::setThreadOptions(numThreads = 2)
+test_that("Can use an on-disk index", {
+	filename <- tempfile(pattern = "largevistest")
+	expect_silent(randomProjectionTreeSearch(dat,
+																					K = 5,
+																					n_trees = 10,
+																					max_iter = 1,
+																					save_file = filename,
+																					verbose = FALSE))
+	expect_true(file.exists(filename))
+})
+
 
 M <- 5
 d_matrix <- as.matrix(dist(t(dat), method = "euclidean"))
@@ -166,3 +178,4 @@ test_that("With a bigger dataset, performance is as expected", {
 	}
 
 })
+
