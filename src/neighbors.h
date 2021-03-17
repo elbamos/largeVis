@@ -34,60 +34,59 @@ public:
 	}
 };
 
-// V is the type of arma vector e.g., vec
-// M is the type of arma matrix e.g., mat, sp_mat
-template<class M, class V, typename Distance>
+template <typename Distance>
+using LVAnnoyIndex = AnnoyIndex<vertexidxtype, annoy_distance, Distance, Kiss64Random, RcppAnnoyIndexThreadPolicy>;
+
+
+template<typename Distance>
 class AnnoySearch {
-private:
+protected:
 	Neighborhood* treeNeighborhoods;
 	arma::imat knns;
-
-protected:
 	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
 
 	inline void addHeap(vector< std::pair<annoy_distance, vertexidxtype> >& heap, const vertexidxtype& i, const vertexidxtype& j) const;
 	inline void addToNeighborhood(const vertexidxtype& i, const vertexidxtype& j,
-                         vector< std::pair<annoy_distance, vertexidxtype> >& neighborhood) const;
-
-
+                               vector< std::pair<annoy_distance, vertexidxtype> >& neighborhood) const;
 
 public:
-	const M& data;
-	AnnoyIndex<vertexidxtype, annoy_distance, Distance, Kiss64Random, RcppAnnoyIndexThreadPolicy> annoy_index;
+	LVAnnoyIndex<Distance>* annoy_index;
 	const kidxtype K;
 	const vertexidxtype N;
 	Progress p;
-
-public:
-
-	AnnoySearch(const M& data, const kidxtype& K, const bool &verbose, const int &maxIter, const int&n_trees) :
-			data{data},
-			annoy_index(data.n_rows),
-			K{K},
-			N(data.n_cols),
-			p((2 * N * n_trees) + (3 * N) + (N * maxIter), verbose) {	}
-
-	void trees(const unsigned int& n_trees, const Rcpp::Nullable< Rcpp::String > &saveFile);
 	void reduce();
 
 	void exploreOne(const vertexidxtype& i, const arma::imat& old_knns,
                  vector< std::pair<annoy_distance, vertexidxtype> >& nodeHeap,
                  MinIndexedPQ& positionHeap, vector< Position >& positionVector);
-
 	void reduceOne(const vertexidxtype& i);
 	void sortCopyOne(vector< std::pair<annoy_distance, vertexidxtype>>& holder, const vertexidxtype& i);
-
 	void exploreNeighborhood(const unsigned int& maxIter);
-
 	arma::imat sortAndReturn();
+
+	AnnoySearch(LVAnnoyIndex<Distance>* annoy_index, const vertexidxtype& N, const kidxtype& K, const bool &verbose, const int &maxIter, const long &pCount) :
+		annoy_index{annoy_index},
+		K{K},
+		N{N},
+		p(pCount, verbose) {}
 };
 
-template<class M, class V, typename Distance>
+
+template<class M, typename Distance>
+void trees(
+		LVAnnoyIndex<Distance>& annoy_index,
+		const M& data,
+		const unsigned int& n_trees,
+		const Rcpp::Nullable< Rcpp::String > &savefile,
+		Progress& p
+	);
+
+template<typename Distance>
 class SortCopyWorker : public RcppParallel::Worker  {
 public:
-	AnnoySearch<M, V,Distance> *searcher;
+	AnnoySearch<Distance> *searcher;
 
-	SortCopyWorker<M,V,Distance>(AnnoySearch<M,V,Distance> *searcher) : searcher {searcher} {}
+	SortCopyWorker<Distance>(AnnoySearch<Distance> *searcher) : searcher {searcher} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		vector< std::pair<annoy_distance, vertexidxtype>> holder;
@@ -98,12 +97,12 @@ public:
 	}
 };
 
-template<class M, class V, typename Distance>
+template<typename Distance>
 class ReduceWorker : public RcppParallel::Worker  {
 public:
-	AnnoySearch<M,V,Distance> *searcher;
+	AnnoySearch<Distance> *searcher;
 
-	ReduceWorker<M,V,Distance>(AnnoySearch<M,V,Distance> *searcher) : searcher {searcher} {}
+	ReduceWorker<Distance>(AnnoySearch<Distance> *searcher) : searcher {searcher} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		for (vertexidxtype i = begin; i < end; ++i) if (searcher->p.increment()) {
@@ -112,13 +111,13 @@ public:
 	}
 };
 
-template<class M, class V, typename Distance>
+template<typename Distance>
 class ExploreWorker : public RcppParallel::Worker {
 public:
-	AnnoySearch<M, V,Distance> *searcher;
+	AnnoySearch<Distance> *searcher;
 	arma::imat *old_knns;
 
-	ExploreWorker<M,V,Distance>(AnnoySearch<M,V,Distance> *searcher, arma::imat *old_knns) : searcher {searcher}, old_knns {old_knns} {}
+	ExploreWorker<Distance>(AnnoySearch<Distance> *searcher, arma::imat *old_knns) : searcher {searcher}, old_knns {old_knns} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		/*
@@ -138,5 +137,8 @@ public:
 		}
 	}
 };
+
+typedef AnnoySearch<Euclidean> DenseEuclidean ;
+typedef AnnoySearch<Angular> DenseCosine ;
 
 #endif

@@ -31,23 +31,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// searchTrees
-arma::imat searchTrees(const int& n_trees, const int& K, const int& maxIter, const arma::mat& data, const std::string& distMethod, Rcpp::Nullable< Rcpp::String >& saveFile, bool verbose);
-RcppExport SEXP _largeVis_searchTrees(SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP saveFileSEXP, SEXP verboseSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const int& >::type n_trees(n_treesSEXP);
-    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
-    Rcpp::traits::input_parameter< const int& >::type maxIter(maxIterSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::String >& >::type saveFile(saveFileSEXP);
-    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(searchTrees(n_trees, K, maxIter, data, distMethod, saveFile, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
 // fastDistance
 arma::vec fastDistance(const arma::ivec& is, const arma::ivec& js, const arma::mat& data, const std::string& distMethod, bool verbose);
 RcppExport SEXP _largeVis_fastDistance(SEXP isSEXP, SEXP jsSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP verboseSEXP) {
@@ -150,19 +133,36 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// optics_cpp
-List optics_cpp(const arma::sp_mat& edges, const arma::imat& neighbors, const double& eps, const int& minPts, const bool& useQueue, const bool& verbose);
-RcppExport SEXP _largeVis_optics_cpp(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP useQueueSEXP, SEXP verboseSEXP) {
+// searchTrees
+arma::imat searchTrees(const int& n_trees, const int& K, const int& maxIter, const arma::mat& data, const std::string& distMethod, Rcpp::Nullable< Rcpp::String >& saveFile, bool verbose);
+RcppExport SEXP _largeVis_searchTrees(SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP saveFileSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::sp_mat& >::type edges(edgesSEXP);
-    Rcpp::traits::input_parameter< const arma::imat& >::type neighbors(neighborsSEXP);
-    Rcpp::traits::input_parameter< const double& >::type eps(epsSEXP);
-    Rcpp::traits::input_parameter< const int& >::type minPts(minPtsSEXP);
-    Rcpp::traits::input_parameter< const bool& >::type useQueue(useQueueSEXP);
-    Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(optics_cpp(edges, neighbors, eps, minPts, useQueue, verbose));
+    Rcpp::traits::input_parameter< const int& >::type n_trees(n_treesSEXP);
+    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int& >::type maxIter(maxIterSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::String >& >::type saveFile(saveFileSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(searchTrees(n_trees, K, maxIter, data, distMethod, saveFile, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// searchTreesFromIndex
+arma::imat searchTreesFromIndex(const int& K, const int& D, const int& maxIter, const std::string& distMethod, Rcpp::String& saveFile, bool verbose);
+RcppExport SEXP _largeVis_searchTreesFromIndex(SEXP KSEXP, SEXP DSEXP, SEXP maxIterSEXP, SEXP distMethodSEXP, SEXP saveFileSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int& >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const int& >::type D(DSEXP);
+    Rcpp::traits::input_parameter< const int& >::type maxIter(maxIterSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
+    Rcpp::traits::input_parameter< Rcpp::String& >::type saveFile(saveFileSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(searchTreesFromIndex(K, D, maxIter, distMethod, saveFile, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -201,6 +201,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::Nullable< Rcpp::String >& >::type saveFile(saveFileSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(searchTreesTSparse(n_trees, K, maxIter, i, j, x, distMethod, saveFile, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// optics_cpp
+List optics_cpp(const arma::sp_mat& edges, const arma::imat& neighbors, const double& eps, const int& minPts, const bool& useQueue, const bool& verbose);
+RcppExport SEXP _largeVis_optics_cpp(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP useQueueSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::sp_mat& >::type edges(edgesSEXP);
+    Rcpp::traits::input_parameter< const arma::imat& >::type neighbors(neighborsSEXP);
+    Rcpp::traits::input_parameter< const double& >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< const int& >::type minPts(minPtsSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type useQueue(useQueueSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(optics_cpp(edges, neighbors, eps, minPts, useQueue, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
