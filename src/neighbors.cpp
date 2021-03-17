@@ -1,6 +1,11 @@
 #include "neighbors.h"
-//#define NOPARTREES
-//
+
+int getNumThreads() {
+	char* num_threads = std::getenv("RCPP_PARALLEL_NUM_THREADS");
+	if (strcmp(num_threads, "") == 0) return -1;
+	else return atoi(num_threads);
+}
+
 using namespace arma;
 
 template<class M, class V, typename Distance>
@@ -62,7 +67,8 @@ void AnnoySearch<M, V, Distance>::trees(const unsigned int& n_trees, const Rcpp:
 		annoy_index.on_disk_build(file_path.c_str(), NULL);
 	}
 	p.increment(N * n_trees);
-	annoy_index.build(n_trees);
+	int threads = getNumThreads();
+	annoy_index.build(n_trees, threads);
 	p.increment(N * n_trees);
 }
 
