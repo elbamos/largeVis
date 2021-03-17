@@ -5,6 +5,7 @@
 \alias{randomProjectionTreeSearch.matrix}
 \alias{randomProjectionTreeSearch.CsparseMatrix}
 \alias{randomProjectionTreeSearch.TsparseMatrix}
+\alias{randomProjectionTreeSearchFromIndex}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
 randomProjectionTreeSearch(
@@ -14,7 +15,6 @@ randomProjectionTreeSearch(
   max_iter = 1,
   distance_method = "Euclidean",
   save_file = NULL,
-  seed = NULL,
   verbose = getOption("verbose", TRUE)
 )
 
@@ -25,7 +25,6 @@ randomProjectionTreeSearch(
   max_iter = 1,
   distance_method = "Euclidean",
   save_file = NULL,
-  seed = NULL,
   verbose = getOption("verbose", TRUE)
 )
 
@@ -36,7 +35,6 @@ randomProjectionTreeSearch(
   max_iter = 1,
   distance_method = "Euclidean",
   save_file = NULL,
-  seed = NULL,
   verbose = getOption("verbose", TRUE)
 )
 
@@ -47,29 +45,38 @@ randomProjectionTreeSearch(
   max_iter = 1,
   distance_method = "Euclidean",
   save_file = NULL,
-  seed = NULL,
+  verbose = getOption("verbose", TRUE)
+)
+
+randomProjectionTreeSearchFromIndex(
+  save_file,
+  D,
+  K = 150,
+  max_iter = 1,
+  distance_method = "Euclidean",
   verbose = getOption("verbose", TRUE)
 )
 }
 \arguments{
 \item{x}{A (potentially sparse) matrix, where examples are columnns and features are rows.}
 
-\item{K}{How many nearest neighbors to seek for each node.}
+\item{K}{The number of nearest neighbors to find}
 
 \item{n_trees}{The number of trees to build.}
 
 \item{max_iter}{Number of iterations in the neighborhood exploration phase.}
 
-\item{distance_method}{One of "Euclidean" or "Cosine."}
+\item{distance_method}{One of "Euclidean" or "Cosine" - must match the previously saved index.}
 
-\item{save_file}{If not null, the annoy index will be built on-disk at this path.}
-
-\item{seed}{Random seed passed to the C++ functions. If \code{seed} is not \code{NULL} (the default),
-the maximum number of threads will be set to 1 in phases that would be non-determinstic otherwise.}
+\item{save_file}{The path to the index}
 
 \item{verbose}{Whether to print verbose logging using the \code{progress} package.}
+
+\item{D}{Dimensionality of the dataset}
 }
 \value{
+A [K, N] matrix of the approximate K nearest neighbors for each vertex.
+
 A [K, N] matrix of the approximate K nearest neighbors for each vertex.
 }
 \description{

@@ -43,13 +43,20 @@ test_that("Trees does not error", {
 RcppParallel::setThreadOptions(numThreads = 2)
 test_that("Can use an on-disk index", {
 	filename <- tempfile(pattern = "largevistest")
-	expect_silent(randomProjectionTreeSearch(dat,
+	expect_silent(neighbors1 <- randomProjectionTreeSearch(dat,
 																					K = 5,
 																					n_trees = 10,
 																					max_iter = 1,
 																					save_file = filename,
 																					verbose = FALSE))
 	expect_true(file.exists(filename))
+	neighbors2 <- randomProjectionTreeSearchFromIndex(filename,
+																					 D = nrow(dat),
+																					 K = 5,
+																					 max_iter = 1,
+																					 save_file = filename,
+																					 verbose = FALSE)
+	testthat::expect_identical(neighbors1, neighbors2)
 })
 
 
