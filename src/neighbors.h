@@ -41,9 +41,6 @@ class AnnoySearch {
 private:
 	Neighborhood* treeNeighborhoods;
 	arma::imat knns;
-	int storedThreads = 0;
-	uniform_real_distribution<double> rnd;
-	mt19937_64 mt;
 
 protected:
 	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
@@ -69,8 +66,6 @@ public:
 			K{K},
 			N(data.n_cols),
 			p((2 * N * n_trees) + (3 * N) + (N * maxIter), verbose) {	}
-
-	void setSeed(Rcpp::Nullable< NumericVector >& seed);
 
 	void trees(const unsigned int& n_trees, const Rcpp::Nullable< Rcpp::String > &saveFile);
 	void reduce();

@@ -43,18 +43,6 @@ void AnnoySearch<M, V, Distance>::addToNeighborhood(const vertexidxtype& i, cons
 	}
 
 template<class M, class V, typename Distance>
-void AnnoySearch<M, V, Distance>::setSeed(Rcpp::Nullable< NumericVector >& seed) {
-	long innerSeed;
-	if (seed.isNotNull()) {
-		innerSeed = NumericVector(seed)[0];
-	} else {
-		random_device hardseed;
-		innerSeed = hardseed();
-	}
-	mt = mt19937_64(innerSeed);
-}
-
-template<class M, class V, typename Distance>
 void AnnoySearch<M, V, Distance>::trees(const unsigned int& n_trees, const Rcpp::Nullable< Rcpp::String > &savefile) {
 	if (savefile.isNotNull()) {
 		String save_file_path = String(savefile);

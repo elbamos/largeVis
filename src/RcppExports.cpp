@@ -32,8 +32,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // searchTrees
-arma::imat searchTrees(const int& n_trees, const int& K, const int& maxIter, const arma::mat& data, const std::string& distMethod, Rcpp::Nullable< Rcpp::String >& saveFile, Rcpp::Nullable< NumericVector > seed, bool verbose);
-RcppExport SEXP _largeVis_searchTrees(SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP saveFileSEXP, SEXP seedSEXP, SEXP verboseSEXP) {
+arma::imat searchTrees(const int& n_trees, const int& K, const int& maxIter, const arma::mat& data, const std::string& distMethod, Rcpp::Nullable< Rcpp::String >& saveFile, bool verbose);
+RcppExport SEXP _largeVis_searchTrees(SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP dataSEXP, SEXP distMethodSEXP, SEXP saveFileSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -43,9 +43,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::String >& >::type saveFile(saveFileSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable< NumericVector > >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(searchTrees(n_trees, K, maxIter, data, distMethod, saveFile, seed, verbose));
+    rcpp_result_gen = Rcpp::wrap(searchTrees(n_trees, K, maxIter, data, distMethod, saveFile, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -168,8 +167,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // searchTreesCSparse
-arma::imat searchTreesCSparse(const int& n_trees, const int& K, const int& maxIter, const arma::uvec& i, const arma::uvec& p, const arma::vec& x, const std::string& distMethod, const Rcpp::Nullable< Rcpp::String >& saveFile, Rcpp::Nullable< Rcpp::NumericVector> seed, bool verbose);
-RcppExport SEXP _largeVis_searchTreesCSparse(SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP pSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP saveFileSEXP, SEXP seedSEXP, SEXP verboseSEXP) {
+arma::imat searchTreesCSparse(const int& n_trees, const int& K, const int& maxIter, const arma::uvec& i, const arma::uvec& p, const arma::vec& x, const std::string& distMethod, const Rcpp::Nullable< Rcpp::String >& saveFile, bool verbose);
+RcppExport SEXP _largeVis_searchTreesCSparse(SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP pSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP saveFileSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -181,15 +180,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
     Rcpp::traits::input_parameter< const Rcpp::Nullable< Rcpp::String >& >::type saveFile(saveFileSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable< Rcpp::NumericVector> >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(searchTreesCSparse(n_trees, K, maxIter, i, p, x, distMethod, saveFile, seed, verbose));
+    rcpp_result_gen = Rcpp::wrap(searchTreesCSparse(n_trees, K, maxIter, i, p, x, distMethod, saveFile, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // searchTreesTSparse
-arma::imat searchTreesTSparse(const int& n_trees, const int& K, const int& maxIter, const arma::uvec& i, const arma::uvec& j, const arma::vec& x, const std::string& distMethod, const Rcpp::Nullable< Rcpp::String >& saveFile, Rcpp::Nullable< NumericVector> seed, bool verbose);
-RcppExport SEXP _largeVis_searchTreesTSparse(SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP jSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP saveFileSEXP, SEXP seedSEXP, SEXP verboseSEXP) {
+arma::imat searchTreesTSparse(const int& n_trees, const int& K, const int& maxIter, const arma::uvec& i, const arma::uvec& j, const arma::vec& x, const std::string& distMethod, const Rcpp::Nullable< Rcpp::String >& saveFile, bool verbose);
+RcppExport SEXP _largeVis_searchTreesTSparse(SEXP n_treesSEXP, SEXP KSEXP, SEXP maxIterSEXP, SEXP iSEXP, SEXP jSEXP, SEXP xSEXP, SEXP distMethodSEXP, SEXP saveFileSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -201,9 +199,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type distMethod(distMethodSEXP);
     Rcpp::traits::input_parameter< const Rcpp::Nullable< Rcpp::String >& >::type saveFile(saveFileSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable< NumericVector> >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(searchTreesTSparse(n_trees, K, maxIter, i, j, x, distMethod, saveFile, seed, verbose));
+    rcpp_result_gen = Rcpp::wrap(searchTreesTSparse(n_trees, K, maxIter, i, j, x, distMethod, saveFile, verbose));
     return rcpp_result_gen;
 END_RCPP
 }

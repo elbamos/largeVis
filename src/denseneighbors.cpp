@@ -25,7 +25,6 @@ arma::imat searchTrees(
                        const arma::mat& data,
                        const std::string& distMethod,
                        Rcpp::Nullable< Rcpp::String > &saveFile,
-                       Rcpp::Nullable< NumericVector > seed,
                        bool verbose) {
 
   const mat dataMat = (distMethod.compare(string("Cosine")) == 0) ? normalise(data) : mat();
@@ -33,7 +32,6 @@ arma::imat searchTrees(
 	imat ret;
 	if (distMethod.compare(string("Cosine")) == 0) {
 		DenseAnnoySearch<Angular>* annoy = new DenseCosine(dataMat, K, verbose, maxIter, n_trees);
-		annoy->setSeed(seed);
 		annoy->trees(n_trees, saveFile);
 		annoy->reduce();
 		annoy->exploreNeighborhood(maxIter);
@@ -41,7 +39,6 @@ arma::imat searchTrees(
 		delete annoy;
 	} else {
 		DenseAnnoySearch<Euclidean>* annoy = new DenseEuclidean(data, K, verbose, maxIter, n_trees);
-		annoy->setSeed(seed);
 		annoy->trees(n_trees, saveFile);
 		annoy->reduce();
 		annoy->exploreNeighborhood(maxIter);

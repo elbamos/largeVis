@@ -1,7 +1,6 @@
 context("neighbors")
 
 data(iris)
-set.seed(1974)
 dat <- as.matrix(iris[, 1:4])
 dat <- scale(dat)
 dupes <- which(duplicated(dat))
@@ -130,8 +129,8 @@ test_that("Can determine iris neighbors accurately, Euclidean", {
 																					K = M,
 																					n_trees = 20,
 																					max_iter = 12,
-																					verbose = FALSE,
-																					seed = 1974)
+																					verbose = FALSE
+																					)
 	expect_lte(sum(neighbors != bests, na.rm = TRUE), 5)
 })
 
@@ -155,8 +154,8 @@ test_that("With a bigger dataset, performance is as expected", {
 																						K = M,
 																						n_trees = t,
 																						max_iter = 0,
-																						verbose = FALSE,
-																						seed = 1974)
+																						verbose = FALSE
+																						)
 		score <- sum(neighbors != bests, na.rm = TRUE)
 		expect_lte(score, oldscore, label = paste("n_trees=", t))
 		oldscore <- score
@@ -170,8 +169,8 @@ test_that("With a bigger dataset, performance is as expected", {
 																						K = M,
 																						n_trees = 10,
 																						max_iter = t,
-																						verbose = FALSE,
-																						seed = 1974)
+																						verbose = FALSE
+																						)
 		score <- max(0, sum(neighbors != bests, na.rm = TRUE))
 		expect_lte(score, oldscore, label = paste("iters=", t))
 		oldscore <- score

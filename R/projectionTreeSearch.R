@@ -25,7 +25,6 @@ randomProjectionTreeSearch <- function(x,
                                        max_iter = 1,
                                        distance_method = "Euclidean",
 																			 save_file = NULL,
-																			 seed = NULL,
                                        verbose = getOption("verbose", TRUE))
   UseMethod("randomProjectionTreeSearch")
 
@@ -37,7 +36,6 @@ randomProjectionTreeSearch.matrix <- function(x,
                                        max_iter = 1,
                                        distance_method = "Euclidean",
 																			 save_file = NULL,
-																			 seed = NULL,
                                        verbose = getOption("verbose", TRUE)) {
   if (verbose) cat("Searching for neighbors.\n")
 
@@ -49,7 +47,6 @@ randomProjectionTreeSearch.matrix <- function(x,
                       data = x,
                       distMethod = as.character(distance_method),
   										saveFile = save_file,
-  										seed = seed,
                       verbose = as.logical(verbose))
 
   if (sum(colSums(knns != -1) == 0) > 0)
@@ -72,7 +69,6 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
                                               max_iter = 1,
                                               distance_method = "Euclidean",
 																							save_file = NULL,
-																							seed = NULL,
                                               verbose = getOption("verbose", TRUE)) {
   if (verbose) cat("Searching for neighbors.\n")
 
@@ -85,7 +81,6 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
                       x = x@x,
                       distMethod = as.character(distance_method),
   										saveFile = save_file,
-  										seed = seed,
                       verbose = as.logical(verbose))
 
   if (sum(colSums(knns != -1) == 0) > 0)
@@ -109,7 +104,6 @@ randomProjectionTreeSearch.TsparseMatrix <- function(x,
                                                      distance_method =
                                                        "Euclidean",
 																										 save_file = NULL,
-																										 seed = NULL,
                                                      verbose = getOption("verbose", TRUE)) {
   if (verbose) cat("Searching for neighbors.\n")
 
@@ -122,7 +116,6 @@ randomProjectionTreeSearch.TsparseMatrix <- function(x,
                              x = x@x,
                              distMethod = as.character(distance_method),
                              saveFile = save_file,
-  													 seed = seed,
                              verbose = as.logical(verbose))
 
   if (sum(colSums(knns != -1) == 0) > 0)

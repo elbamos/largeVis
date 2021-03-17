@@ -21,7 +21,6 @@ imat searchTreesSparse(
                         const int& maxIter,
                         const sp_mat& data,
                         const string& distMethod,
-                        Rcpp::Nullable< NumericVector> seed,
                         const Rcpp::Nullable< Rcpp::String >& saveFile,
                         bool verbose) {
 	const vertexidxtype N = data.n_cols;
@@ -35,7 +34,6 @@ imat searchTreesSparse(
 		dataMat = sp_mat(data);
 		for (arma::uword d = 0; d < dataMat.n_cols; d++) dataMat.col(d) /= norm(dataMat.col(d));
 		SparseCosine* annoy = new SparseCosine(dataMat, K, verbose, maxIter, n_trees);
-		annoy->setSeed(seed);
 		annoy->trees(n_trees, saveFile);
 		annoy->reduce();
 		annoy->exploreNeighborhood(maxIter);
@@ -44,7 +42,6 @@ imat searchTreesSparse(
 		return ret;
 	} else {
 		SparseEuclidean* annoy = new SparseEuclidean(data, K, verbose, maxIter, n_trees);
-		annoy->setSeed(seed);
 		annoy->trees(n_trees, saveFile);
 		annoy->reduce();
 		annoy->exploreNeighborhood(maxIter);
@@ -66,11 +63,10 @@ arma::imat searchTreesCSparse(
                              const arma::vec& x,
                              const std::string& distMethod,
                              const Rcpp::Nullable< Rcpp::String > &saveFile,
-                             Rcpp::Nullable< Rcpp::NumericVector> seed,
                              bool verbose) {
   const vertexidxtype N = p.size() -1;
   const sp_mat data = sp_mat(i,p,x,N,N);
-  return searchTreesSparse(n_trees,K,maxIter,data,distMethod,seed, saveFile, verbose);
+  return searchTreesSparse(n_trees,K,maxIter,data,distMethod,saveFile, verbose);
 }
 
 // [[Rcpp::export]]
@@ -83,9 +79,8 @@ arma::imat searchTreesTSparse(
                              const arma::vec& x,
                              const std::string& distMethod,
                              const Rcpp::Nullable< Rcpp::String > &saveFile,
-                             Rcpp::Nullable< NumericVector> seed,
                              bool verbose) {
   const umat locations = join_cols(i,j);
   const sp_mat data = sp_mat(locations,x);
-  return searchTreesSparse(n_trees,K,maxIter,data,distMethod,seed, saveFile, verbose);
+  return searchTreesSparse(n_trees,K,maxIter,data,distMethod,saveFile, verbose);
 }
