@@ -95,7 +95,7 @@ This function takes as its input a `Matrix::sparseMatrix`, of connections betwee
 
 The `LargeVis` algorithm, explained in detail in @tang2016visualizing, estimates the embedding by sampling from the identitied nearest-neighbor connections. For each edge, the algorithm also samples `M` non-nearest neighbor negative samples. `M`, along with $\gamma$ and $\alpha$, control the visualization. $\alpha$ controls the desired distance between nearest neighbors. $\gamma$ controls the relative strength of the attractive force between nearest neighbors and repulsive force between non-neighbors.
 
-The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperparameters on the `mnist` dataset:
+The following generates a grid illustrating the effect of the $\alpha$ and $\gamma$ hyperparameters on the `mnist` dataset:
 
 ```{r echo=T,eval=F}
 library(largeVis)
@@ -121,10 +121,7 @@ agcoords <- map2(inputs$alpha, inputs$gamma, function(a, g) {
 agcoords$label = rep(labels, nrow(inputs))
 ```
 
-```{r reload}
-load(system.file(package = "largeVis", "vignettedata/agcoords.Rda"))
-```
-```{r drawhyperparameters,echo=F,fig.width=3.5,fig.height=4,fig.align='center',results='asis',cache=FALSE}
+```{r drawhyperparameters,echo=T,eval=F}
 ggplot(agcoords,
        aes(x = x, 
            y = y, 
@@ -156,7 +153,7 @@ The algorithm can treat positive edge weights in two different ways. The authors
 
 The `largeVis` function combines `randomProjectionTreeSearch` and `projectKNNs`, along with additional logic for calculating edge weights, to implement the complete `LargeVis` algorithm. 
 
-The following chart illustrates the effect of the `M` hyperparameter from `projectKNNs` and `K`, the number of nearest neighbors, again using the `mnist` dataset.
+The following code generates a chart illustrating the effect of the `M` hyperparameter from `projectKNNs` and `K`, the number of nearest neighbors, again using the `mnist` dataset.
 
 ```{r echo=T,eval=F}
 Ks <- c(75, 150, 300)
@@ -178,7 +175,7 @@ for (k in Ks) {
 kmcoords <- bind_rows(coord_list)
 ```
 
-```{r drawiris,echo=F,fig.width=4,fig.height=4.5,fig.align='center',results='asis'}
+```{r drawiris,echo=T,eval=F}
 load(system.file(package = "largeVis", "vignettedata/kmcoords.Rda"))
 
 ggplot(kmcoords, aes(x = x, y = y, color = factor(label))) + 
@@ -220,7 +217,7 @@ manifoldMap(mnistCoords[,1:2],
 
 The `largeVis` visualization algorithm can be used to visualize undirected weighted or unweighted graphs.  The included `wiki` dataset is an example.
 
-The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). The data and visualization are not included here for size reasons.
+The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). 
 
 ```{r youtube,eval=F,echo=T}
 pathToGraphFile <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.ungraph.txt"
