@@ -58,3 +58,45 @@ kmcoords %>%
 	guides(color = F)
 
 save(kmcoords, file = "./inst/vignettedata/kmcoords.Rda")
+
+
+pathToGraphFile <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.ungraph.txt"
+pathToCommunities <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.top5000.cmty.txt"
+youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
+youtube <- as.matrix(youtube)
+youtube <- Matrix::sparseMatrix(i = youtube[, 1],
+																j = youtube[, 2],
+																x = rep(1, nrow(youtube)),
+																dims = c(max(youtube), max(youtube)))
+youtube <- youtube + t(youtube)
+communities <- readr::read_lines(pathToCommunities)
+communities <- lapply(communities,
+											FUN = function(x) as.numeric(unlist(strsplit(x, "\t"))))
+community_assignments <- rep(0,
+														 nrow(youtube))
+for (i in 1:length(communities)) community_assignments[communities[[i]]] <- i
+
+wij <- buildWijMatrix(youtube)
+youTube_coordinates <- projectKNNs(youtube, verbose=T)
+youTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
+colnames(youTube_coordinates) <- c("x", "y")
+youTube_coordinates$community <- factor(community_assignments)
+youTube_coordinates$alpha <- factor(ifelse(youTube_coordinates$community == 0, 0.05, 0.2))
+ggplot(youTube_coordinates, aes( x = x,
+																 y = y,
+																 color = community,
+																 alpha = alpha,
+																 size = alpha)) +
+	geom_point() +
+	scale_alpha_manual(values = c(0.005, 0.2), guide = FALSE) +
+	scale_size_manual(values = c(0.03, 0.15), guide = FALSE) +
+	scale_x_continuous("",
+										 breaks = NULL, limits = c(-2.5,2.5)) +
+	scale_y_continuous("",
+										 breaks = NULL, limits = c(-2.5,2.5)) +
+	ggtitle("YouTube Communities") +
+	guides(color = FALSE) +
+	theme_minimal()
+
+save(youTube_coordinates, file = "./inst/vignettedata/ytcoords.Rda")
+
