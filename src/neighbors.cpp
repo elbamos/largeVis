@@ -75,8 +75,7 @@ void AnnoySearch<M, V, Distance>::trees(const unsigned int& n_trees, const Rcpp:
 template<class M, class V, typename Distance>
 void AnnoySearch<M, V, Distance>::reduceOne(const vertexidxtype& i) {
 	vector<vertexidxtype> neighbor_index;
-	vector<annoy_distance> neighbor_dist;
-	annoy_index.get_nns_by_item(i, K + 1, -1, &neighbor_index, &neighbor_dist);
+	annoy_index.get_nns_by_item(i, K + 1, -1, &neighbor_index, NULL);
 
 	sort(neighbor_index.begin(), neighbor_index.end());
 
