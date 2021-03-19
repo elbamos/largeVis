@@ -22,8 +22,6 @@ agcoords <- map2(inputs$alpha, inputs$gamma, function(a, g) {
 
 agcoords$label = rep(labels, nrow(inputs))
 
-save(agcoords, file = "./inst/vignettedata/agcoords.Rda")
-
 library(ggplot2)
 
 agcoords %>%
@@ -56,9 +54,6 @@ kmcoords %>%
 	facet_grid(K ~ M) +
 	theme_minimal() +
 	guides(color = F)
-
-save(kmcoords, file = "./inst/vignettedata/kmcoords.Rda")
-
 
 pathToGraphFile <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.ungraph.txt"
 pathToCommunities <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.top5000.cmty.txt"
@@ -97,6 +92,4 @@ ggplot(youTube_coordinates, aes( x = x,
 	ggtitle("YouTube Communities") +
 	guides(color = FALSE) +
 	theme_minimal()
-
-save(youTube_coordinates, file = "./inst/vignettedata/ytcoords.Rda")
 
