@@ -1,13 +1,12 @@
 context("Edge Matrix")
 
 test_that("Edge Matrix doesn't crash", {
-	M <- 10
 	data(quakes)
-dat <- t(scale(as.matrix(quakes)))
+	dat <- t(scale(as.matrix(quakes)))
 	neighbors <- randomProjectionTreeSearch(dat,
-																					K = 20,
-																					max_iter = 1,
-																					n_trees = 10,
+																					K = 5,
+																					max_iter = 4,
+																					n_trees = 20,
 																					verbose = FALSE)
 	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
 	expect_equal(attr(edges, "Metric"), "euclidean")
