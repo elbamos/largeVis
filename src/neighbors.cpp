@@ -1,7 +1,8 @@
 #include "neighbors.h"
 
 int getNumThreads() {
-	char* num_threads = std::getenv("RCPP_PARALLEL_NUM_THREADS");
+	char const* num_threads = std::getenv("RCPP_PARALLEL_NUM_THREADS");
+	if (num_threads == NULL) return -1;
 	if (strcmp(num_threads, "") == 0) return -1;
 	else return atoi(num_threads);
 }
@@ -74,9 +75,16 @@ void AnnoySearch<Distance>::reduceOne(const vertexidxtype& i) {
 
 	sort(neighbor_index.begin(), neighbor_index.end());
 
-	copy_if(neighbor_index.begin(), neighbor_index.end(),
+	auto it = knns.begin_col(i);
+	for (auto neigh = neighbor_index.begin(); neigh != neighbor_index.end(); ++neigh) {
+		if (*neigh != i) *(it++) = *neigh;
+	}
+
+	for (; it != knns.end_col(i); ++it) *it = -1;
+
+	/*copy_if(neighbor_index.begin(), neighbor_index.end(),
          knns.begin_col(i),
-         [&i](int x) { return x != i;});
+         [&i](int x) { return x != i;});*/
 }
 
 	/*
