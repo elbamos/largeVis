@@ -204,6 +204,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// neighborsToVectors
+List neighborsToVectors(IntegerMatrix x);
+RcppExport SEXP _largeVis_neighborsToVectors(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(neighborsToVectors(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // optics_cpp
 List optics_cpp(const arma::sp_mat& edges, const arma::imat& neighbors, const double& eps, const int& minPts, const bool& useQueue, const bool& verbose);
 RcppExport SEXP _largeVis_optics_cpp(SEXP edgesSEXP, SEXP neighborsSEXP, SEXP epsSEXP, SEXP minPtsSEXP, SEXP useQueueSEXP, SEXP verboseSEXP) {

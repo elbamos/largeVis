@@ -49,6 +49,10 @@ searchTreesTSparse <- function(n_trees, K, maxIter, i, j, x, distMethod, saveFil
     .Call('_largeVis_searchTreesTSparse', PACKAGE = 'largeVis', n_trees, K, maxIter, i, j, x, distMethod, saveFile, verbose)
 }
 
+neighborsToVectors <- function(x) {
+    .Call('_largeVis_neighborsToVectors', PACKAGE = 'largeVis', x)
+}
+
 optics_cpp <- function(edges, neighbors, eps, minPts, useQueue, verbose) {
     .Call('_largeVis_optics_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, useQueue, verbose)
 }

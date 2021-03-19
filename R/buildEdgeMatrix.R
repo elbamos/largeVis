@@ -15,16 +15,14 @@ buildEdgeMatrix <- function(data,
                             verbose = getOption("verbose", TRUE),
 														...) {
 	if (is.null(neighbors)) neighbors <- randomProjectionTreeSearch(data, ...)
-	indices <- neighborsToVectors(neighbors)
-	distances <- distance(i = indices$i, j = indices$j, x = data, distance_method = distance_method, verbose = verbose)
-	distances <- pmax(distances, 1e-5)
-	ret <- structure(list(
-		        i = indices$i + 1,
-						j = indices$j + 1,
-						x = as.vector(distances)),
-						dims = c(ncol(data), ncol(data)),
-						call = sys.call(),
-						Metric = tolower(distance_method))
+	ret <- neighborsToVectors(neighbors)
+	ret$x <- distance(i = ret$i, j = ret$j, x = data, distance_method = distance_method, verbose = verbose)
+	ret$x <- as.vector(pmax(ret$x, 1e-5))
+	ret$i <- as.vector(ret$i + 1)
+	ret$j <- as.vector(ret$j + 1)
+	attr(ret, "dims") <- c(ncol(data), ncol(data))
+	attr(ret, "call") <- sys.call()
+	attr(ret, "Metric") <- tolower(distance_method)
 	class(ret) <- "edgematrix"
 	ret
 }
