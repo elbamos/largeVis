@@ -30,7 +30,7 @@ used in the examples in the original paper.}
 
 \item{max_iter}{See \code{\link{randomProjectionTreeSearch}}.}
 
-\item{distance_method}{One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.}
+\item{distance_method}{See \code{\link{randomProjectionTreeSearch}}.}
 
 \item{perplexity}{See \code{\link{buildWijMatrix}}.}
 

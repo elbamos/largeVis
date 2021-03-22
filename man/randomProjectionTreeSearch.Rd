@@ -75,7 +75,11 @@ randomProjectionTreeSearchFromIndex(
 \item{D}{Dimensionality of the dataset}
 }
 \value{
-A [K, N] matrix of the approximate K nearest neighbors for each vertex.
+A `list` with the following members:
+ \describe{
+   \item{'neighbors'}{A [K, N] adjacency matrix of the approximate K nearest neighbors for each vertex.}
+   \item{'edgematrix'}{A [N,N] sparse matrix of distances between nearest neighbors.}
+ }
 
 A [K, N] matrix of the approximate K nearest neighbors for each vertex.
 }

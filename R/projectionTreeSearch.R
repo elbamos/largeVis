@@ -11,11 +11,16 @@
 #' @param K How many nearest neighbors to seek for each node.
 #' @param n_trees The number of trees to build.
 #' @param max_iter Number of iterations in the neighborhood exploration phase.
-#' @param distance_method One of "Euclidean" or "Cosine."
+#' @param distance_method One of "Euclidean", "Cosine", "Manhattan", or "Hamming"
 #' @param save_file If not null, the annoy index will be built on-disk at this path.
 #' @param verbose Whether to print verbose logging using the \code{progress} package.
 #'
-#' @return A [K, N] matrix of the approximate K nearest neighbors for each vertex.
+#' @return A `list` with the following members:
+#'  \describe{
+#'    \item{'neighbors'}{A [K, N] adjacency matrix of the approximate K nearest neighbors for each vertex.}
+#'    \item{'edgematrix'}{A [N,N] sparse matrix of distances between nearest neighbors.}
+#'  }
+#'
 #' @export
 randomProjectionTreeSearch <- function(x,
 																			 K = 150,

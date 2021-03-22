@@ -6,7 +6,7 @@
 #' @param n_trees See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 #' used in the examples in the original paper.
 #' @param max_iter See \code{\link{randomProjectionTreeSearch}}.
-#' @param distance_method One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.
+#' @param distance_method See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See \code{\link{buildWijMatrix}}.
 #' @param save_neighbors Whether to include in the output the adjacency matrix of nearest neighbors.
 #' @param save_edges Whether to include in the output the distance matrix of nearest neighbors.

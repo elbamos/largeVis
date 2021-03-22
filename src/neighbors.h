@@ -34,37 +34,37 @@ public:
 	}
 };
 
-template <typename Distance>
-using LVAnnoyIndex = AnnoyIndex<vertexidxtype, annoy_distance, Distance, Kiss64Random, RcppAnnoyIndexThreadPolicy>;
+template <typename distancemetric, typename Distance>
+using LVAnnoyIndex = AnnoyIndex<vertexidxtype, distancemetric, Distance, Kiss64Random, RcppAnnoyIndexThreadPolicy>;
 
 
-template<typename Distance>
+template<typename distancemetric, typename Distance>
 class AnnoySearch {
 protected:
 	Neighborhood* treeNeighborhoods;
 	arma::imat knns;
 	void advanceHeap(MinIndexedPQ& positionHeap, vector< Position>& positionVector) const;
 
-	inline void addHeap(vector< std::pair<annoy_distance, vertexidxtype> >& heap, const vertexidxtype& i, const vertexidxtype& j) const;
+	inline void addHeap(vector< std::pair<distancemetric, vertexidxtype> >& heap, const vertexidxtype& i, const vertexidxtype& j) const;
 	inline void addToNeighborhood(const vertexidxtype& i, const vertexidxtype& j,
-                               vector< std::pair<annoy_distance, vertexidxtype> >& neighborhood) const;
+                               vector< std::pair<distancemetric, vertexidxtype> >& neighborhood) const;
 
 public:
-	LVAnnoyIndex<Distance>* annoy_index;
+	LVAnnoyIndex<distancemetric, Distance>* annoy_index;
 	const kidxtype K;
 	const vertexidxtype N;
 	Progress p;
 	void reduce();
 
 	void exploreOne(const vertexidxtype& i, const arma::imat& old_knns,
-                 vector< std::pair<annoy_distance, vertexidxtype> >& nodeHeap,
+                 vector< std::pair<distancemetric, vertexidxtype> >& nodeHeap,
                  MinIndexedPQ& positionHeap, vector< Position >& positionVector);
 	void reduceOne(const vertexidxtype& i);
-	void sortCopyOne(vector< std::pair<annoy_distance, vertexidxtype>>& holder, const vertexidxtype& i);
+	void sortCopyOne(vector< std::pair<distancemetric, vertexidxtype>>& holder, const vertexidxtype& i);
 	void exploreNeighborhood(const unsigned int& maxIter);
 	arma::imat sortAndReturn();
 
-	AnnoySearch(LVAnnoyIndex<Distance>* annoy_index, const vertexidxtype& N, const kidxtype& K, const bool &verbose, const int &maxIter, const long &pCount) :
+	AnnoySearch(LVAnnoyIndex<distancemetric, Distance>* annoy_index, const vertexidxtype& N, const kidxtype& K, const bool &verbose, const int &maxIter, const long &pCount) :
 		annoy_index{annoy_index},
 		K{K},
 		N{N},
@@ -72,24 +72,24 @@ public:
 };
 
 
-template<class M, typename Distance>
+template<class M, typename distancemetric, typename Distance>
 void trees(
-		LVAnnoyIndex<Distance>& annoy_index,
+		LVAnnoyIndex<distancemetric, Distance>& annoy_index,
 		const M& data,
 		const unsigned int& n_trees,
 		const Rcpp::Nullable< Rcpp::String > &savefile,
 		Progress& p
 	);
 
-template<typename Distance>
+template<typename distancemetric, typename Distance>
 class SortCopyWorker : public RcppParallel::Worker  {
 public:
-	AnnoySearch<Distance> *searcher;
+	AnnoySearch<distancemetric, Distance> *searcher;
 
-	SortCopyWorker<Distance>(AnnoySearch<Distance> *searcher) : searcher {searcher} {}
+	SortCopyWorker<distancemetric, Distance>(AnnoySearch<distancemetric, Distance> *searcher) : searcher {searcher} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
-		vector< std::pair<annoy_distance, vertexidxtype>> holder;
+		vector< std::pair<distancemetric, vertexidxtype>> holder;
 		holder.reserve(searcher->K);
 		for (vertexidxtype i = begin; i != end; ++i) if (searcher->p.increment()) {
 			searcher->sortCopyOne(holder, i);
@@ -97,12 +97,12 @@ public:
 	}
 };
 
-template<typename Distance>
+template<typename distancemetric, typename Distance>
 class ReduceWorker : public RcppParallel::Worker  {
 public:
-	AnnoySearch<Distance> *searcher;
+	AnnoySearch<distancemetric, Distance> *searcher;
 
-	ReduceWorker<Distance>(AnnoySearch<Distance> *searcher) : searcher {searcher} {}
+	ReduceWorker<distancemetric, Distance>(AnnoySearch<distancemetric, Distance> *searcher) : searcher {searcher} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		for (vertexidxtype i = begin; i < end; ++i) if (searcher->p.increment()) {
@@ -111,13 +111,13 @@ public:
 	}
 };
 
-template<typename Distance>
+template<typename distancemetric, typename Distance>
 class ExploreWorker : public RcppParallel::Worker {
 public:
-	AnnoySearch<Distance> *searcher;
+	AnnoySearch<distancemetric, Distance> *searcher;
 	arma::imat *old_knns;
 
-	ExploreWorker<Distance>(AnnoySearch<Distance> *searcher, arma::imat *old_knns) : searcher {searcher}, old_knns {old_knns} {}
+	ExploreWorker<distancemetric, Distance>(AnnoySearch<distancemetric, Distance> *searcher, arma::imat *old_knns) : searcher {searcher}, old_knns {old_knns} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		/*
@@ -126,7 +126,7 @@ public:
 		 * We can use a simple priority queue because the number of entries in the queue, which equals
 		 * K + 1, is small and well-controlled.
 		 */
-		vector< std::pair<annoy_distance, vertexidxtype> > nodeHeap;
+		vector< std::pair<distancemetric, vertexidxtype> > nodeHeap;
 		nodeHeap.reserve(searcher->K);
 		MinIndexedPQ positionHeap(searcher->K + 1);
 		vector< Position > positionVector;
@@ -137,8 +137,5 @@ public:
 		}
 	}
 };
-
-typedef AnnoySearch<Euclidean> DenseEuclidean ;
-typedef AnnoySearch<Angular> DenseCosine ;
 
 #endif

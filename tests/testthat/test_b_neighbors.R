@@ -47,6 +47,7 @@ test_that("Can use an on-disk index", {
 																					K = 5,
 																					n_trees = 10,
 																					max_iter = 1,
+																					distance_method = "Euclidean",
 																					save_file = filename,
 																					verbose = FALSE))
 	expect_true(file.exists(filename))
@@ -54,7 +55,7 @@ test_that("Can use an on-disk index", {
 																					 D = nrow(dat),
 																					 K = 5,
 																					 max_iter = 1,
-																					 save_file = filename,
+																					 distance_method = "Euclidean",
 																					 verbose = FALSE)
 	testthat::expect_identical(neighbors1$neighbors, neighbors2$neighbors)
 })
