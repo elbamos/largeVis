@@ -2,6 +2,8 @@
 * The purpose of this update is to get the package back on CRAN and enable multi-threading on current OS X systems.
 * Replaced OpenMP with RcppParallel. This was necessary to get the package running in parallel on current OS X systems, and should eliminate a number of compilation hitches on some systems. It should not affect performance. 
 * Replaced my implementation of the Annoy algorithm with RcppAnnoy. This was necessary to get efficient multithreading for the Annoy phase of the algorithm. 
+* The functionality that was formerly in `buildEdgeMatrix` is now built into `randomProjectionTreeSearch`, which now returns both a matrix of nearest neighbors and an `edgematrix` object. This enables handling datasets that were previously too large in R. It also eliminated the `distance` function. 
+* `randomProjectionTreeSearch` supports the Hamming and Manhattan distances as well as Euclidean and Cosine.
 * The `threads` parameter is removed from all function calls that had it; the number of threads should instead now be set with `RcppParallel::setThreadOptions()`
 * `randomProjectionTreeSearch` now has a parameter to allow building the annoy index on disk, which should help for very large datasets. 
 * Removed the as.dendrogram function for hdbscan. I never felt it worked properly.
