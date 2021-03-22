@@ -287,11 +287,10 @@ A simple way to reduce peak memory usage, is to turn-off the `save_neighbors` pa
 
 ```{r lowmemexample,eval=F,echo=T}
 neighbors <- randomProjectionTreeSearch(largeDataset)
-edges <- buildEdgeMatrix(data = largeDataset, neighbors = neighbors)
-rm(neighbors)
+neighbors$neighbors <- NULL
 gc()
-wij <- buildWijMatrix(edges)
-rm(edges)
+wij <- buildWijMatrix(neighbors$edgematrix)
+rm(neighbors)
 gc()
 coords <- projectKNNs(wij)
 ```
