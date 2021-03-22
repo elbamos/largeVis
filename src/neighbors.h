@@ -15,7 +15,7 @@ using namespace std;
 typedef float annoy_distance;
 
 typedef vector< vertexidxtype > Neighborhood;
-typedef shared_ptr<arma::ivec> Neighborholder;
+
 /*
  * Helper class for n-way merge sort
  */
