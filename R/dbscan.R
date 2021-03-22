@@ -2,9 +2,7 @@
 #'
 #' Implementation of the DBSCAN algorithm using largeVis datastructures.
 #'
-#' @param edges An `edgematrix` object. Alternatively, a \code{largeVis} object,
-#' in which case \code{edges} and \code{neighbors} will be taken from the \code{edges} and \code{knns} parameters, respectively.
-#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}
+#' @param neighbors A list of the type produced by \code{\link{randomProjectionTreeSearch}}. Alternatively, a \code{largeVis} object.
 #' @param eps See \code{\link[dbscan]{dbscan}}.
 #' @param minPts See \code{\link[dbscan]{dbscan}}.
 #' @param verbose Vebosity level.
@@ -16,18 +14,18 @@
 #' @export
 #'
 #' @references Martin Ester, Hans-Peter Kriegel, Jorg Sander, Xiaowei Xu (1996). Evangelos Simoudis, Jiawei Han, Usama M. Fayyad, eds. A density-based algorithm for discovering clusters in large spatial databases with noise. Proceedings of the Second International Conference on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226-231. ISBN 1-57735-004-9.
-lv_dbscan <- function(edges,
-									 neighbors,
+lv_dbscan <- function(neighbors,
 									 eps = Inf,
 									 minPts = nrow(neighbors - 1),
 									 verbose = getOption("verbose", TRUE)) {
-	if (inherits(edges, "edgematrix")) {
-		edges <- t(toMatrix(edges))
-	} else if (inherits(edges, "largeVis")) {
-		if (missing(neighbors)) neighbors <- edges$knns
-		edges <- t(toMatrix(edges$edges))
+	if (inherits(neighbors, "list")) {
+		edges <- t(toMatrix(neighbors$edgematrix))
+		neighbors <- neighbors$neighbors
+	} else if (inherits(neighbors, "largeVis")) {
+		edges <- t(toMatrix(neighbors$edges))
+		neighbors <- neighbors$knns
 	} else {
-		stop("edges must be either an edgematrix or a largeVis object")
+		stop("Neighbors must be the output of either largeVis or randomProjectionTreeSearch")
 	}
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1

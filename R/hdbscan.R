@@ -2,9 +2,7 @@
 #'
 #' Implemenation of the hdbscan algorithm.
 #'
-#' @param edges An edge matrix of the type returned by \code{\link{buildEdgeMatrix}} or, alternatively, a \code{largeVis} object.
-#' @param neighbors An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}. Must be specified unless
-#' \code{edges} is a \code{largeVis} object.
+#' @param neighbors The output of either \code{\link{randomProjectionTreeSearch}} or \code{\link{largeVis}}.
 #' @param minPts The minimum number of points in a cluster.
 #' @param K The number of points in the core neighborhood. (See details.)
 #' @param verbose Verbosity.
@@ -86,16 +84,17 @@
 #' }
 #' @export
 #' @importFrom stats aggregate
-hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
+hdbscan <- function(neighbors = NULL, minPts = 20, K = 5,
 										verbose = getOption("verbose", TRUE)) {
 
-	if (inherits(edges, "edgematrix")) {
-		edges <- t(toMatrix(edges))
-	} else if (inherits(edges, "largeVis")) {
-		if (missing(neighbors)) neighbors <- edges$knns
-		edges <- t(toMatrix(edges$edges))
+	if (inherits(neighbors, "list")) {
+		edges <- t(toMatrix(neighbors$edgematrix))
+		neighbors <- neighbors$neighbors
+	} else if (inherits(neighbors, "largeVis")) {
+		edges <- t(toMatrix(neighbors$edges))
+		neighbors <- neighbors$knns
 	} else {
-		stop("edges must be either an edgematrix or a largeVis object")
+		stop("Neighbors must be the output of either largeVis or randomProjectionTreeSearch")
 	}
 	if (is.null(edges) || is.null(neighbors)) stop("Both edges and neighbors must be specified (or use a largeVis object)")
 

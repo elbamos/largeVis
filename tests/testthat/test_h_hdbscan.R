@@ -41,7 +41,7 @@ test_that("hdbscan is fine with minpts < 6", {
 
 test_that("hdbscan finds 3 clusters and outliers in spiral", {
 	load(system.file("testdata/spiral.Rda", package = "largeVis"))
-	expect_silent(clustering <- hdbscan(spiral$edges, spiral$knns, K = 3, minPts = 20))
+	expect_silent(clustering <- hdbscan(spiral, K = 3, minPts = 20))
 	expect_equal(length(unique(clustering$clusters)), 3)
 })
 
@@ -57,9 +57,7 @@ K <- 20
 neighbors <- randomProjectionTreeSearch(dat, K = K, verbose = FALSE)
 
 test_that("hdbscan doesn't crash without 3 neighbors and is correct", {
-	edges <- neighbors$edgematrix
-	neighbors <- neighbors$neighbors
-	expect_silent(clustering <- hdbscan(edges, neighbors = neighbors, minPts = 20, K = 3, verbose = FALSE))
+	expect_silent(clustering <- hdbscan(neighbors = neighbors, minPts = 20, K = 3, verbose = FALSE))
 	expect_equal(length(unique(clustering$clusters)), 3)
 })
 

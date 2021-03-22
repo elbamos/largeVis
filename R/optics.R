@@ -2,9 +2,7 @@
 #'
 #' Experimental implementation of the OPTICS algorithm.
 #'
-#' @param edges A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}. Alternatively, a \code{largeVis} object,
-#' in which case \code{edges} and \code{neighbors} will be taken from the \code{edges} and \code{knns} parameters, respectively.
-#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}
+#' @param neighbors The output of either \code{\link{randomProjectionTreeSearch}} or \code{\link{largeVis}}
 #' @param eps See \code{\link[dbscan]{optics}}.
 #' @param minPts See \code{\link[dbscan]{optics}}.
 #' @param eps_cl See \code{\link[dbscan]{optics}}.
@@ -28,21 +26,21 @@
 #' @return An \code{\link[dbscan]{optics}} object.
 #' @references  Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jorg Sander (1999). OPTICS: Ordering Points To Identify the Clustering Structure. ACM SIGMOD international conference on Management of data. ACM Press. pp. 49-60.
 #' @export
-lv_optics <- function(edges,
-										 neighbors,
+lv_optics <- function(neighbors,
 										 eps = Inf,
 										 minPts = nrow(neighbors),
 										 eps_cl,
 										 xi,
 										 useQueue = TRUE,
 										 verbose = getOption("verbose", TRUE)) {
-	if (inherits(edges, "edgematrix")) {
-		edges <- t(toMatrix(edges))
-	} else if (inherits(edges, "largeVis")) {
-		if (missing(neighbors)) neighbors <- edges$knns
-		edges <- t(toMatrix(edges$edges))
+	if (inherits(neighbors, "list")) {
+		edges <- t(toMatrix(neighbors$edgematrix))
+		neighbors <- neighbors$neighbors
+	} else if (inherits(neighbors, "largeVis")) {
+		edges <- t(toMatrix(neighbors$edges))
+		neighbors <- neighbors$knns
 	} else {
-		stop("edges must be either an edgematrix or a largeVis object")
+		stop("Neighbors must be the output of either largeVis or randomProjectionTreeSearch")
 	}
 	if (!is.null(neighbors)) {
 		neighbors[is.na(neighbors)] <- -1

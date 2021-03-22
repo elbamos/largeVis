@@ -26,17 +26,15 @@ K <- 147
 neighbors <- randomProjectionTreeSearch(dat, K = K,
 																				n_trees = 10,  max_iter = 4,
 																				verbose = FALSE)
-edges <- neighbors$edgematrix
-neighbors <- neighbors$neighbors
 
 test_that("dbscan doesn't crash on iris", {
-	expect_silent(lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE))
+	expect_silent(lv_dbscan(neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE))
 })
 
 load(system.file(package = "largeVis", "testdata/irisdbscan.Rda"))
 
 test_that("dbscan matches iris", {
-	dbclusters <- lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
+	dbclusters <- lv_dbscan(neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
 	expect_lte(sum(dbclusters$cluster != irisclustering$cluster), 1)
 })
 
@@ -56,16 +54,14 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 147
 neighbors <- randomProjectionTreeSearch(dat, K = K, n_trees = 10,  max_iter = 4, verbose = FALSE)
-edges <- neighbors$edgematrix
-neighbors <- neighbors$neighbors
 
 test_that("optics doesn't crash on iris", {
-	expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = FALSE, verbose = FALSE))
-	expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = TRUE, verbose = FALSE))
+	expect_silent(lv_optics(neighbors = neighbors, eps = 10, minPts = 10, useQueue = FALSE, verbose = FALSE))
+	expect_silent(lv_optics(neighbors = neighbors, eps = 10, minPts = 10, useQueue = TRUE, verbose = FALSE))
 })
 
 load(system.file(package = "largeVis", "testdata/irisoptics.Rda"))
-opclusters <- lv_optics(edges = edges, neighbors = neighbors, eps = 1, minPts = 10,  useQueue = FALSE, verbose = FALSE)
+opclusters <- lv_optics(neighbors = neighbors, eps = 1, minPts = 10,  useQueue = FALSE, verbose = FALSE)
 
 test_that("optics matches optics core infinities", {
 	expect_equal(which(is.infinite(opclusters$coredist)), which(is.infinite(irisoptics$coredist)))
@@ -77,7 +73,7 @@ test_that("optics matches optics core dist not infinities", {
 
 test_that("opticis iris cut to dbscan matches dbscan", {
 	cl <- cutoptics(opclusters)
-	dbclusters <- lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
+	dbclusters <- lv_dbscan(neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE)
 	expect_equal(cl, dbclusters$cluster)
 })
 
@@ -107,13 +103,11 @@ test_that("optics output format is correct", {
 
 	x <- opttest$test_data
 	neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399, max_iter = 10)
-	edges <- neighbors$edgematrix
-	neighbors <- neighbors$neighbors
 
 	eps <- .1
 	eps_cl <- .1
 	minPts <- 10
-	res <- lv_optics(edges, neighbors, eps = eps, useQueue = FALSE,  minPts = minPts)
+	res <- lv_optics(neighbors, eps = eps, useQueue = FALSE,  minPts = minPts)
 	expect_identical(length(res$order), nrow(x))
 	expect_identical(length(res$reachdist), nrow(x))
 	expect_identical(length(res$coredist), nrow(x))
