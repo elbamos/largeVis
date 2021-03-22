@@ -13,20 +13,9 @@ neighbors <- randomProjectionTreeSearch(dat, K = K, verbose = FALSE)
 
 test_that(paste("LOF is consistent", 20), {
 	load(system.file("testdata/truelof20.Rda", package = "largeVis"))
-	edges <- buildEdgeMatrix(data = dat,
-													 neighbors = neighbors,
-													 verbose = FALSE)
+	edges <- neighbors$edgematrix
 	ourlof <- lof(edges)
 	expect_lt(sum(truelof20 - ourlof)^2 / ncol(dat), 0.4)
-})
-
-test_that("LOF is consistent 10", {
-	edges <- buildEdgeMatrix(data = dat,
-													 neighbors = neighbors[1:10,],
-													 verbose = FALSE)
-	load(system.file("testdata/truelof10.Rda", package = "largeVis"))
-	ourlof <- lof(edges)
-	expect_lt(sum(truelof10 - ourlof)^2 / ncol(dat), 0.4)
 })
 
 context("hdbscan")
@@ -68,7 +57,8 @@ K <- 20
 neighbors <- randomProjectionTreeSearch(dat, K = K, verbose = FALSE)
 
 test_that("hdbscan doesn't crash without 3 neighbors and is correct", {
-	edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
+	edges <- neighbors$edgematrix
+	neighbors <- neighbors$neighbors
 	expect_silent(clustering <- hdbscan(edges, neighbors = neighbors, minPts = 20, K = 3, verbose = FALSE))
 	expect_equal(length(unique(clustering$clusters)), 3)
 })

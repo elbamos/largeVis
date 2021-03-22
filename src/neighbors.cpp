@@ -192,98 +192,101 @@ void AnnoySearch<Distance>::sortCopyOne(vector< std::pair<annoy_distance, vertex
 
 
 
+// Neighbor conversion functions
 
-
-
-template<typename Distance>
-imat denseSearchTrees(
-		const int& n_trees,
-		const int& K,
-		const int& maxIter,
-		const arma::mat& data,
-		Rcpp::Nullable< Rcpp::String > &saveFile,
-		bool verbose
-) {
-	LVAnnoyIndex<Distance> annoy_index(data.n_rows);
-	vertexidxtype pCount = (2 * n_trees * data.n_cols) + ((3 + maxIter) * data.n_cols);
-	AnnoySearch<Distance> searcher(&annoy_index, data.n_cols, K, verbose, maxIter, pCount);
-	trees<Mat<double>, Distance>(annoy_index, data, n_trees, saveFile, searcher.p);
-	searcher.reduce();
-	searcher.exploreNeighborhood(maxIter);
-	return searcher.sortAndReturn();
-}
-
-// [[Rcpp::export]]
-arma::imat searchTrees(
-		const int& n_trees,
-		const int& K,
-		const int& maxIter,
-		const arma::mat& data,
-		const std::string& distMethod,
-		Rcpp::Nullable< Rcpp::String > &saveFile,
-		bool verbose) {
-
-	if (distMethod.compare(string("Cosine")) == 0) {
-		return denseSearchTrees<Angular>(n_trees, K, maxIter, data, saveFile, verbose);
-	} else {
-		return denseSearchTrees<Euclidean>(n_trees, K, maxIter, data, saveFile, verbose);
+vertexidxtype countSize(imat x) {
+	vertexidxtype ones = 0;
+	for (vertexidxtype i = 0; i < x.n_cols; ++i) {
+		for (vertexidxtype j = 0; j < x.n_rows; ++j) {
+			if (x(j, i) == -1) ones++;
+		}
 	}
-
+	return (x.n_cols * x.n_rows) - ones;
 }
 
-
-template<typename Distance>
-imat denseSearchIndex(
-		const int& D,
-		const int& K,
-		const int& maxIter,
-		Rcpp::String &saveFile,
-		bool verbose
-) {
-	LVAnnoyIndex<Distance> annoy_index(D);
-	annoy_index.load(saveFile.get_cstring());
-	vertexidxtype pCount = (3 + maxIter) * annoy_index.get_n_items();
-	AnnoySearch<Distance> searcher(&annoy_index, annoy_index.get_n_items(), K, verbose, maxIter, pCount);
-	searcher.reduce();
-	searcher.exploreNeighborhood(maxIter);
-	return searcher.sortAndReturn();
-}
-
-// [[Rcpp::export]]
-arma::imat searchTreesFromIndex(
-		const int& K,
-		const int& D,
-		const int& maxIter,
-		const std::string& distMethod,
-		Rcpp::String &saveFile,
-		bool verbose) {
-
-	if (distMethod.compare(string("Cosine")) == 0) {
-		return denseSearchIndex<Angular>(D, K, maxIter, saveFile, verbose);
-	} else {
-		return denseSearchIndex<Euclidean>(D, K, maxIter, saveFile, verbose);
+void neighborsToVectors(const imat& x, vector<vertexidxtype>& is, vector<vertexidxtype>& js) {
+	long cols = x.n_cols;
+	long rows = x.n_rows;
+	long sz = countSize(x);
+	is.reserve(sz);
+	js.reserve(sz);
+	for (long col = 0; col < cols; ++col) {
+		for (long row = 0; row < rows; ++row) {
+			if (x(row, col) == -1) break;
+			is.push_back(col);
+			js.push_back(x(row, col));
+		}
 	}
 }
 
 template<typename Distance>
-imat sparseSearchTrees(
+List buildEdgeMatrix(const imat& knns, const LVAnnoyIndex<Distance>& index) {
+	vector<vertexidxtype> is;
+	vector<vertexidxtype> js;
+	vector<distancetype> xs;
+
+	neighborsToVectors(knns, is, js);
+
+	xs.reserve(is.size());
+
+	for (auto it_i = is.begin(), it_j = js.begin(); it_i != is.end(); ++it_i, ++it_j) {
+		xs.push_back(index.get_distance(*it_i, *it_j));
+	}
+
+	List ret = List::create(
+		Named("i") = IntegerVector(is.begin(), is.end()) + 1,
+		Named("j") = IntegerVector(js.begin(), js.end()) + 1,
+		Named("x") = NumericVector(xs.begin(), xs.end())
+	);
+
+	ret.attr("class") = "edgematrix";
+	ret.attr("dims") = IntegerVector::create(knns.n_cols, knns.n_cols);
+	return ret;
+}
+
+template<class M, typename Distance>
+List searchTreesTyped(
 		const int& n_trees,
-		const kidxtype& K,
+		const int& K,
 		const int& maxIter,
-		const sp_mat& data,
+		const M& data,
 		const Rcpp::Nullable< Rcpp::String > &saveFile,
 		bool verbose
 ) {
 	LVAnnoyIndex<Distance> annoy_index(data.n_rows);
 	vertexidxtype pCount = (2 * n_trees * data.n_cols) + ((3 + maxIter) * data.n_cols);
 	AnnoySearch<Distance> searcher(&annoy_index, data.n_cols, K, verbose, maxIter, pCount);
-	trees<sp_mat, Distance>(annoy_index, data, n_trees, saveFile, searcher.p);
+	trees<M, Distance>(annoy_index, data, n_trees, saveFile, searcher.p);
 	searcher.reduce();
 	searcher.exploreNeighborhood(maxIter);
-	return searcher.sortAndReturn();
+	imat knns = searcher.sortAndReturn();
+
+	List edgematrix = buildEdgeMatrix<Distance>(knns, annoy_index);
+
+	return List(
+		List::create(Named("neighbors") = knns , Named("edgematrix") = edgematrix)
+	);
 }
 
-imat searchTreesSparse(
+// [[Rcpp::export]]
+List searchTrees(
+		const int& n_trees,
+		const int& K,
+		const int& maxIter,
+		const arma::mat& data,
+		const std::string& distMethod,
+		Rcpp::Nullable< Rcpp::String > &saveFile,
+		bool verbose) {
+
+	if (distMethod.compare(string("Cosine")) == 0) {
+		return searchTreesTyped<arma::mat, Angular>(n_trees, K, maxIter, data, saveFile, verbose);
+	} else {
+		return searchTreesTyped<arma::mat, Euclidean>(n_trees, K, maxIter, data, saveFile, verbose);
+	}
+
+}
+
+List searchTreesSparse(
 		const int& n_trees,
 		const kidxtype& K,
 		const int& maxIter,
@@ -293,14 +296,14 @@ imat searchTreesSparse(
 		bool verbose) {
 
 	if (distMethod.compare(string("Cosine")) == 0) {
-		return sparseSearchTrees<Angular>(n_trees, K, maxIter, data, saveFile, verbose);
+		return searchTreesTyped<sp_mat, Angular>(n_trees, K, maxIter, data, saveFile, verbose);
 	} else {
-		return sparseSearchTrees<Euclidean>(n_trees, K, maxIter, data, saveFile, verbose);
+		return searchTreesTyped<sp_mat, Euclidean>(n_trees, K, maxIter, data, saveFile, verbose);
 	}
 }
 
 // [[Rcpp::export]]
-arma::imat searchTreesCSparse(
+List searchTreesCSparse(
 		const int& n_trees,
 		const int& K,
 		const int& maxIter,
@@ -316,7 +319,7 @@ arma::imat searchTreesCSparse(
 }
 
 // [[Rcpp::export]]
-arma::imat searchTreesTSparse(
+List searchTreesTSparse(
 		const int& n_trees,
 		const int& K,
 		const int& maxIter,
@@ -329,4 +332,44 @@ arma::imat searchTreesTSparse(
 	const umat locations = join_cols(i,j);
 	const sp_mat data = sp_mat(locations,x);
 	return searchTreesSparse(n_trees,K,maxIter,data,distMethod,saveFile, verbose);
+}
+
+
+template<typename Distance>
+List denseSearchIndex(
+		const int& D,
+		const int& K,
+		const int& maxIter,
+		Rcpp::String &saveFile,
+		bool verbose
+) {
+	LVAnnoyIndex<Distance> annoy_index(D);
+	annoy_index.load(saveFile.get_cstring());
+	vertexidxtype pCount = (3 + maxIter) * annoy_index.get_n_items();
+	AnnoySearch<Distance> searcher(&annoy_index, annoy_index.get_n_items(), K, verbose, maxIter, pCount);
+	searcher.reduce();
+	searcher.exploreNeighborhood(maxIter);
+	imat knns = searcher.sortAndReturn();
+
+	List edgematrix = buildEdgeMatrix<Distance>(knns, annoy_index);
+
+	return List(
+		List::create(Named("neighbors") = knns , Named("edgematrix") = edgematrix)
+	);
+}
+
+// [[Rcpp::export]]
+List searchTreesFromIndex(
+		const int& K,
+		const int& D,
+		const int& maxIter,
+		const std::string& distMethod,
+		Rcpp::String &saveFile,
+		bool verbose) {
+
+	if (distMethod.compare(string("Cosine")) == 0) {
+		return denseSearchIndex<Angular>(D, K, maxIter, saveFile, verbose);
+	} else {
+		return denseSearchIndex<Euclidean>(D, K, maxIter, saveFile, verbose);
+	}
 }

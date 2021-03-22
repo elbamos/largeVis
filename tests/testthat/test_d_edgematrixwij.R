@@ -1,18 +1,3 @@
-context("Edge Matrix")
-
-test_that("Edge Matrix doesn't crash", {
-	data(quakes)
-	dat <- t(scale(as.matrix(quakes)))
-	neighbors <- randomProjectionTreeSearch(dat,
-																					K = 5,
-																					max_iter = 4,
-																					n_trees = 20,
-																					verbose = FALSE)
-	expect_silent(edges <- buildEdgeMatrix(dat, neighbors, verbose = FALSE))
-	expect_equal(attr(edges, "Metric"), "euclidean")
-	expect_equal(class(edges), "edgematrix")
-})
-
 context("wij")
 
 test_that("wij doesn't crash", {
@@ -24,8 +9,7 @@ test_that("wij doesn't crash", {
 	dat <- dat[-dupes, ]
 	dat <- t(dat)
 	neighbors <- randomProjectionTreeSearch(dat, K = 20)
-	edges <- buildEdgeMatrix(dat, neighbors)
-	expect_silent(wij <- buildWijMatrix(edges))
+	expect_silent(wij <- buildWijMatrix(neighbors$edgematrix))
 })
 
 context("project knns")
@@ -37,7 +21,7 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 neighbors <- randomProjectionTreeSearch(dat, K = 20)
-edges <- buildEdgeMatrix(dat, neighbors)
+edges <- neighbors$edgematrix
 wij <- buildWijMatrix(edges)
 
 test_that("project knns doesn't crash", {
@@ -80,20 +64,20 @@ do <- dist(t(dat))
 
 test_that("build edge matrix as distance matches dist", {
 	neighbors <- randomProjectionTreeSearch(dat, K = ncol(dat) - 1, max_iter = 10)
-	edges <- buildEdgeMatrix(dat, neighbors)
+	edges <- neighbors$edgematrix
 	d2 <- as.dist(edges)
 	expect_true(inherits(d2, "dist"))
 	expect_true(inherits(d2, "dissimilarity"))
-	expect_equal(as.matrix(do), as.matrix(d2))
+	expect_equal(as.matrix(do), as.matrix(d2), tolerance=1e-6)
 	expect_equal(attr(d2, "Metric"), "euclidean")
 	expect_equal(sum(is.na(as.matrix(d2))), 0)
 })
 
 test_that("build edge matrix as distance matches dist with nas", {
 	neighbors <- randomProjectionTreeSearch(dat, K = 20)
-	edges <- buildEdgeMatrix(dat, neighbors)
+	edges <- neighbors$edgematrix
 	d3 <- as.dist(edges)
 	todelete <- !is.na(as.matrix(d3))
-	expect_equal(as.matrix(do)[todelete], as.matrix(d3)[todelete])
+	expect_equal(as.matrix(do)[todelete], as.matrix(d3)[todelete], tolerance=1e-6)
 	expect_equal(attr(d3, "Metric"), "euclidean")
 })

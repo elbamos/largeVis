@@ -48,15 +48,17 @@ randomProjectionTreeSearch.matrix <- function(x,
 		verbose = as.logical(verbose)
 	)
 
-	if (sum(colSums(knns != -1) == 0) > 0)
+	if (sum(colSums(knns$neighbors != -1) == 0) > 0)
 		stop ("After neighbor search, no candidates for some nodes.")
-	if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
+	if (sum(is.na(knns$neighbors)) + sum(is.nan(knns$neighbors)) > 0)
 		stop ("NAs or nans in neighbor graph.")
-	if (verbose[1] && sum(knns == -1) > 0)
+	if (verbose[1] && sum(knns$neighbors == -1) > 0)
 		warning ("Wanted to find",
-						 nrow(knns) * ncol(knns),
+						 nrow(knns$neighbors) * ncol(knns$neighbors),
 						 " neighbors, but only found",
-						 ((nrow(knns) * ncol(knns)) - sum(knns == -1)))
+						 ((nrow(knns$neighbors) * ncol(knns$neighbors)) - sum(knns$neighbors == -1)))
+
+	attr(knns$edgematrix, "Metric") <- tolower(distance_method)
 
 	return(knns)
 }
@@ -85,15 +87,17 @@ randomProjectionTreeSearch.CsparseMatrix <- function(x,
 		verbose = as.logical(verbose)
 	)
 
-	if (sum(colSums(knns != -1) == 0) > 0)
+	if (sum(colSums(knns$neighbors != -1) == 0) > 0)
 		stop ("After neighbor search, no candidates for some nodes.")
-	if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
+	if (sum(is.na(knns$neighbors)) + sum(is.nan(knns$neighbors)) > 0)
 		stop ("NAs or nans in neighbor graph.")
-	if (verbose[1] && sum(knns == -1) > 0)
+	if (verbose[1] && sum(knns$neighbors == -1) > 0)
 		warning ("Wanted to find",
-						 nrow(knns) * ncol(knns),
+						 nrow(knns$neighbors) * ncol(knns$neighbors),
 						 " neighbors, but only found",
-						 ((nrow(knns) * ncol(knns)) - sum(knns == -1)))
+						 ((nrow(knns$neighbors) * ncol(knns$neighbors)) - sum(knns$neighbors == -1)))
+
+	attr(knns$edgematrix, "Metric") <- tolower(distance_method)
 
 	return(knns)
 }
@@ -123,15 +127,17 @@ randomProjectionTreeSearch.TsparseMatrix <- function(x,
 		verbose = as.logical(verbose)
 	)
 
-	if (sum(colSums(knns != -1) == 0) > 0)
+	if (sum(colSums(knns$neighbors != -1) == 0) > 0)
 		stop ("After neighbor search, no candidates for some nodes.")
-	if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
+	if (sum(is.na(knns$neighbors)) + sum(is.nan(knns$neighbors)) > 0)
 		stop ("NAs or nans in neighbor graph.")
-	if (verbose[1] && sum(knns == -1) > 0)
+	if (verbose[1] && sum(knns$neighbors == -1) > 0)
 		warning ("Wanted to find",
-						 nrow(knns) * ncol(knns),
+						 nrow(knns$neighbors) * ncol(knns$neighbors),
 						 " neighbors, but only found",
-						 ((nrow(knns) * ncol(knns)) - sum(knns == -1)))
+						 ((nrow(knns$neighbors) * ncol(knns$neighbors)) - sum(knns$neighbors == -1)))
+
+	attr(knns$edgematrix, "Metric") <- tolower(distance_method)
 
 	return(knns)
 }
@@ -167,15 +173,17 @@ randomProjectionTreeSearchFromIndex <- function(save_file,
 		verbose = as.logical(verbose)
 	)
 
-	if (sum(colSums(knns != -1) == 0) > 0)
+	if (sum(colSums(knns$neighbors != -1) == 0) > 0)
 		stop ("After neighbor search, no candidates for some nodes.")
-	if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
+	if (sum(is.na(knns$neighbors)) + sum(is.nan(knns$neighbors)) > 0)
 		stop ("NAs or nans in neighbor graph.")
-	if (verbose[1] && sum(knns == -1) > 0)
+	if (verbose[1] && sum(knns$neighbors == -1) > 0)
 		warning ("Wanted to find",
-						 nrow(knns) * ncol(knns),
+						 nrow(knns$neighbors) * ncol(knns$neighbors),
 						 " neighbors, but only found",
-						 ((nrow(knns) * ncol(knns)) - sum(knns == -1)))
+						 ((nrow(knns$neighbors) * ncol(knns$neighbors)) - sum(knns$neighbors == -1)))
+
+	attr(knns$edgematrix, "Metric") <- tolower(distance_method)
 
 	return(knns)
 }

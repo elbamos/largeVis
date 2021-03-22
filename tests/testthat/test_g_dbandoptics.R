@@ -26,9 +26,8 @@ K <- 147
 neighbors <- randomProjectionTreeSearch(dat, K = K,
 																				n_trees = 10,  max_iter = 4,
 																				verbose = FALSE)
-edges <- buildEdgeMatrix(data = dat,
-												 neighbors = neighbors,
-												 verbose = FALSE)
+edges <- neighbors$edgematrix
+neighbors <- neighbors$neighbors
 
 test_that("dbscan doesn't crash on iris", {
 	expect_silent(lv_dbscan(edges = edges, neighbors = neighbors, eps = 1, minPts = 10, verbose = FALSE))
@@ -57,9 +56,8 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 147
 neighbors <- randomProjectionTreeSearch(dat, K = K, n_trees = 10,  max_iter = 4, verbose = FALSE)
-edges <- buildEdgeMatrix(data = dat,
-												 neighbors = neighbors,
-												 verbose = FALSE)
+edges <- neighbors$edgematrix
+neighbors <- neighbors$neighbors
 
 test_that("optics doesn't crash on iris", {
 	expect_silent(lv_optics(edges = edges, neighbors = neighbors, eps = 10, minPts = 10, useQueue = FALSE, verbose = FALSE))
@@ -74,7 +72,7 @@ test_that("optics matches optics core infinities", {
 })
 
 test_that("optics matches optics core dist not infinities", {
-	expect_equal(opclusters$coredist[!is.infinite(opclusters$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
+	expect_equal(opclusters$coredist[!is.infinite(opclusters$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)], tolerance = 1e-6)
 })
 
 test_that("opticis iris cut to dbscan matches dbscan", {
@@ -88,7 +86,7 @@ test_that("optics works with largeVis objects", {
 
 	vis <- largeVis(dat, sgd_batches = 1)
 	expect_silent(cl <- lv_optics(vis, eps = 1, minPts = 10))
-	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
+	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)], tolerance = 1e-6)
 })
 
 test_that("optics works with dbscan", {
@@ -96,7 +94,7 @@ test_that("optics works with dbscan", {
 
 	vis <- largeVis(dat, sgd_batches = 1)
 	expect_silent(cl <- lv_optics(vis, eps = 1, minPts = 10, eps_cl = .4, xi = .05))
-	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)])
+	expect_equal(cl$coredist[!is.infinite(cl$coredist)], irisoptics$coredist[!is.infinite(irisoptics$coredist)], tolerance = 1e-6)
 })
 
 
@@ -109,7 +107,8 @@ test_that("optics output format is correct", {
 
 	x <- opttest$test_data
 	neighbors <- randomProjectionTreeSearch(t(opttest$test_data), K = 399, max_iter = 10)
-	edges <- buildEdgeMatrix(t(opttest$test_data), neighbors = neighbors)
+	edges <- neighbors$edgematrix
+	neighbors <- neighbors$neighbors
 
 	eps <- .1
 	eps_cl <- .1
@@ -120,7 +119,7 @@ test_that("optics output format is correct", {
 	expect_identical(length(res$coredist), nrow(x))
 	expect_identical(res$eps, eps)
 	expect_identical(res$minPts, minPts)
-	expect_equal(res$coredist, opttest$elkiopt$coredist)
+	expect_equal(res$coredist, opttest$elkiopt$coredist, tolerance = 1e-6)
 	optcut <- cutoptics(res)
 	refcut <- cutoptics(opttest$elkiopt)
 	expect_equal(optcut, refcut)

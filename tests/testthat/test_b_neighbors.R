@@ -56,7 +56,7 @@ test_that("Can use an on-disk index", {
 																					 max_iter = 1,
 																					 save_file = filename,
 																					 verbose = FALSE)
-	testthat::expect_identical(neighbors1, neighbors2)
+	testthat::expect_identical(neighbors1$neighbors, neighbors2$neighbors)
 })
 
 
@@ -73,6 +73,7 @@ test_that("exploration is not negative", {
 																					n_trees = 1,
 																					max_iter = 0,
 																					verbose = FALSE)
+	neighbors <- neighbors$neighbors
 	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
 	score <- sum(as.numeric(scores))
 	oldscore <- score
@@ -81,6 +82,7 @@ test_that("exploration is not negative", {
 																					n_trees = 1,
 																					max_iter = 1,
 																					verbose = FALSE)
+	neighbors <- neighbors$neighbors
 	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
 	score <- sum(as.numeric(scores))
 	expect_gte(score, oldscore, label = "1 iteration")
@@ -90,6 +92,7 @@ test_that("exploration is not negative", {
 																					n_trees = 1,
 																					max_iter = 2,
 																					verbose = FALSE)
+	neighbors <- neighbors$neighbors
 	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[, x] %in% bests[, x]))
 	score <- sum(as.numeric(scores))
 	expect_gte(score, oldscore, label = "2 iterations")
@@ -102,6 +105,7 @@ test_that("Can determine iris neighbors with iterations 1 thread", {
 																					n_trees = 20,
 																					max_iter = 10,
 																					verbose = FALSE)
+	neighbors <- neighbors$neighbors
 	expect_equal(sum(is.na(neighbors)), 0)
 	expect_equal(nrow(neighbors), 5)
 	expect_equal(ncol(neighbors), ncol(dat))
@@ -119,6 +123,7 @@ test_that("Can determine iris neighbors with iterations 2 threads", {
 																					n_trees = 20,
 																					max_iter = 10,
 																					verbose = FALSE)
+	neighbors <- neighbors$neighbors
 
 	expect_equal(sum(is.na(neighbors)), 0)
 	expect_equal(nrow(neighbors), 5)
@@ -138,6 +143,7 @@ test_that("Can determine iris neighbors accurately, Euclidean", {
 																					max_iter = 12,
 																					verbose = FALSE
 																					)
+	neighbors <- neighbors$neighbors
 	expect_lte(sum(neighbors != bests, na.rm = TRUE), 5)
 })
 
@@ -163,6 +169,7 @@ test_that("With a bigger dataset, performance is as expected", {
 																						max_iter = 0,
 																						verbose = FALSE
 																						)
+		neighbors <- neighbors$neighbors
 		score <- sum(neighbors != bests, na.rm = TRUE)
 		expect_lte(score, oldscore, label = paste("n_trees=", t))
 		oldscore <- score
@@ -178,6 +185,7 @@ test_that("With a bigger dataset, performance is as expected", {
 																						max_iter = t,
 																						verbose = FALSE
 																						)
+		neighbors <- neighbors$neighbors
 		score <- max(0, sum(neighbors != bests, na.rm = TRUE))
 		expect_lte(score, oldscore, label = paste("iters=", t))
 		oldscore <- score

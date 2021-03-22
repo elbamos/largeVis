@@ -6,7 +6,6 @@ test_that("dim064 issue is resolved (large numbers of duplicate points)", {
 	load(system.file("testdata/badmat.Rda", package = "largeVis"))
 	badmat <- badmat
 	expect_silent(neighbors <- randomProjectionTreeSearch(x = badmat, K = 50))
-	expect_silent(edges <- buildEdgeMatrix(data = badmat, neighbors = neighbors, threads = 2))
 	expect_silent(vis <- largeVis(badmat, K = 50, sgd_batches = 1000))
 })
 

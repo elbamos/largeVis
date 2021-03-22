@@ -1,32 +1,3 @@
-#' Build an nearest-neighbor graph weighted by distance.
-#'
-#' @param data A matrix with a number of columns equal to the number of columns in `x`
-#' @param neighbors An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}. If \code{NULL}, \code{\link{randomProjectionTreeSearch}}
-#' will be run with parameters given by \code{...}.
-#' @param distance_method One of "Euclidean" or "Cosine"
-#' @param verbose Verbosity
-#' @param ... Additional parameters passed to \code{\link{randomProjectionTreeSearch}} if \code{neighbors} is \code{NULL}.
-#'
-#' @return An `edgematrix` object consisting of the elements of a sparse matrix, with the distance method stored in attribute \code{method}.
-#' @export
-buildEdgeMatrix <- function(data,
-                            neighbors = NULL,
-                            distance_method = "Euclidean",
-                            verbose = getOption("verbose", TRUE),
-														...) {
-	if (is.null(neighbors)) neighbors <- randomProjectionTreeSearch(data, ...)
-	ret <- neighborsToVectors(neighbors)
-	ret$x <- distance(i = ret$i, j = ret$j, x = data, distance_method = distance_method, verbose = verbose)
-	ret$x <- as.vector(pmax(ret$x, 1e-5))
-	ret$i <- as.vector(ret$i + 1)
-	ret$j <- as.vector(ret$j + 1)
-	attr(ret, "dims") <- c(ncol(data), ncol(data))
-	attr(ret, "call") <- sys.call()
-	attr(ret, "Metric") <- tolower(distance_method)
-	class(ret) <- "edgematrix"
-	ret
-}
-
 #' @importFrom Matrix sparseMatrix
 toMatrix <- function(x) {
 	sparseMatrix(

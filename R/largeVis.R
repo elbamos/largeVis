@@ -67,24 +67,17 @@ largeVis <- function(x,
                                      max_iter = max_iter,
                                      distance_method = distance_method,
                                      verbose = verbose)
-  #############################################
-  # Clean knns
-  #############################################
-  if (verbose[1]) cat("Calculating edge weights...\n")
-  edges <- buildEdgeMatrix(data = x,
-  												 neighbors = knns,
-  												 distance_method = distance_method,
-  												 verbose = verbose)
-  if (!save_neighbors) rm(knns)
+
+  if (!save_neighbors) knns$neighbors <- NULL
   gc()
-  if (any(edges$x > 27)) {
+  if (any(knns$edgematrix$x > 27)) {
   	warning(paste(
   		"The Distances between some neighbors are large enough to cause the calculation of p_{j|i} to overflow.",
   		"Scaling the distance vector."))
-  	edges$x <- edges$x / max(edges$x)
+  	knns$edgematrix$x <- knns$edgematrix$x / max(knns$edgematrix$x)
   }
-  wij <- buildWijMatrix(edges, perplexity)
-  if (!save_edges) rm(edges)
+  wij <- buildWijMatrix(knns$edgematrix, perplexity)
+  if (!save_edges) rm(knns)
 
   #######################################################
   # Estimate embeddings
@@ -105,11 +98,11 @@ largeVis <- function(x,
   )
 
   if (save_neighbors) {
-    knns[knns == -1] <- NA
-    returnvalue$knns <- t(knns)
+    knns$neighbors[knns$neighbors == -1] <- NA
+    returnvalue$knns <- t(knns$neighbors)
   }
   if (save_edges) {
-  	returnvalue$edges <- edges
+  	returnvalue$edges <- knns$edgematrix
   }
 
   class(returnvalue) <- "largeVis"
