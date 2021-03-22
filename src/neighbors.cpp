@@ -23,11 +23,10 @@ void trees(
 		annoy_index.on_disk_build(file_path.c_str(), NULL);
 	}
 	vector<distancemetric> tmp(data.n_rows);
-	for (size_t i = 0; i < data.n_cols; ++i) {
+	for (size_t i = 0; i < data.n_cols; ++i) if (p.increment()) {
 		copy(data.col(i).begin(), data.col(i).end(), tmp.begin());
 		annoy_index.add_item(i, tmp.data());
 	}
-	p.increment(data.n_rows * n_trees);
 	int threads = getNumThreads();
 	annoy_index.build(n_trees, threads);
 	p.increment(data.n_rows * n_trees);
@@ -240,6 +239,21 @@ List buildEdgeMatrix(const imat& knns, const LVAnnoyIndex<distancemetric, Distan
 	return ret;
 }
 
+
+void checkDistanceMetric(const std::string& metric) {
+	if (metric.compare(string("Cosine")) == 0) {
+		return;
+	} else if (metric.compare(string("Euclidean")) == 0) {
+		return;
+	} else if (metric.compare(string("Manhattan")) == 0) {
+		return;
+	} else if (metric.compare(string("Hamming")) == 0) {
+		return;
+	} else {
+		Rcpp::exception("Bad distance metric");
+	}
+}
+
 template<class M, typename distancemetric, typename Distance>
 List searchTreesTyped(
 		const int& n_trees,
@@ -274,6 +288,8 @@ List searchTrees(
 		const std::string& distMethod,
 		Rcpp::Nullable< Rcpp::String > &saveFile,
 		bool verbose) {
+
+	checkDistanceMetric(distMethod);
 
 	if (distMethod.compare(string("Cosine")) == 0) {
 		return searchTreesTyped<arma::mat, annoy_distance, Angular>(n_trees, K, maxIter, data, saveFile, verbose);
@@ -372,9 +388,11 @@ List searchTreesFromIndex(
 		Rcpp::String &saveFile,
 		bool verbose) {
 
+	checkDistanceMetric(distMethod);
+
 	if (distMethod.compare(string("Cosine")) == 0) {
 		return denseSearchIndex<annoy_distance, Angular>(D, K, maxIter, saveFile, verbose);
-	} if (distMethod.compare(string("Euclidean")) == 0) {
+	} else if (distMethod.compare(string("Euclidean")) == 0) {
 		return denseSearchIndex<annoy_distance, Euclidean>(D, K, maxIter, saveFile, verbose);
 	} else if (distMethod.compare(string("Manhattan")) == 0) {
 		return denseSearchIndex<annoy_distance, Manhattan>(D, K, maxIter, saveFile, verbose);
