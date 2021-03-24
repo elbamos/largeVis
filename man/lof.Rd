@@ -7,7 +7,7 @@
 lof(edges)
 }
 \arguments{
-\item{edges}{An `edgematrix` of the type produced by \code{\link{buildEdgeMatrix}}.}
+\item{edges}{An `edgematrix` of the type produced by \code{\link{randomProjectionTreeSearch}}.}
 }
 \value{
 A vector of LOF values for each data point.

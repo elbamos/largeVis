@@ -44,7 +44,7 @@ lv_dbscan <- function(neighbors,
 #' @description Calculate the Local Outlier Factor (LOF) score for each data point given knowledge
 #' of k-Nearest Neighbors.
 #'
-#' @param edges An `edgematrix` of the type produced by \code{\link{buildEdgeMatrix}}.
+#' @param edges An `edgematrix` of the type produced by \code{\link{randomProjectionTreeSearch}}.
 #'
 #' @references Based on code in the \code{\link[dbscan]{dbscan}} package.
 #'
