@@ -5,7 +5,6 @@
 \title{lv_optics}
 \usage{
 lv_optics(
-  edges,
   neighbors,
   eps = Inf,
   minPts = nrow(neighbors),
@@ -16,10 +15,7 @@ lv_optics(
 )
 }
 \arguments{
-\item{edges}{A weighted graph of the type produced by \code{\link{buildEdgeMatrix}}. Alternatively, a \code{largeVis} object,
-in which case \code{edges} and \code{neighbors} will be taken from the \code{edges} and \code{knns} parameters, respectively.}
-
-\item{neighbors}{An adjacency matrix of the type produced by \code{\link{randomProjectionTreeSearch}}}
+\item{neighbors}{The output of either \code{\link{randomProjectionTreeSearch}} or \code{\link{largeVis}}}
 
 \item{eps}{See \code{\link[dbscan]{optics}}.}
 

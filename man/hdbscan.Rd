@@ -5,7 +5,6 @@
 \title{hdbscan}
 \usage{
 hdbscan(
-  edges,
   neighbors = NULL,
   minPts = 20,
   K = 5,
@@ -13,10 +12,7 @@ hdbscan(
 )
 }
 \arguments{
-\item{edges}{An edge matrix of the type returned by \code{\link{buildEdgeMatrix}} or, alternatively, a \code{largeVis} object.}
-
-\item{neighbors}{An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}. Must be specified unless
-\code{edges} is a \code{largeVis} object.}
+\item{neighbors}{The output of either \code{\link{randomProjectionTreeSearch}} or \code{\link{largeVis}}.}
 
 \item{minPts}{The minimum number of points in a cluster.}
 
