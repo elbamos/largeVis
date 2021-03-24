@@ -215,11 +215,12 @@ manifoldMap(mnistCoords[,1:2],
 
 ## Visualizing Graphs
 
-The `largeVis` visualization algorithm can be used to visualize undirected weighted or unweighted graphs.  The included `wiki` dataset is an example.
+The `largeVis` visualization algorithm can be used to visualize undirected weighted or unweighted graphs.
 
 The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). 
 
 ```{r youtube,eval=F,echo=T}
+library(Matrix)
 pathToGraphFile <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.ungraph.txt"
 pathToCommunities <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.top5000.cmty.txt"
 youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)

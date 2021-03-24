@@ -13,7 +13,6 @@ vignette: >
 ```{r setupvignette,eval=T,echo=F,warning=F,error=F,message=F}
 require(ggplot2, 
         quietly = TRUE)
-library(png)
 library(grid)
 knitr::opts_chunk$set(collapse = TRUE, 
                       comment = "#>",
@@ -55,48 +54,28 @@ Versions of `largeVis` prior to 0.1.8 (i.e., before the reference implementation
 
 The difference is that using edge weights, the resulting clusters tend to be more plainly convex. Using degree encourages a wider variation of irregular shapes. The effect is imperceptible at small data sizes; is subtle noticeable at around 50,000 nodes; but becomes pronounced on datasets of greater than 1 million nodes.  
 
-```{r prepmnist}
-if (rebuild) {
-	load("../../largeVisData/mnist/test.RData")
-	load("../../largeVisData/mnist/train.RData")
-	mnist <- t(rbind(trainData, testData)) - 0.5
-	preVis <- largeVis(mnist, K = 100, tree_threshold = 200, n_trees = 100, sgd_batches = 100, verbose = TRUE)
-	set.seed(1974)
-	labels <- rbind(trainLabels, testLabels)
-	labels <- apply(labels, 1, function(x) which(x == 1))
-	labels <- labels - 1
-}
-```
+The following code, if run, will demonstrate the difference using the `mnist` dataset. 
 
-```{r usedegree}
-if (rebuild) {
-	noDegree <- projectKNNs(preVis$wij, seed = 1974, verbose = TRUE)
-	degree <- projectKNNs(preVis$wij, useDegree = TRUE, verbose = TRUE)
-	degreeCoords <- data.frame(rbind(t(noDegree), t(degree)), 
-														 label = factor(c(labels, labels)), 
-														 degree = factor(rep(c("weights", "degree"), 
-														 										each = ncol(degree))))
-}
-```
+```{r prepmnist,echo=T,eval=F}
+mnist <- deepnet::load.mnist(mnist_path)
+data <- t(mnist$train$x)
+labels <- mnist$train$y
+preVis <- largeVis(data, K = 100, sgd_batches = 1)
 
-```{r drawdegree}
-if (rebuild) {
-	degreeplot <- ggplot(degreeCoords, aes(x = X1, y = X2, color = label)) + 
-		geom_point(size = 0.02, alpha = 0.1) + 
-		facet_grid(. ~ degree) +
-		scale_x_continuous("", labels = NULL, breaks = NULL) + 
-		scale_y_continuous("", labels = NULL, breaks = NULL) +
-		guides(color = FALSE) +
-		ggtitle("Effect of useDegree")
-	ggsave(degreeplot, 
-			 filename = system.file(package = "largeVis", "vignettedata/degreeplot.png"),
-			 width = 5, height = 4)
-}
-```
+noDegree <- projectKNNs(preVis$wij)
+degree <- projectKNNs(preVis$wij, useDegree = TRUE)
+degreeCoords <- data.frame(rbind(t(noDegree), t(degree)), 
+													 label = factor(c(labels, labels)), 
+													 degree = factor(rep(c("weights", "degree"), 
+													 										each = ncol(degree))))
 
-```{r drawdegreeimage,fig.width=5,fig.height=4} 
-img <- readPNG(system.file(package = "largeVis", "vignettedata/degreeplot.png"))
-grid.raster(img)
+ggplot(degreeCoords, aes(x = X1, y = X2, color = label)) + 
+	geom_point(size = 0.02, alpha = 0.1) + 
+	facet_grid(. ~ degree) +
+	scale_x_continuous("", labels = NULL, breaks = NULL) + 
+	scale_y_continuous("", labels = NULL, breaks = NULL) +
+	guides(color = FALSE) +
+	ggtitle("Effect of useDegree")
 ```
 
 ## Momentum Training
