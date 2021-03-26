@@ -80,9 +80,8 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   is <- wij@i
 
   ##############################################
-  # Initialize coordinate matrix
+  # Determine number of batches
   ##############################################
-  if (is.null(coords)) coords <- matrix((runif(N * dim) - 0.5) / dim * 0.0001, nrow = dim)
 
   if (is.null(sgd_batches)) {
   	sgd_batches <- sgdBatches(N, length(wij@x / 2))
@@ -97,7 +96,8 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   # SGD
   #################################################
   if (verbose) cat("Estimating embeddings.\n")
-  coords <- sgd(coords = coords,
+  coords <- sgd(starter_coords = coords,
+  							D = as.integer(dim),
                 targets_i = is,
                 sources_j = js,
                 ps = wij@p,

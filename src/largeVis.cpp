@@ -213,7 +213,8 @@ public:
 };
 
 // [[Rcpp::export]]
-arma::mat sgd(arma::mat& coords,
+arma::mat sgd(Nullable<NumericMatrix>& starter_coords,
+              const int& D,
               arma::ivec& targets_i, // vary randomly
               arma::ivec& sources_j, // ordered
               arma::ivec& ps, // N+1 length vector of indices to start of each row j in vector is
@@ -227,9 +228,18 @@ arma::mat sgd(arma::mat& coords,
               const bool& useDegree,
               const Rcpp::Nullable<Rcpp::NumericVector> seed,
               const bool verbose) {
-	const dimidxtype D = coords.n_rows;
-	const vertexidxtype N = coords.n_cols;
+	const vertexidxtype N = ps.size() - 1;
 	const edgeidxtype E = targets_i.n_elem;
+
+	arma::mat coords(D, N);
+
+	if (starter_coords.isNotNull()) {
+		NumericMatrix starter(starter_coords);
+		copy(starter.begin(), starter.end(), coords.begin());
+	} else {
+		coords.randu();
+		coords -= 0.5;
+	}
 
 	Visualizer* v;
 	if (momentum.isNull()) v = new Visualizer(

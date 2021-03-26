@@ -17,8 +17,8 @@ hdbscanc <- function(edges, neighbors, K, minPts, verbose) {
     .Call('_largeVis_hdbscanc', PACKAGE = 'largeVis', edges, neighbors, K, minPts, verbose)
 }
 
-sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, verbose) {
-    .Call('_largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, verbose)
+sgd <- function(starter_coords, D, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, verbose) {
+    .Call('_largeVis_sgd', PACKAGE = 'largeVis', starter_coords, D, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, verbose)
 }
 
 searchTrees <- function(n_trees, K, maxIter, data, distMethod, saveFile, verbose) {
