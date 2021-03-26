@@ -57,7 +57,24 @@ test_that("largeVis works with cosine", {
 	expect_false(any(is.infinite(visObject$coords)))
 })
 
-test_that("largeVis graidents aren't off", {
+test_that("starter coords work as expected", {
+
+	visObject <- largeVis(dat, max_iter = 20,
+												sgd_batches = 1,
+												K = 10, verbose = FALSE,
+												distance_method = "Cosine")
+
+	starter_coords <- matrix(runif(ncol(visObject$coords) * nrow(visObject$coords)), ncol = ncol(visObject$coords))
+	backup <- starter_coords + 1
+
+	expect_silent(coords <- projectKNNs(visObject$wij, sgd_batches = 1000, coords = starter_coords))
+
+  expect_identical(backup - 1, starter_coords)
+
+  expect_silent(coords2 <- projectKNNs(visObject$wij, sgd_batches = 1000, coords = starter_coords))
+})
+
+test_that("largeVis gradients aren't off", {
 	skip_on_cran()
 	visObject <- largeVis(dat, K = 30, max_iter = 20, verbose = FALSE)
 	expect_false(any(is.na(visObject$coords)))
