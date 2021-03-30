@@ -1,269 +1,68 @@
-benchmark <- function(path,
-											samplepath,
-											K = 40,
-											tree_range = c(10, 20, 50),
-											thresholds = c(10, 20, 30, 40, 50),
-											iters = c(3),
-											n = 10) {
-	data <- readr::read_delim(path, delim = " ", col_names = F)
-	data <- as.matrix(data)
-	data <- scale(data)
-	cat("Getting actual neighbors...\n")
+library(largeVis)
+library(plyr)
+library(dplyr)
+library(magrittr)
 
-	if (file.exists(samplepath)) {
-		load(samplepath)
-	} else {
-		samples <- sample(nrow(data), n, replace = F)
 
-		actualneighbors <- RANN::nn2(
-			data, data[samples, ], k = K, treetype = "kd",
-		)$nn.idx - 1
 
-		savedsamples <- list(samples = samples, neighbors = actualneighbors)
-		save(savedsamples, file = samplepath)
-		rm(samples)
-		rm(actualneighbors)
-	}
-	data <- t(data)
-
-	for (n_trees in tree_range) {
-		for (max_iters in iters) {
-			for (threshold in thresholds) {
-				print(paste(n_trees, max_iters, threshold))
-				gc()
-				start <- Sys.time()
-				knns <- randomProjectionTreeSearch(data,
-																					 K, n_trees, threshold, max_iters,
-																					 verbose = TRUE)
-				time <- Sys.time() - start
-				units(time) <- "mins"
-				precision <- lapply(1:n,
-														FUN = function(x)
-															sum(knns[, savedsamples$samples[x]] %in% savedsamples$neighbors[x, ]))
-				precision <- sum(as.numeric(precision)) / n
-
-				one_result <- data.frame(
-					time = time,
-					precision = precision,
-					n_trees = n_trees,
-					max_iterations = max_iters,
-					tree_threshold = threshold,
-					method = "largeVis",
-					tree_type = "",
-					searchtype = "",
-					eps = 0,
-					K = K,
-					machine = "aws")
-				print(one_result)
-				readr::write_csv(one_result, path = "results.csv", append = TRUE)
-				if (precision == K) break
-			}
-		}
-	}
+get_true_nns <- function(data, k) {
+#	bests <- RANN::nn2(data, k = k, eps = 0.0)
+#	bests <- t(bests$nn.idx) - 1
+ bests <- randomProjectionTreeSearch(data, K = k, n_trees = 200, max_iter = 5, verbose = T)
+ bests$neighbors
 }
 
-benchmarkRANN <- function(path,
-													samplepath,
-													K = 40,
-													tree_types = "kd", # c("kd", "bd"),
-													searchtypes = c("priority", "standard"),
-													epss = c(0.1, 0.2, 0.5),
-													n = 10) {
-	data <- readr::read_delim(path, delim = " ", col_names = F)
-	data <- as.matrix(data)
-	data <- scale(data)
-	cat("Getting actual neighbors...\n")
+calc_precision <- function(bests, tst) {
+	precision <- lapply(1:ncol(bests),
+											FUN = function(x)
+												sum(bests[, x] %in% tst[, x]))
 
-	if (file.exists(samplepath)) {
-		load(samplepath)
-	} else {
-		samples <- sample(nrow(data), n, replace = F)
-
-		actualneighbors <- RANN::nn2(
-			data, data[samples, ], k = K, treetype = "kd",
-		)$nn.idx - 1
-
-		savedsamples <- list(samples = samples, neighbors = actualneighbors)
-		save(savedsamples, file = samplepath)
-		rm(samples)
-		rm(actualneighbors)
-	}
-	library(RANN)
-	for (tree_type in tree_types) {
-		for (searchtype in searchtypes) {
-			for (eps in epss) {
-				print(paste(tree_type, searchtype, eps))
-				start <- Sys.time()
-				knns <- nn2(data, k = K, query = data[savedsamples$samples, ],
-										treetype = tree_type,
-										searchtype = searchtype,
-										eps = eps)$nn.idx
-				time <- Sys.time() - start
-				units(time) <- "mins"
-				precision <- lapply(1:n,
-														FUN = function(x)
-															sum(knns[x, ] %in% (savedsamples$neighbors[x, ] + 1)))
-
-				one_result <- data.frame(
-					time = time,
-					precision = sum(as.numeric(precision)) / n,
-					n_trees = 0,
-					max_iterations = 0,
-					tree_threshold = 0,
-					method = "RANN",
-					tree_type = tree_type,
-					searchtype = searchtype,
-					eps = eps)
-				print(one_result)
-				readr::write_csv(one_result, path = "results.csv", append = TRUE)
-			}
-		}
-	}
+	sum(as.numeric(precision)) / (ncol(bests) * nrow(bests))
 }
 
-benchmarkAnnoy <- function(path,
-													 samplepath,
-													 K = 40,
-													 tree_range = c(10, 20, 50, 100),
-													 n = 10,
-													 full = FALSE) {
-	data <- readr::read_delim(path, delim = " ", col_names = F)
-	data <- as.matrix(data)
-	data <- scale(data)
-	cat("Getting actual neighbors...\n")
 
-	if (file.exists(samplepath)) {
-		load(samplepath)
-	} else {
-		samples <- sample(nrow(data), n, replace = F)
-
-		actualneighbors <- RANN::nn2(
-			data, data[samples, ], k = K, treetype = "kd",
-		)$nn.idx - 1
-
-		savedsamples <- list(samples = samples, neighbors = actualneighbors)
-		save(savedsamples, file = samplepath)
-		rm(samples)
-		rm(actualneighbors)
-	}
-	library(RcppAnnoy)
-	for (n_trees in tree_range) {
-		knns <- list()
-		print(n_trees)
-		gc()
-		start <- Sys.time()
-		a <- new(AnnoyEuclidean, ncol(data))
-		for (i in 1:nrow(data)) a$addItem(i - 1, data[i, ])
-		a$build(n_trees)
-		if (! full) for (i in 1:n)
-			knns[[i]] <- a$getNNsByItem(item = savedsamples$samples[i] - 1,
-																	size = K)
-		else for (i in 1:nrow(data))
-			knns[[i]] <- a$getNNsByItem(item = i - 1, size = K)
-		time <- Sys.time() - start
-		units(time) <- "mins"
-
-		if (full) knns <- knns[savedsamples$samples]
-
-		precision <- lapply(1:n,
-												FUN = function(x)
-													sum(knns[[x]] %in% savedsamples$neighbors[x, ]))
-
-		if (full) method <- "RcppAnnoy-Full"
-		else method <- "RcppAnnoy"
-
-		one_result <- data.frame(
-			time = time,
-			precision = sum(as.numeric(precision)) / n,
-			n_trees = n_trees,
-			max_iterations = 0,
-			tree_threshold = 0,
-			method = method,
-			tree_type = "",
-			searchtype = "",
-			eps = 0,
-			K = K,
-			machine = "aws")
-		print(one_result)
-		readr::write_csv(one_result, path = "results.csv", append = TRUE)
-	}
+benchmark_one <- function(bests, data, k, trees, iters) {
+	gc()
+	start <- Sys.time()
+	neighbors <- randomProjectionTreeSearch(data, K = k, n_trees = trees, max_iter = iters)
+	end <- Sys.time()
+	local_bests <- bests[1:k, ]
+	score <- calc_precision(local_bests, neighbors$neighbors)
+	time <- end - start
+	units(time) <- "secs"
+	data.frame(time = time, precision = score)
 }
 
-require( largeVis )
-path <- "./siftknns.txt"
-samplepath <- "./samples.Rda"
+sift_path <- "/Volumes/Datasets2/DATASETS/sift/siftknns.txt"
+sift <- readr::read_delim(sift_path, delim = " ", col_names = F)
+sift <- t(as.matrix(sift))
 
-Annoyresults <- benchmarkAnnoy(path,
-															 samplepath,
-															 tree_range = c(10, 20, 50, 100, 200, 400),
-															 n = 10000,
-															 K = 50,
-															 full = TRUE)
-results <- benchmark(path,
-										 samplepath,
-										 n = 10000,
-										 tree_range = c(10, 20, 50, 100, 200),
-										 thresholds = c(128),
-										 iters = c(1, 0, 2, 3),
-										 K = 50)
-results2 <- benchmark(path,
-											samplepath,
-											n = 10000,
-											tree_range = c(10, 20, 50),
-											thresholds = c(10, 20, 50, 80, 256, 512),
-											iters = c(1),
-											K = 50)
-results2 <- benchmark(path,
-											samplepath,
-											n = 10000,
-											tree_range = c(10),
-											thresholds = c(200, 400, 800),
-											iters = c(0,1,2),
-											K = 50)
-results2 <- benchmark(path,
-											samplepath,
-											n = 10000,
-											tree_range = c(20),
-											thresholds = c(100, 200, 400),
-											iters = c(0,1,2),
-											K = 50)
-results2 <- benchmark(path,
-											samplepath,
-											n = 10000,
-											tree_range = c(40),
-											thresholds = c(50, 100, 200),
-											iters = c(0,1,2),
-											K = 50)
-results2 <- benchmark(path,
-											samplepath,
-											n = 10000,
-											tree_range = c(80),
-											thresholds = c(25, 50, 100),
-											iters = c(0,1,2),
-											K = 50)
-# RANNresults <- benchmarkRANN(path,
-#                              samplepath,
-#                              epss = c(.1, .5, 1,2,5),
-#                              n = 10000,
-#                              K = 500)
-results2 <- benchmark(path,
-											samplepath,
-											n = 10000,
-											tree_range = c(2),
-											thresholds = c(50, 100, 250),
-											iters = c(0,1,2),
-											K = 50)
-results2 <- benchmark(path,
-											samplepath,
-											n = 10000,
-											tree_range = c(4),
-											thresholds = c(125),
-											iters = c(0,1,2),
-											K = 50)
-results2 <- benchmark(path,
-											samplepath,
-											n = 10000,
-											tree_range = c(5),
-											thresholds = c(20, 40, 100),
-											iters = c(0,1,2),
-											K = 50)
+bests <- get_true_nns(sift, 200)
+gc()
+
+
+
+test_range <- expand.grid(nns = c(50, 100, 150), n_trees = c(7, 14, 21, 42, 84), n_iters = c(0, 1, 2))
+
+results <- adply(test_range, .margins = 1, .fun = function(x) {
+	res <- benchmark_one(bests, sift, k = x$nns, trees = x$n_trees, iters = x$n_iters)
+	cbind(res, x)
+})
+
+
+library(ggplot2)
+
+results %>%
+	mutate(speed = 1000000 / as.numeric(time)) %>%
+	filter(n_iters < 5) %>%
+	group_by(nns, n_trees) %>%
+	arrange(n_iters) %>%
+	ggplot(aes(x = speed, y = precision, color = factor(n_iters), group = factor(n_trees))) +
+	geom_point(size = 0.6) +
+  geom_line(size = 0.3, alpha = 0.3, color = "black") +
+	facet_wrap(. ~ nns, scales = "free") +
+	scale_y_sqrt("Accuracy") +
+	scale_x_log10("Speed (points / second)") +
+	theme_minimal()
+
+save(results, file = "./inst/extdata/benchmark.Rda")
