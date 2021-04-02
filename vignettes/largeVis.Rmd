@@ -6,6 +6,10 @@ output:
   rmarkdown::html_vignette:
     fig_caption: yes
 bibliography: largevisvignettes.bib
+params:
+  mnist_path: /Volumes/Datasets2/DATASETS/mnist/raw
+  graph_file: /Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.ungraph.txt
+  communities: /Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.top5000.cmty.txt
 vignette: |
   %\VignetteIndexEntry{largeVis: An Implementation of the LargeVis Algorithm}    
   %\VignetteEngine{knitr::rmarkdown}    
@@ -38,6 +42,19 @@ theme_set(
 )
 
 require(largeVis,quietly = TRUE)
+
+if (
+	file.exists(params$mnist_path)
+	&& require(deepnet) 
+	&& require(tidyr)
+	&& require(magrittr)
+	&& require(dplyr)
+) .build_mnist <- TRUE else .build_mnist <- FALSE
+
+if (
+	file.exists(params$graph_file) 
+	&& file.exists(params$communities)
+) .build_youtube <- TRUE else .build_youtube <- FALSE
 ```
 This Vingette provides an overview of the largeVis package.  
 
@@ -81,13 +98,9 @@ Duplicates in the input data are likely to cause issues.  If the number of dupli
 
 ### `randomProjectionTreeSearch`
 
-This function uses a two-phase algorithm to find approximate nearest neighbors. In the first phase, which is based on [Erik Bernhardsson](http://erikbern.com)'s [Annoy](https://github.com/spotify/annoy) algorithm, `n_trees` trees are formed by recursively dividing the space by hyperplanes until at most `tree_threshold` nodes remain in a branch.  A node's candidate nearest neighbors are the union of all nodes with which it shared a leaf on any of the trees.  The `largeVis` algorithm adds a second phase, neighborhood exploration, which considers, for each node, whether the candidate neighbors of the node's candidate immediate neighbors are closer. The logic of the algorithm is that a node's neighbors' neighbors are likely to be the node's own neighbors. In each iteration, the closest `K` candidate neighbors for each node are kept. 
-
-(Note that this implementation of `largeVis` differs from the approach taken by `Annoy`, in that `Annoy` always uses the number of features as the leaf threshold, where `largeVis` allows this to be an adjustable parameter.)
+This function uses a two-phase algorithm to find approximate nearest neighbors. In the first phase, which is based on [Erik Bernhardsson](http://erikbern.com)'s [Annoy](https://github.com/spotify/annoy) algorithm, `n_trees` trees are formed by recursively dividing the space by hyperplanes until the number of nodes in the branch is lower than the dimensionality of the dataset.  A node's candidate nearest neighbors are the union of all nodes with which it shared a leaf on any of the trees.  The `LargeVis` algorithm adds a second phase, neighborhood exploration, which considers, for each node, whether the candidate neighbors of the node's candidate immediate neighbors are closer. The logic of the algorithm is that a node's neighbors' neighbors are likely to be the node's own neighbors. In each iteration, the closest `K` candidate neighbors for each node are kept. 
 
 The authors of @tang2016visualizing suggest that a single iteration of the second phase is generally sufficient to obtain satisfactory performance. 
-
-See the vignette "ANN Benchmarks" for additional information.
 
 ### `projectKNNs`
 
@@ -95,50 +108,44 @@ This function takes as its input a `Matrix::sparseMatrix`, of connections betwee
 
 The `LargeVis` algorithm, explained in detail in @tang2016visualizing, estimates the embedding by sampling from the identitied nearest-neighbor connections. For each edge, the algorithm also samples `M` non-nearest neighbor negative samples. `M`, along with $\gamma$ and $\alpha$, control the visualization. $\alpha$ controls the desired distance between nearest neighbors. $\gamma$ controls the relative strength of the attractive force between nearest neighbors and repulsive force between non-neighbors.
 
-The following generates a grid illustrating the effect of the $\alpha$ and $\gamma$ hyperparameters on the `mnist` dataset:
+The following grid illustrates the effect of the $\alpha$ and $\gamma$ hyperparameters on the `mnist` dataset:
 
-```{r echo=T,eval=F}
+```{r echo=T,fig.width=6,fig.height=6}
 library(largeVis)
-library(deepnet)
-mnist <- deepnet::load.mnist(mnist_path)
-data <- t(mnist$train$x)
-labels <- mnist$train$y
-visObj <- largeVis(data, sgd_batches = 1)
-
-library(tidyr)
-library(dplyr)
-library(magrittr)
-library(purrr)
-inputs <- expand_grid(gamma = c(5,7,14), alpha = c(0.1, 1, 10))
-
-agcoords <- map2(inputs$alpha, inputs$gamma, function(a, g) {
-	obj <- projectKNNs(visObj$wij, dim = 2, alpha = a, gamma = g)
-	data.frame(t(obj)) %>%
-		set_colnames(c("x", "y")) %>%
-		mutate(alpha = a, gamma = g)
-}) %>% bind_rows()
-
-agcoords$label = rep(labels, nrow(inputs))
-```
-
-```{r drawhyperparameters,echo=T,eval=F}
-ggplot(agcoords,
-       aes(x = x, 
-           y = y, 
-           color = factor(label))) +
-  geom_point(alpha = 0.1, 
-             size = 0.1) +
-  facet_grid(alpha ~ gamma,
-             labeller = label_bquote(alpha == .(alpha), 
-                                     gamma == .(gamma)),
-             scales = 'free') +
-  scale_x_continuous(breaks = NULL, 
-                     name = "") +
-  scale_y_continuous(breaks = NULL, 
-                     name = "") +
-  ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  "))) +
-  guides(color = FALSE)
-  
+if (.build_mnist) {
+	mnist <- deepnet::load.mnist(params$mnist_path)
+	data <- t(mnist$train$x)
+	labels <- mnist$train$y
+	visObj <- largeVis(data, sgd_batches = 1)
+	
+	inputs <- tidyr::expand_grid(gamma = c(5,7,14), alpha = c(0.1, 1, 10))
+	
+	agcoords <- purrr::map2(inputs$alpha, inputs$gamma, function(a, g) {
+		obj <- projectKNNs(visObj$wij, dim = 2, alpha = a, gamma = g)
+		data.frame(t(obj)) %>%
+			set_colnames(c("x", "y")) %>%
+			mutate(alpha = a, gamma = g)
+	}) %>% bind_rows()
+	
+	agcoords$label = rep(labels, nrow(inputs))
+	
+	ggplot(agcoords,
+	       aes(x = x, 
+	           y = y, 
+	           color = factor(label))) +
+	  geom_point(alpha = 0.1, 
+	             size = 0.1) +
+	  facet_grid(alpha ~ gamma,
+	             labeller = label_bquote(alpha == .(alpha), 
+	                                     gamma == .(gamma)),
+	             scales = 'free') +
+	  scale_x_continuous(breaks = NULL, 
+	                     name = "") +
+	  scale_y_continuous(breaks = NULL, 
+	                     name = "") +
+	  ggtitle(expression(paste("Effect of ", alpha, " vs. ", gamma, sep = "  "))) +
+	  guides(color = FALSE)
+}
 ```
 
 
@@ -153,60 +160,59 @@ The algorithm can treat positive edge weights in two different ways. The authors
 
 The `largeVis` function combines `randomProjectionTreeSearch` and `projectKNNs`, along with additional logic for calculating edge weights, to implement the complete `LargeVis` algorithm. 
 
-The following code generates a chart illustrating the effect of the `M` hyperparameter from `projectKNNs` and `K`, the number of nearest neighbors, again using the `mnist` dataset.
+The chart illustrates the effect of the `M` hyperparameter from `projectKNNs` and `K`, the number of nearest neighbors, again using the `mnist` dataset.
 
-```{r echo=T,eval=F}
-Ks <- c(75, 150, 300)
-Ms <- c(1, 5, 10)
-
-coord_list <- c()
-
-for (k in Ks) {
-	visObj <- largeVis(data, K = k, sgd_batches = 1)
-	for (m in Ms) {
-		coords <- projectKNNs(visObj$wij, M = m)
-		new_data <- data.frame(t(coords)) %>%
-			set_colnames(c("x", "y")) %>%
-			mutate(label = labels, M = m, K = k)
-		coord_list <- c(coord_list, list(new_data))
+```{r echo=T,fig.width=6,fig.height=6}
+if (.build_mnist) {
+	Ks <- c(75, 150, 300)
+	Ms <- c(1, 5, 10)
+	
+	coord_list <- c()
+	
+	for (k in Ks) {
+		visObj <- largeVis(data, K = k, sgd_batches = 1)
+		for (m in Ms) {
+			coords <- projectKNNs(visObj$wij, M = m)
+			new_data <- data.frame(t(coords)) %>%
+				set_colnames(c("x", "y")) %>%
+				mutate(label = labels, M = m, K = k)
+			coord_list <- c(coord_list, list(new_data))
+		}
 	}
+	
+	kmcoords <- bind_rows(coord_list)
+	
+	ggplot(kmcoords, aes(x = x, y = y, color = factor(label))) + 
+		geom_point(size = 0.1, alpha = 0.1) + 
+		guides(color = F) +
+	  scale_x_continuous("", 
+	                     breaks = NULL) +
+	  scale_y_continuous("", 
+	                     breaks = NULL) +
+	  facet_grid(K ~ M, 
+	             scales = 'free', 
+	             labeller = label_bquote(K == .(K), M == .(M))) +
+	  ggtitle("Effect of M and K")
 }
-
-kmcoords <- bind_rows(coord_list)
-```
-
-```{r drawiris,echo=T,eval=F}
-load(system.file(package = "largeVis", "vignettedata/kmcoords.Rda"))
-
-ggplot(kmcoords, aes(x = x, y = y, color = factor(label))) + 
-	geom_point(size = 0.1, alpha = 0.1) + 
-	guides(color = F) +
-  scale_x_continuous("", 
-                     breaks = NULL) +
-  scale_y_continuous("", 
-                     breaks = NULL) +
-  facet_grid(K ~ M, 
-             scales = 'free', 
-             labeller = label_bquote(K == .(K), M == .(M))) +
-  ggtitle("Effect of M and K on Iris Dataset")
 ```
 
 ### `manifoldMap`
 
 The `manifoldMap` function is useful when the examples being clustered are themselves images. Given a coordinate matrix (as generated by `projectKNNs` or `vis`) and an `array` of `N` images, the function samples `n` images and plots them at the coordinates given in the matrix. 
 
-The following code will generate the visualization shown in the examples:
-
-```{r echomanifold,echo=T,eval=F}
-dim(trainData) <- c(60000, 28, 28)
-aperm(trainData, perm = c(1,3,2), resize = FALSE)
-set.seed(1974)
-manifoldMap(mnistCoords[,1:2],
-    n = 5000,
-    scale = 0.1,
-    images = trainData,
-    xlab = "", 
-    ylab = "")
+```{r manifold,echo=T,fig.width=6,fig.height=6}
+if (.build_mnist) {
+	mnistCoords <- largeVis(data, K = 150)$coords
+	images <- mnist$train$x
+	dim(images) <- c(60000, 28, 28)
+	images <- aperm(images, perm = c(1,3,2), resize = FALSE)
+	manifoldMap(t(mnistCoords),
+	    n = 1000,
+	    scale = 0.1,
+	    images = images,
+	    xlab = "", 
+	    ylab = "")
+}
 ```
 
 ## Support for Sparse Matrices
@@ -215,53 +221,70 @@ manifoldMap(mnistCoords[,1:2],
 
 ## Visualizing Graphs
 
-The `largeVis` visualization algorithm can be used to visualize undirected weighted or unweighted graphs.
+The `largeVis` visualization algorithm can be used to visualize graphs, which may be weighted, and directed or undirected. This can be done in one of three ways: By visualizing the graph directly, by calculating and visualizing the $\omega_{ij}$ matrix (see @tang2016visualizing for details), or by calculating the distance between nodes. 
 
-The following code illustrates how to import and visualize a graph using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). 
+The following code illustrates how to import and visualize a directed, unweighted graph directly and by using a $\omega_{ij}$ matrix, using the YouTube-communities dataset available [here](https://snap.stanford.edu/data/com-Youtube.html). 
 
-```{r youtube,eval=F,echo=T}
-library(Matrix)
-pathToGraphFile <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.ungraph.txt"
-pathToCommunities <- "/Volumes/Datasets2/DATASETS/YouTubeCommunities/com-youtube.top5000.cmty.txt"
-youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
-youtube <- as.matrix(youtube)
-youtube <- Matrix::sparseMatrix(i = youtube[, 1],
-                                j = youtube[, 2],
-                                x = rep(1, nrow(youtube)), 
-                                dims = c(max(youtube), max(youtube)))
-youtube <- youtube + t(youtube)
-communities <- readr::read_lines(pathToCommunities)
-communities <- lapply(communities, 
-                      FUN = function(x) as.numeric(unlist(strsplit(x, "\t"))))
-community_assignments <- rep(0, 
-                             nrow(youtube))
-for (i in 1:length(communities)) community_assignments[communities[[i]]] <- i
+```{r youtube,echo=T,fig.width=7,fig.height=14}
+if (.build_youtube) {
+	library(Matrix)
+	pathToGraphFile <- params$graph_file 
+	pathToCommunities <- params$communities
+	youtube <- readr::read_tsv(pathToGraphFile, skip=4, col_names=FALSE)
+	youtube <- as.matrix(youtube)
+	youtube <- Matrix::sparseMatrix(i = youtube[, 1],
+	                                j = youtube[, 2],
+	                                x = rep(1, nrow(youtube)), 
+	                                dims = c(max(youtube), max(youtube)))
+	
+	communities <- readr::read_lines(pathToCommunities)
+	communities <- lapply(communities, 
+	                      FUN = function(x) as.numeric(unlist(strsplit(x, "\t"))))
+	community_assignments <- rep(NA, 
+	                             nrow(youtube))
+	for (i in 1:length(communities)) community_assignments[communities[[i]]] <- i
+	
+	wij <- buildWijMatrix(youtube)
+	wij_coordinates <- projectKNNs(wij)
+	
+	# The input matrix for projectKNNs must be symmetricsized
+	youtube <- youtube + t(youtube)
+	direct_coordinates <- projectKNNs(youtube)
+	
+	youTube_coordinates <- data.frame(rbind(t(wij_coordinates), t(direct_coordinates)))
+	colnames(youTube_coordinates) <- c("x", "y")
+	youTube_coordinates$community <- factor(rep(community_assignments, 2))
+	youTube_coordinates$set <- rep(c("wij", "direct"), each = ncol(wij_coordinates))
 
-wij <- buildWijMatrix(youtube)
-youTube_coordinates <- projectKNNs(youtube, verbose=T)
-youTube_coordinates <- data.frame(scale(t(youTube_coordinates)))
-colnames(youTube_coordinates) <- c("x", "y")
-youTube_coordinates$community <- factor(community_assignments)
-youTube_coordinates$alpha <- factor(ifelse(youTube_coordinates$community == 0, 0.05, 0.2))
-ggplot(youTube_coordinates, aes( x = x, 
-                      y = y, 
-                      color = community, 
-                      alpha = alpha, 
-                      size = alpha)) +
-  geom_point() +
-  scale_alpha_manual(values = c(0.005, 0.2), guide = FALSE) +
-  scale_size_manual(values = c(0.03, 0.15), guide = FALSE) +
-  scale_x_continuous("", 
-                     breaks = NULL, limits = c(-2.5,2.5)) +
-  scale_y_continuous("", 
-                     breaks = NULL, limits = c(-2.5,2.5)) +
-  ggtitle("YouTube Communities") +
-  guides(color = FALSE)
+	youTube_coordinates %>% 
+		mutate(
+			alpha = if_else(is.na(community), .001, .1),
+			size = if_else(is.na(community), .001, .01),
+			x = x / sd(x), 
+			y = y / sd(y)
+		) %>%
+		arrange(if_else(is.na(community), 0, 1)) %>%
+	ggplot(aes( x = x, 
+	                      y = y, 
+	                      color = community, 
+							size = size,
+							alpha = alpha
+	                      )) +
+	  geom_point() +
+		scale_size_binned(range = c(0.0001, 0.1)) +
+		scale_alpha_binned(range = c(0.0001, .1)) +
+	  scale_x_continuous("", breaks = NULL, limits = c(-2.2, 2.2)) +
+	  scale_y_continuous("", breaks = NULL, limits = c(-2.2, 2.2)) +
+	  ggtitle("YouTube Communities") +
+		facet_grid(set ~ .) +
+		coord_equal() +
+	  guides(color = FALSE, size = FALSE, alpha = FALSE)
+}
 ```
 
 ## Distance Methods
 
-The original `LargeVis` paper used Euclidean distances exclusively.  The `largeVis` package offers a choice between Euclidean and Cosine distance measures.  
+The original `LargeVis` paper used Euclidean distances exclusively.  The `largeVis` package offers a choice among Euclidean, Cosine, Manhattan, and Hamming distance measures.  
 
 ## Memory Consumption
 
