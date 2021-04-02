@@ -25,19 +25,19 @@ edges <- neighbors$edgematrix
 wij <- buildWijMatrix(edges)
 
 test_that("project knns doesn't crash", {
-	coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE)
+	expect_silent(coords <- projectKNNs(wij, sgd_batches = 8193, verbose = FALSE))
 })
 
 test_that("project knns doesn't crash with momentum", {
-	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, momentum = 0.5))
+	expect_silent(coords <- projectKNNs(wij, sgd_batches = 8193, verbose = FALSE, momentum = 0.5))
 })
 
 test_that("project knns doesn't crash with useDegree", {
-	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, useDegree = TRUE))
+	expect_silent(coords <- projectKNNs(wij, sgd_batches = 8193, verbose = FALSE, useDegree = TRUE))
 })
 
 test_that("project knns doesn't crash with useDegree and momentum", {
-	expect_silent(coords <- projectKNNs(wij, sgd_batches = 100, verbose = FALSE, useDegree = TRUE, momentum = 0.5))
+	expect_silent(coords <- projectKNNs(wij, sgd_batches = 8193, verbose = FALSE, useDegree = TRUE, momentum = 0.5))
 })
 
 context("sgd batches")

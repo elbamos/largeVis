@@ -7,6 +7,8 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 
+MIN_BATCHES = 8193
+
 RcppParallel::setThreadOptions(numThreads=2)
 
 test_that("largeVis simple linux failure is fixed", {
@@ -16,7 +18,7 @@ test_that("largeVis simple linux failure is fixed", {
 
 test_that("largeVis works", {
 	visObject <- largeVis(dat, max_iter = 20, n_trees = 100,
-											  sgd_batches = 1000,
+											  sgd_batches = MIN_BATCHES,
 												K = 20,  verbose = FALSE)
 	expect_false(any(is.na(visObject$coords)))
 	expect_false(any(is.nan(visObject$coords)))
@@ -49,7 +51,7 @@ test_that("largeVis works when alpha == 0", {
 test_that("largeVis works with cosine", {
 
 	visObject <- largeVis(dat, max_iter = 20,
-												sgd_batches = 1000,
+												sgd_batches = MIN_BATCHES,
 												K = 10, verbose = FALSE,
 												distance_method = "Cosine")
 	expect_false(any(is.na(visObject$coords)))
@@ -67,16 +69,20 @@ test_that("starter coords work as expected", {
 	starter_coords <- matrix(runif(ncol(visObject$coords) * nrow(visObject$coords)), ncol = ncol(visObject$coords))
 	backup <- starter_coords + 1
 
-	expect_silent(coords <- projectKNNs(visObject$wij, sgd_batches = 1000, coords = starter_coords))
+	expect_silent(coords <- projectKNNs(visObject$wij, sgd_batches = MIN_BATCHES, coords = starter_coords))
 
   expect_identical(backup - 1, starter_coords)
 
-  expect_silent(coords2 <- projectKNNs(visObject$wij, sgd_batches = 1000, coords = starter_coords))
+  coords3 <- projectKNNs(visObject$wij, sgd_batches = 1, coords = starter_coords)
+
+  expect_equal(coords3, starter_coords)
+
+  expect_silent(coords2 <- projectKNNs(visObject$wij, sgd_batches = MIN_BATCHES, coords = starter_coords))
 })
 
 test_that("largeVis gradients aren't off", {
 	skip_on_cran()
-	visObject <- largeVis(dat, K = 30, max_iter = 20, verbose = FALSE)
+	visObject <- largeVis(dat, K = 30, max_iter = MIN_BATCHES, verbose = FALSE)
 	expect_false(any(is.na(visObject$coords)))
 	expect_false(any(is.nan(visObject$coords)))
 	expect_false(any(is.infinite(visObject$coords)))
@@ -85,11 +91,11 @@ test_that("largeVis gradients aren't off", {
 })
 
 test_that("largeVis can eat a data.frame", {
-	expect_silent(visObj <- largeVis(iris, K = 20, max_iter = 10, sgd_batches = 1, verbose = FALSE))
+	expect_silent(visObj <- largeVis(iris, K = 20, max_iter = MIN_BATCHES, sgd_batches = 1, verbose = FALSE))
 })
 
 test_that("largeVis rejects wrong data types", {
-	expect_error(visObj <- largeVis(letters, K = 2, max_iter = 10, sgd_batches = 1, verbose = FALSE))
+	expect_error(visObj <- largeVis(letters, K = 2, max_iter = MIN_BATCHES, sgd_batches = 1, verbose = FALSE))
 	expect_error(visObj <- largeVis(matrix(sample(letters, 100, replace = T), nrow = 10, ncol = 10),
-																	K = 2, max_iter = 10, sgd_batches = 1, verbose = FALSE))
+																	K = 2, max_iter = MIN_BATCHES, sgd_batches = 1, verbose = FALSE))
 })
