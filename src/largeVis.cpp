@@ -28,12 +28,9 @@ protected:
 	AliasTable< edgeidxtype, coordinatetype, double > posAlias;
 	Gradient* grad;
 
-	unsigned int storedThreads = 0;
-
 public:
 	double rho;
 	const double rhoIncrement;
-	mutex vis_mutex;
 
 	Visualizer(vertexidxtype *sourcePtr,
             vertexidxtype *targetPtr,
@@ -55,8 +52,8 @@ public:
 	            negAlias(AliasTable< vertexidxtype, coordinatetype, double >(N)),
 	            posAlias(AliasTable< edgeidxtype, coordinatetype, double >(E)),
 	            rho{rho},
-	            rhoIncrement((rho - 0.0001) / n_samples),
-	            vis_mutex() {
+	            rhoIncrement((rho - 0.0001) / n_samples)
+		{
     	if (alpha == 0) grad = new ExpGradient(gamma, D);
     	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
     	else grad = new AlphaGradient(alpha, gamma, D);
@@ -182,7 +179,7 @@ public:
 	}
 };
 
-#define BATCHSIZE 8192
+#define BATCHSIZE_SHIFT 13
 
 class VisualizerWorker : public RcppParallel::Worker {
 public:
@@ -195,17 +192,15 @@ public:
 	void operator()(std::size_t begin, std::size_t end) {
 
 		coordinatetype * const holder = new coordinatetype[vis->D * 2];
+		double localRho = vis->rho;
 
 		for (long i = begin; i < end; ++i) {
-			const double localRho = vis->rho;
-			if (localRho <= 0) return;
+			if (localRho <= 0) break;
 
 			vis->innerLoop(localRho, batchSize, holder);
 
-			vis->vis_mutex.lock();
-			vis->rho -= (vis->rhoIncrement * batchSize);
+			localRho = vis->rho -= (vis->rhoIncrement * batchSize);
 			if (!p->increment()) break;
-			vis->vis_mutex.unlock();
 		}
 
 		delete[] holder;
@@ -273,9 +268,9 @@ arma::mat sgd(Nullable<NumericMatrix>& starter_coords,
 	v -> initAlias(weights.memptr(), negweights, seed);
 	delete[] negweights;
 
-	const uword batchSize = BATCHSIZE;
+	const uword batchSize = 1 << BATCHSIZE_SHIFT;
 
-	const uword batches = n_samples / batchSize;
+	const uword batches = n_samples >> BATCHSIZE_SHIFT;
 
 	Progress progress(batches, verbose);
 	VisualizerWorker worker(v, batchSize, &progress);
