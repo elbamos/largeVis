@@ -80,6 +80,30 @@ test_that("starter coords work as expected", {
   expect_silent(coords2 <- projectKNNs(visObject$wij, sgd_batches = MIN_BATCHES, coords = starter_coords))
 })
 
+test_that("seed works", {
+
+	visObject <- largeVis(dat, max_iter = 20,
+												sgd_batches = 1,
+												K = 10, verbose = FALSE,
+												distance_method = "Cosine",
+												seed = 1974)
+
+	coords <- projectKNNs(visObject$wij, sgd_batches = 1, seed = 1974)
+
+	expect_equal(coords, visObject$coords)
+
+	RcppParallel::setThreadOptions(numThreads = 1)
+
+	coords <- projectKNNs(visObject$wij, sgd_batches = MIN_BATCHES, seed = 1974)
+
+	coords2 <- projectKNNs(visObject$wij, sgd_batches = MIN_BATCHES, seed = 1974)
+
+	expect_equal(coords, coords2)
+
+})
+
+RcppParallel::setThreadOptions(numThreads = 2)
+
 test_that("largeVis gradients aren't off", {
 	skip_on_cran()
 	visObject <- largeVis(dat, K = 30, max_iter = MIN_BATCHES, verbose = FALSE)

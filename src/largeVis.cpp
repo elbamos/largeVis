@@ -232,6 +232,12 @@ arma::mat sgd(Nullable<NumericMatrix>& starter_coords,
 		NumericMatrix starter(starter_coords);
 		copy(starter.begin(), starter.end(), coords.begin());
 	} else {
+		if (seed.isNotNull()) {
+			Rcpp::Environment base_env("package:base");
+			Rcpp::Function set_seed_r = base_env["set.seed"];
+			NumericVector inner_seed(seed);
+			set_seed_r(inner_seed[0]);
+		}
 		coords.randu();
 		coords -= 0.5;
 	}
