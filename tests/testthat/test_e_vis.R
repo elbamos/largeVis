@@ -92,8 +92,6 @@ test_that("seed works", {
 
 	expect_equal(coords, visObject$coords)
 
-	RcppParallel::setThreadOptions(numThreads = 1)
-
 	coords <- projectKNNs(visObject$wij, sgd_batches = MIN_BATCHES, seed = 1974)
 
 	coords2 <- projectKNNs(visObject$wij, sgd_batches = MIN_BATCHES, seed = 1974)
@@ -101,8 +99,6 @@ test_that("seed works", {
 	expect_equal(coords, coords2)
 
 })
-
-RcppParallel::setThreadOptions(numThreads = 2)
 
 test_that("largeVis gradients aren't off", {
 	skip_on_cran()

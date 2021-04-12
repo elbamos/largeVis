@@ -7,32 +7,21 @@ dupes <- which(duplicated(dat))
 dat <- dat[-dupes, ]
 dat <- t(dat)
 
+RcppParallel::setThreadOptions(numThreads = 2)
+
 test_that("Trees does not error", {
-	RcppParallel::setThreadOptions(numThreads = 1)
+
 	expect_silent(randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 10,
 																												max_iter = 0,
 																												verbose = FALSE))
 
-	RcppParallel::setThreadOptions(numThreads = 2)
-	expect_silent(randomProjectionTreeSearch(dat,
-																												K = 5,
-																												n_trees = 10,
-																												max_iter = 0,
-																												verbose = FALSE))
-	RcppParallel::setThreadOptions(numThreads = 1)
 	expect_silent(randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 50,
 																												max_iter = 1,
 																												verbose = FALSE))
-	expect_silent(randomProjectionTreeSearch(dat,
-																												K = 5,
-																												n_trees = 50,
-																												max_iter = 1,
-																												verbose = FALSE))
-	RcppParallel::setThreadOptions(numThreads = 2)
 	expect_silent(randomProjectionTreeSearch(dat,
 																												K = 5,
 																												n_trees = 50,
@@ -40,7 +29,6 @@ test_that("Trees does not error", {
 																												verbose = FALSE))
 })
 
-RcppParallel::setThreadOptions(numThreads = 2)
 test_that("Can use an on-disk index", {
 	filename <- tempfile(pattern = "largevistest")
 	expect_silent(neighbors1 <- randomProjectionTreeSearch(dat,
@@ -67,7 +55,6 @@ bests <- apply(d_matrix, MARGIN = 1, FUN = function(x) order(x)[1:(M + 1)])
 bests <- bests[-1,] - 1
 
 
-RcppParallel::setThreadOptions(numThreads = 2)
 test_that("exploration is not negative", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
@@ -99,25 +86,7 @@ test_that("exploration is not negative", {
 	expect_gte(score, oldscore, label = "2 iterations")
 })
 
-RcppParallel::setThreadOptions(numThreads = 1)
-test_that("Can determine iris neighbors with iterations 1 thread", {
-	neighbors <- randomProjectionTreeSearch(dat,
-																					K = 5,
-																					n_trees = 20,
-																					max_iter = 10,
-																					verbose = FALSE)
-	neighbors <- neighbors$neighbors
-	expect_equal(sum(is.na(neighbors)), 0)
-	expect_equal(nrow(neighbors), 5)
-	expect_equal(ncol(neighbors), ncol(dat))
-	expect_lt(sum(neighbors == -1), 20)
-	expect_equal(sum(neighbors[, 1:40] > 50), 0)
-	scores <- lapply(1:ncol(dat), FUN = function(x) sum(neighbors[,x] %in% bests[,x]))
-	score <- sum(as.numeric(scores))
-	expect_gte(score, M * ncol(dat) - 2) # Two neighbors are equidistanct
-})
 
-RcppParallel::setThreadOptions(numThreads = 2)
 test_that("Can determine iris neighbors with iterations 2 threads", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = 5,
@@ -136,7 +105,6 @@ test_that("Can determine iris neighbors with iterations 2 threads", {
 	expect_gte(score, M * ncol(dat) - 2) # Two neighbors are equidistanct
 })
 
-RcppParallel::setThreadOptions(numThreads = 2)
 test_that("Can determine iris neighbors accurately, Euclidean", {
 	neighbors <- randomProjectionTreeSearch(dat,
 																					K = M,
@@ -148,7 +116,6 @@ test_that("Can determine iris neighbors accurately, Euclidean", {
 	expect_lte(sum(neighbors != bests, na.rm = TRUE), 5)
 })
 
-RcppParallel::setThreadOptions(numThreads = 1)
 test_that("With a bigger dataset, performance is as expected", {
 	M <- 10
 	data(quakes)
@@ -163,7 +130,6 @@ test_that("With a bigger dataset, performance is as expected", {
 	oldscore <- nrow(quakes) * M
 
 	for (t in c(5, 20, 40, 90)) {
-		RcppParallel::setThreadOptions(numThreads = 1)
 		neighbors <- randomProjectionTreeSearch(t(quakes),
 																						K = M,
 																						n_trees = t,
@@ -179,7 +145,6 @@ test_that("With a bigger dataset, performance is as expected", {
 	oldscore <- nrow(quakes) * M
 
 	for (t in c(1, 5, 10, 20)) {
-		RcppParallel::setThreadOptions(numThreads = 1)
 		neighbors <- randomProjectionTreeSearch(t(quakes),
 																						K = M,
 																						n_trees = 10,
