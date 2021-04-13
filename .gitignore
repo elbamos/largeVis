@@ -9,3 +9,5 @@ doc
 Meta
 
 *.tmp
+/doc/
+/Meta/
