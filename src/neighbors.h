@@ -11,6 +11,7 @@
 
 using namespace Rcpp;
 using namespace std;
+using namespace Annoy;
 
 typedef float annoy_distance;
 
