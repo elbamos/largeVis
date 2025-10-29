@@ -8,23 +8,25 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
+typedef sword vertexidx;
+
 class DBSCAN {
 protected:
 	const sp_mat* edges;
 	const imat* neighbors;
 	const long double eps;
 	const unsigned int minPts;
-	const long long N;
+	const vertexidx N;
 	vector< bool > visited;
 	vector< int > clusterAssignments;
 	Progress progress;
 
-	list< long long > regionQuery(long long& p) const {
-		set< long long > holder = set< long long >();
+	list< vertexidx > regionQuery(vertexidx& p) const {
+		set< vertexidx > holder = set< vertexidx >();
 		bool exceeded = false;
 		for (auto it = neighbors -> begin_col(p);
          it != neighbors -> end_col(p);
-         it ++) {
+         ++it) {
 			if (*it == -1 || (*edges)(p, *it) > eps) {
 				exceeded = true;
 				break;
@@ -34,20 +36,20 @@ protected:
 		if (! exceeded) {
 			for (auto it = edges -> begin_col(p);
         	 it != edges -> end_col(p);
-        	 it++) {
+        	 ++it) {
 				if (*it < eps) holder.insert(it.row());
 			}
 		}
-		list< long long > ret = list< long long >(holder.begin(), holder.end());
+		list< vertexidx > ret = list< vertexidx >(holder.begin(), holder.end());
 		return ret;
 	}
 
-	void expandCluster(long long& P, list< long long >& pNeighbors, int& C) {
+	void expandCluster(vertexidx& P, list< vertexidx >& pNeighbors, int& C) {
 		clusterAssignments[P] = C;
-		for (auto pprime = pNeighbors.begin(); pprime != pNeighbors.end(); pprime++) {
+		for (auto pprime = pNeighbors.begin(); pprime != pNeighbors.end(); ++pprime) {
 			if (! visited[*pprime]) {
 				visited[*pprime] = true;
-				list< long long > pprimeNeighbors = regionQuery(*pprime);
+				list< vertexidx > pprimeNeighbors = regionQuery(*pprime);
 				if (pprimeNeighbors.size() >= minPts - 1) {
 					pNeighbors.insert(pNeighbors.end(), pprimeNeighbors.begin(), pprimeNeighbors.end());
 				}
@@ -73,9 +75,9 @@ public:
 
 	IntegerVector run() {
 		int C = -1;
-		for (long long p = 0; p < N; p++) if (progress.increment() && ! visited[p]) {
+		for (vertexidx p = 0; p < N; ++p) if (progress.increment() && ! visited[p]) {
 			visited[p] = true;
-			list< long long > pNeighbors = regionQuery(p);
+			list< vertexidx > pNeighbors = regionQuery(p);
 			if (pNeighbors.size() >= minPts - 1) {
 				++C;
 				expandCluster(p, pNeighbors, C);

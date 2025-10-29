@@ -10,137 +10,185 @@
 #' @param x A (potentially sparse) matrix, where examples are columnns and features are rows.
 #' @param K How many nearest neighbors to seek for each node.
 #' @param n_trees The number of trees to build.
-#' @param tree_threshold The threshold for creating a new branch.  The paper authors suggest
-#' using a value equivalent to the number of features in the input set.
 #' @param max_iter Number of iterations in the neighborhood exploration phase.
-#' @param distance_method One of "Euclidean" or "Cosine."
-#' @param seed Random seed passed to the C++ functions. If \code{seed} is not \code{NULL} (the default),
-#' the maximum number of threads will be set to 1 in phases that would be non-determinstic otherwise.
-#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
+#' @param distance_method One of "Euclidean", "Cosine", "Manhattan", or "Hamming"
+#' @param save_file If not null, the annoy index will be built on-disk at this path.
 #' @param verbose Whether to print verbose logging using the \code{progress} package.
 #'
-#' @return A [K, N] matrix of the approximate K nearest neighbors for each vertex.
+#' @return A `list` with the following members:
+#'  \describe{
+#'    \item{'neighbors'}{A [K, N] adjacency matrix of the approximate K nearest neighbors for each vertex.}
+#'    \item{'edgematrix'}{A [N,N] sparse matrix of distances between nearest neighbors.}
+#'  }
+#'
 #' @export
 randomProjectionTreeSearch <- function(x,
-                                       K = 150,
-                                       n_trees = 50,
-                                       tree_threshold =  max(10, nrow(x)),
-                                       max_iter = 1,
-                                       distance_method = "Euclidean",
-																			 seed = NULL,
-																			 threads = NULL,
-                                       verbose = getOption("verbose", TRUE))
-  UseMethod("randomProjectionTreeSearch")
+																			 K = 150,
+																			 n_trees = 50,
+																			 max_iter = 1,
+																			 distance_method = "Euclidean",
+																			 save_file = NULL,
+																			 verbose = getOption("verbose", TRUE))
+	UseMethod("randomProjectionTreeSearch")
 
 #' @export
 #' @rdname randomProjectionTreeSearch
 randomProjectionTreeSearch.matrix <- function(x,
-                                       K = 150,
-                                       n_trees = 50,
-                                       tree_threshold =  max(10, nrow(x)),
-                                       max_iter = 1,
-                                       distance_method = "Euclidean",
-																			 seed = NULL,
-																			 threads = NULL,
-                                       verbose = getOption("verbose", TRUE)) {
-  if (verbose) cat("Searching for neighbors.\n")
+																							K = 150,
+																							n_trees = 50,
+																							max_iter = 1,
+																							distance_method = "Euclidean",
+																							save_file = NULL,
+																							verbose = getOption("verbose", TRUE)) {
+	if (verbose)
+		cat("Searching for neighbors.\n")
 
-  if (distance_method == "Cosine") x <- x / rowSums(x)
+	knns <- searchTrees(
+		n_trees = as.integer(n_trees),
+		K = as.integer(K),
+		maxIter = as.integer(max_iter),
+		data = x,
+		distMethod = as.character(distance_method),
+		saveFile = save_file,
+		verbose = as.logical(verbose)
+	)
 
-  knns <- searchTrees(threshold = as.integer(tree_threshold),
-                      n_trees = as.integer(n_trees),
-                      K = as.integer(K),
-                      maxIter = as.integer(max_iter),
-                      data = x,
-                      distMethod = as.character(distance_method),
-  										seed = seed,
-  										threads = threads,
-                      verbose = as.logical(verbose))
+	if (sum(colSums(knns$neighbors != -1) == 0) > 0)
+		stop ("After neighbor search, no candidates for some nodes.")
+	if (sum(is.na(knns$neighbors)) + sum(is.nan(knns$neighbors)) > 0)
+		stop ("NAs or nans in neighbor graph.")
+	if (verbose[1] && sum(knns$neighbors == -1) > 0)
+		warning ("Wanted to find",
+						 nrow(knns$neighbors) * ncol(knns$neighbors),
+						 " neighbors, but only found",
+						 ((nrow(knns$neighbors) * ncol(knns$neighbors)) - sum(knns$neighbors == -1)))
 
-  if (sum(colSums(knns != -1) == 0) > 0)
-    stop ("After neighbor search, no candidates for some nodes.")
-  if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
-    stop ("NAs or nans in neighbor graph.")
-  if (verbose[1] && sum(knns == -1) > 0)
-    warning ("Wanted to find", nrow(knns) * ncol(knns),
-             " neighbors, but only found",
-                  ( (nrow(knns) * ncol(knns)) - sum(knns == -1)))
+	attr(knns$edgematrix, "Metric") <- tolower(distance_method)
 
-  return(knns)
+	return(knns)
 }
 
 #' @export
 #' @rdname randomProjectionTreeSearch
 randomProjectionTreeSearch.CsparseMatrix <- function(x,
-                                              K = 150,
-                                              n_trees = 50,
-                                              tree_threshold =  max(10, nrow(x)),
-                                              max_iter = 1,
-                                              distance_method = "Euclidean",
-																							seed = NULL,
-																							threads = NULL,
-                                              verbose = getOption("verbose", TRUE)) {
-  if (verbose) cat("Searching for neighbors.\n")
+																										 K = 150,
+																										 n_trees = 50,
+																										 max_iter = 1,
+																										 distance_method = "Euclidean",
+																										 save_file = NULL,
+																										 verbose = getOption("verbose", TRUE)) {
+	if (verbose)
+		cat("Searching for neighbors.\n")
 
-  knns <- searchTreesCSparse(threshold = as.integer(tree_threshold),
-                      n_trees = as.integer(n_trees),
-                      K = as.integer(K),
-                      maxIter = as.integer(max_iter),
-                      i = x@i,
-                      p = x@p,
-                      x = x@x,
-                      distMethod = as.character(distance_method),
-  										seed = seed,
-  										threads = threads,
-                      verbose = as.logical(verbose))
+	knns <- searchTreesCSparse(
+		n_trees = as.integer(n_trees),
+		K = as.integer(K),
+		maxIter = as.integer(max_iter),
+		i = x@i,
+		p = x@p,
+		x = x@x,
+		distMethod = as.character(distance_method),
+		saveFile = save_file,
+		verbose = as.logical(verbose)
+	)
 
-  if (sum(colSums(knns != -1) == 0) > 0)
-    stop ("After neighbor search, no candidates for some nodes.")
-  if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
-    stop ("NAs or nans in neighbor graph.")
-  if (verbose[1] && sum(knns == -1) > 0)
-    warning ("Wanted to find", nrow(knns) * ncol(knns),
-             " neighbors, but only found",
-             ( (nrow(knns) * ncol(knns)) - sum(knns == -1)))
+	if (sum(colSums(knns$neighbors != -1) == 0) > 0)
+		stop ("After neighbor search, no candidates for some nodes.")
+	if (sum(is.na(knns$neighbors)) + sum(is.nan(knns$neighbors)) > 0)
+		stop ("NAs or nans in neighbor graph.")
+	if (verbose[1] && sum(knns$neighbors == -1) > 0)
+		warning ("Wanted to find",
+						 nrow(knns$neighbors) * ncol(knns$neighbors),
+						 " neighbors, but only found",
+						 ((nrow(knns$neighbors) * ncol(knns$neighbors)) - sum(knns$neighbors == -1)))
 
-  return(knns)
+	attr(knns$edgematrix, "Metric") <- tolower(distance_method)
+
+	return(knns)
 }
 
 #' @export
 #' @rdname randomProjectionTreeSearch
 randomProjectionTreeSearch.TsparseMatrix <- function(x,
-                                                     K = 150,
-                                                     n_trees = 50,
-                                                     tree_threshold =
-                                                       max(10, nrow(x)),
-                                                     max_iter = 1,
-                                                     distance_method =
-                                                       "Euclidean",
-																										 seed = NULL,
-																										 threads = NULL,
-                                                     verbose = getOption("verbose", TRUE)) {
-  if (verbose) cat("Searching for neighbors.\n")
+																										 K = 150,
+																										 n_trees = 50,
+																										 max_iter = 1,
+																										 distance_method =
+																										 	"Euclidean",
+																										 save_file = NULL,
+																										 verbose = getOption("verbose", TRUE)) {
+	if (verbose)
+		cat("Searching for neighbors.\n")
 
-  knns <- searchTreesTSparse(threshold = as.integer(tree_threshold),
-                             n_trees = as.integer(n_trees),
-                             K = as.integer(K),
-                             maxIter = as.integer(max_iter),
-                             i = x@i,
-                             j = x@j,
-                             x = x@x,
-                             distMethod = as.character(distance_method),
-  													 seed = seed,
-  													 threads = threads,
-                             verbose = as.logical(verbose))
+	knns <- searchTreesTSparse(
+		n_trees = as.integer(n_trees),
+		K = as.integer(K),
+		maxIter = as.integer(max_iter),
+		i = x@i,
+		j = x@j,
+		x = x@x,
+		distMethod = as.character(distance_method),
+		saveFile = save_file,
+		verbose = as.logical(verbose)
+	)
 
-  if (sum(colSums(knns != -1) == 0) > 0)
-    stop ("After neighbor search, no candidates for some nodes.")
-  if (sum(is.na(knns)) + sum(is.nan(knns)) > 0)
-    stop ("NAs or nans in neighbor graph.")
-  if (verbose[1] && sum(knns == -1) > 0)
-    warning ("Wanted to find", nrow(knns) * ncol(knns),
-             " neighbors, but only found",
-             ( (nrow(knns) * ncol(knns) ) - sum(knns == -1)))
+	if (sum(colSums(knns$neighbors != -1) == 0) > 0)
+		stop ("After neighbor search, no candidates for some nodes.")
+	if (sum(is.na(knns$neighbors)) + sum(is.nan(knns$neighbors)) > 0)
+		stop ("NAs or nans in neighbor graph.")
+	if (verbose[1] && sum(knns$neighbors == -1) > 0)
+		warning ("Wanted to find",
+						 nrow(knns$neighbors) * ncol(knns$neighbors),
+						 " neighbors, but only found",
+						 ((nrow(knns$neighbors) * ncol(knns$neighbors)) - sum(knns$neighbors == -1)))
 
-  return(knns)
+	attr(knns$edgematrix, "Metric") <- tolower(distance_method)
+
+	return(knns)
+}
+
+
+#' Run randomProjectionTreeSearch using a previously saved RccpAnnoy index
+#' @param save_file The path to the index
+#' @param D Dimensionality of the dataset
+#' @param K The number of nearest neighbors to find
+#' @param max_iter Number of iterations in the neighborhood exploration phase.
+#' @param distance_method One of "Euclidean" or "Cosine" - must match the previously saved index.
+#' @param verbose Whether to print verbose logging using the \code{progress} package.
+#'
+#' @return A [K, N] matrix of the approximate K nearest neighbors for each vertex.
+#' @export
+#' @rdname randomProjectionTreeSearch
+randomProjectionTreeSearchFromIndex <- function(save_file,
+																								 D,
+																								 K = 150,
+																								 max_iter = 1,
+																								 distance_method = "Euclidean",
+																								 verbose = getOption("verbose", TRUE)) {
+	if (verbose)
+		cat("Searching for neighbors.\n")
+
+
+	knns <- searchTreesFromIndex(
+		K = as.integer(K),
+		D = as.integer(D),
+		maxIter = as.integer(max_iter),
+		distMethod = as.character(distance_method),
+		saveFile = as.character(save_file),
+		verbose = as.logical(verbose)
+	)
+
+	if (sum(colSums(knns$neighbors != -1) == 0) > 0)
+		stop ("After neighbor search, no candidates for some nodes.")
+	if (sum(is.na(knns$neighbors)) + sum(is.nan(knns$neighbors)) > 0)
+		stop ("NAs or nans in neighbor graph.")
+	if (verbose[1] && sum(knns$neighbors == -1) > 0)
+		warning ("Wanted to find",
+						 nrow(knns$neighbors) * ncol(knns$neighbors),
+						 " neighbors, but only found",
+						 ((nrow(knns$neighbors) * ncol(knns$neighbors)) - sum(knns$neighbors == -1)))
+
+	attr(knns$edgematrix, "Metric") <- tolower(distance_method)
+
+	return(knns)
 }

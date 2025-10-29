@@ -1,7 +1,39 @@
 #include "neighbors.h"
 
-template<class M, class V>
-void AnnoySearch<M, V>::advanceHeap(MinIndexedPQ& positionHeap,
+int getNumThreads() {
+	char const* num_threads = std::getenv("RCPP_PARALLEL_NUM_THREADS");
+	if (num_threads == NULL) return -1;
+	if (strcmp(num_threads, "") == 0) return -1;
+	else return atoi(num_threads);
+}
+
+using namespace arma;
+
+template<class M, typename distancemetric, typename Distance>
+void trees(
+		LVAnnoyIndex<distancemetric, Distance>& annoy_index,
+		const M& data,
+		const unsigned int& n_trees,
+		const Rcpp::Nullable< Rcpp::String > &savefile,
+		Progress& p
+) {
+	if (savefile.isNotNull()) {
+		String save_file_path = String(savefile);
+		std::string file_path = save_file_path.get_cstring();
+		annoy_index.on_disk_build(file_path.c_str(), NULL);
+	}
+	vector<distancemetric> tmp(data.n_rows);
+	for (size_t i = 0; i < data.n_cols; ++i) if (p.increment()) {
+		copy(data.col(i).begin(), data.col(i).end(), tmp.begin());
+		annoy_index.add_item(i, tmp.data());
+	}
+	int threads = getNumThreads();
+	annoy_index.build(n_trees, threads);
+	p.increment(data.n_rows * n_trees);
+}
+
+template<typename distancemetric, typename Distance>
+void AnnoySearch<distancemetric, Distance>::advanceHeap(MinIndexedPQ& positionHeap,
                                     vector< Position>& positionVector) const {
 	dimidxtype whichColumn = positionHeap.minIndex();
 	Position& iterators = positionVector[whichColumn];
@@ -10,180 +42,44 @@ void AnnoySearch<M, V>::advanceHeap(MinIndexedPQ& positionHeap,
 	else positionHeap.rotate(adv);
 }
 
-template<class M, class V>
-void AnnoySearch<M, V>::addHeap(vector< std::pair<distancetype, vertexidxtype> >& heap,
-              									const V& x_i, const vertexidxtype& j) const {
-		const distancetype d = distanceFunction(x_i, data.col(j));
+template<typename distancemetric, typename Distance>
+void AnnoySearch<distancemetric, Distance>::addHeap(vector< std::pair<distancemetric, vertexidxtype> >& heap,
+              									const vertexidxtype& i, const vertexidxtype& j) const {
+		const distancemetric d = annoy_index->get_distance(i, j);
 		heap.emplace_back(d, j);
-		push_heap(heap.begin(), heap.end(), std::less<std::pair<distancetype, vertexidxtype>>());
+		push_heap(heap.begin(), heap.end(), std::less<std::pair<distancemetric, vertexidxtype>>());
 		if (heap.size() > K) {
-			pop_heap(heap.begin(), heap.end(), std::less<std::pair<distancetype, vertexidxtype>>());
+			pop_heap(heap.begin(), heap.end(), std::less<std::pair<distancemetric, vertexidxtype>>());
 			heap.pop_back();
 		}
 	}
 
-template<class M, class V>
-void AnnoySearch<M, V>::addToNeighborhood(const V& x_i, const vertexidxtype& j,
-									                        vector< std::pair<distancetype, vertexidxtype> >& neighborhood) const {
-		const distancetype d = distanceFunction(x_i, data.col(j));
+template<typename distancemetric, typename Distance>
+void AnnoySearch<distancemetric, Distance>::addToNeighborhood(const vertexidxtype& i, const vertexidxtype& j,
+									                        vector< std::pair<distancemetric, vertexidxtype> >& neighborhood) const {
+		const distancemetric d = annoy_index->get_distance(i, j);
 		neighborhood.emplace_back(d, j);
-		push_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<distancetype, vertexidxtype>>());
+		push_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<distancemetric, vertexidxtype>>());
 		if (neighborhood.size() > K) {
-			pop_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<distancetype, vertexidxtype>>());
+			pop_heap(neighborhood.begin(), neighborhood.end(), std::less<std::pair<distancemetric, vertexidxtype>>());
 			neighborhood.pop_back();
 		}
 	}
 
-/*
- * During the annoy-tree phase, used to copy the elements of a leaf
- * into the neighborhood for each point in the leaf.
- * The neighborhood is maintained in vertex-index order.
- */
-template<class M, class V>
-void AnnoySearch<M, V>::mergeNeighbors(const list< Neighborholder >& localNeighborhoods) {
-#ifdef _OPENMP
-#pragma omp critical
-#endif
-	{
-	Neighborhood tmp;
-	for (auto it = localNeighborhoods.begin(); it != localNeighborhoods.end(); ++it) {
-		const ivec& indices = **it;
-		const auto indicesEnd = indices.end();
-		for (auto it2 = indices.begin(); it2 != indicesEnd; ++it2) {
-			const vertexidxtype cur = *it2;
-		  Neighborhood& neighborhood = treeNeighborhoods[cur];
-		  tmp.clear();
-		  tmp.swap(neighborhood);
-		  neighborhood.reserve(tmp.size() + indices.size() - 1);
 
-		  auto it3 = indices.begin();
-		  auto neighboriterator = tmp.begin();
-		  auto tmpe = tmp.end();
+template<typename distancemetric, typename Distance>
+void AnnoySearch<distancemetric, Distance>::reduceOne(const vertexidxtype& i) {
+	vector<vertexidxtype> neighbor_index;
+	annoy_index->get_nns_by_item(i, K + 1, -1, &neighbor_index, NULL);
 
-		  while (neighboriterator != tmpe && it3 != indicesEnd) {
-		  	vertexidxtype newone = *neighboriterator;
-		  	if (newone < *it3) ++neighboriterator;
-		  	else if (*it3 < newone) {
-		  		if (*it3 == cur) {
-		  			++it3;
-		  			continue;
-		  		}
-		  		newone = *it3;
-		  		++it3;
-		  	} else {
-		  		++neighboriterator; ++it3;
-		  	}
-		  	neighborhood.emplace_back(newone);
-		  }
-		  auto back = std::back_inserter(neighborhood);
-		  copy(neighboriterator, tmpe, back);
-		  copy_if(it3, indicesEnd, back, [&cur](const vertexidxtype& tst) {return tst != cur;});
-	  }
-	}
-}
-}
+	sort(neighbor_index.begin(), neighbor_index.end());
 
-Neighborholder copyTo(const Neighborholder& indices, const uvec& selections) {
-	Neighborholder out = make_shared<ivec>(selections.n_elem);
-	std::transform(selections.begin(), selections.end(), out->begin(),
-                [&indices](const uword& it) {return (*indices)[it];});
-	return out;
-}
-
-	/*
-	* The key function of the annoy-trees phase.
-	*/
-template<class M, class V>
-void AnnoySearch<M, V>::recurse(const Neighborholder& indices, list< Neighborholder >& localNeighborhood) {
-	const arma::uword I = indices->n_elem;
-	if (I <= threshold) {
-		localNeighborhood.emplace_back(indices);
-		p.increment(I);
-	} else {
-		vec direction = hyperplane(*indices);
-		distancetype middle = median(direction);
-		uvec left = find(direction > middle);
-		if (left.n_elem > (I - 2) || left.n_elem < 2) {
-			direction.randu();
-			middle = 0.5;
-			left = find(direction > middle);
-		}
-		const uvec right = find(direction <= middle);
-		recurse(copyTo(indices, left), localNeighborhood);
-		recurse(copyTo(indices, right), localNeighborhood);
-	}
-};
-
-template<class M, class V>
-void AnnoySearch<M, V>::setSeed(Rcpp::Nullable< NumericVector >& seed) {
-	long innerSeed;
-	if (seed.isNotNull()) {
-#ifdef _OPENMP
-		storedThreads = omp_get_max_threads();
-		omp_set_num_threads(1);
-		omp_set_dynamic(0);
-#endif
-		innerSeed = NumericVector(seed)[0];
-	} else {
-		random_device hardseed;
-		innerSeed = hardseed();
-	}
-	mt = mt19937_64(innerSeed);
-}
-
-template<class M, class V>
-void AnnoySearch<M, V>::trees(const unsigned int& n_trees, const unsigned int& newThreshold) {
-	threshold = newThreshold;
-	threshold2 = threshold * 4;
-	Neighborholder indices = make_shared<ivec>(regspace<ivec>(0, data.n_cols - 1));
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-	for (unsigned int t = 0; t < n_trees; t++) if (! p.check_abort()) {
-		list< Neighborholder > local;
-		recurse(indices, local);
-		mergeNeighbors(local);
-	}
-#ifdef _OPENMP
-	if (storedThreads > 0) omp_set_num_threads(storedThreads);
-#endif
-}
-
-template<class M, class V>
-void AnnoySearch<M, V>::reduceOne(const vertexidxtype& i,
-                                  vector< std::pair<distancetype, vertexidxtype> >& newNeighborhood) {
-	const V& x_i = data.col(i);
-	newNeighborhood.clear();
-	Neighborhood& neighborhood = treeNeighborhoods[i];
-
-	/*
-	* Sort by distance the first K items, by assembling into a heap.
-	*/
-	for (auto j = neighborhood.begin(); j != neighborhood.end(); ++j) {
-		addToNeighborhood(x_i, *j, newNeighborhood);
+	auto it = knns.begin_col(i);
+	for (auto neigh = neighbor_index.begin(); neigh != neighbor_index.end(); ++neigh) {
+		if (*neigh != i) *(it++) = *neigh;
 	}
 
-	/*
-	 * Copy the remainder (max K elements) into a column
-	 * of the matrix. Sort those K by vertex index. Pad the column with -1's, if necessary.
-	 */
-	auto continueWriting = std::transform(newNeighborhood.begin(), newNeighborhood.end(), knns.begin_col(i),
-                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
-	if (continueWriting == knns.begin_col(i)) throw Rcpp::exception("At reduction, no neighbors for vertex.");
-	sort(knns.begin_col(i), continueWriting);
-	std::fill(continueWriting, knns.end_col(i), -1);
-
-	treeNeighborhoods[i].resize(0);
-}
-
-template<class M, class V>
-void AnnoySearch<M, V>::reduceThread(const vertexidxtype& loopstart,
-                                     				const vertexidxtype& end) {
-	vector< std::pair<distancetype, vertexidxtype> > newNeighborhood;
-	newNeighborhood.reserve(K * threshold);
-	for (vertexidxtype i = loopstart; i != end; ++i) if (p.increment()) {
-		reduceOne(i, newNeighborhood);
-	}
+	for (; it != knns.end_col(i); ++it) *it = -1;
 }
 
 	/*
@@ -191,54 +87,25 @@ void AnnoySearch<M, V>::reduceThread(const vertexidxtype& loopstart,
 	* generated by each tree.  This function finds the K-shortest-distance points
 	* for each point, and copies them into the knns matrix, sorted by index.
 	*/
-template<class M, class V>
-void AnnoySearch<M, V>::reduce() {
+template<typename distancemetric, typename Distance>
+void AnnoySearch<distancemetric, Distance>::reduce() {
 	knns = imat(K,N);
-#ifdef _OPENMP
-	const unsigned int dynamo = omp_get_dynamic();
-	omp_set_dynamic(0);
-	const vertexidxtype chunk = (N / omp_get_max_threads()) + 1;
-#pragma omp parallel for
-#else
-	const vertexidxtype chunk = N;
-#endif
-	for (vertexidxtype i = 0; i <= N; i += chunk) {
-		reduceThread(i, min(i + chunk, N));
-	}
-#ifdef _OPENMP
-	omp_set_dynamic(dynamo);
-#endif
+
+	ReduceWorker<distancemetric, Distance> worker(this);
+	parallelFor(0, N, worker);
 }
 
-template<class M, class V>
-void AnnoySearch<M, V>::exploreThread(const imat& old_knns,
-				                                     const vertexidxtype& loopstart,
-				                                     const vertexidxtype& end) {
-	/*
-	 * The goal here is to maintain a size-K minHeap of the points with the shortest distances
-	 * to the target point. This is a merge sort with more than two sorted arrays being merged.
-	 * We can use a simple priority queue because the number of entries in the queue, which equals
-	 * K + 1, is small and well-controlled.
-	 */
-	vector< std::pair<distancetype, vertexidxtype> > nodeHeap;
-	nodeHeap.reserve(K);
-	MinIndexedPQ positionHeap(K + 1);
-	vector< Position > positionVector;
-	positionVector.reserve(K + 1);
 
-	for (vertexidxtype i = loopstart; i != end; ++i) if (p.increment()) {
-		exploreOne(i, old_knns, nodeHeap, positionHeap, positionVector);
-	}
-}
-
-template<class M, class V>
-void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
-												                 const imat& old_knns,
-												                 vector< std::pair<distancetype, vertexidxtype> >& nodeHeap,
-												                 MinIndexedPQ& positionHeap,
-												                 vector< Position >& positionVector) {
-	const V& x_i = data.col(i);
-
+/*
+ * Given a neighborhood for a point (which may include an index for the point as well), use a
+ * constant size heap to find the K nearest neighbors of the point.
+ */
+template<typename distancemetric, typename Distance>
+void AnnoySearch<distancemetric, Distance>::exploreOne( const vertexidxtype& i,
+									                 const imat& old_knns,
+									                 vector< std::pair<distancemetric, vertexidxtype> >& nodeHeap,
+									                 MinIndexedPQ& positionHeap,
+									                 vector< Position >& positionVector) {
 	positionVector.clear();
 	nodeHeap.clear();
 
@@ -259,7 +126,7 @@ void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 		const vertexidxtype nextOne = positionHeap.minKey();
 
 		if (nextOne != lastOne && nextOne != i) {
-			addHeap(nodeHeap, x_i, nextOne);
+			addHeap(nodeHeap, i, nextOne);
 			lastOne = nextOne;
 		}
 		advanceHeap(positionHeap, positionVector);
@@ -272,85 +139,264 @@ void AnnoySearch<M,V>::exploreOne(const vertexidxtype& i,
 	* We can't use std:copy because we're copying from a vector of pairs
 	*/
 	auto copyContinuation = std::transform(nodeHeap.begin(), nodeHeap.end(), knns.begin_col(i),
-                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
+                                        [](const std::pair<distancemetric, vertexidxtype>& input) {return input.second;});
 	if (copyContinuation == knns.begin_col(i)) throw Rcpp::exception("No neighbors after exploration - this is a bug.");
 	sort(knns.begin_col(i), copyContinuation);
 	std::fill(copyContinuation, knns.end_col(i), -1);
 }
 
-template<class M, class V>
-void AnnoySearch<M,V>::exploreNeighborhood(const unsigned int& maxIter) {
+template<typename distancemetric, typename Distance>
+void AnnoySearch<distancemetric, Distance>::exploreNeighborhood(const unsigned int& maxIter) {
 	const kidxtype K = knns.n_rows;
 	imat old_knns = imat(K,N);
 
 	for (unsigned int T = 0; T != maxIter; ++T) if (! p.check_abort()) {
 		swap(knns, old_knns);
-#ifdef _OPENMP
-		const unsigned int dynamo = omp_get_dynamic();
-		omp_set_dynamic(0);
-		const vertexidxtype chunk = (N / omp_get_max_threads()) + 1;
-#pragma omp parallel for shared(old_knns)
-#else
-		const vertexidxtype chunk = N;
-#endif
-		for (vertexidxtype i = 0; i <= N; i += chunk) {
-			exploreThread(old_knns, i, min(i + chunk, N));
-		}
-#ifdef _OPENMP
-		omp_set_dynamic(dynamo);
-#endif
+		ExploreWorker<distancemetric, Distance> worker(this, &old_knns);
+
+		parallelFor(0, N, worker);
 	}
 }
 
 /*
  * Resort the matrix so in each column the neighbors are sorted by distance
  */
-template<class M, class V>
-imat AnnoySearch<M, V>::sortAndReturn() {
-#ifdef _OPENMP
-	const unsigned int dynamo = omp_get_dynamic();
-	if (omp_get_num_threads() > 1) omp_set_dynamic(0);
-	const vertexidxtype chunk = (N / omp_get_max_threads()) + 1;
-#pragma omp parallel for
-#else
-	const vertexidxtype chunk = N;
-#endif
-	for (vertexidxtype i = 0; i <= N; i += chunk) {
-		sortCopyThread(i, min(i + chunk, N));
-	}
-#ifdef _OPENMP
-	if (omp_get_num_threads() > 1) omp_set_dynamic(dynamo);
-#endif
+template<typename distancemetric, typename Distance>
+imat AnnoySearch<distancemetric, Distance>::sortAndReturn() {
+	SortCopyWorker<distancemetric, Distance> worker(this);
+	parallelFor(0, N, worker);
 	return knns;
 }
 
-template<class M, class V>
-void AnnoySearch<M,V>::sortCopyThread(const vertexidxtype& start,
-                                      const vertexidxtype& end) {
-	vector< std::pair<distancetype, vertexidxtype>> holder;
-	holder.reserve(K);
-	for (vertexidxtype i = start; i != end; ++i) if (p.increment()) {
-		sortCopyOne(holder, i);
-	}
-}
-
-template<class M, class V>
-void AnnoySearch<M,V>::sortCopyOne(vector< std::pair<distancetype, vertexidxtype>>& holder,
+template<typename distancemetric, typename Distance>
+void AnnoySearch<distancemetric, Distance>::sortCopyOne(vector< std::pair<distancemetric, vertexidxtype>>& holder,
                                    const vertexidxtype& i) {
 	holder.clear();
-	const V& x_i = data.col(i);
 	/*
 	* Its cheaper to not maintain a heap and instead just sort because we'll never have more entries than we need.
 	*/
 	for (auto it = knns.begin_col(i); it != knns.end_col(i) && *it != -1; ++it) {
-		const distancetype d = distanceFunction(x_i, data.col(*it));
+		const distancemetric d = annoy_index->get_distance(i, *it);
 		holder.emplace_back(d, *it);
 	}
 	sort(holder.begin(), holder.end());
 	auto copyContinuation = std::transform(holder.begin(), holder.end(), knns.begin_col(i),
-                                        [](const std::pair<distancetype, vertexidxtype>& input) {return input.second;});
+                                        [](const std::pair<distancemetric, vertexidxtype>& input) {return input.second;});
 	std::fill(copyContinuation, knns.end_col(i), -1);
 }
 
-template class AnnoySearch<Mat<double>, Col<double>>;
-template class AnnoySearch<SpMat<double>, SpMat<double>>;
+
+
+// Neighbor conversion functions
+
+vertexidxtype countSize(imat x) {
+	vertexidxtype ones = 0;
+	for (vertexidxtype i = 0; i < x.n_cols; ++i) {
+		for (vertexidxtype j = 0; j < x.n_rows; ++j) {
+			if (x(j, i) == -1) ones++;
+		}
+	}
+	return (x.n_cols * x.n_rows) - ones;
+}
+
+void neighborsToVectors(const imat& x, vector<vertexidxtype>& is, vector<vertexidxtype>& js) {
+	long cols = x.n_cols;
+	long rows = x.n_rows;
+	long sz = countSize(x);
+	is.reserve(sz);
+	js.reserve(sz);
+	for (long col = 0; col < cols; ++col) {
+		for (long row = 0; row < rows; ++row) {
+			if (x(row, col) == -1) break;
+			is.push_back(col);
+			js.push_back(x(row, col));
+		}
+	}
+}
+
+template<typename distancemetric, typename Distance>
+List buildEdgeMatrix(const imat& knns, const LVAnnoyIndex<distancemetric, Distance>& index) {
+	vector<vertexidxtype> is;
+	vector<vertexidxtype> js;
+	vector<distancetype> xs;
+
+	neighborsToVectors(knns, is, js);
+
+	xs.reserve(is.size());
+
+	for (auto it_i = is.begin(), it_j = js.begin(); it_i != is.end(); ++it_i, ++it_j) {
+		xs.push_back(index.get_distance(*it_i, *it_j));
+	}
+
+	List ret = List::create(
+		Named("i") = IntegerVector(is.begin(), is.end()) + 1,
+		Named("j") = IntegerVector(js.begin(), js.end()) + 1,
+		Named("x") = NumericVector(xs.begin(), xs.end())
+	);
+
+	ret.attr("class") = "edgematrix";
+	ret.attr("dims") = IntegerVector::create(knns.n_cols, knns.n_cols);
+	return ret;
+}
+
+
+void checkDistanceMetric(const std::string& metric) {
+	if (metric.compare(string("Cosine")) == 0) {
+		return;
+	} else if (metric.compare(string("Euclidean")) == 0) {
+		return;
+	} else if (metric.compare(string("Manhattan")) == 0) {
+		return;
+	} else if (metric.compare(string("Hamming")) == 0) {
+		return;
+	} else {
+		Rcpp::exception("Bad distance metric");
+	}
+}
+
+template<class M, typename distancemetric, typename Distance>
+List searchTreesTyped(
+		const int& n_trees,
+		const int& K,
+		const int& maxIter,
+		const M& data,
+		const Rcpp::Nullable< Rcpp::String > &saveFile,
+		bool verbose
+) {
+	LVAnnoyIndex<distancemetric, Distance> annoy_index(data.n_rows);
+	vertexidxtype pCount = (2 * n_trees * data.n_cols) + ((3 + maxIter) * data.n_cols);
+	AnnoySearch<distancemetric, Distance> searcher(&annoy_index, data.n_cols, K, verbose, maxIter, pCount);
+	trees<M, distancemetric, Distance>(annoy_index, data, n_trees, saveFile, searcher.p);
+	searcher.reduce();
+	searcher.exploreNeighborhood(maxIter);
+	imat knns = searcher.sortAndReturn();
+
+	List edgematrix = buildEdgeMatrix<distancemetric, Distance>(knns, annoy_index);
+
+	return List(
+		List::create(Named("neighbors") = knns , Named("edgematrix") = edgematrix)
+	);
+}
+
+
+// [[Rcpp::export]]
+List searchTrees(
+		const int& n_trees,
+		const int& K,
+		const int& maxIter,
+		const arma::mat& data,
+		const std::string& distMethod,
+		Rcpp::Nullable< Rcpp::String > &saveFile,
+		bool verbose) {
+
+	checkDistanceMetric(distMethod);
+
+	if (distMethod.compare(string("Cosine")) == 0) {
+		return searchTreesTyped<arma::mat, annoy_distance, Angular>(n_trees, K, maxIter, data, saveFile, verbose);
+	} else if (distMethod.compare(string("Euclidean")) == 0) {
+		return searchTreesTyped<arma::mat, annoy_distance, Euclidean>(n_trees, K, maxIter, data, saveFile, verbose);
+	} else if (distMethod.compare(string("Manhattan")) == 0) {
+		return searchTreesTyped<arma::mat, annoy_distance, Manhattan>(n_trees, K, maxIter, data, saveFile, verbose);
+	} else {
+		return searchTreesTyped<arma::mat, uint64_t, Hamming>(n_trees, K, maxIter, data, saveFile, verbose);
+	}
+
+}
+
+List searchTreesSparse(
+		const int& n_trees,
+		const kidxtype& K,
+		const int& maxIter,
+		const sp_mat& data,
+		const string& distMethod,
+		const Rcpp::Nullable< Rcpp::String >& saveFile,
+		bool verbose) {
+
+	if (distMethod.compare(string("Cosine")) == 0) {
+		return searchTreesTyped<sp_mat, annoy_distance, Angular>(n_trees, K, maxIter, data, saveFile, verbose);
+	} else if (distMethod.compare(string("Euclidean")) == 0) {
+		return searchTreesTyped<sp_mat, annoy_distance, Euclidean>(n_trees, K, maxIter, data, saveFile, verbose);
+	} else if (distMethod.compare(string("Manhattan")) == 0) {
+		return searchTreesTyped<sp_mat, annoy_distance, Manhattan>(n_trees, K, maxIter, data, saveFile, verbose);
+	} else {
+		return searchTreesTyped<sp_mat, uint64_t, Hamming>(n_trees, K, maxIter, data, saveFile, verbose);
+	}
+}
+
+// [[Rcpp::export]]
+List searchTreesCSparse(
+		const int& n_trees,
+		const int& K,
+		const int& maxIter,
+		const arma::uvec& i,
+		const arma::uvec& p,
+		const arma::vec& x,
+		const std::string& distMethod,
+		const Rcpp::Nullable< Rcpp::String > &saveFile,
+		bool verbose) {
+	const vertexidxtype N = p.size() -1;
+	const sp_mat data = sp_mat(i,p,x,N,N);
+	return searchTreesSparse(n_trees,K,maxIter,data,distMethod,saveFile, verbose);
+}
+
+// [[Rcpp::export]]
+List searchTreesTSparse(
+		const int& n_trees,
+		const int& K,
+		const int& maxIter,
+		const arma::uvec& i,
+		const arma::uvec& j,
+		const arma::vec& x,
+		const std::string& distMethod,
+		const Rcpp::Nullable< Rcpp::String > &saveFile,
+		bool verbose) {
+	const umat locations = join_cols(i,j);
+	const sp_mat data = sp_mat(locations,x);
+	return searchTreesSparse(n_trees,K,maxIter,data,distMethod,saveFile, verbose);
+}
+
+
+template<typename distancemetric, typename Distance>
+List denseSearchIndex(
+		const int& D,
+		const int& K,
+		const int& maxIter,
+		Rcpp::String &saveFile,
+		bool verbose
+) {
+	LVAnnoyIndex<distancemetric, Distance> annoy_index(D);
+	annoy_index.load(saveFile.get_cstring());
+	vertexidxtype pCount = (3 + maxIter) * annoy_index.get_n_items();
+	AnnoySearch<distancemetric, Distance> searcher(&annoy_index, annoy_index.get_n_items(), K, verbose, maxIter, pCount);
+	searcher.reduce();
+	searcher.exploreNeighborhood(maxIter);
+	imat knns = searcher.sortAndReturn();
+
+	List edgematrix = buildEdgeMatrix<distancemetric, Distance>(knns, annoy_index);
+
+	return List(
+		List::create(Named("neighbors") = knns , Named("edgematrix") = edgematrix)
+	);
+}
+
+// [[Rcpp::export]]
+List searchTreesFromIndex(
+		const int& K,
+		const int& D,
+		const int& maxIter,
+		const std::string& distMethod,
+		Rcpp::String &saveFile,
+		bool verbose) {
+
+	checkDistanceMetric(distMethod);
+
+	if (distMethod.compare(string("Cosine")) == 0) {
+		return denseSearchIndex<annoy_distance, Angular>(D, K, maxIter, saveFile, verbose);
+	} else if (distMethod.compare(string("Euclidean")) == 0) {
+		return denseSearchIndex<annoy_distance, Euclidean>(D, K, maxIter, saveFile, verbose);
+	} else if (distMethod.compare(string("Manhattan")) == 0) {
+		return denseSearchIndex<annoy_distance, Manhattan>(D, K, maxIter, saveFile, verbose);
+	} else {
+		return denseSearchIndex<uint64_t, Hamming>(D, K, maxIter, saveFile, verbose);
+	}
+}

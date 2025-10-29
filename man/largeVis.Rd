@@ -4,10 +4,19 @@
 \alias{largeVis}
 \title{Apply the LargeVis algorithm for visualizing large high-dimensional datasets.}
 \usage{
-largeVis(x, dim = 2, K = 50, n_trees = 50, tree_threshold = max(10,
-  min(nrow(x), ncol(x))), max_iter = 1, distance_method = "Euclidean",
-  perplexity = max(50, K/3), save_neighbors = TRUE, save_edges = TRUE,
-  threads = NULL, verbose = getOption("verbose", TRUE), ...)
+largeVis(
+  x,
+  dim = 2,
+  K = 50,
+  n_trees = 50,
+  max_iter = 1,
+  distance_method = "Euclidean",
+  perplexity = max(50, K/3),
+  save_neighbors = TRUE,
+  save_edges = TRUE,
+  verbose = getOption("verbose", TRUE),
+  ...
+)
 }
 \arguments{
 \item{x}{A matrix, where the features are rows and the examples are columns.}
@@ -19,22 +28,15 @@ largeVis(x, dim = 2, K = 50, n_trees = 50, tree_threshold = max(10,
 \item{n_trees}{See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 used in the examples in the original paper.}
 
-\item{tree_threshold}{See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
-in the input set.}
-
 \item{max_iter}{See \code{\link{randomProjectionTreeSearch}}.}
 
-\item{distance_method}{One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.}
+\item{distance_method}{See \code{\link{randomProjectionTreeSearch}}.}
 
 \item{perplexity}{See \code{\link{buildWijMatrix}}.}
 
 \item{save_neighbors}{Whether to include in the output the adjacency matrix of nearest neighbors.}
 
 \item{save_edges}{Whether to include in the output the distance matrix of nearest neighbors.}
-
-\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).  It is unlikely that
-this parameter should ever need to be adjusted.  It is only available to make it possible to abide by the CRAN limitation that no package
-use more than two cores.}
 
 \item{verbose}{Verbosity}
 
@@ -56,21 +58,14 @@ A `largeVis` object with the following slots:
 Apply the LargeVis algorithm for visualizing large high-dimensional datasets.
 }
 \examples{
-# iris
-data(iris)
-dat <- as.matrix(iris[,1:4])
-visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000, threads = 1)
-plot(t(visObject$coords))
-
 \dontrun{
 # mnist
 # Note: The MNIST dataset may be obtained using the deepnet package.
 load("./mnist.Rda")
-dat <- mnist$images
-dim(dat) <- c(42000, 28 * 28)
+dat <- mnist$train$x
 dat <- (dat / 255) - 0.5
 dat <- t(dat)
-visObject <- largeVis(dat, n_trees = 50, tree_th = 200, K = 50)
+visObject <- largeVis(dat, n_trees = 50, K = 50)
 plot(t(visObject$coords))
 }
 

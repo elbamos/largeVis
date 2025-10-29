@@ -11,26 +11,17 @@
 
 #include <RcppArmadillo.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-using namespace arma;
 /*
  * Global types
  */
 typedef double distancetype;
 typedef double coordinatetype;
 
-typedef sword vertexidxtype;
-typedef sword edgeidxtype;
-typedef uword iterationtype;
+typedef arma::sword vertexidxtype;
+typedef arma::sword edgeidxtype;
+typedef arma::uword iterationtype;
 
 typedef unsigned int dimidxtype;
 typedef unsigned int kidxtype;
-
-#ifdef _OPENMP
-void checkCRAN(Rcpp::Nullable<Rcpp::NumericVector> threads);
-#endif
 
 #endif

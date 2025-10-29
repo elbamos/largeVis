@@ -2,54 +2,46 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 checkBits <- function() {
-    .Call('largeVis_checkBits', PACKAGE = 'largeVis')
-}
-
-checkOpenMP <- function() {
-    .Call('largeVis_checkOpenMP', PACKAGE = 'largeVis')
+    .Call('_largeVis_checkBits', PACKAGE = 'largeVis')
 }
 
 dbscan_cpp <- function(edges, neighbors, eps, minPts, verbose) {
-    .Call('largeVis_dbscan_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, verbose)
+    .Call('_largeVis_dbscan_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, verbose)
 }
 
-searchTrees <- function(threshold, n_trees, K, maxIter, data, distMethod, seed, threads, verbose) {
-    .Call('largeVis_searchTrees', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, data, distMethod, seed, threads, verbose)
+referenceWij <- function(i, j, d, perplexity) {
+    .Call('_largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, perplexity)
 }
 
-fastDistance <- function(is, js, data, distMethod, threads, verbose) {
-    .Call('largeVis_fastDistance', PACKAGE = 'largeVis', is, js, data, distMethod, threads, verbose)
+hdbscanc <- function(edges, neighbors, K, minPts, verbose) {
+    .Call('_largeVis_hdbscanc', PACKAGE = 'largeVis', edges, neighbors, K, minPts, verbose)
 }
 
-fastCDistance <- function(is, js, i_locations, p_locations, x, distMethod, threads, verbose) {
-    .Call('largeVis_fastCDistance', PACKAGE = 'largeVis', is, js, i_locations, p_locations, x, distMethod, threads, verbose)
+sgd <- function(starter_coords, D, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, verbose) {
+    .Call('_largeVis_sgd', PACKAGE = 'largeVis', starter_coords, D, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, verbose)
 }
 
-fastSDistance <- function(is, js, i_locations, j_locations, x, distMethod, threads, verbose) {
-    .Call('largeVis_fastSDistance', PACKAGE = 'largeVis', is, js, i_locations, j_locations, x, distMethod, threads, verbose)
+searchTrees <- function(n_trees, K, maxIter, data, distMethod, saveFile, verbose) {
+    .Call('_largeVis_searchTrees', PACKAGE = 'largeVis', n_trees, K, maxIter, data, distMethod, saveFile, verbose)
 }
 
-referenceWij <- function(i, j, d, threads, perplexity) {
-    .Call('largeVis_referenceWij', PACKAGE = 'largeVis', i, j, d, threads, perplexity)
+searchTreesCSparse <- function(n_trees, K, maxIter, i, p, x, distMethod, saveFile, verbose) {
+    .Call('_largeVis_searchTreesCSparse', PACKAGE = 'largeVis', n_trees, K, maxIter, i, p, x, distMethod, saveFile, verbose)
 }
 
-hdbscanc <- function(edges, neighbors, K, minPts, threads, verbose) {
-    .Call('largeVis_hdbscanc', PACKAGE = 'largeVis', edges, neighbors, K, minPts, threads, verbose)
+searchTreesTSparse <- function(n_trees, K, maxIter, i, j, x, distMethod, saveFile, verbose) {
+    .Call('_largeVis_searchTreesTSparse', PACKAGE = 'largeVis', n_trees, K, maxIter, i, j, x, distMethod, saveFile, verbose)
 }
 
-sgd <- function(coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, threads, verbose) {
-    .Call('largeVis_sgd', PACKAGE = 'largeVis', coords, targets_i, sources_j, ps, weights, gamma, rho, n_samples, M, alpha, momentum, useDegree, seed, threads, verbose)
+searchTreesFromIndex <- function(K, D, maxIter, distMethod, saveFile, verbose) {
+    .Call('_largeVis_searchTreesFromIndex', PACKAGE = 'largeVis', K, D, maxIter, distMethod, saveFile, verbose)
+}
+
+neighborsToVectors <- function(x) {
+    .Call('_largeVis_neighborsToVectors', PACKAGE = 'largeVis', x)
 }
 
 optics_cpp <- function(edges, neighbors, eps, minPts, useQueue, verbose) {
-    .Call('largeVis_optics_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, useQueue, verbose)
-}
-
-searchTreesCSparse <- function(threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, threads, verbose) {
-    .Call('largeVis_searchTreesCSparse', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, i, p, x, distMethod, seed, threads, verbose)
-}
-
-searchTreesTSparse <- function(threshold, n_trees, K, maxIter, i, j, x, distMethod, seed, threads, verbose) {
-    .Call('largeVis_searchTreesTSparse', PACKAGE = 'largeVis', threshold, n_trees, K, maxIter, i, j, x, distMethod, seed, threads, verbose)
+    .Call('_largeVis_optics_cpp', PACKAGE = 'largeVis', edges, neighbors, eps, minPts, useQueue, verbose)
 }
 

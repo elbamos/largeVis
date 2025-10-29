@@ -1,46 +1,36 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: r
+cache: packages
 
 matrix:
   include:
   - os: linux
-    dist: trusty
+    dist: bionic
     r: release
-    before_install: |1
-     mkdir ~/.R
-     cat <<EOF > ~/.R/Makevars
-     CC=gcc-6
-     CXX=g++-6
-     CXX1X=g++-6
-     CXX11=g++-6
 
   - os: osx
+    osx_image: xcode12.2
     r: release
 
   - os: linux
-    dist: trusty
+    dist: bionic
     r: devel
-    before_install: |1
-     mkdir ~/.R
-     cat <<EOF > ~/.R/Makevars
-     CC=gcc-6
-     CXX=g++-6
-     CXX1X=g++-6
-     CXX11=g++-6
 
   - os: osx
+    osx_image: xcode12.2
     r: devel
     env: _R_CHECK_FORCE_SUGGESTS_=FALSE
   allow_failure:
     r: devel
     r_check_args: --use-valgrind
 
-cache: packages
+
 
 env:
   global:
   - OS=$(uname -s)
+  - _R_CHECK_FORCE_SUGGESTS_=false
 
 cran: http://cran.rstudio.com
 
@@ -48,27 +38,19 @@ r_packages:
   - covr
   - BH
   - ggplot2
-
-r_binary_packages:
-  - testthat
   - png
-  - Rcpp
-  - RcppArmadillo
   - RcppProgress
-  - dbscan
   - knitr
   - rmarkdown
+  - testthat
+  - Rcpp
+  - RcppArmadillo
 
 sudo: required
 
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
-      - gcc-6
-      - g++-6
-      - gfortran-6
       - libudunits2-dev
   brew_packages:
       - udunits

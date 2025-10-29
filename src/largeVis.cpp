@@ -2,6 +2,7 @@
 #include "alias.h"
 #include "progress.hpp"
 #include "gradients.h"
+#include <RcppParallel.h>
 
 using namespace Rcpp;
 using namespace std;
@@ -14,24 +15,23 @@ private:
                           const distancetype& rho) {
 		for (dimidxtype d = 0; d != D; ++d) to[d] -= from[d] * rho;
 	}
-protected:
+public:
 	const dimidxtype D;
+protected:
 	const unsigned int M;
 
 	vertexidxtype * const targetPointer;
 	vertexidxtype * const sourcePointer;
 	coordinatetype * const coordsPtr;
 
-	double rho;
-	const double rhoIncrement;
-
 	AliasTable< vertexidxtype, coordinatetype, double > negAlias;
 	AliasTable< edgeidxtype, coordinatetype, double > posAlias;
 	Gradient* grad;
 
-	unsigned int storedThreads = 0;
-
 public:
+	double rho;
+	const double rhoIncrement;
+
 	Visualizer(vertexidxtype *sourcePtr,
             vertexidxtype *targetPtr,
             coordinatetype *coordPtr,
@@ -49,18 +49,16 @@ public:
 	            targetPointer{targetPtr},
 	            sourcePointer{sourcePtr},
 	            coordsPtr{coordPtr},
-	            rho{rho},
-	            rhoIncrement((rho - 0.0001) / n_samples),
 	            negAlias(AliasTable< vertexidxtype, coordinatetype, double >(N)),
-	            posAlias(AliasTable< edgeidxtype, coordinatetype, double >(E)){
+	            posAlias(AliasTable< edgeidxtype, coordinatetype, double >(E)),
+	            rho{rho},
+	            rhoIncrement((rho - 0.0001) / n_samples)
+		{
     	if (alpha == 0) grad = new ExpGradient(gamma, D);
     	else if (alpha == 1) grad = new AlphaOneGradient(gamma, D);
     	else grad = new AlphaGradient(alpha, gamma, D);
     }
 	virtual ~Visualizer() {
-#ifdef _OPENMP
-		if (storedThreads > 0) omp_set_num_threads(storedThreads);
-#endif
 		delete grad;
 	}
 
@@ -71,10 +69,6 @@ public:
 		posAlias.initialize(posWeights);
 
 		if (seed.isNotNull()) {
-#ifdef _OPENMP
-			storedThreads = omp_get_max_threads();
-			omp_set_num_threads(1);
-#endif
 			vertexidxtype innerSeed = Rcpp::NumericVector(seed)[0];
 			innerSeed = negAlias.initRandom(innerSeed);
 			posAlias.initRandom(innerSeed);
@@ -105,7 +99,7 @@ public:
 
 				// Check that the draw isn't one of i's edges
 				if (k == i || k == j) continue;
-				m++;
+				++m;
 
 				y_j = coordsPtr + (k * D);
 				grad -> negativeGradient(y_i, y_j, secondholder);
@@ -115,21 +109,6 @@ public:
 			}
 			updateMinus(firstholder, y_i, - localRho);
 		}
-	}
-
-	void thread(Progress& progress, const uword& batchSize) {
-		coordinatetype * const holder = new coordinatetype[D * 2];
-
-		while (rho >= 0) {
-			const double localRho = rho;
-			innerLoop(localRho, batchSize, holder);
-#ifdef _OPENMP
-#pragma omp atomic
-#endif
-			rho -= (rhoIncrement * batchSize);
-			if (!progress.increment()) break;
-		}
-		delete[] holder;
 	}
 };
 
@@ -187,7 +166,7 @@ public:
 
 				// Check that the draw isn't one of i's edges
 				if (k == i || k == j) continue;
-				m++;
+				++m;
 
 				y_j = coordsPtr + (k * D);
 				grad -> negativeGradient(y_i, y_j, secondholder);
@@ -200,10 +179,37 @@ public:
 	}
 };
 
-#define BATCHSIZE 8192
+#define BATCHSIZE_SHIFT 13
+
+class VisualizerWorker : public RcppParallel::Worker {
+public:
+	Visualizer *vis;
+	long batchSize;
+	Progress *p;
+
+	VisualizerWorker(Visualizer *vis, long batchSize, Progress *p) : vis {vis}, batchSize {batchSize}, p {p} {};
+
+	void operator()(std::size_t begin, std::size_t end) {
+
+		coordinatetype * const holder = new coordinatetype[vis->D * 2];
+		double localRho = vis->rho;
+
+		for (long i = begin; i < end; ++i) {
+			if (localRho <= 0) break;
+
+			vis->innerLoop(localRho, batchSize, holder);
+
+			localRho = vis->rho -= (vis->rhoIncrement * batchSize);
+			if (!p->increment()) break;
+		}
+
+		delete[] holder;
+	}
+};
 
 // [[Rcpp::export]]
-arma::mat sgd(arma::mat& coords,
+arma::mat sgd(Nullable<NumericMatrix>& starter_coords,
+              const int& D,
               arma::ivec& targets_i, // vary randomly
               arma::ivec& sources_j, // ordered
               arma::ivec& ps, // N+1 length vector of indices to start of each row j in vector is
@@ -216,14 +222,25 @@ arma::mat sgd(arma::mat& coords,
               const Rcpp::Nullable<Rcpp::NumericVector> momentum,
               const bool& useDegree,
               const Rcpp::Nullable<Rcpp::NumericVector> seed,
-              const Rcpp::Nullable<Rcpp::NumericVector> threads,
               const bool verbose) {
-#ifdef _OPENMP
-	checkCRAN(threads);
-#endif
-	const dimidxtype D = coords.n_rows;
-	const vertexidxtype N = coords.n_cols;
+	const vertexidxtype N = ps.size() - 1;
 	const edgeidxtype E = targets_i.n_elem;
+
+	arma::mat coords(D, N);
+
+	if (starter_coords.isNotNull()) {
+		NumericMatrix starter(starter_coords);
+		copy(starter.begin(), starter.end(), coords.begin());
+	} else {
+		if (seed.isNotNull()) {
+			Rcpp::Environment base_env("package:base");
+			Rcpp::Function set_seed_r = base_env["set.seed"];
+			NumericVector inner_seed(seed);
+			set_seed_r(inner_seed[0]);
+		}
+		coords.randu();
+		coords -= 0.5;
+	}
 
 	Visualizer* v;
 	if (momentum.isNull()) v = new Visualizer(
@@ -245,7 +262,7 @@ arma::mat sgd(arma::mat& coords,
 	distancetype* negweights = new distancetype[N];
 	std::fill(negweights, negweights + N, 0);
 	if (useDegree) {
-		std::for_each(targets_i.begin(), targets_i.end(), [&negweights](const sword& e) {negweights[e]++;});
+		std::for_each(targets_i.begin(), targets_i.end(), [&negweights](const sword& e) {++negweights[e];});
 	} else {
 		for (vertexidxtype p = 0; p < N; ++p) {
 			for (edgeidxtype e = ps[p]; e != ps[p + 1]; ++e) {
@@ -257,19 +274,14 @@ arma::mat sgd(arma::mat& coords,
 	v -> initAlias(weights.memptr(), negweights, seed);
 	delete[] negweights;
 
-	const uword batchSize = BATCHSIZE;
-#ifdef _OPENMP
-	const unsigned int ts = omp_get_max_threads();
-#else
-	const unsigned int ts = 2;
-#endif
-	Progress progress(max((uword) ts, n_samples / BATCHSIZE), verbose);
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-	for (unsigned int t = 0; t < ts; ++t) {
-		v->thread(progress, batchSize);
-	}
+	const uword batchSize = 1 << BATCHSIZE_SHIFT;
+
+	const uword batches = n_samples >> BATCHSIZE_SHIFT;
+
+	Progress progress(batches, verbose);
+	VisualizerWorker worker(v, batchSize, &progress);
+	parallelFor(0, batches, worker);
+
 	delete v;
 	return coords;
 }

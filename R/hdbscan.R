@@ -2,14 +2,9 @@
 #'
 #' Implemenation of the hdbscan algorithm.
 #'
-#' @param edges An edge matrix of the type returned by \code{\link{buildEdgeMatrix}} or, alternatively, a \code{largeVis} object.
-#' @param neighbors An adjacency matrix of the type returned by \code{\link{randomProjectionTreeSearch}}. Must be specified unless
-#' \code{edges} is a \code{largeVis} object.
+#' @param neighbors The output of either \code{\link{randomProjectionTreeSearch}} or \code{\link{largeVis}}.
 #' @param minPts The minimum number of points in a cluster.
 #' @param K The number of points in the core neighborhood. (See details.)
-#' @param threads Maximum number of threads. Determined automatically if \code{NULL} (the default).  It is unlikely that
-#' this parameter should ever need to be adjusted.  It is only available to make it possible to abide by the CRAN limitation that no package
-#' use more than two cores.
 #' @param verbose Verbosity.
 #'
 #' @details The hyperparameter \code{K} controls the size of core neighborhoods.
@@ -73,16 +68,14 @@
 #' library(clusteringdatasets)  # See https://github.com/elbamos/clusteringdatasets
 #' data(spiral)
 #' dat <- as.matrix(spiral[, 1:2])
-#' neighbors <- randomProjectionTreeSearch(t(dat), K = 10, tree_threshold = 100,
-#'                                        max_iter = 5, threads = 1)
+#' neighbors <- randomProjectionTreeSearch(t(dat), K = 10, max_iter = 5)
 #' edges <- buildEdgeMatrix(t(dat), neighbors)
-#' clusters <- hdbscan(edges, neighbors = neighbors, verbose = FALSE, threads = 1)
+#' clusters <- hdbscan(edges, neighbors = neighbors, verbose = FALSE)
 #'
 #' # Calling largeVis while setting sgd_batches to 1 is
 #' # the simplest way to generate the data structures neeeded for hdbscan
-#' spiralVis <- largeVis(t(dat), K = 10, tree_threshold = 100, max_iter = 5,
-#'                       sgd_batches = 1, threads = 1)
-#' clusters <- hdbscan(spiralVis, verbose = FALSE, threads = 1)
+#' spiralVis <- largeVis(t(dat), K = 10, max_iter = 5, sgd_batches = 1)
+#' clusters <- hdbscan(spiralVis, verbose = FALSE)
 #' # The gplot function helps to visualize the clustering
 #' largeHighDimensionalDataset <- matrix(rnorm(50000), ncol = 50)
 #' vis <- largeVis(largeHighDimensionalDataset)
@@ -91,17 +84,17 @@
 #' }
 #' @export
 #' @importFrom stats aggregate
-hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
-										threads = NULL,
+hdbscan <- function(neighbors = NULL, minPts = 20, K = 5,
 										verbose = getOption("verbose", TRUE)) {
 
-	if (inherits(edges, "edgematrix")) {
-		edges <- t(toMatrix(edges))
-	} else if (inherits(edges, "largeVis")) {
-		if (missing(neighbors)) neighbors <- edges$knns
-		edges <- t(toMatrix(edges$edges))
+	if (inherits(neighbors, "list")) {
+		edges <- t(toMatrix(neighbors$edgematrix))
+		neighbors <- neighbors$neighbors
+	} else if (inherits(neighbors, "largeVis")) {
+		edges <- t(toMatrix(neighbors$edges))
+		neighbors <- neighbors$knns
 	} else {
-		stop("edges must be either an edgematrix or a largeVis object")
+		stop("Neighbors must be the output of either largeVis or randomProjectionTreeSearch")
 	}
 	if (is.null(edges) || is.null(neighbors)) stop("Both edges and neighbors must be specified (or use a largeVis object)")
 
@@ -114,7 +107,6 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 													neighbors = neighbors,
 													K	= as.integer(K),
 													minPts = as.integer(minPts),
-													threads = threads,
 													verbose = as.logical(verbose))
 
 	clusters = factor(clustersout$clusters)
@@ -183,10 +175,9 @@ hdbscan <- function(edges, neighbors = NULL, minPts = 20, K = 5,
 #' # The aggregation dataset can be downloaded from https://github.com/elbamos/clusteringdatasets
 #' data(Aggregation)
 #' dat <- as.matrix(Aggregation[, 1:2])
-#' aggregateVis <- largeVis(dat, K = 10, tree_threshold = 100,
-#'                          max_iter = 5, sgd_batches = 1)
+#' aggregateVis <- largeVis(t(dat), K = 10, max_iter = 5, sgd_batches = 1)
 #' clusters <- hdbscan(aggregateVis, verbose = FALSE)
-#' gplot(clusters, dat)
+#' gplot(clusters, dat) + ggplot2::theme_minimal()
 #' }
 #' @importFrom ggplot2 ggplot unit geom_label geom_point geom_segment aes_
 gplot <- function(x, coords, text = FALSE, distances = FALSE) {

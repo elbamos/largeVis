@@ -5,50 +5,82 @@
 \alias{randomProjectionTreeSearch.matrix}
 \alias{randomProjectionTreeSearch.CsparseMatrix}
 \alias{randomProjectionTreeSearch.TsparseMatrix}
+\alias{randomProjectionTreeSearchFromIndex}
 \title{Find approximate k-Nearest Neighbors using random projection tree search.}
 \usage{
-randomProjectionTreeSearch(x, K = 150, n_trees = 50,
-  tree_threshold = max(10, nrow(x)), max_iter = 1,
-  distance_method = "Euclidean", seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+randomProjectionTreeSearch(
+  x,
+  K = 150,
+  n_trees = 50,
+  max_iter = 1,
+  distance_method = "Euclidean",
+  save_file = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 
-\method{randomProjectionTreeSearch}{matrix}(x, K = 150, n_trees = 50,
-  tree_threshold = max(10, nrow(x)), max_iter = 1,
-  distance_method = "Euclidean", seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+\method{randomProjectionTreeSearch}{matrix}(
+  x,
+  K = 150,
+  n_trees = 50,
+  max_iter = 1,
+  distance_method = "Euclidean",
+  save_file = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 
-\method{randomProjectionTreeSearch}{CsparseMatrix}(x, K = 150, n_trees = 50,
-  tree_threshold = max(10, nrow(x)), max_iter = 1,
-  distance_method = "Euclidean", seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+\method{randomProjectionTreeSearch}{CsparseMatrix}(
+  x,
+  K = 150,
+  n_trees = 50,
+  max_iter = 1,
+  distance_method = "Euclidean",
+  save_file = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 
-\method{randomProjectionTreeSearch}{TsparseMatrix}(x, K = 150, n_trees = 50,
-  tree_threshold = max(10, nrow(x)), max_iter = 1,
-  distance_method = "Euclidean", seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+\method{randomProjectionTreeSearch}{TsparseMatrix}(
+  x,
+  K = 150,
+  n_trees = 50,
+  max_iter = 1,
+  distance_method = "Euclidean",
+  save_file = NULL,
+  verbose = getOption("verbose", TRUE)
+)
+
+randomProjectionTreeSearchFromIndex(
+  save_file,
+  D,
+  K = 150,
+  max_iter = 1,
+  distance_method = "Euclidean",
+  verbose = getOption("verbose", TRUE)
+)
 }
 \arguments{
 \item{x}{A (potentially sparse) matrix, where examples are columnns and features are rows.}
 
-\item{K}{How many nearest neighbors to seek for each node.}
+\item{K}{The number of nearest neighbors to find}
 
 \item{n_trees}{The number of trees to build.}
 
-\item{tree_threshold}{The threshold for creating a new branch.  The paper authors suggest
-using a value equivalent to the number of features in the input set.}
-
 \item{max_iter}{Number of iterations in the neighborhood exploration phase.}
 
-\item{distance_method}{One of "Euclidean" or "Cosine."}
+\item{distance_method}{One of "Euclidean" or "Cosine" - must match the previously saved index.}
 
-\item{seed}{Random seed passed to the C++ functions. If \code{seed} is not \code{NULL} (the default),
-the maximum number of threads will be set to 1 in phases that would be non-determinstic otherwise.}
-
-\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
+\item{save_file}{The path to the index}
 
 \item{verbose}{Whether to print verbose logging using the \code{progress} package.}
+
+\item{D}{Dimensionality of the dataset}
 }
 \value{
+A `list` with the following members:
+ \describe{
+   \item{'neighbors'}{A [K, N] adjacency matrix of the approximate K nearest neighbors for each vertex.}
+   \item{'edgematrix'}{A [N,N] sparse matrix of distances between nearest neighbors.}
+ }
+
 A [K, N] matrix of the approximate K nearest neighbors for each vertex.
 }
 \description{

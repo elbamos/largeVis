@@ -4,10 +4,20 @@
 \alias{projectKNNs}
 \title{Project a distance matrix into a lower-dimensional space.}
 \usage{
-projectKNNs(wij, dim = 2, sgd_batches = NULL, M = 5, gamma = 7,
-  alpha = 1, rho = 1, coords = NULL, useDegree = FALSE,
-  momentum = NULL, seed = NULL, threads = NULL,
-  verbose = getOption("verbose", TRUE))
+projectKNNs(
+  wij,
+  dim = 2,
+  sgd_batches = NULL,
+  M = 5,
+  gamma = 7,
+  alpha = 1,
+  rho = 1,
+  coords = NULL,
+  useDegree = FALSE,
+  momentum = NULL,
+  seed = NULL,
+  verbose = getOption("verbose", TRUE)
+)
 }
 \arguments{
 \item{wij}{A symmetric sparse matrix of edge weights, in C-compressed format, as created with the \code{Matrix} package.}
@@ -39,8 +49,6 @@ momentum can drastically speed-up training time, at the cost of additional memor
 Note that if the seed is not \code{NULL} (the default), the maximum number of threads will be set to 1 in phases of the algorithm
 that would otherwise be non-deterministic.}
 
-\item{threads}{The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).}
-
 \item{verbose}{Verbosity}
 }
 \value{
@@ -66,7 +74,7 @@ Note that the input matrix should be symmetric.  If any columns in the matrix ar
 \note{
 If specified, \code{seed} is passed to the C++ and used to initialize the random number generator. This will not, however, be
 sufficient to ensure reproducible results, because the initial coordinate matrix is generated using the \code{R} random number generator.
-To ensure reproducibility, call \code{\link[base]{set.seed}} before calling this function, or pass it a pre-allocated coordinate matrix.
+To ensure reproducibility, call \code{set.seed} before calling this function, or pass it a pre-allocated coordinate matrix.
 
 The original paper called for weights in negative sampling to be calculated according to the degree of each vertex, the number of edges
 connecting to the vertex. The reference implementation, however, uses the sum of the weights of the edges to each vertex. In experiments, the
@@ -75,14 +83,15 @@ is to use the edge weights, consistent with the reference implementation.
 }
 \examples{
 \dontrun{
+checkCRAN()
 data(CO2)
 CO2$Plant <- as.integer(CO2$Plant)
 CO2$Type <- as.integer(CO2$Type)
 CO2$Treatment <- as.integer(CO2$Treatment)
 co <- scale(as.matrix(CO2))
 # Very small datasets often produce a warning regarding the alias table.  This is safely ignored.
-suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1, threads = 2))
-suppressWarnings(coords <- projectKNNs(vis$wij, threads = 2))
-plot(t(coords))
+suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1))
+suppressWarnings(coords <- projectKNNs(vis$wij))
+plot(t(coords), col = factor(CO2$Type))
 }
 }

@@ -30,4 +30,12 @@
 #' @docType package
 #' @useDynLib largeVis
 #' @aliases NULL
+#' @import Rcpp
+#' @importFrom RcppParallel RcppParallelLibs
 "_PACKAGE"
+
+
+#' @importFrom RcppParallel setThreadOptions
+checkCRAN <- function() {
+	if (!identical(Sys.getenv("NOT_CRAN"), "true")) RcppParallel::setThreadOptions(numThreads = 2)
+}

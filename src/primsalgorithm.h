@@ -40,21 +40,19 @@ public:
 		Q.batchInsert(N, start);
 		Q.decreaseIf(starterIndex, -1);
 		while (! Q.isEmpty()) {
-	//		if (Q.size() < 0) stop("bad");
 			VIDX v = Q.pop();
 			if (! p.increment()) break;
-	//		if (Q.keyOf(v) == INFINITY || Q.keyOf(v) == -1) starterIndex = v;
 			IntegerVector vNeighbors = neighbors.column(v);
 			for (auto it = vNeighbors.begin();
         it != vNeighbors.end() && *it != -1;
-        it++) {
+        ++it) {
 				updateVWD(v, *it, edges(v, *it));
 			}
-			for (auto it = edges.begin_col(v);
+			for (arma::sp_mat::const_col_iterator it = edges.begin_col(v);
         it != edges.end_col(v);
-        it++) {
+        ++it) {
 				updateVWD(v, it.row(), *it);
-			}
+        }
 		}
 		return minimum_spanning_tree;
 	}

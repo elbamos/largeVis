@@ -1,3 +1,17 @@
+### largeVis 0.3
+* The purpose of this update is to get the package back on CRAN and enable multi-threading on current OS X systems.
+* Replaced OpenMP with RcppParallel. This was necessary to get the package running in parallel on current OS X systems, and should eliminate a number of compilation hitches on some systems. It should not affect performance.
+* Replaced my implementation of the Annoy algorithm with RcppAnnoy. This was necessary to get efficient multithreading for the Annoy phase of the algorithm.
+* The functionality that was formerly in `buildEdgeMatrix` is now built into `randomProjectionTreeSearch`, which now returns both a matrix of nearest neighbors and an `edgematrix` object. This enables handling datasets that were previously too large in R. It also eliminated the `distance` function.
+* The interfaces of the dbscan, optics, and hdbscan functions have been updated to match.
+* `randomProjectionTreeSearch` supports the Hamming and Manhattan distances as well as Euclidean and Cosine.
+* The `threads` parameter is removed from all function calls that had it; the number of threads should instead now be set with `RcppParallel::setThreadOptions()`
+* `randomProjectionTreeSearch` now has a parameter to allow building the annoy index on disk, which should help for very large datasets.
+* Removed the `as.dendrogram` function for hdbscan. This was always experimental.
+* The vignettes have been re-written to include the code, but not the data, for demonstrating various aspects of `largeVis` performance. The issue here is that vignette code is run by CRAN, which is resource constrained, and cannot run `projectKNNs` on MNIST dozens of times to generate the visualizations. My prior approach had been to generate them by hand and include the resulting coordinate data files. This was unsatisfactory in that it made the size of the package very large, and also the vignette Rmd files themselves were not really complete runnable code. In addition, it created rather a maintenance headache.
+* Direct arma to not link against LAPACK. This should have no impact on performance, since the package uses no LAPACK calls. Linking against LAPACK did, however, create issues linking on some UNIX-based systems. Please contact me if you experience any issues.
+* Thanks to @gdkmr, @meowcat, @evanbiederstedt and @SamGG for bugging me to get this back on CRAN.
+
 ### largeVis 0.2.2dev
 *	Modified Makevars should now automatically handle OpenMP correctly on OS X with R 3.4.
 
@@ -8,13 +22,13 @@
 * Compilation will now throw a useful error if the user tries to compile using gcc < 4.9 (which had buggy C++11 implementations).
 
 ### largeVis 0.2
-* largeVis has reached a point of stability where its appropriate to bump the version. 
+* largeVis has reached a point of stability where its appropriate to bump the version.
 * Performance improvements in neighbor search & projectKNNs.
 * HDBSCAN
-	+	Performance improvements in HDBSCAN. 
-	+	Now outputs GLOSH outlier scores for each point assigned to a cluster, and these are used by gplot. 
+	+	Performance improvements in HDBSCAN.
+	+	Now outputs GLOSH outlier scores for each point assigned to a cluster, and these are used by gplot.
 	+ Outputs lambda birth and death
-	+ as_dendrogram_hdbscan is now (properly) an S3 method for as.dendrogram applied to class hdbscan. 
+	+ as_dendrogram_hdbscan is now (properly) an S3 method for as.dendrogram applied to class hdbscan.
 	+ Improvements to the visualizations of dedrograms
 	+ gplot now has an option to show the core distances for each point, using the ggforce package.
 * Edge matrices are now `edgematrix` objects. This allows the as_dist function to be an S3 method for as.dist applied to class edgematrix.
@@ -31,45 +45,45 @@
 * This is a significant update. Major changes are:
 	+ 20% performance improvements in `projectKNNs`
 	+ The nearest neighbor search now runs substantially faster because of more efficient use of threads.
-	+ `projectKNNs` now supports training with momentum, which offers an additional 20-50% performance improvement. See the vignette for details. 
+	+ `projectKNNs` now supports training with momentum, which offers an additional 20-50% performance improvement. See the vignette for details.
 	+	OPTICS and DBSCAN are back, rewritten, and substantially improved.
 *	Other changes:
 	* `projectKNNs`
-		+ The `useDegree` parameter allows the user to select the negative weighting method. 
+		+ The `useDegree` parameter allows the user to select the negative weighting method.
 	* Clustering
 		* `largeVis` now has an additional parameter, `save_edges`, to control whether the edge matrix is preserved. This is to simplify using the
-clustering functions. 
+clustering functions.
 		* `hdbscan`, `lv_dbscan` and `lv_optics` now all accept a `largeVis` object as the first parameter.
-		* Both edges and neighbors (or a largeVis object) must be specified for `hdbscan`. 
+		* Both edges and neighbors (or a largeVis object) must be specified for `hdbscan`.
 		*	Added `hdbscanToDendrogram` function to make hdbscan objects compatible with other R hierarchical clustering implementations.
-* New utility function `sgdBatches` helps estimate training time for datasets. 
-* Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes. 
-* `buildEdgeMatrix` and `distance` now store the `distance_method` in attribute `method` of the returned object. 
+* New utility function `sgdBatches` helps estimate training time for datasets.
+* Fixed bug in estimation of `sgd_batches` where 10x to many batches would be used for dataset < 10000 nodes.
+* `buildEdgeMatrix` and `distance` now store the `distance_method` in attribute `method` of the returned object.
 * The benchmarks vignette has been replaced with a benchmarks readme - the reason is the overhead and expense of repeatedly recalculating the benchmarks on AWS.
-* Third vignette covers momentum, the `useDegree` parameter, and clustering. 
+* Third vignette covers momentum, the `useDegree` parameter, and clustering.
 
 ### largeVis 0.1.9.3
-Fix to hdbscan selecting wrong K, and gplot failing. 
+Fix to hdbscan selecting wrong K, and gplot failing.
 
 ### largeVis 0.1.9.2
-Hotfix for a bug in the neighbor search when max iterations was 0. 
+Hotfix for a bug in the neighbor search when max iterations was 0.
 
 ### largeVis 0.1.9.1
 The OPTICS implementation has been temporarily removed. This reason is that the code was based on the code in the `dbscan` package, and the CRAN
-administrators objected to the inclusion of a separate copyright notice. OPTICS will be restored once the code is sufficiently re-written. 
+administrators objected to the inclusion of a separate copyright notice. OPTICS will be restored once the code is sufficiently re-written.
 
 ### largeVis 0.1.9
 * Fixes
 		+ Fixed insidious bug that would arise if the edge matrix contained distances > 27.
 		+ Fixed bug in hdbscan where it would mistakenly conclude that it lacked sufficient neighbors.
-		+ Fixed bug in buildWijMatrix that caused a segfault on certain 32-bit systems in certain cases. 
+		+ Fixed bug in buildWijMatrix that caused a segfault on certain 32-bit systems in certain cases.
 		+ Change to address apparent upstream issue causing compilation problem on 32-bit systems.
-		+ Fixed bug in hdbscan caused by the knn matrix not matching output from randomProjectionTreeSearch. 
+		+ Fixed bug in hdbscan caused by the knn matrix not matching output from randomProjectionTreeSearch.
 * Algorithm Improvements
-		+ Hdbscan now uses a PairingHeap insead of a Binary Heap, which should improve performance on large datasets. 
+		+ Hdbscan now uses a PairingHeap insead of a Binary Heap, which should improve performance on large datasets.
 		+ NOTE:  buildEdgeMatrix no2 incorporates a regularization constant. Duplicates are now recorded as being a Euclidean distances of 1e-5 apart. The reason for this is that the Matrix package and armadillo sparse matrices do not preserve information about zeros. As a result, with datasets with large numbers of duplicates, the edge matrices appeared to contain no (or too little) neighbor data for some rows. This created issues with other functions dependent on the output of buildEdgeMatrix, such as hdbscan. Adding a regularization constant fixes the issue.
 * Interface Improvements
-		+ On load, now inform the user if the package was compiled for 32-bit or without OpenMP. 
+		+ On load, now inform the user if the package was compiled for 32-bit or without OpenMP.
 
 ### largeVis 0.1.8
 * hdbscan algorithm added
@@ -83,7 +97,7 @@ administrators objected to the inclusion of a separate copyright notice. OPTICS 
 		+	Largely reduced the "fuzzies"
 * API Improvements
 		+ Allow the seed to be set for projectKNNs and randomProjectionTreeSearch
-				+ If a seed is given, multi-threading is disabled during sgd and the annoy phase of the neighbor search. These 
+				+ If a seed is given, multi-threading is disabled during sgd and the annoy phase of the neighbor search. These
 				phases of the algorithm would otherwise be non-deterministic. Note that the performance impact is substantial.
 		+ Verbosity now defaults to the R system option
 		+ The neighbor matrix returned by randomProjectionTreeSearch is now sorted by distance
@@ -95,21 +109,21 @@ administrators objected to the inclusion of a separate copyright notice. OPTICS 
 * Refactorings & Improvements
 		+ Refactored neighbor search to unify code for sparse and dense neighbors, substantially improving sparse performance
 		+ Now using managed pointers in many places
-		
+
 ### largeVis 0.1.6
 
 * Revisions for CRAN release, including verifying correctness by reproducing paper examples, and timing tests/benchmarks
     + Tested against the paper authors' wiki-doc and wiki-word datasets
-    + Tested with up to 2.5m rows, 100m edges (processed in 12 hours). 
+    + Tested with up to 2.5m rows, 100m edges (processed in 12 hours).
 * Neighbor search:
     + Dense search is much, much faster and more efficient
     + Tree search for cosine distances uses normalized vectors
-* projectKNNs 
+* projectKNNs
     + Should be 10x faster for small datasets
     + Replaced binary search ( O(n log n) ) with the alias algorithm for weighted sampling ( O(1) )
 	  + Clips and smooths gradients, per discussion with paper authors
 	  + Optimized implementation for alpha == 1
-	  + Removed option for mixing weights into loss function - doesn't make sense if gradients are being clipped. 
+	  + Removed option for mixing weights into loss function - doesn't make sense if gradients are being clipped.
 	  + Fixed OpenMP-related bug which caused visualizations to be "fuzzy"
 	  + Switched to the STL random number generator, allowing the user to set a seed for reproducible results.
 * Vignettes:
@@ -118,8 +132,8 @@ administrators objected to the inclusion of a separate copyright notice. OPTICS 
 	  + Examples removed from vignettes and moved to readme
 	  + Added examples of manifold map with color faces using OpenFace vectors
 * Sigms, P_ij matrix, w_ij matrix
-	  + Replaced C++ code entirely with new code based on reference implementation 
-	  + Refactored R code into `buildEdgeMatrix()` and `buildWijMatrix()`, which are simpler. 
+	  + Replaced C++ code entirely with new code based on reference implementation
+	  + Refactored R code into `buildEdgeMatrix()` and `buildWijMatrix()`, which are simpler.
 * Visualization
 	  + Color manifold maps work
 	  + Ported Karpathy's function for non-overlapping embeddings (experimental)
@@ -136,7 +150,7 @@ administrators objected to the inclusion of a separate copyright notice. OPTICS 
 	  + Many misc changes to simplify dependencies for CRAN
 	  + Re-added ARMA_64BIT_WORD; otherwise, could exceed the limitation on size of an arma sparse matrix with moderately sized datasets (~ 1 M rows, K = 100)
 	  + Now depends on R >= 3.0.2, so RcppProgress and RcppArmadillo could be moved from the Depends section of the DESCRIPTION file
-	  + Will now compile on systems that lack OpenMP (e.g., OS X systems with old versions of xcode). 
+	  + Will now compile on systems that lack OpenMP (e.g., OS X systems with old versions of xcode).
 * Correctness and Testing
 	  + Tests are separated by subject
 	  + Additional, more extensive tests with greater code coverage
@@ -157,16 +171,16 @@ administrators objected to the inclusion of a separate copyright notice. OPTICS 
 
 ### largeVis 0.1.4
 
-* Added option of Euclidean or Cosine distance. 
+* Added option of Euclidean or Cosine distance.
 * Now using the median in random projection trees, to make splits more even. This should eliminate the need for the
-max_depth parameter. 
+max_depth parameter.
 * Benchmarks
 * Vignette
 * Vastly improved multi-threading performance
 
 ### largeVis 0.1.3
 
-* Rewrote neighbor-search code to improve memory performance. 
+* Rewrote neighbor-search code to improve memory performance.
 
 * Performance of wji calculation improved by an order of magnitude.
 
@@ -176,9 +190,9 @@ max_depth parameter.
 
 ### largeVis 0.1.1
 
-* Many changes because of OpenMP compatibility issues. 
+* Many changes because of OpenMP compatibility issues.
 
-* Moved from Rcpp to RcppArmadillo objects, etc. 
+* Moved from Rcpp to RcppArmadillo objects, etc.
 
 ### largeVis 0.1.0
 

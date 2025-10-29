@@ -40,9 +40,8 @@ library(largeVis)
 # The aggregation dataset can be downloaded from https://github.com/elbamos/clusteringdatasets
 data(Aggregation)
 dat <- as.matrix(Aggregation[, 1:2])
-aggregateVis <- largeVis(dat, K = 10, tree_threshold = 100,
-                         max_iter = 5, sgd_batches = 1)
+aggregateVis <- largeVis(t(dat), K = 10, max_iter = 5, sgd_batches = 1)
 clusters <- hdbscan(aggregateVis, verbose = FALSE)
-gplot(clusters, dat)
+gplot(clusters, dat) + ggplot2::theme_minimal()
 }
 }

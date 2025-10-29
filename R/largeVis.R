@@ -5,16 +5,11 @@
 #' @param K The number of nearest-neighbors to use in computing the kNN graph
 #' @param n_trees See \code{\link{randomProjectionTreeSearch}}.  The default is set at 50, which is the number
 #' used in the examples in the original paper.
-#' @param tree_threshold See \code{\link{randomProjectionTreeSearch}}.  By default, this is the number of features
-#' in the input set.
 #' @param max_iter See \code{\link{randomProjectionTreeSearch}}.
-#' @param distance_method One of "Euclidean" or "Cosine."  See \code{\link{randomProjectionTreeSearch}}.
+#' @param distance_method See \code{\link{randomProjectionTreeSearch}}.
 #' @param perplexity See \code{\link{buildWijMatrix}}.
 #' @param save_neighbors Whether to include in the output the adjacency matrix of nearest neighbors.
 #' @param save_edges Whether to include in the output the distance matrix of nearest neighbors.
-#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).  It is unlikely that
-#' this parameter should ever need to be adjusted.  It is only available to make it possible to abide by the CRAN limitation that no package
-#' use more than two cores.
 #' @param verbose Verbosity
 #' @param ... Additional arguments passed to \code{\link{projectKNNs}}.
 #'
@@ -33,21 +28,14 @@
 #' @references Jian Tang, Jingzhou Liu, Ming Zhang, Qiaozhu Mei. \href{https://arxiv.org/abs/1602.00370}{Visualizing Large-scale and High-dimensional Data.}
 #'
 #' @examples
-#' # iris
-#' data(iris)
-#' dat <- as.matrix(iris[,1:4])
-#' visObject <- largeVis(dat, max_iter = 20, K = 10, sgd_batches = 10000, threads = 1)
-#' plot(t(visObject$coords))
-#'
 #' \dontrun{
 #' # mnist
 #' # Note: The MNIST dataset may be obtained using the deepnet package.
 #' load("./mnist.Rda")
-#' dat <- mnist$images
-#' dim(dat) <- c(42000, 28 * 28)
+#' dat <- mnist$train$x
 #' dat <- (dat / 255) - 0.5
 #' dat <- t(dat)
-#' visObject <- largeVis(dat, n_trees = 50, tree_th = 200, K = 50)
+#' visObject <- largeVis(dat, n_trees = 50, K = 50)
 #' plot(t(visObject$coords))
 #' }
 #'
@@ -56,7 +44,6 @@ largeVis <- function(x,
                      K = 50,
 
                      n_trees = 50,
-                     tree_threshold = max(10, min(nrow(x), ncol(x))),
                      max_iter = 1,
                      distance_method = "Euclidean",
 
@@ -64,8 +51,6 @@ largeVis <- function(x,
 
                      save_neighbors = TRUE,
 										 save_edges = TRUE,
-
-										 threads = NULL,
 
                      verbose = getOption("verbose", TRUE),
                     ...) {
@@ -78,30 +63,21 @@ largeVis <- function(x,
   #############################################
   knns <- randomProjectionTreeSearch(x,
                                      n_trees = n_trees,
-                                     tree_threshold = tree_threshold,
                                      K = K,
                                      max_iter = max_iter,
                                      distance_method = distance_method,
-  																	 threads,
                                      verbose = verbose)
-  #############################################
-  # Clean knns
-  #############################################
-  if (verbose[1]) cat("Calculating edge weights...\n")
-  edges <- buildEdgeMatrix(data = x,
-  												 neighbors = knns,
-  												 distance_method = distance_method,
-  												 verbose = verbose)
-  if (!save_neighbors) rm(knns)
+
+  if (!save_neighbors) knns$neighbors <- NULL
   gc()
-  if (any(edges$x > 27)) {
+  if (any(knns$edgematrix$x > 27)) {
   	warning(paste(
   		"The Distances between some neighbors are large enough to cause the calculation of p_{j|i} to overflow.",
   		"Scaling the distance vector."))
-  	edges$x <- edges$x / max(edges$x)
+  	knns$edgematrix$x <- knns$edgematrix$x / max(knns$edgematrix$x)
   }
-  wij <- buildWijMatrix(edges, threads, perplexity)
-  if (!save_edges) rm(edges)
+  wij <- buildWijMatrix(knns$edgematrix, perplexity)
+  if (!save_edges) rm(knns)
 
   #######################################################
   # Estimate embeddings
@@ -109,7 +85,6 @@ largeVis <- function(x,
   coords <- projectKNNs(wij = wij,
                         dim = dim,
                         verbose = verbose,
-  											threads = threads,
                         ...)
 
   #######################################################
@@ -123,11 +98,11 @@ largeVis <- function(x,
   )
 
   if (save_neighbors) {
-    knns[knns == -1] <- NA
-    returnvalue$knns <- t(knns)
+    knns$neighbors[knns$neighbors == -1] <- NA
+    returnvalue$knns <- t(knns$neighbors)
   }
   if (save_edges) {
-  	returnvalue$edges <- edges
+  	returnvalue$edges <- knns$edgematrix
   }
 
   class(returnvalue) <- "largeVis"

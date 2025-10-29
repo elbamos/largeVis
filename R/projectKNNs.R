@@ -33,12 +33,11 @@
 #' @param seed Random seed to be passed to the C++ functions; sampled from hardware entropy pool if \code{NULL} (the default).
 #' Note that if the seed is not \code{NULL} (the default), the maximum number of threads will be set to 1 in phases of the algorithm
 #' that would otherwise be non-deterministic.
-#' @param threads The maximum number of threads to spawn. Determined automatically if \code{NULL} (the default).
 #' @param verbose Verbosity
 #'
 #' @note If specified, \code{seed} is passed to the C++ and used to initialize the random number generator. This will not, however, be
 #' sufficient to ensure reproducible results, because the initial coordinate matrix is generated using the \code{R} random number generator.
-#' To ensure reproducibility, call \code{\link[base]{set.seed}} before calling this function, or pass it a pre-allocated coordinate matrix.
+#' To ensure reproducibility, call \code{set.seed} before calling this function, or pass it a pre-allocated coordinate matrix.
 #'
 #' @note The original paper called for weights in negative sampling to be calculated according to the degree of each vertex, the number of edges
 #' connecting to the vertex. The reference implementation, however, uses the sum of the weights of the edges to each vertex. In experiments, the
@@ -50,15 +49,16 @@
 #' @importFrom stats runif
 #' @examples
 #' \dontrun{
+#' checkCRAN()
 #' data(CO2)
 #' CO2$Plant <- as.integer(CO2$Plant)
 #' CO2$Type <- as.integer(CO2$Type)
 #' CO2$Treatment <- as.integer(CO2$Treatment)
 #' co <- scale(as.matrix(CO2))
 #' # Very small datasets often produce a warning regarding the alias table.  This is safely ignored.
-#' suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1, threads = 2))
-#' suppressWarnings(coords <- projectKNNs(vis$wij, threads = 2))
-#' plot(t(coords))
+#' suppressWarnings(vis <- largeVis(t(co), K = 20, sgd_batches = 1))
+#' suppressWarnings(coords <- projectKNNs(vis$wij))
+#' plot(t(coords), col = factor(CO2$Type))
 #' }
 projectKNNs <- function(wij, # symmetric sparse matrix
                         dim = 2, # dimension of the projection space
@@ -71,7 +71,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
 												useDegree = FALSE,
 												momentum = NULL,
 												seed = NULL,
-												threads = NULL,
                         verbose = getOption("verbose", TRUE)) {
 
   if (alpha < 0) stop("alpha < 0 is meaningless")
@@ -81,9 +80,8 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   is <- wij@i
 
   ##############################################
-  # Initialize coordinate matrix
+  # Determine number of batches
   ##############################################
-  if (is.null(coords)) coords <- matrix((runif(N * dim) - 0.5) / dim * 0.0001, nrow = dim)
 
   if (is.null(sgd_batches)) {
   	sgd_batches <- sgdBatches(N, length(wij@x / 2))
@@ -92,14 +90,14 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   	sgd_batches = sgd_batches * sgdBatches(N, length(wij@x / 2))
   }
 
-  if (!is.null(threads)) threads <- as.integer(threads)
   if (!is.null(momentum)) momentum <- as.double(momentum)
 
   #################################################
   # SGD
   #################################################
   if (verbose) cat("Estimating embeddings.\n")
-  coords <- sgd(coords,
+  coords <- sgd(starter_coords = coords,
+  							D = as.integer(dim),
                 targets_i = is,
                 sources_j = js,
                 ps = wij@p,
@@ -112,7 +110,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   							momentum = momentum,
   							useDegree = as.logical(useDegree),
   							seed = seed,
-  							threads = threads,
                 verbose = as.logical(verbose))
 
   return(coords)
@@ -129,16 +126,6 @@ projectKNNs <- function(wij, # symmetric sparse matrix
 #'
 #' @return The recommended number of sgd batches.
 #' @export
-#'
-#' @examples
-#' # Observe that increasing K has no effect on processing time
-#' N <- 70000 # MNIST
-#' K <- 10:250
-#' plot(K, sgdBatches(rep(N, length(K)), N * K / 2))
-#'
-#' # Observe that processing time scales linarly with N
-#' N <- c(seq(from = 1, to = 10000, by = 100), seq(from = 10000, to = 10000000, by = 1000))
-#' plot(N, sgdBatches(N))
 sgdBatches <- function(N, E = 150 * N / 2) {
 	ifelse(N < 10000, 2000 * E, ifelse(N < 1000000, 1000000 * (9000 * (N - 10000) / (1000000 - 10000) + 1000), N * 10000))
 }
