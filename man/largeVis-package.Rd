@@ -2,6 +2,7 @@
 % Please edit documentation in R/largeVis-package.r
 \docType{package}
 \name{largeVis-package}
+\alias{largeVis-package}
 \title{largeVis: high-quality visualizations for large, high-dimensionality datasets}
 \description{
 This is an implementation of the \code{largeVis} algorithm by Tang et al., and related functions and algorithms.

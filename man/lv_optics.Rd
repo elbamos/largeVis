@@ -27,7 +27,7 @@ lv_optics(
 
 \item{useQueue}{Whether to process points in order of core distance.  (See note.)}
 
-\item{verbose}{Vebosity level.}
+\item{verbose}{Verbosity level.}
 }
 \value{
 An \code{\link[dbscan]{optics}} object.

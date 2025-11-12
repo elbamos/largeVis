@@ -80,3 +80,62 @@ test_that("glosh is in range", {
 	expect_equal(sum(hdbscanobj$glosh < 0), 0)
 	expect_equal(sum(hdbscanobj$glosh > 1), 0)
 })
+
+context("as.dendrogram")
+
+set.seed(1974)
+data(iris)
+dat <- as.matrix(iris[, 1:4])
+dat <- scale(dat)
+dupes <- which(duplicated(dat))
+dat <- dat[-dupes, ]
+dat <- t(dat)
+K <- 20
+neighbors <- randomProjectionTreeSearch(dat, K = K, verbose = FALSE)
+hdobj <- hdbscan(neighbors = neighbors, minPts = 10, K = 4, verbose = FALSE)
+
+test_that("as.dendrogram returns a dendrogram object (includeNodes = FALSE)", {
+	expect_silent(dend <- as.dendrogram(hdobj, includeNodes = FALSE))
+	expect_true(inherits(dend, "dendrogram"))
+	expect_true(!is.null(attr(dend, "members")))
+	expect_true(!is.null(attr(dend, "height")))
+	expect_true(!is.null(attr(dend, "leaf")))
+})
+
+test_that("as.dendrogram returns a dendrogram object (includeNodes = TRUE)", {
+	expect_silent(dend <- as.dendrogram(hdobj, includeNodes = TRUE))
+	expect_true(inherits(dend, "dendrogram"))
+	expect_true(!is.null(attr(dend, "members")))
+	expect_true(!is.null(attr(dend, "height")))
+})
+
+test_that("as.dendrogram has correct member count (includeNodes = TRUE)", {
+	dend <- as.dendrogram(hdobj, includeNodes = TRUE)
+	expect_equal(attr(dend, "members"), ncol(dat))
+})
+
+test_that("as.dendrogram attributes are correct", {
+	dend <- as.dendrogram(hdobj, includeNodes = FALSE)
+	# Check basic dendrogram attributes exist
+	expect_true(!is.null(attr(dend, "members")))
+	expect_true(!is.null(attr(dend, "height")))
+	expect_true(!is.null(attr(dend, "label")))
+	expect_true(is.numeric(attr(dend, "height")))
+	expect_true(is.integer(attr(dend, "members")) || is.numeric(attr(dend, "members")))
+})
+
+test_that("as.dendrogram can be plotted", {
+	dend <- as.dendrogram(hdobj, includeNodes = FALSE)
+	expect_silent({
+		pdf(file = NULL)
+		plot(dend)
+		dev.off()
+	})
+})
+
+test_that("as.dendrogram handles spiral dataset", {
+	load(system.file("testdata/spiral.Rda", package = "largeVis"))
+	clustering <- hdbscan(spiral, K = 3, minPts = 20, verbose = FALSE)
+	expect_silent(dend <- as.dendrogram(clustering, includeNodes = FALSE))
+	expect_true(inherits(dend, "dendrogram"))
+})
