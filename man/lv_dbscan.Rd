@@ -7,7 +7,7 @@
 lv_dbscan(
   neighbors,
   eps = Inf,
-  minPts = nrow(neighbors - 1),
+  minPts = nrow(neighbors) - 1,
   verbose = getOption("verbose", TRUE)
 )
 }
@@ -18,7 +18,7 @@ lv_dbscan(
 
 \item{minPts}{See \code{\link[dbscan]{dbscan}}.}
 
-\item{verbose}{Vebosity level.}
+\item{verbose}{Verbosity level.}
 }
 \value{
 A \code{\link[dbscan]{dbscan}} object.

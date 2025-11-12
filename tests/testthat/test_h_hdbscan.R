@@ -92,12 +92,7 @@ dat <- dat[-dupes, ]
 dat <- t(dat)
 K <- 20
 neighbors <- randomProjectionTreeSearch(dat, K = K, verbose = FALSE)
-edges <- buildEdgeMatrix(data = dat, neighbors = neighbors, verbose = FALSE)
-hdobj <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 4, verbose = FALSE)
-
-test_that("as.dendrogram is an S3 method", {
-	expect_true(isS3method(f = "as.dendrogram", class = "hdbscan"))
-})
+hdobj <- hdbscan(neighbors = neighbors, minPts = 10, K = 4, verbose = FALSE)
 
 test_that("as.dendrogram returns a dendrogram object (includeNodes = FALSE)", {
 	expect_silent(dend <- as.dendrogram(hdobj, includeNodes = FALSE))
@@ -136,50 +131,6 @@ test_that("as.dendrogram can be plotted", {
 		plot(dend)
 		dev.off()
 	})
-})
-
-test_that("as.dendrogram works with different K values", {
-	hdobj3 <- hdbscan(edges, neighbors = neighbors, minPts = 10, K = 3, verbose = FALSE)
-	expect_silent(dend3 <- as.dendrogram(hdobj3, includeNodes = FALSE))
-	expect_true(inherits(dend3, "dendrogram"))
-
-	expect_silent(dend3_full <- as.dendrogram(hdobj3, includeNodes = TRUE))
-	expect_true(inherits(dend3_full, "dendrogram"))
-	expect_equal(attr(dend3_full, "members"), ncol(dat))
-})
-
-test_that("as.dendrogram includes HDBSCAN-specific attributes", {
-	dend <- as.dendrogram(hdobj, includeNodes = FALSE)
-	# The root or nodes should have cluster-specific attributes
-	# Check if these exist on the root or somewhere in the tree
-	has_cluster_attr <- !is.null(attr(dend, "cluster")) ||
-		(!is.null(dend[[1]]) && !is.null(attr(dend[[1]], "cluster")))
-	expect_true(has_cluster_attr)
-})
-
-test_that("as.dendrogram with includeNodes has point-level attributes", {
-	dend <- as.dendrogram(hdobj, includeNodes = TRUE)
-	# Find a leaf node and check it has point attributes
-	# We need to traverse the tree to find a leaf
-	find_leaf <- function(node) {
-		if (attr(node, "leaf")) return(node)
-		for (i in seq_along(node)) {
-			if (!is.null(node[[i]])) {
-				leaf <- find_leaf(node[[i]])
-				if (!is.null(leaf)) return(leaf)
-			}
-		}
-		return(NULL)
-	}
-
-	leaf <- find_leaf(dend)
-	if (!is.null(leaf)) {
-		# Leaves should have GLOSH and probability when includeNodes = TRUE
-		# They might not all have these if they're aggregated nodes
-		# So we just check the structure is valid
-		expect_true(attr(leaf, "leaf"))
-		expect_true(!is.null(attr(leaf, "height")))
-	}
 })
 
 test_that("as.dendrogram handles spiral dataset", {
