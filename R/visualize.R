@@ -59,7 +59,7 @@ manifoldMap <- function(x,
       (dim(images)[4] < 2 ||
        dim(images)[4] > 4)) stop("Wrong number of color layers.")
 
-  selections <- sample(N, n, replace = F)
+  selections <- sample(N, n, replace = FALSE)
   lowerscale <- min(images)
   upperscale <- max(images)
   graphics::plot(x * 1.1, pch = NA, type = 'n', ...)
@@ -130,7 +130,7 @@ ggManifoldMap <- function(ggObject = NULL,
       (dim(images)[4] < 2 ||
        dim(images)[4] > 4)) stop("Wrong number of color layers.")
 
-  selections <- sample(N, n, replace = F)
+  selections <- sample(N, n, replace = FALSE)
   lowerscale <- min(images)
   upperscale <- max(images)
   if (is.null(ggObject)) {

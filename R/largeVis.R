@@ -77,7 +77,7 @@ largeVis <- function(x,
   	knns$edgematrix$x <- knns$edgematrix$x / max(knns$edgematrix$x)
   }
   wij <- buildWijMatrix(knns$edgematrix, perplexity)
-  if (!save_edges) rm(knns)
+  if (!save_edges && !save_neighbors) rm(knns)
 
   #######################################################
   # Estimate embeddings

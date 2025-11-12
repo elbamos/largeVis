@@ -36,8 +36,6 @@ as.dist.edgematrix <- function(m, diag = FALSE, upper = FALSE) {
 	structure(stats::as.dist(Matrix::as.matrix(y)),
 						class = c("dist", "dissimilarity"),
 						Size = ncol(x),
-						Diag = FALSE,
-						Upper = FALSE,
 						Metric = attr(m, "Metric"),
 						NA.message = "Sparse dist matrix",
 						Diag = diag,

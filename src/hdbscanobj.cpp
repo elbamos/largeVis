@@ -142,7 +142,8 @@ Rcpp::List HDBSCAN::getHierarchy() const {
 	for (auto it = roots.begin(); it != roots.end(); ++it) {
 		HDCluster& thisone = *(it->second);
 		thisone.reportHierarchy(clusterCnt, nodemembership, lambdas, clusterParent, clusterSelected, clusterStability, lambdaBirth, lambdaDeath);
-		delete &thisone;
+		//delete &thisone;
+		delete it->second;
 	}
 
 	return  List::create(Named("nodemembership") = IntegerVector(nodemembership.begin(), nodemembership.end()),

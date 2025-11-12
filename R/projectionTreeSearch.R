@@ -60,7 +60,7 @@ randomProjectionTreeSearch.matrix <- function(x,
 	if (verbose[1] && sum(knns$neighbors == -1) > 0)
 		warning ("Wanted to find",
 						 nrow(knns$neighbors) * ncol(knns$neighbors),
-						 " neighbors, but only found",
+						 "neighbors, but only found",
 						 ((nrow(knns$neighbors) * ncol(knns$neighbors)) - sum(knns$neighbors == -1)))
 
 	attr(knns$edgematrix, "Metric") <- tolower(distance_method)

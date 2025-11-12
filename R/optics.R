@@ -8,7 +8,7 @@
 #' @param eps_cl See \code{\link[dbscan]{optics}}.
 #' @param xi See \code{\link[dbscan]{optics}}.
 #' @param useQueue Whether to process points in order of core distance.  (See note.)
-#' @param verbose Vebosity level.
+#' @param verbose Verbosity level.
 #'
 #' @details This is an implementation of the OPTICS algorithm that attempts
 #' to leverage the \code{largeVis} nearest-neighbor search.

@@ -84,10 +84,10 @@ projectKNNs <- function(wij, # symmetric sparse matrix
   ##############################################
 
   if (is.null(sgd_batches)) {
-  	sgd_batches <- sgdBatches(N, length(wij@x / 2))
+  	sgd_batches <- sgdBatches(N, length(wij@x) / 2)
   } else if (sgd_batches < 0) stop("sgd batches must be > 0")
   else if (sgd_batches < 1) {
-  	sgd_batches = sgd_batches * sgdBatches(N, length(wij@x / 2))
+  	sgd_batches = sgd_batches * sgdBatches(N, length(wij@x) / 2)
   }
 
   if (!is.null(momentum)) momentum <- as.double(momentum)
