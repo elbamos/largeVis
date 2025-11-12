@@ -50,12 +50,12 @@ public:
 		}
 		C accu = 0;
 		while (! large.empty()) {
-			accu += 1 - large.front();
+			accu += 1 - probs[large.front()];
 			probs[large.front()] = 1;
 			large.pop();
 		}
 		while (! small.empty()) {
-			accu += 1 - small.front();
+			accu += 1 - probs[small.front()];
 			probs[small.front()] = 1;
 			small.pop();
 		}

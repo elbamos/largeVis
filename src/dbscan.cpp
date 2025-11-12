@@ -27,7 +27,7 @@ protected:
 		for (auto it = neighbors -> begin_col(p);
          it != neighbors -> end_col(p);
          ++it) {
-			if (*it == -1 || (*edges)(p, *it) > eps) {
+			if (*it == -1 || (*edges)(p, *it) >= eps) {
 				exceeded = true;
 				break;
 			}
