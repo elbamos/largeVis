@@ -1,3 +1,7 @@
+### largeVis 0.4b
+* Fixed a number of persistent bugs with help from Claude
+* Restored the `as.dendrogram` hdbscan function. 
+
 ### largeVis 0.3
 * The purpose of this update is to get the package back on CRAN and enable multi-threading on current OS X systems.
 * Replaced OpenMP with RcppParallel. This was necessary to get the package running in parallel on current OS X systems, and should eliminate a number of compilation hitches on some systems. It should not affect performance.
