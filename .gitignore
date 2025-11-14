@@ -7,7 +7,11 @@ Examples.html
 largeVis.Rproj
 doc
 Meta
-
 *.tmp
 /doc/
 /Meta/
+..Rcheck/*
+.clangd/*
+.vscode/*
+compile_commands.json
+src/symbols.rds
