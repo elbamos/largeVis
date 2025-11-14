@@ -39,7 +39,7 @@ jobs:
     # NO NEED TO CHECKOUT HERE
     - uses: r-hub/actions/setup@v1
       with:
-        config: ${{ github.event.inputs.config }}
+        config: ${{ github.event.inputs.config || 'linux,windows,macos' }}
       id: rhub-setup
 
   linux-containers:
