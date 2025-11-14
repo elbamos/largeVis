@@ -18,7 +18,7 @@ Imports:
 LinkingTo: Rcpp (>= 0.12.4),RcppProgress (>= 0.2.1),RcppArmadillo (>= 0.7.200.2.0),testthat(>= 1.0.2),RcppParallel,RcppAnnoy (>= 0.0.18)
 Suggests:
     deepnet,
-    ggforce, 
+    ggforce,
     testthat,
     knitr,
     dplyr,
@@ -27,7 +27,8 @@ Suggests:
     purrr,
     readr,
     rmarkdown,
-    dbscan
+    dbscan,
+    xml2
 Encoding: UTF-8
 URL: https://github.com/elbamos/largeVis
 BugReports: https://github.com/elbamos/largeVis/issues
