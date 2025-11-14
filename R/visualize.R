@@ -43,10 +43,10 @@ manifoldMap <- function(x,
                         images,
                         scale = 1,
                         ...) { #nocov start
-  if (class(x) == "largeVis") x <- t(x$coords)
+  if (inherits(x, "largeVis")) x <- t(x$coords)
   if (ncol(x) != 2) stop("Can only visualize in 2-D.")
   N <- nrow(x)
-  if (class(images) == "list" &&
+  if (inherits(images, "list") &&
       N != length(images))
     stop("Number of images doesn't equal number of points.")
   if (N != nrow(images))
@@ -114,10 +114,10 @@ ggManifoldMap <- function(ggObject = NULL,
                           n = nrow(x),
                           images,
                           scale = 1) { #nocov start
-  if (class(x) == "largeVis") x <- t(x$coords)
+  if (inherits(x, "largeVis")) x <- t(x$coords)
   if (ncol(x) != 2) stop("Can only visualize in 2-D.")
   N <- nrow(x)
-  if (class(images) == "list" &&
+  if (inherits(images, "list") &&
       N != length(images))
     stop("Number of images doesn't equal number of points.")
   if (N != nrow(images))

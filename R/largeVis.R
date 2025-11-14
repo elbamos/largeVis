@@ -91,11 +91,11 @@ largeVis <- function(x,
   # Cleanup
   #######################################################
 
-  returnvalue <- list(
+  returnvalue <- structure(list(
     wij = wij,
     call = sys.call(),
     coords = coords
-  )
+  ), class = "largeVis")
 
   if (save_neighbors) {
     knns$neighbors[knns$neighbors == -1] <- NA
@@ -105,6 +105,5 @@ largeVis <- function(x,
   	returnvalue$edges <- knns$edgematrix
   }
 
-  class(returnvalue) <- "largeVis"
   return(returnvalue)
 }
