@@ -11,9 +11,16 @@ class AliasTable final {
 private:
 	C* probs;
 	T* aliases;
-	uniform_real_distribution< C > rnd = uniform_real_distribution< C >();
 	mt19937_64 mt;
 	T N;
+
+	// Platform-independent uniform random number in [0,1)
+	inline C uniformRandom() {
+		// Convert mt19937_64 output to uniform [0,1) in a consistent way across platforms
+		// mt19937_64 produces uint64_t values in [0, 2^64-1]
+		// Divide by 2^64 to get [0,1)
+		return static_cast<C>(mt()) / static_cast<C>(18446744073709551616.0);
+	}
 
 public:
 	explicit AliasTable(const T& N) : N{N} {
@@ -78,6 +85,6 @@ public:
 	}
 
 	T operator()() {
-		return (*this)(rnd(mt), rnd(mt));
+		return (*this)(uniformRandom(), uniformRandom());
 	}
 };
