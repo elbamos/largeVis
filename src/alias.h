@@ -85,6 +85,8 @@ public:
 	}
 
 	T operator()() {
-		return (*this)(uniformRandom(), uniformRandom());
+		C r1 = uniformRandom();
+		C r2 = uniformRandom();
+		return (*this)(r1, r2);
 	}
 };
