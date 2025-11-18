@@ -87,7 +87,7 @@ class SortCopyWorker : public RcppParallel::Worker  {
 public:
 	AnnoySearch<distancemetric, Distance> *searcher;
 
-	SortCopyWorker<distancemetric, Distance>(AnnoySearch<distancemetric, Distance> *searcher) : searcher {searcher} {}
+	SortCopyWorker(AnnoySearch<distancemetric, Distance> *searcher) : searcher {searcher} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		vector< std::pair<distancemetric, vertexidxtype>> holder;
@@ -103,7 +103,7 @@ class ReduceWorker : public RcppParallel::Worker  {
 public:
 	AnnoySearch<distancemetric, Distance> *searcher;
 
-	ReduceWorker<distancemetric, Distance>(AnnoySearch<distancemetric, Distance> *searcher) : searcher {searcher} {}
+	ReduceWorker(AnnoySearch<distancemetric, Distance> *searcher) : searcher {searcher} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		for (vertexidxtype i = begin; i < end; ++i) if (searcher->p.increment()) {
@@ -118,7 +118,7 @@ public:
 	AnnoySearch<distancemetric, Distance> *searcher;
 	arma::imat *old_knns;
 
-	ExploreWorker<distancemetric, Distance>(AnnoySearch<distancemetric, Distance> *searcher, arma::imat *old_knns) : searcher {searcher}, old_knns {old_knns} {}
+	ExploreWorker(AnnoySearch<distancemetric, Distance> *searcher, arma::imat *old_knns) : searcher {searcher}, old_knns {old_knns} {}
 
 	void operator()(std::size_t begin, std::size_t end) {
 		/*
