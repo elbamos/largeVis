@@ -1,8 +1,6 @@
 largeVis
 ================
 
-[![R-hub](https://github.com/elbamos/largeVis/actions/workflows/rhub.yaml/badge.svg)](https://github.com/elbamos/largeVis/actions/workflows/rhub.yaml)
-
 This is an implementation of the `largeVis` algorithm described in
 (<https://arxiv.org/abs/1602.00370>). It also incorporates:
 
