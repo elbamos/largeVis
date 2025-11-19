@@ -1,6 +1,7 @@
-### largeVis 0.4b
+### largeVis 0.4
 * Fixed a number of persistent bugs with help from Claude
 * Restored the `as.dendrogram` hdbscan function. 
+* There is an issue in using the RcppAnnoy library, that we use 64-bit types to count the number of vertices in the input. This causes, when checking the package for CRAN, warnings to be emitted that lines in the annoylib header that produce debug output use "%d" for formatting, which assumes 32-bit types. These warnings are, to be clear, spurious in the context of this package, but they do mean that if we want to get back on CRAN, we have to default to compiling with 32-bit types. 
 
 ### largeVis 0.3
 * The purpose of this update is to get the package back on CRAN and enable multi-threading on current OS X systems.
